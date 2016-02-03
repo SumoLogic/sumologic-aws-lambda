@@ -1,9 +1,9 @@
 var https = require('https');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-//      // Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
-//              // See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
-//                      ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
+// See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 var options = { 'hostname': 'endpoint1.collection.us2.sumologic.com',
   'path': 'https://endpoint1.collection.us2.sumologic.com/receiver/v1/http/XXXXX',
   'method': 'POST'
