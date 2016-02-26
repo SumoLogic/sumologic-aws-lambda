@@ -14,7 +14,7 @@ exports.handler = function(event, context) {
 		var zippedInput = new Buffer(event.awslogs.data, 'base64');
 
 		zlib.gunzip(zippedInput, function(e, buffer) {
-			if (e) { context.fail(e); }       
+			if (e) { context.fail(e); }
 
 			awslogsData = JSON.parse(buffer.toString('ascii'));
 
@@ -46,11 +46,10 @@ exports.handler = function(event, context) {
 				val.logStream = stream;
 				val.logGroup = group;
 				var rs = re.exec(val.message);
-				if (rs!=null) { curRequestID = rs[1]; }
+				if (rs!==null) { curRequestID = rs[1]; }
 				val.requestID = curRequestID;
 				req.write(JSON.stringify(val) + '\n');
 			});
 			req.end();
-		});    
+		});
 };
-
