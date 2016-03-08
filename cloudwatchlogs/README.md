@@ -1,4 +1,4 @@
-SumoLogic Functions for AWS CloudWatch Logs 
+Sumo Logic Functions for AWS CloudWatch Logs 
 ===========================================
 
 Files 

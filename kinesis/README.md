@@ -1,7 +1,7 @@
-# Kinesis to Sumologic
+# Kinesis to Sumo Logic
 
 This function reads messages from a Kinesis
-stream and posts them to a SumoLogic hosted HTTP collector.
+stream and posts them to a Sumo Logic hosted HTTP collector.
 
 ## Lambda configuration
 

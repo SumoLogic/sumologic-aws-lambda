@@ -1,4 +1,4 @@
-SumoLogic AWS Lambda Functions
+Sumo Logic AWS Lambda Functions
 ==============================
 
 ## What does AWS Lambda do? ##

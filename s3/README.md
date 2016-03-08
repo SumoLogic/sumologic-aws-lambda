@@ -1,5 +1,5 @@
-# S3 to SumoLogic
-This function reads files from an S3 bucket to a SumoLogic hosted HTTP collector. Files in the source bucket can be gzipped, or in cleartext, but should contain only texts.
+# S3 to Sumo Logic
+This function reads files from an S3 bucket to a Sumo Logic hosted HTTP collector. Files in the source bucket can be gzipped, or in cleartext, but should contain only texts.
 
 ## How it works 
 The function receives S3 notifications on new files uploaded to the source S3 bucket. It then reads these files, or unzips them if the file names end with `gz`, and sends to the target Sumo endpoint.
