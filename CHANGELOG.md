@@ -2,6 +2,10 @@
 
 This file lists changes made in each version of function repo
 
+## 1.2.1:
+Apr 05, 2016
+* Merged [PR#7](https://github.com/SumoLogic/sumologic-aws-lambda/pull/7). 
+
 ## 1.2.0:
 Feb 29, 2016
 * Merged [PR#4](https://github.com/SumoLogic/sumologic-aws-lambda/pull/4), add LICENSE file, and a function for reading from S3. 
