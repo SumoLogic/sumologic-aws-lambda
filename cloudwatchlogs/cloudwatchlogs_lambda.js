@@ -1,4 +1,3 @@
-
 var https = require('https');
 var zlib = require('zlib');
 
@@ -7,16 +6,17 @@ exports.handler = function(event, context) {
 		// Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
 		// See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
-	    var options = { 'hostname': 'collectors.sumologic.com',
-						'path': 'https://collectors.sumologic.com/receiver/v1/http/<XXX>',
-						'method': 'POST'
-					};
+		var options = {
+			'hostname': 'collectors.sumologic.com',
+			'path': 'https://collectors.sumologic.com/receiver/v1/http/<XXX>',
+			'method': 'POST'
+		};
 		var zippedInput = new Buffer(event.awslogs.data, 'base64');
 
 		zlib.gunzip(zippedInput, function(e, buffer) {
 			if (e) { context.fail(e); }
 
-			awslogsData = JSON.parse(buffer.toString('ascii'));
+			var awslogsData = JSON.parse(buffer.toString('ascii'));
 
 			console.log(awslogsData);
 
@@ -25,31 +25,48 @@ exports.handler = function(event, context) {
 				context.succeed("Success");
 			}
 
-			var req = https.request(options, function(res) {
-				var body = '';
-				console.log('Status:', res.statusCode);
-				res.setEncoding('utf8');
-				res.on('data', function(chunk) { body += chunk; });
-				res.on('end', function() {
-					console.log('Successfully processed HTTPS response');
-					context.succeed(); });
-			});
+			var requestsSent = 0;
+			var requestsFailed = 0;
+			var finalizeContext = function() {
+				var tot = requestsSent + requestsFailed;
+				if (tot == awslogsData.logEvents.length) {
+					if (requestsFailed > 0) {
+						context.fail(requestsFailed + " / " + tot + " events failed");
+					} else {
+						context.succeed(requestsSent + " requests sent");
+					}
+				}
+			};
 
-			req.on('error', context.fail);
-
-			stream=awslogsData.logStream;
-			group=awslogsData.logGroup;
-
-			curRequestID = null;
 			var re = new RegExp(/RequestId: (\S+) /);
 			awslogsData.logEvents.forEach(function(val, idx, arr) {
+				var req = https.request(options, function(res) {
+					var body = '';
+					console.log('Status:', res.statusCode);
+					res.setEncoding('utf8');
+					res.on('data', function(chunk) { body += chunk; });
+					res.on('end', function() {
+						console.log('Successfully processed HTTPS response');
+						requestsSent++;
+						finalizeContext();
+					});
+				});
+
+				req.on('error', function(e) {
+					console.log(e.message)
+					requestsFailed++;
+					finalizeContext();
+				});
+
+				var stream=awslogsData.logStream;
+				var group=awslogsData.logGroup;
+				var rs = re.exec(val.message);
+
+				val.requestID = (rs!==null) ? rs[1] : null;
 				val.logStream = stream;
 				val.logGroup = group;
-				var rs = re.exec(val.message);
-				if (rs!==null) { curRequestID = rs[1]; }
-				val.requestID = curRequestID;
-				req.write(JSON.stringify(val) + '\n');
+				req.end(JSON.stringify(val));
 			});
-			req.end();
+
 		});
 };
