@@ -18,7 +18,7 @@ exports.handler = function(event, context) {
 
 			awslogsData = JSON.parse(buffer.toString('ascii'));
 
-			console.log(awslogsData);
+			//console.log(awslogsData);
 
 			if (awslogsData.messageType === "CONTROL_MESSAGE") {
 				console.log("Control message");
@@ -32,7 +32,7 @@ exports.handler = function(event, context) {
 				res.on('data', function(chunk) { body += chunk; });
 				res.on('end', function() {
 					console.log('Successfully processed HTTPS response');
-					context.succeed(); });
+					context.succeed("Success"); });
 			});
 
 			req.on('error', context.fail);
