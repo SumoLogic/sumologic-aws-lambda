@@ -38,7 +38,8 @@ exports.handler = function(event, context) {
 				}
 			};
 
-			var re = new RegExp(/RequestId: (\S+) /);
+			var re = new RegExp(/(?:RequestId:|Z)\s+([\w\d\-]+)/);
+			var lastRequestID = null;
 			awslogsData.logEvents.forEach(function(val, idx, arr) {
 				var req = https.request(options, function(res) {
 					var body = '';
@@ -61,8 +62,10 @@ exports.handler = function(event, context) {
 				var stream=awslogsData.logStream;
 				var group=awslogsData.logGroup;
 				var rs = re.exec(val.message);
-
-				val.requestID = (rs!==null) ? rs[1] : null;
+				if (rs!==null) { 
+                		   lastRequestID = rs[1]; 
+                		}
+				val.requestID = lastRequestID;
 				val.logStream = stream;
 				val.logGroup = group;
 				req.end(JSON.stringify(val));
