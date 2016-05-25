@@ -8,7 +8,7 @@ exports.handler = function(event, context) {
 		// See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
 	    var options = { 'hostname': 'collectors.sumologic.com',
-						'path': 'https://collectors.sumologic.com/receiver/v1/http/<XXX>',
+						'path': 'receiver/v1/http/<XXX>',
 						'method': 'POST'
 					};
 		var zippedInput = new Buffer(event.awslogs.data, 'base64');
