@@ -15,6 +15,6 @@ Usage
 5. Scroll down to the *Lambda function handle and role* section, make sure you set the right values that match the function. For role, you can just use the basic execution role. Click next.
 6. Finally click on "Create function" to create the function. 
 7. (Optional) Test this new function with sample AWS CloudWatch Logs template provided by AWS  
-NOTE: You are interested in **Lambda logs** (via CloudWatchLogs) specifically, please visit this [KB article](http://help.sumologic.com/Apps/AWS_Lambda/Collect_Logs_for_AWS_Lambda?t=1461360129021)  
+NOTE: If you are interested in **Lambda logs** (via CloudWatchLogs) specifically, please visit this [KB article](http://help.sumologic.com/Apps/AWS_Lambda/Collect_Logs_for_AWS_Lambda?t=1461360129021)  
 
 
