@@ -1,16 +1,21 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
+// See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+var sumoEndpoint = 'https://collectors.sumologic.com/receiver/v1/http/<XXX>'
+
 var https = require('https');
 var zlib = require('zlib');
+var url = require('url');
 
 exports.handler = function(event, context) {
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
-		// See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////
-		var options = {
-			'hostname': 'collectors.sumologic.com',
-			'path': 'https://collectors.sumologic.com/receiver/v1/http/<XXX>',
-			'method': 'POST'
-		};
+	    var urlObject = url.parse(sumoEndpoint);
+	    
+	    var options = { 'hostname': urlobject.hostname,
+				'path': urlObject.pathname,
+				'method': 'POST'
+			};
+
 		var zippedInput = new Buffer(event.awslogs.data, 'base64');
 
 		zlib.gunzip(zippedInput, function(e, buffer) {
