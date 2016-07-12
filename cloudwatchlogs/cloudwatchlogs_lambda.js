@@ -11,7 +11,7 @@ var url = require('url');
 exports.handler = function(event, context) {
 	    var urlObject = url.parse(sumoEndpoint);
 	    
-	    var options = { 'hostname': urlobject.hostname,
+	    var options = { 'hostname': urlObject.hostname,
 				'path': urlObject.pathname,
 				'method': 'POST'
 			};
