@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
-// See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
+// See more at: https://help.sumologic.com/APIs/01Collector_Management_API
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 var sumoEndpoint = 'https://collectors.sumologic.com/receiver/v1/http/<XXX>'
 
