@@ -26,7 +26,6 @@ function s3LogsToSumo(bucket, objKey,context) {
                 });
             });
     
-    var finalData = '';
     var totalBytes = 0;
     var isCompressed = false;
     if (objKey.match(/\.gz$/)) {
@@ -53,8 +52,7 @@ function s3LogsToSumo(bucket, objKey,context) {
     if (!isCompressed) {
         s3Stream.on('data',function(data) {
                 //console.log("Read bytes:" +data.length);
-                finalData += data;
-                req.write(data+'\n');
+                req.write(data);
                 totalBytes += data.length;
             });
         s3Stream.on('end',finishFnc);
@@ -64,8 +62,7 @@ function s3LogsToSumo(bucket, objKey,context) {
         
         gunzip.on('data',function(data) {
             totalBytes += data.length;
-            req.write(data.toString()+'\n');
-            finalData += data.toString();
+            req.write(data.toString());
         }).on('end',finishFnc)
         .on('error',function(error) {
             context.fail(error);
