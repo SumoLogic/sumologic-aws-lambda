@@ -1,8 +1,10 @@
-# S3 to Sumo Logic
-This function reads files from an S3 bucket to a Sumo Logic hosted HTTP collector. Files in the source bucket can be gzipped, or in cleartext, but should contain only texts.
+===========================================
+S3 to Sumo Logic
+===========================================
 
-## How it works 
-The function receives S3 notifications on new files uploaded to the source S3 bucket. It then reads these files, or unzips them if the file names end with `gz`, and sends to the target Sumo endpoint.
+Files 
+-----
+*	*node.js/s3.js*:  node.js function to read files from an S3 bucket to a Sumo Logic hosted HTTP collector. Files in the source bucket can be gzipped, or in cleartext, but should contain only texts. The function receives S3 notifications on new files uploaded to the source S3 bucket, then reads these files, or unzips them if the file names end with `gz`, and finally sends the data to the target Sumo endpoint.
 
 ## Lambda Setup 
 For the Sumo collector configuration, do not enable multiline processing or
