@@ -1,7 +1,10 @@
-# Kinesis to Sumo Logic
+===========================================
+Kinesis to Sumo Logic
+===========================================
 
-This function reads messages from a Kinesis
-stream and posts them to a Sumo Logic hosted HTTP collector.
+Files 
+-----
+*	*node.js/k2sl_lambda.js*:  node.js function to read messages from a Kinesis stream and posts them to a Sumo Logic hosted HTTP collector.
 
 ## Lambda configuration
 
