@@ -104,7 +104,9 @@ exports.handler = function (event, context) {
 			
             // delete id as it's not very useful
             delete val.id;
-
+            
+            val.logStream = awslogsData.logStream;
+            val.logGroup = awslogsData.logGroup;
             val.requestID = lastRequestID;
             req.end(JSON.stringify(val));
         });
