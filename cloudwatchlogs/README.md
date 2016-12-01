@@ -3,7 +3,7 @@ Sumo Logic Functions for AWS CloudWatch Logs
 
 Files 
 -----
-*	*node.js/cloudwatchlogs.js*:  node.js file to collect data from AWS CWL. Can also be used to collect AWS VPC Flowlogs sent via CWL.
+*	*node.js/cloudwatchlogs.js*:  node.js file to collect data from AWS CWL.
 *	*node.js/cloudwatchlogs_vpc.js*:  node.js file to collect AWS VPC Flowlogs sent via CWL.
 *	*node.js/cloudwatchlogs_lambda.js*:  node.js file to collect AWS Lambda logs via CWL. This version extracts and add a "RequestId" field to each log line to make correlations easier.
 
