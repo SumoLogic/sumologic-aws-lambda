@@ -32,19 +32,19 @@ function sumoMetaKey(awslogsData, message) {
     var sourceHost = '';
     
     if (sourceCategoryOverride !== null) {
-        sourceCategory = sourceCategoryOverride
+        sourceCategory = sourceCategoryOverride;
     }
     
     if (sourceHostOverride !== null) {
-        sourceHost = sourceHostOverride
+        sourceHost = sourceHostOverride;
     } else {
-        sourceHost = awslogsData.logGroup
+        sourceHost = awslogsData.logGroup;
     }
     
     if (sourceNameOverride !== null) {
-        sourceName = sourceNameOverride
+        sourceName = sourceNameOverride;
     } else {
-        sourceName = awslogsData.logStream
+        sourceName = awslogsData.logStream;
     }
     
     // Ability to override metadata within the message
@@ -60,16 +60,16 @@ function sumoMetaKey(awslogsData, message) {
         if (metadataOverride.source) {
             sourceName = metadataOverride.source;
         }
-        delete log['_sumo_metadata']
+        delete log._sumo_metadata;
     }
-    return sourceName + ':' + sourceCategory + ':' + sourceHost
+    return sourceName + ':' + sourceCategory + ':' + sourceHost;
     
 }
 
 function postToSumo(context, messages) {
     var messagesTotal = Object.keys(messages).length;
     var messagesSent = 0;
-    var messagesFailed = 0;
+    var messageErrors = [];
     
     var urlObject = url.parse(sumoEndpoint);
     var options = {
@@ -79,14 +79,15 @@ function postToSumo(context, messages) {
     };
     
     var finalizeContext = function () {
-        var total = messagesSent + messagesFailed;
+        var total = messagesSent + messageErrors.length;
         if (total == messagesTotal) {
-            if (messagesFailed > 0) {
-                context.fail(messagesFailed + " / " + total + " events failed");
+            var message = 'messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length;
+            if (messageErrors.length > 0) {
+                context.fail(message + ' errors: ' + messageErrors);
             } else {
-                context.succeed(messagesSent + " requests sent");
+                context.succeed(message);
             }
-            console.log('messagesSent: ' + messagesSent + ' messagesFailed: ' + messagesFailed);
+            console.log(message);
         }
     };
     
@@ -100,19 +101,18 @@ function postToSumo(context, messages) {
         };
         
         var req = https.request(options, function (res) {
-            var body = '';
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {
-                body += chunk;
-            });
             res.on('end', function () {
-                messagesSent++;
+                if (res.statusCode == 200) {
+                    messagesSent++;
+                } else {
+                    errors.push('HTTP Return code ' + res.statusCode);
+                }
                 finalizeContext();
             });
         });
         
         req.on('error', function (e) {
-            messagesFailed++;
+            messageErrors.push(e.message);
             finalizeContext();
         });
         
@@ -125,6 +125,7 @@ function postToSumo(context, messages) {
 
 
 exports.handler = function (event, context) {
+    
     var messages_list = {};
     
     var zippedInput = new Buffer(event.awslogs.data, 'base64');
@@ -145,6 +146,7 @@ exports.handler = function (event, context) {
         
         console.log('total events: ' + awslogsData.logEvents.length);
         
+        // Chunk log events before posting to SumoLogic
         awslogsData.logEvents.forEach(function (log, idx, arr) {
             
             // Remove any trailing \n
@@ -168,7 +170,7 @@ exports.handler = function (event, context) {
                 log.message = JSON.parse(log.message);
             } catch (err) {
                 // Do nothing, leave as text
-                log.message.trim()
+                log.message.trim();
             }
             
             // delete id as it's not very useful
@@ -186,9 +188,9 @@ exports.handler = function (event, context) {
             var metadataKey = sumoMetaKey(awslogsData, log.message);
             
             if (metadataKey in messages_list) {
-                messages_list[metadataKey].push(log)
+                messages_list[metadataKey].push(log);
             } else {
-                messages_list[metadataKey] = [log]
+                messages_list[metadataKey] = [log];
             }
         });
         
