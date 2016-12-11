@@ -55,7 +55,7 @@ function sumoMetaKey(awslogsData, message) {
     // Ability to override metadata within the message
     // Useful within Lambda function console.log to dynamically set metadata fields within SumoLogic.
     if (message.hasOwnProperty('_sumo_metadata')) {
-        var metadataOverride = log._sumo_metadata;
+        var metadataOverride = message._sumo_metadata;
         if (metadataOverride.category) {
             sourceCategory = metadataOverride.category;
         }
@@ -65,7 +65,7 @@ function sumoMetaKey(awslogsData, message) {
         if (metadataOverride.source) {
             sourceName = metadataOverride.source;
         }
-        delete log._sumo_metadata;
+        delete message._sumo_metadata;
     }
     return sourceName + ':' + sourceCategory + ':' + sourceHost;
     
@@ -86,12 +86,11 @@ function postToSumo(context, messages) {
     var finalizeContext = function () {
         var total = messagesSent + messageErrors.length;
         if (total == messagesTotal) {
-            var message = 'messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length;
+            console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
             if (messageErrors.length > 0) {
-                context.fail(message + ' errors: ' + messageErrors);
+                context.fail('errors: ' + messageErrors);
             } else {
-                console.log(message);
-                context.succeed(message);
+                context.succeed();
             }
         }
     };
@@ -99,14 +98,19 @@ function postToSumo(context, messages) {
     
     Object.keys(messages).forEach(function (key, index) {
         var headerArray = key.split(':');
-        console.log(key);
+        
         options.headers = {
-            'X-Sumo-Category': headerArray[0],
             'X-Sumo-Name': headerArray[0],
-            'X-Sumo-Host': headerArray[0]
+            'X-Sumo-Category': headerArray[1],
+            'X-Sumo-Host': headerArray[2]
         };
         
         var req = https.request(options, function (res) {
+            var body = '';
+            res.setEncoding('utf8');
+            res.on('data', function (chunk) {
+                body += chunk;
+            });
             res.on('end', function () {
                 if (res.statusCode == 200) {
                     messagesSent++;
@@ -131,7 +135,7 @@ function postToSumo(context, messages) {
 
 
 exports.handler = function (event, context) {
-
+    
     // Validate URL has been set
     var urlObject = url.parse(SumoURL);
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
@@ -147,14 +151,14 @@ exports.handler = function (event, context) {
         
         var awslogsData = JSON.parse(buffer.toString('ascii'));
         
-        if (awslogsData.messageType === "CONTROL_MESSAGE") {
-            console.log("Control message");
-            context.succeed("Success");
+        if (awslogsData.messageType === 'CONTROL_MESSAGE') {
+            console.log('Control message');
+            context.succeed('Success');
         }
         
         var lastRequestID = null;
         
-        console.log('total events: ' + awslogsData.logEvents.length);
+        console.log('Log events: ' + awslogsData.logEvents.length);
         
         // Chunk log events before posting to SumoLogic
         awslogsData.logEvents.forEach(function (log, idx, arr) {
