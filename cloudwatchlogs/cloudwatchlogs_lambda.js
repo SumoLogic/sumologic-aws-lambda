@@ -8,12 +8,12 @@ var SumoURL = process.env.SUMO_ENDPOINT;
 
 // The following parameters override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
 // Not these can also be overridden via json within the message payload. See the README for more information.
-var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE,  // If none sourceCategoryOverride will not be overridden
-    sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE,          // If none sourceHostOverride will not be set to the name of the logGroup
-    sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE;          // If none sourceNameOverride will not be set to the name of the logStream
+var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none',  // If none sourceCategoryOverride will not be overridden
+    sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE || 'none',          // If none sourceHostOverride will not be set to the name of the logGroup
+    sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || 'none';          // If none sourceNameOverride will not be set to the name of the logStream
 
 // CloudWatch logs encoding
-var encoding = 'utf-8';   // default is utf-8
+var encoding = process.env.ENCODING || 'utf-8';  // default is utf-8
 
 // Include logStream and logGroup as json fields within the message. Required for SumoLogic AWS Lambda App
 var includeLogInfo = true;  // default is true
