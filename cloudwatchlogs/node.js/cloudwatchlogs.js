@@ -1,14 +1,16 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
-// See more at: https://help.sumologic.com/APIs/01Collector_Management_API
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-var sumoEndpoint = 'https://collectors.sumologic.com/receiver/v1/http/<XXX>';
+//////////////////////////////////////////////////////////////////////////////////
+//                       CloudWatch Logs to SumoLogic                           //
+// https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchlogs //
+//////////////////////////////////////////////////////////////////////////////////
 
-// The following parameters can be specified to override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
+// SumoLogic Endpoint to post logs
+var SumoURL = process.env.SUMO_ENDPOINT;
+
+// The following parameters override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
 // Not these can also be overridden via json within the message payload. See the README for more information.
-var sourceCategoryOverride = null;  // If null sourceCategoryOverride will not be overridden
-var sourceHostOverride = null;      // If null sourceHostOverride will not be set to the name of the logGroup
-var sourceNameOverride = null;      // If null sourceNameOverride will not be set to the name of the logStream
+var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE,  // If none sourceCategoryOverride will not be overridden
+    sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE,          // If none sourceHostOverride will not be set to the name of the logGroup
+    sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE;          // If none sourceNameOverride will not be set to the name of the logStream
 
 // Include logStream and logGroup as json fields within the message. Required for SumoLogic AWS Lambda App
 var includeLogInfo = true;  // default is true
@@ -21,6 +23,9 @@ var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+
 // Used to extract RequestID
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
 
+// Used to hold chunks of messages to post to SumoLogic
+var messages_list = {};
+
 var https = require('https');
 var zlib = require('zlib');
 var url = require('url');
@@ -31,17 +36,17 @@ function sumoMetaKey(awslogsData, message) {
     var sourceName = '';
     var sourceHost = '';
     
-    if (sourceCategoryOverride !== null) {
+    if (sourceCategoryOverride !== null && sourceCategoryOverride !== '' && sourceCategoryOverride != 'none') {
         sourceCategory = sourceCategoryOverride;
     }
     
-    if (sourceHostOverride !== null) {
+    if (sourceHostOverride !== null && sourceHostOverride !== '' && sourceHostOverride != 'none') {
         sourceHost = sourceHostOverride;
     } else {
         sourceHost = awslogsData.logGroup;
     }
     
-    if (sourceNameOverride !== null) {
+    if (sourceNameOverride !== null && sourceNameOverride !== '' && sourceNameOverride != 'none') {
         sourceName = sourceNameOverride;
     } else {
         sourceName = awslogsData.logStream;
@@ -71,7 +76,7 @@ function postToSumo(context, messages) {
     var messagesSent = 0;
     var messageErrors = [];
     
-    var urlObject = url.parse(sumoEndpoint);
+    var urlObject = url.parse(SumoURL);
     var options = {
         'hostname': urlObject.hostname,
         'path': urlObject.pathname,
@@ -85,15 +90,16 @@ function postToSumo(context, messages) {
             if (messageErrors.length > 0) {
                 context.fail(message + ' errors: ' + messageErrors);
             } else {
+                console.log(message);
                 context.succeed(message);
             }
-            console.log(message);
         }
     };
     
     
     Object.keys(messages).forEach(function (key, index) {
         var headerArray = key.split(':');
+        console.log(key);
         options.headers = {
             'X-Sumo-Category': headerArray[0],
             'X-Sumo-Name': headerArray[0],
@@ -125,8 +131,12 @@ function postToSumo(context, messages) {
 
 
 exports.handler = function (event, context) {
-    
-    var messages_list = {};
+
+    // Validate URL has been set
+    var urlObject = url.parse(SumoURL);
+    if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
+        context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+    }
     
     var zippedInput = new Buffer(event.awslogs.data, 'base64');
     
