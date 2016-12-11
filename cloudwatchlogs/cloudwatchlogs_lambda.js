@@ -12,6 +12,9 @@ var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE,  // If none s
     sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE,          // If none sourceHostOverride will not be set to the name of the logGroup
     sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE;          // If none sourceNameOverride will not be set to the name of the logStream
 
+// CloudWatch logs encoding
+var encoding = 'utf-8';   // default is utf-8
+
 // Include logStream and logGroup as json fields within the message. Required for SumoLogic AWS Lambda App
 var includeLogInfo = true;  // default is true
 
@@ -149,7 +152,7 @@ exports.handler = function (event, context) {
             context.fail(e);
         }
         
-        var awslogsData = JSON.parse(buffer.toString('ascii'));
+        var awslogsData = JSON.parse(buffer.toString(encoding));
         
         if (awslogsData.messageType === 'CONTROL_MESSAGE') {
             console.log('Control message');
