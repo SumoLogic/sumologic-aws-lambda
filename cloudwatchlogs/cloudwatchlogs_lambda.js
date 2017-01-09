@@ -27,7 +27,7 @@ var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
 
 // Used to hold chunks of messages to post to SumoLogic
-var messages_list = {};
+var messageList = {};
 
 var https = require('https');
 var zlib = require('zlib');
@@ -201,15 +201,15 @@ exports.handler = function (event, context) {
             
             var metadataKey = sumoMetaKey(awslogsData, log.message);
             
-            if (metadataKey in messages_list) {
-                messages_list[metadataKey].push(log);
+            if (metadataKey in messageList) {
+                messageList[metadataKey].push(log);
             } else {
-                messages_list[metadataKey] = [log];
+                messageList[metadataKey] = [log];
             }
         });
         
         // Push messages to Sumo
-        postToSumo(context, messages_list);
+        postToSumo(context, messageList);
         
     });
 };
