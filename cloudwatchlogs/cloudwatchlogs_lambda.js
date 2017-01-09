@@ -8,9 +8,9 @@ var SumoURL = process.env.SUMO_ENDPOINT;
 
 // The following parameters override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
 // Not these can also be overridden via json within the message payload. See the README for more information.
-var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none',  // If none sourceCategoryOverride will not be overridden
-    sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE || 'none',          // If none sourceHostOverride will not be set to the name of the logGroup
-    sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || 'none';          // If none sourceNameOverride will not be set to the name of the logStream
+var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none';   // If none sourceCategoryOverride will not be overridden
+var sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE;          // If none sourceHostOverride will not be set to the name of the logGroup
+var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE; // If none sourceNameOverride will not be set to the name of the logStream
 
 // CloudWatch logs encoding
 var encoding = process.env.ENCODING || 'utf-8';  // default is utf-8
@@ -27,7 +27,7 @@ var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
 
 // Used to hold chunks of messages to post to SumoLogic
-var messages_list = {};
+var messageList = {};
 
 var https = require('https');
 var zlib = require('zlib');
@@ -109,11 +109,8 @@ function postToSumo(context, messages) {
         };
         
         var req = https.request(options, function (res) {
-            var body = '';
             res.setEncoding('utf8');
-            res.on('data', function (chunk) {
-                body += chunk;
-            });
+            res.on('data', function (chunk) {});
             res.on('end', function () {
                 if (res.statusCode == 200) {
                     messagesSent++;
@@ -204,15 +201,15 @@ exports.handler = function (event, context) {
             
             var metadataKey = sumoMetaKey(awslogsData, log.message);
             
-            if (metadataKey in messages_list) {
-                messages_list[metadataKey].push(log);
+            if (metadataKey in messageList) {
+                messageList[metadataKey].push(log);
             } else {
-                messages_list[metadataKey] = [log];
+                messageList[metadataKey] = [log];
             }
         });
         
         // Push messages to Sumo
-        postToSumo(context, messages_list);
+        postToSumo(context, messageList);
         
     });
 };
