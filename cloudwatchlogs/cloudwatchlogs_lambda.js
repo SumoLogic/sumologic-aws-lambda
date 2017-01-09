@@ -118,7 +118,7 @@ function postToSumo(context, messages) {
                 if (res.statusCode == 200) {
                     messagesSent++;
                 } else {
-                    errors.push('HTTP Return code ' + res.statusCode);
+                    messageErrors.push('HTTP Return code ' + res.statusCode);
                 }
                 finalizeContext();
             });
