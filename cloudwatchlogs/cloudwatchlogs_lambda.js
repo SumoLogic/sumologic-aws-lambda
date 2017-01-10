@@ -8,7 +8,7 @@ var SumoURL = process.env.SUMO_ENDPOINT;
 
 // The following parameters override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
 // Not these can also be overridden via json within the message payload. See the README for more information.
-var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none';   // If none sourceCategoryOverride will not be overridden
+var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE;   // If none sourceCategoryOverride will not be overridden
 var sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE;          // If none sourceHostOverride will not be set to the name of the logGroup
 var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE; // If none sourceNameOverride will not be set to the name of the logStream
 
@@ -25,9 +25,6 @@ var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+
 
 // Used to extract RequestID
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
-
-// Used to hold chunks of messages to post to SumoLogic
-var messageList = {};
 
 var https = require('https');
 var zlib = require('zlib');
@@ -136,6 +133,9 @@ function postToSumo(context, messages) {
 
 exports.handler = function (event, context) {
     
+    // Used to hold chunks of messages to post to SumoLogic
+    var messageList = {};
+
     // Validate URL has been set
     var urlObject = url.parse(SumoURL);
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
