@@ -1,7 +1,10 @@
-//////////////////////////////////////////////////////////////////////////////////
-//                       CloudWatch Logs to SumoLogic                           //
-// https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchlogs //
-//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
+//                              CloudWatch Logs to SumoLogic                                //
+//     https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchlogs         //
+//                                                                                          //
+//    YOU MUST CREATE A SUMO LOGIC ENDPOINT AND PASTE IN ENVIRONMENTAL VARIABLES BELOW      //
+// https://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source //
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 // SumoLogic Endpoint to post logs
 var SumoURL = process.env.SUMO_ENDPOINT;
