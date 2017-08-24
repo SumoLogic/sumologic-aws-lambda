@@ -46,13 +46,13 @@ function sumoMetaKey(awslogsData, message) {
     if (sourceHostOverride !== null && sourceHostOverride !== '' && sourceHostOverride != 'none') {
         sourceHost = sourceHostOverride;
     } else {
-        sourceHost = awslogsData.logGroup;
+        sourceHost = awslogsData.logStream;
     }
     
     if (sourceNameOverride !== null && sourceNameOverride !== '' && sourceNameOverride != 'none') {
         sourceName = sourceNameOverride;
     } else {
-        sourceName = awslogsData.logStream;
+        sourceName = awslogsData.logGroup;
     }
     
     // Ability to override metadata within the message
