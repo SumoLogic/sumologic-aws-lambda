@@ -1,20 +1,29 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                        CloudTrail S3 bucket log to SumoLogic                                    // 
+//               https://github.com/SumoLogic/sumologic-aws-lambda                                                 //
+//                                                                                                                 //
+//        YOU MUST CREATE A SUMO LOGIC ENDPOINT CALLED SUMO_ENDPOINT AND PASTE IN ENVIRONMENTAL VARIABLES BELOW    //
+//            https://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source             //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SumoLogic Endpoint to post logs
+var SumoURL = process.env.SUMO_ENDPOINT;
+
 var AWS = require('aws-sdk');
 var s3 = new AWS.S3();
 var https = require('https');
 var zlib = require('zlib'); 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
-// See more at: https://service.sumologic.com/help/Default.htm#Collector_Management_API.htm
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-var options = { 'hostname': 'endpoint1.collection.sumologic.com',
-                'path': 'https://endpoint1.collection.sumologic.com/receiver/v1/http/<XXXX>',
-                'method': 'POST'
-            };
-
+var url = require('url');
 
 function s3LogsToSumo(bucket, objKey,context) {
+    var urlObject = url.parse(SumoURL);
+    var options = {
+        'hostname': urlObject.hostname,
+        'path': urlObject.pathname,
+        'method': 'POST'
+    };
+    options.headers = {
+        'X-Sumo-Name': objKey,      
+    };
     var req = https.request(options, function(res) {
                 var body = '';
                 console.log('Status:', res.statusCode);
@@ -25,21 +34,13 @@ function s3LogsToSumo(bucket, objKey,context) {
                     context.succeed(); 
                 });
             });
-    
     var finalData = '';
-    var totalBytes = 0;
-    var isCompressed = false;
-    if (objKey.match(/\.gz$/)) {
-        isCompressed = true;
-    }
-    
-    var finishFnc = function() {
-            console.log("End of stream");
-            console.log("Final total byte read: "+totalBytes);
-            req.end();
-            context.succeed();
-    }
-    
+
+    if (objKey.match(/CloudTrail-Digest/)) {
+        console.log("digest file are ignored");
+        context.succeed();
+    }    
+
     var s3Stream = s3.getObject({Bucket: bucket, Key: objKey}).createReadStream();
     s3Stream.on('error', function() {
         console.log(
@@ -47,38 +48,32 @@ function s3LogsToSumo(bucket, objKey,context) {
             'Make sure they exist and your bucket is in the same region as this function.');
         context.fail();
     });
-    
-    req.write('Bucket: '+bucket + ' ObjectKey: ' + objKey +'\n');
-    
-    if (!isCompressed) {
-        s3Stream.on('data',function(data) {
-                //console.log("Read bytes:" +data.length);
-                finalData += data;
-                req.write(data+'\n');
-                totalBytes += data.length;
-            });
-        s3Stream.on('end',finishFnc);
-    } else {
-        var gunzip = zlib.createGunzip();
-        s3Stream.pipe(gunzip);
-        
-        gunzip.on('data',function(data) {
-            totalBytes += data.length;
-            req.write(data.toString()+'\n');
-            finalData += data.toString();
-        }).on('end',finishFnc)
-        .on('error',function(error) {
-            context.fail(error);
-        })
-    }
+   var gunzip = zlib.createGunzip();
+    s3Stream.pipe(gunzip);
+    gunzip.on('data',function(data) {
+        finalData += data.toString();
+    }).on('end',function(end){
+        // READ THE UNZIPPED CloudTrail logs
+        var records = JSON.parse(finalData);
+        console.log(records.Records.length + " cloudtrail records in this file");
+        for (var i = 0, len = records.Records.length; i < len; i++) {
+            req.write(JSON.stringify(records.Records[i]) + '\n'); 
+        } 
+        req.end();
+    }).on('error',function(error) {
+        context.fail(error);
+    });
 }
 
 exports.handler = function(event, context) {
-    options.agent = new https.Agent(options);
-    event.Records.forEach(function(record) {
-        var bucket = record.s3.bucket.name;
-        var objKey = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
-        console.log('Bucket: '+bucket + ' ObjectKey: ' + objKey);
-        s3LogsToSumo(bucket, objKey, context);
-    });
+    //options.agent = new https.Agent(options);
+    // Validate URL has been set
+    var urlObject = url.parse(SumoURL);
+    if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
+        context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+    }
+    var bucket = event.Records[0].s3.bucket.name;
+    var objKey = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+    console.log('Bucket: '+bucket + ' ObjectKey: ' + objKey);
+    s3LogsToSumo(bucket, objKey, context);
 }
