@@ -8,12 +8,13 @@ Files
 
 ## Lambda Setup 
 For the Sumo collector configuration, do not enable multiline processing or
-one message per request -- the idea is to send as many messages in one request
-as possible to Sumo and let Sumo break them apart as needed.
+one message per request -- Additionally, the timeformat should be adjusted to ensure the eventTime is the messageTime.
+In the source Timestamp Format section, add a format <b>yyyy-MM-dd'T'HH:mm:ss'Z'</b> with Timestamp locator <b>eventTime\":\"(.*)?\"</b>
+.
 
 In the AWS console, use a code entry type of 'Edit code inline' and paste in the
 code. In the Environment variable section, set the following Key to the URL provided from Sumo collector configuration.
-SUMO_ENDPOINT
+<b>SUMO_ENDPOINT</b>
 
 In configuration specify index.handler as the Handler. Specify a Role that has
 sufficient privileges to read from the *source* bucket, and invoke a lambda
