@@ -1,6 +1,6 @@
-# Sumo Logic Functions for AWS CloudWatch Events 
+# Sumo Logic Function for AWS CloudWatch Events 
 
-AWS Lambda function to collector logs from CloudWatch Events and post them to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
+AWS Lambda function to collect CloudWatch events and post them to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
 
 
 # Usage
@@ -30,7 +30,7 @@ The following AWS Lambda environment variables are supported
 * `SOURCE_HOST_OVERRIDE` (OPTIONAL) - Override _sourceHost metadata field within SumoLogic. If `none` will not be overridden
 * `SOURCE_NAME_OVERRIDE` (OPTIONAL) - Override _sourceName metadata field within SumoLogic. If `none` will not be overridden
 
-# Including Outer Event Fields
+# Excluding Outer Event Fields
 By default, a CloudWatch Event has a format similar to this: 
 
 ```
@@ -47,4 +47,4 @@ By default, a CloudWatch Event has a format similar to this:
 } 
 ```
 
-This event will be sent as-is to Sumo Logic. If you just want to send the ```defail``` key instead, set the ```removeOuterFields``` to true.
+This event will be sent as-is to Sumo Logic. If you just want to send the ```detail``` key instead, set the ```removeOuterFields``` variable to true.
