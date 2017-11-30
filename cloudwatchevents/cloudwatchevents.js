@@ -96,7 +96,7 @@ exports.handler = function (event, context) {
     }
     
     //console.log(event);
-    if ((event.source==="aws.guardduty") && (removeOuterFields)) {
+    if ((event.source==="aws.guardduty") || (removeOuterFields)) {
         final_event =event.detail;
     } else {
         final_event = event;
