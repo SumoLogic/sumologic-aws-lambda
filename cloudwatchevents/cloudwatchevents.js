@@ -95,7 +95,7 @@ exports.handler = function (event, context) {
         context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
     }
     
-    console.log(event);
+    //console.log(event);
     if ((event.source==="aws.guardduty") && (removeOuterFields)) {
         final_event =event.detail;
     } else {
