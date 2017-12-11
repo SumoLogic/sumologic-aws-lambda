@@ -1,10 +1,10 @@
 var AWS = require("aws-sdk");
 var processLogsHandler = require('./cloudwatchlogs_lambda').processLogs;
 
-function receiveMessages(sqs, env, callback) {
+function receiveMessages(messageCount, sqs, env, callback) {
     var params = {
         QueueUrl: env.TASK_QUEUE_URL,
-        MaxNumberOfMessages: 1
+        MaxNumberOfMessages: messageCount
     };
     sqs.receiveMessage(params, function (err, data) {
         if (err) {
@@ -23,22 +23,47 @@ function deleteMessage(sqs, env, receiptHandle, cb) {
     }, cb);
 }
 
+function initworkers(env, context) {
+    //add permission
+    var lambda = new AWS.Lambda({
+      region: env.AWS_REGION
+    });
+
+    lambda.invoke({
+        InvocationType: 'Event',
+        FunctionName: env.WORKER_NAME,
+        Payload: '' // pass params
+    }, function(err, data) {
+       if (err) {
+           context.fail(err);
+       } else {
+           context.succeed('success');
+       }
+    });
+}
 exports.consumeMessages = function (env, context, callback) {
     var sqs = new AWS.SQS({region: env.AWS_REGION});
-    receiveMessages(sqs, env, function (err, messages) {
+
+    receiveMessages(10, sqs, env, function (err, messages) {
+
         if (err) {
             callback(err);
         } else if (messages && messages.length > 0) {
+            var fail_cnt = 0;
             console.log("Messages Recieved", messages.length);
-            // console.log("Message Body", messages[0].Body);
-            // console.log("Message receiptHandle", messages[0].ReceiptHandle);
-            try {
-                var logdata = JSON.parse(messages[0].Body).awslogs.data;
-                processLogsHandler(env, context, logdata);
-                deleteMessage(sqs, env, messages[0].ReceiptHandle, callback);
-            } catch (e) {
-                callback(e);
+            for (var i = 0; i < messages.length; i++) {
+                try {
+                    var logdata = JSON.parse(messages[i].Body).awslogs.data;
+                    processLogsHandler(env, context, logdata);
+                    deleteMessage(sqs, env, messages[i].ReceiptHandle, callback);
+                } catch(err) {
+                    fail_cnt += 1;
+                }
             }
+            if (fail_cnt == 0 && context.functionName.indexOf('Worker') < 0) {
+                initworkers(env, context);
+            }
+            callback(null, fail_cnt + ' success');
         } else {
             callback(null, 'success');
         }

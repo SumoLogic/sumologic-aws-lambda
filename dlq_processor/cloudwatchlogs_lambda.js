@@ -79,9 +79,7 @@ function postToSumo(context, messages, config) {
         if (total == messagesTotal) {
             console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
             if (messageErrors.length > 0) {
-                context.fail('errors: ' + messageErrors);
-            } else {
-                context.succeed();
+                throw 'errors: ' + messageErrors;
             }
         }
     };
@@ -150,21 +148,21 @@ exports.processLogs = function (env, context, eventAwslogsData) {
     // Validate URL has been set
     var urlObject = url.parse(config.SumoURL);
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
-        context.fail('Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL);
+        throw 'Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL;
     }
 
     var zippedInput = new Buffer(eventAwslogsData, 'base64');
 
     zlib.gunzip(zippedInput, function (e, buffer) {
         if (e) {
-            context.fail(e);
+            throw e;
         }
 
         var awslogsData = JSON.parse(buffer.toString(config.encoding));
 
         if (awslogsData.messageType === 'CONTROL_MESSAGE') {
             console.log('Control message');
-            context.succeed('Success');
+            return;
         }
 
         var lastRequestID = null;
@@ -229,5 +227,12 @@ exports.processLogs = function (env, context, eventAwslogsData) {
 
 
 exports.handler = function (event, context) {
-    exports.processLogs(process.env, context, event.awslogs.data);
+    try {
+        exports.processLogs(process.env, context, event.awslogs.data);
+        context.succeed('success');
+    }
+    catch(err) {
+        context.fail(err);
+    }
+
 };
