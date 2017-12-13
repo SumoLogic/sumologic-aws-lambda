@@ -282,7 +282,8 @@
                                   "/LambdaDLQ"
                                 ]
                             ]
-                        }
+                        },
+                        "NUM_OF_WORKERS": 4
                     }
                 }
             }

@@ -24,22 +24,23 @@ function deleteMessage(sqs, env, receiptHandle, cb) {
 }
 
 function initworkers(env, context) {
-    //add permission
     var lambda = new AWS.Lambda({
       region: env.AWS_REGION
     });
 
-    lambda.invoke({
-        InvocationType: 'Event',
-        FunctionName: env.WORKER_NAME,
-        Payload: '' // pass params
-    }, function(err, data) {
-       if (err) {
-           context.fail(err);
-       } else {
-           context.succeed('success');
-       }
-    });
+    for (var i = 0; i < env.NUM_OF_WORKERS; i++) {
+        lambda.invoke({
+            InvocationType: 'Event',
+            FunctionName: env.WORKER_NAME,
+            Payload: '' // pass params
+        }, function(err, data) {
+           if (err) {
+               context.fail(err);
+           } else {
+               context.succeed('success');
+           }
+        });
+    }
 }
 exports.consumeMessages = function (env, context, callback) {
     var sqs = new AWS.SQS({region: env.AWS_REGION});
@@ -50,7 +51,7 @@ exports.consumeMessages = function (env, context, callback) {
             callback(err);
         } else if (messages && messages.length > 0) {
             var fail_cnt = 0;
-            console.log("Messages Recieved", messages.length);
+            console.log("Messages Received", messages.length);
             for (var i = 0; i < messages.length; i++) {
                 try {
                     var logdata = JSON.parse(messages[i].Body).awslogs.data;
