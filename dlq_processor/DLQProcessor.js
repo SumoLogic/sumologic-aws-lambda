@@ -50,6 +50,7 @@ exports.consumeMessages = function (env, context, callback) {
         if (err) {
             callback(err);
         } else if (messages && messages.length > 0) {
+            env['SUMO_CLIENT_HEADER'] = 'dlq-cwl-lambda';
             var fail_cnt = 0;
             console.log("Messages Received", messages.length);
             for (var i = 0; i < messages.length; i++) {

@@ -91,7 +91,8 @@ function postToSumo(context, messages, config) {
         options.headers = {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
-            'X-Sumo-Host': headerArray[2]
+            'X-Sumo-Host': headerArray[2],
+            'X-Sumo-Client': config.SUMO_CLIENT_HEADER
         };
 
         var req = https.request(options, function (res) {
@@ -130,7 +131,7 @@ function getConfig(env) {
         "sourceCategoryOverride": env.SOURCE_CATEGORY_OVERRIDE || 'none',  // If none sourceCategoryOverride will not be overridden
         "sourceHostOverride": env.SOURCE_HOST_OVERRIDE || 'none',          // If none sourceHostOverride will not be set to the name of the logGroup
         "sourceNameOverride": env.SOURCE_NAME_OVERRIDE || 'none',          // If none sourceNameOverride will not be set to the name of the logStream
-
+        "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-lambda',
         // CloudWatch logs encoding
         "encoding": env.ENCODING || 'utf-8'  // default is utf-8
     };
