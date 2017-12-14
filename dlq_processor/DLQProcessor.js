@@ -28,11 +28,11 @@ function initworkers(env, context) {
       region: env.AWS_REGION
     });
 
-    for (var i = 0; i < env.NUM_OF_WORKERS; i++) {
+    for (var i = 0; i < parseInt(env.NUM_OF_WORKERS); i++) {
         lambda.invoke({
             InvocationType: 'Event',
-            FunctionName: env.WORKER_NAME,
-            Payload: '' // pass params
+            FunctionName: context.functionName,
+            Payload: '{"is_worker": "1"}'
         }, function(err, data) {
            if (err) {
                context.fail(err);
@@ -62,7 +62,7 @@ exports.consumeMessages = function (env, context, callback) {
                     fail_cnt += 1;
                 }
             }
-            if (fail_cnt == 0 && context.functionName.indexOf('Worker') < 0) {
+            if (fail_cnt == 0 && (parseInt(env.is_worker) === 0)) {
                 initworkers(env, context);
             }
             callback(null, fail_cnt + ' success');
@@ -74,6 +74,9 @@ exports.consumeMessages = function (env, context, callback) {
 exports.AWS = AWS;
 
 exports.handler = function (event, context, callback) {
-    exports.consumeMessages(process.env, context, callback);
+
+    var env = process.env;
+    env['is_worker'] = event.is_worker || 0;
+    exports.consumeMessages(env, context, callback);
 };
 

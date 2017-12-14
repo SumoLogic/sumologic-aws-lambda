@@ -237,52 +237,6 @@
                                 ]
                             ]
                         },
-                        "WORKER_NAME": {
-                            "Fn::GetAtt": [
-                                "DLQProcessorWorkerLambda",
-                                "Arn"
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "DLQProcessorWorkerLambda": {
-            "Type": "AWS::Lambda::Function",
-            "DependsOn": [
-                "LambdaExecutionRole",
-                "LambdaDLQ"
-            ],
-            "Properties": {
-                "Code": {
-                    "S3Bucket": "appdevstore",
-                    "S3Key": "dlqprocessor.zip"
-                },
-                "Role": {
-                    "Fn::GetAtt": [
-                        "LambdaExecutionRole",
-                        "Arn"
-                    ]
-                },
-                "Timeout": 300,
-                "Handler": "DLQProcessor.handler",
-                "Runtime": "nodejs4.3",
-                "MemorySize": 128,
-                "Environment": {
-                    "Variables": {
-                        "SUMO_ENDPOINT": "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA==",
-                        "TASK_QUEUE_URL": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                  "https://sqs.",
-                                  { "Ref" : "AWS::Region" },
-                                  ".amazonaws.com/",
-                                  { "Ref" : "AWS::AccountId" },
-                                  "/LambdaDLQ"
-                                ]
-                            ]
-                        },
                         "NUM_OF_WORKERS": 4
                     }
                 }
