@@ -24,11 +24,11 @@ function deleteMessage(sqs, env, receiptHandle, cb) {
 }
 
 function initworkers(env, context) {
-    var lambda = new AWS.Lambda({
-      region: env.AWS_REGION
-    });
 
     for (var i = 0; i < parseInt(env.NUM_OF_WORKERS); i++) {
+        var lambda = new AWS.Lambda({
+          region: env.AWS_REGION
+        });
         lambda.invoke({
             InvocationType: 'Event',
             FunctionName: context.functionName,
