@@ -5,10 +5,14 @@ from time import sleep
 
 
 class TestLambda(unittest.TestCase):
+    DLQ_QUEUE_NAME = 'SumoCWDeadLetterQueue'
+    PROCESS_DLQ_LAMBDA = 'SumoCWProcessDLQLambda'
+    TEMPLATE_KEYS_TO_REMOVE = ['SumoCWProcessDLQScheduleRule',
+                               'SumoCWEventsInvokeLambdaPermission']
 
     def setUp(self):
         self.config = {
-            'AWS_REGION_NAME': 'us-east-2'
+            'AWS_REGION_NAME': 'us-east-1'
         }
         # aws_access_key_id aws_secret_access_key
         self.stack_name = "TestCWLStack"
@@ -66,7 +70,7 @@ class TestLambda(unittest.TestCase):
     def _get_dlq_url(self):
         if (not hasattr(self, 'dlq_queue_url')):
             sqs = boto3.resource('sqs', self.config['AWS_REGION_NAME'])
-            queue = sqs.get_queue_by_name(QueueName='LambdaDLQ')
+            queue = sqs.get_queue_by_name(QueueName=self.DLQ_QUEUE_NAME)
             self.dlq_queue_url = queue.url
 
         return self.dlq_queue_url
@@ -86,7 +90,7 @@ class TestLambda(unittest.TestCase):
 
     def _get_message_count(self):
         sqs = boto3.resource('sqs', self.config['AWS_REGION_NAME'])
-        queue = sqs.get_queue_by_name(QueueName='LambdaDLQ')
+        queue = sqs.get_queue_by_name(QueueName=self.DLQ_QUEUE_NAME)
         return queue.attributes.get('ApproximateNumberOfMessages')
 
     def _get_dlq_function_name(self, lambda_client, pattern):
@@ -99,7 +103,7 @@ class TestLambda(unittest.TestCase):
     def invoke_lambda(self):
         lambda_client = boto3.client('lambda', self.config['AWS_REGION_NAME'])
         lambda_func_name = self._get_dlq_function_name(lambda_client,
-                                                       r'DLQProcessorLambda')
+                                                       self.PROCESS_DLQ_LAMBDA)
         response = lambda_client.invoke(FunctionName=lambda_func_name)
         print("Invoking lambda function", response)
 
@@ -119,8 +123,8 @@ class TestLambda(unittest.TestCase):
         #removing schedulerule to prevent lambda being triggered while testing
         #becoz we are invoking lambda directly
         template_data = eval(template_data)
-        template_data["Resources"].pop("ScheduleRule")
-        template_data["Resources"].pop("PermissionForEventsToInvokeLambda")
+        for key in self.TEMPLATE_KEYS_TO_REMOVE:
+            template_data["Resources"].pop(key)
         template_data = str(template_data)
 
         return template_data
