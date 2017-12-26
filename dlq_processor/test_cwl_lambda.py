@@ -91,7 +91,7 @@ class TestLambda(unittest.TestCase):
     def _get_message_count(self):
         sqs = boto3.resource('sqs', self.config['AWS_REGION_NAME'])
         queue = sqs.get_queue_by_name(QueueName=self.DLQ_QUEUE_NAME)
-        return queue.attributes.get('ApproximateNumberOfMessages')
+        return int(queue.attributes.get('ApproximateNumberOfMessages'))
 
     def _get_dlq_function_name(self, lambda_client, pattern):
         import re
@@ -112,7 +112,7 @@ class TestLambda(unittest.TestCase):
         final_message_count = self._get_message_count()
         print("Testing number of consumed messages initial: %s final: %s processed: %s" % (
             self.initial_log_count, final_message_count,
-            int(self.initial_log_count) - int(final_message_count)))
+            self.initial_log_count - final_message_count))
         self.assertGreater(self.initial_log_count, final_message_count)
 
     def _parse_template(self, template):

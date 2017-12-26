@@ -17,109 +17,14 @@ var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+
 // Used to extract RequestID
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
 
-var https = require('https');
 var zlib = require('zlib');
 var url = require('url');
+var generateHeaders = require('./sumo-dlq-function-utils').generateHeaders;
+var SumoLogsClient = require('./sumo-dlq-function-utils').SumoLogsClient;
 
-
-function sumoMetaKey(awslogsData, message, config) {
-    var sourceCategory = '';
-    var sourceName = '';
-    var sourceHost = '';
-
-    if (config.sourceCategoryOverride !== null && config.sourceCategoryOverride !== '' && config.sourceCategoryOverride != 'none') {
-        sourceCategory = config.sourceCategoryOverride;
-    }
-
-    if (config.sourceHostOverride !== null && config.sourceHostOverride !== '' && config.sourceHostOverride != 'none') {
-        sourceHost = config.sourceHostOverride;
-    } else {
-        sourceHost = awslogsData.logGroup;
-    }
-
-    if (config.sourceNameOverride !== null && config.sourceNameOverride !== '' && config.sourceNameOverride != 'none') {
-        sourceName = config.sourceNameOverride;
-    } else {
-        sourceName = awslogsData.logStream;
-    }
-
-    // Ability to override metadata within the message
-    // Useful within Lambda function console.log to dynamically set metadata fields within SumoLogic.
-    if (message.hasOwnProperty('_sumo_metadata')) {
-        var metadataOverride = message._sumo_metadata;
-        if (metadataOverride.category) {
-            sourceCategory = metadataOverride.category;
-        }
-        if (metadataOverride.host) {
-            sourceHost = metadataOverride.host;
-        }
-        if (metadataOverride.source) {
-            sourceName = metadataOverride.source;
-        }
-        delete message._sumo_metadata;
-    }
-    return sourceName + ':' + sourceCategory + ':' + sourceHost;
-
+function sumoMetaKey(headerObj) {
+    return headerObj['X-Sumo-Name'] + ':' + headerObj['X-Sumo-Category'] + ':' + headerObj['X-Sumo-Host'];
 }
-
-function postToSumo(context, messages, config) {
-    var messagesTotal = Object.keys(messages).length;
-    var messagesSent = 0;
-    var messageErrors = [];
-
-    var urlObject = url.parse(config.SumoURL);
-    var options = {
-        'hostname': urlObject.hostname,
-        'path': urlObject.pathname,
-        'method': 'POST'
-    };
-
-    var finalizeContext = function () {
-        var total = messagesSent + messageErrors.length;
-        if (total == messagesTotal) {
-            console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
-            if (messageErrors.length > 0) {
-                throw 'errors: ' + messageErrors;
-            }
-        }
-    };
-
-
-    Object.keys(messages).forEach(function (key, index) {
-        var headerArray = key.split(':');
-
-        options.headers = {
-            'X-Sumo-Name': headerArray[0],
-            'X-Sumo-Category': headerArray[1],
-            'X-Sumo-Host': headerArray[2],
-            'X-Sumo-Client': config.SUMO_CLIENT_HEADER
-        };
-
-        var req = https.request(options, function (res) {
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {});
-            res.on('end', function () {
-                if (res.statusCode == 200) {
-                    messagesSent++;
-                } else {
-                    messageErrors.push('HTTP Return code ' + res.statusCode);
-                }
-                finalizeContext();
-            });
-        });
-
-        req.on('error', function (e) {
-            messageErrors.push(e.message);
-            finalizeContext();
-        });
-
-        for (var i = 0; i < messages[key].length; i++) {
-            req.write(JSON.stringify(messages[key][i]) + '\n');
-        }
-        req.end();
-    });
-}
-
 
 function getConfig(env) {
     var config = {
@@ -139,30 +44,33 @@ function getConfig(env) {
 }
 
 
-exports.processLogs = function (env, context, eventAwslogsData) {
+exports.processLogs = function (env, eventAwslogsData, errorHandler) {
 
     var config = getConfig(env);
+    var SumoLogsClientObj = new SumoLogsClient(config);
 
     // Used to hold chunks of messages to post to SumoLogic
     var messageList = {};
 
     // Validate URL has been set
     var urlObject = url.parse(config.SumoURL);
-    if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
-        throw 'Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL;
+    if (urlObject.protocol !== 'https:' || urlObject.host === null || urlObject.path === null) {
+        errorHandler('Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL, 'Error in SumoURL');
     }
 
     var zippedInput = new Buffer(eventAwslogsData, 'base64');
 
     zlib.gunzip(zippedInput, function (e, buffer) {
         if (e) {
-            throw e;
+            errorHandler(e, "Error in Unzipping");
+            return;
         }
 
         var awslogsData = JSON.parse(buffer.toString(config.encoding));
 
         if (awslogsData.messageType === 'CONTROL_MESSAGE') {
             console.log('Control message');
+            errorHandler(null, "Control Message");
             return;
         }
 
@@ -208,8 +116,8 @@ exports.processLogs = function (env, context, eventAwslogsData) {
             if (lastRequestID) {
                 log.requestID = lastRequestID;
             }
-
-            var metadataKey = sumoMetaKey(awslogsData, log.message, config);
+            var headerObj = generateHeaders(config, log.message, awslogsData);
+            var metadataKey = sumoMetaKey(headerObj);
 
             if (metadataKey in messageList) {
                 messageList[metadataKey].push(log);
@@ -219,21 +127,28 @@ exports.processLogs = function (env, context, eventAwslogsData) {
         });
 
         // Push messages to Sumo
-        postToSumo(context, messageList, config);
-
+        SumoLogsClientObj.postToSumo(messageList, errorHandler, function (options, messages, key) {
+            var headerArray = key.split(':');
+            options.headers = {
+                'X-Sumo-Name': headerArray[0],
+                'X-Sumo-Category': headerArray[1],
+                'X-Sumo-Host': headerArray[2],
+                'X-Sumo-Client': config.SUMO_CLIENT_HEADER
+            };
+        });
     });
+};
 
 
-}
-
-
-exports.handler = function (event, context) {
-    try {
-        exports.processLogs(process.env, context, event.awslogs.data);
-        context.succeed('success');
-    }
-    catch(err) {
-        context.fail(err);
-    }
+exports.handler = function (event, context, callback) {
+    exports.processLogs(process.env, event.awslogs.data, function (err, msg) {
+        if (err) {
+            console.log(err, msg);
+            callback(err);
+        } else {
+            console.log(msg);
+            callback(null, "Success");
+        }
+    });
 
 };

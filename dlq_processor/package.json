@@ -9,7 +9,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "node -e 'require('./test').test()'",
-    "build": "zip -r dlqprocessor.zip DLQProcessor.js cloudwatchlogs_lambda.js package.json node_modules/"
+    "build": "zip -r dlqprocessor.zip DLQProcessor.js cloudwatchlogs_lambda.js package.json sumo-dlq-function-utils/ node_modules/"
   },
   "author": "Himanshu Pal",
   "license": "Apache-2.0"
