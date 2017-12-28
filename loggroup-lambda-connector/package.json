@@ -1,0 +1,19 @@
+{
+  "name": "loggroup-lambda-connector",
+  "version": "1.0.0",
+  "description": "Lambda Function for automatic subscription of any Sumo Logic lambda function with loggroups matching an input pattern.",
+  "main": "loggroup-lambda-connector.js",
+  "dependencies": {
+    "aws-sdk": "^2.160.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "zip -r loggroup-lambda-connector.zip loggroup-lambda-connector.js package.json node_modules/"
+  },
+  "keywords": [
+    "AWS"
+  ],
+  "author": "Himanshu Pal",
+  "license": "Apache-2.0"
+}

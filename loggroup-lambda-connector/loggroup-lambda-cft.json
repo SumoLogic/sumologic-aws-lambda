@@ -1,0 +1,118 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "PermissionForEventsToInvokeLambda": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": { "Ref": "SumoLogGroupLambdaConnector" },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "events.amazonaws.com",
+                "SourceArn": { "Fn::GetAtt": ["SumoCWCreateLogGroupTrigger", "Arn"] }
+            }
+        },
+        "SumoCWCreateLogGroupTrigger": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Trigger on CreateLogGroup event",
+                "EventPattern": {
+                  "source": [
+                    "aws.logs"
+                  ],
+                  "detail-type": [
+                    "AWS API Call via CloudTrail"
+                  ],
+                  "detail": {
+                    "eventSource": [
+                      "logs.amazonaws.com"
+                    ],
+                    "eventName": [
+                      "CreateLogGroup"
+                    ]
+                  }
+                },
+                "State": "ENABLED",
+                "Targets": [{
+                    "Arn": { "Fn::GetAtt": ["SumoLogGroupLambdaConnector", "Arn"] },
+                    "Id": "TargetFunctionV1"
+                }]
+            }
+        },
+        "SumoCWLambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": {"Service": ["lambda.amazonaws.com"] },
+                        "Action": ["sts:AssumeRole"]
+                    } ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "CloudWatchCreateLogsRolePolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [{
+                                "Effect": "Allow",
+                                "Action": [
+                                    "logs:CreateLogGroup",
+                                    "logs:CreateLogStream",
+                                    "logs:PutLogEvents",
+                                    "logs:DescribeLogStreams",
+                                    "logs:PutSubscriptionFilter",
+                                    "logs:DescribeSubscriptionFilters"
+                                ],
+                                "Resource": [
+                                       "arn:aws:logs:*:*:*"
+                                ]
+                            }]
+                        }
+                    }
+                ]
+            }
+        },
+        "SumoLogGroupLambdaConnector": {
+            "Type": "AWS::Lambda::Function",
+            "DependsOn": [
+                "SumoCWLambdaExecutionRole"
+            ],
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "appdevfiles",
+                    "S3Key": "loggroup-lambda-connector.zip"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SumoCWLambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "FunctionName": "SumoLogGroupLambdaConnector",
+                "Timeout": 300,
+                "Handler": "loggroup-lambda-connector.handler",
+                "Runtime": "nodejs4.3",
+                "MemorySize": 128,
+                "Environment": {
+                    "Variables": {
+                        "LAMBDA_ARN": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                  "arn:aws:lambda:",
+                                  { "Ref" : "AWS::Region" },
+                                  ":",
+                                  { "Ref" : "AWS::AccountId" },
+                                  ":function:SumoCWLogsLambda"
+                                ]
+                            ]
+                        },
+                        "LOG_GROUP_PATTERN": "Test"
+                    }
+                }
+            }
+        }
+
+    }
+}
