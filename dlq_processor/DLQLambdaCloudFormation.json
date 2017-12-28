@@ -44,13 +44,6 @@
 
                 "Principal": { "Fn::Join": [ ".", [ "logs", { "Ref": "AWS::Region" }, "amazonaws.com" ] ] },
 
-                "SourceArn": {
-                    "Fn::GetAtt": [
-                        "SumoCWLogGroup",
-                        "Arn"
-                    ]
-                },
-
                 "SourceAccount": { "Ref": "AWS::AccountId" }
             }
         },
@@ -151,6 +144,7 @@
                 "SumoCWDeadLetterQueue"
             ],
             "Properties": {
+                "FunctionName": "SumoCWLogsLambda",
                 "Code": {
                     "S3Bucket": "appdevstore",
                     "S3Key": "dlqprocessor.zip"
