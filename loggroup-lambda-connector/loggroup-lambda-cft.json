@@ -80,7 +80,7 @@
             ],
             "Properties": {
                 "Code": {
-                    "S3Bucket": "appdevfiles",
+                    "S3Bucket": "appdevstore",
                     "S3Key": "loggroup-lambda-connector.zip"
                 },
                 "Role": {
