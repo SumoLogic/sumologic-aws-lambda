@@ -55,7 +55,7 @@ exports.processLogs = function (env, eventAwslogsData, errorHandler) {
     // Validate URL has been set
     var urlObject = url.parse(config.SumoURL);
     if (urlObject.protocol !== 'https:' || urlObject.host === null || urlObject.path === null) {
-        errorHandler('Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL, 'Error in SumoURL');
+        errorHandler(new Error('Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL), 'Error in SumoURL');
     }
 
     var zippedInput = new Buffer(eventAwslogsData, 'base64');
