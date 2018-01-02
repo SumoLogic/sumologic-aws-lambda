@@ -1,0 +1,242 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "SumoCWLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": "SumoCWLogGroup",
+                "RetentionInDays": 7
+            }
+        },
+        "SumoCWLogSubsriptionFilter": {
+            "Type": "AWS::Logs::SubscriptionFilter",
+            "Properties": {
+                "LogGroupName": {
+                    "Ref": "SumoCWLogGroup"
+                },
+                "DestinationArn": {
+                    "Fn::GetAtt": [
+                        "SumoCWLogsLambda",
+                        "Arn"
+                    ]
+                },
+                "FilterPattern": ""
+            },
+            "DependsOn": [
+                "SumoCWLogGroup",
+                "SumoCWLambdaPermission",
+                "SumoCWLogsLambda"
+            ]
+        },
+        "SumoCWLambdaPermission": {
+
+            "Type": "AWS::Lambda::Permission",
+
+            "Properties": {
+
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SumoCWLogsLambda",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+
+                "Principal": { "Fn::Join": [ ".", [ "logs", { "Ref": "AWS::Region" }, "amazonaws.com" ] ] },
+
+                "SourceAccount": { "Ref": "AWS::AccountId" }
+            }
+        },
+        "SumoCWDeadLetterQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+                "QueueName": "SumoCWDeadLetterQueue"
+            }
+        },
+        "SumoCWLambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": {"Service": ["lambda.amazonaws.com"] },
+                        "Action": ["sts:AssumeRole"]
+                    } ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "SQSCreateLogsRolePolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [{
+                                "Effect": "Allow",
+                                "Action": [
+                                    "sqs:DeleteMessage",
+                                    "sqs:GetQueueUrl",
+                                    "sqs:ListQueues",
+                                    "sqs:ChangeMessageVisibility",
+                                    "sqs:SendMessageBatch",
+                                    "sqs:ReceiveMessage",
+                                    "sqs:SendMessage",
+                                    "sqs:GetQueueAttributes",
+                                    "sqs:ListQueueTags",
+                                    "sqs:ListDeadLetterSourceQueues",
+                                    "sqs:DeleteMessageBatch",
+                                    "sqs:PurgeQueue",
+                                    "sqs:DeleteQueue",
+                                    "sqs:CreateQueue",
+                                    "sqs:ChangeMessageVisibilityBatch",
+                                    "sqs:SetQueueAttributes"
+                                ],
+                                "Resource": [
+                                    {
+                                        "Fn::GetAtt": [
+                                            "SumoCWDeadLetterQueue",
+                                            "Arn"
+                                        ]
+                                    }
+                                ]
+                            }]
+                        }
+                    },
+                    {
+                        "PolicyName": "CloudWatchCreateLogsRolePolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [{
+                                "Effect": "Allow",
+                                "Action": [
+                                    "logs:CreateLogGroup",
+                                    "logs:CreateLogStream",
+                                    "logs:PutLogEvents",
+                                    "logs:DescribeLogStreams"
+                                ],
+                                "Resource": [
+                                       "arn:aws:logs:*:*:*"
+                                ]
+                            }]
+                        }
+                    },
+                    {
+                        "PolicyName": "InvokeLambdaRolePolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [{
+                                "Effect": "Allow",
+                                "Action": [
+                                    "lambda:InvokeFunction"
+                                ],
+                                "Resource": [
+                                       "arn:aws:lambda:*:*:*"
+                                ]
+                            }]
+                        }
+                    }
+                ]
+            }
+        },
+        "SumoCWLogsLambda": {
+            "Type": "AWS::Lambda::Function",
+            "DependsOn": [
+                "SumoCWLambdaExecutionRole",
+                "SumoCWDeadLetterQueue"
+            ],
+            "Properties": {
+                "FunctionName": "SumoCWLogsLambda",
+                "Code": {
+                    "S3Bucket": "appdevstore",
+                    "S3Key": "dlqprocessor.zip"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SumoCWLambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "Timeout": 300,
+                "DeadLetterConfig": {
+                    "TargetArn" : {
+                        "Fn::GetAtt": [
+                            "SumoCWDeadLetterQueue",
+                            "Arn"
+                        ]
+                    }
+                },
+                "Handler": "cloudwatchlogs_lambda.handler",
+                "Runtime": "nodejs4.3",
+                "MemorySize": 128,
+                "Environment": {
+                    "Variables": {
+                        "SUMO_ENDPOINT": "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA=="
+                    }
+                }
+            }
+        },
+        "SumoCWEventsInvokeLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": { "Ref": "SumoCWProcessDLQLambda" },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "events.amazonaws.com",
+                "SourceArn": { "Fn::GetAtt": ["SumoCWProcessDLQScheduleRule", "Arn"] }
+            }
+        },
+        "SumoCWProcessDLQScheduleRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Events rule for Cron",
+                "ScheduleExpression": "rate(5 minutes)",
+                "State": "ENABLED",
+                "Targets": [{
+                    "Arn": { "Fn::GetAtt": ["SumoCWProcessDLQLambda", "Arn"] },
+                    "Id": "TargetFunctionV1"
+                }]
+            }
+        },
+        "SumoCWProcessDLQLambda": {
+            "Type": "AWS::Lambda::Function",
+            "DependsOn": [
+                "SumoCWLambdaExecutionRole",
+                "SumoCWDeadLetterQueue"
+            ],
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "appdevstore",
+                    "S3Key": "dlqprocessor.zip"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SumoCWLambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "Timeout": 300,
+                "Handler": "DLQProcessor.handler",
+                "Runtime": "nodejs4.3",
+                "MemorySize": 128,
+                "Environment": {
+                    "Variables": {
+                        "SUMO_ENDPOINT": "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA==",
+                        "TASK_QUEUE_URL": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                  "https://sqs.",
+                                  { "Ref" : "AWS::Region" },
+                                  ".amazonaws.com/",
+                                  { "Ref" : "AWS::AccountId" },
+                                  "/SumoCWDeadLetterQueue"
+                                ]
+                            ]
+                        },
+                        "NUM_OF_WORKERS": 4,
+                        "SUMO_CLIENT_HEADER": "dlq-cwl-lambda"
+                    }
+                }
+            }
+        }
+    }
+}
+

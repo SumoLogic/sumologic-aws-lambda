@@ -1,0 +1,13 @@
+{
+  "name": "sumo-dlq-function-utils",
+  "version": "0.0.1",
+  "description": "This is an utility package for Sumo Logic Inc.",
+  "license": "Apache",
+  "files": ["./lib"],
+  "main": "./lib/mainindex",
+  "dependencies": {
+    "aws-sdk": "^2.160.0"
+  },
+  "devDependencies": {},
+  "author": "Himanshu Pal"
+}
