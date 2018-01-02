@@ -26,7 +26,7 @@ function generateHeaders(config, message, awslogsData) {
     if (message.hasOwnProperty('_sumo_metadata')) {
         var metadataOverride = message._sumo_metadata;
         Object.getOwnPropertyNames(metadataOverride).forEach( function(property) {
-            if (metadataMap[property]) { //format for metadatamap keys soureName(in azure) or name
+            if (metadataMap[property]) {
                 var targetProperty = metadataMap[property];
             } else {
                 targetProperty = property;
@@ -47,7 +47,7 @@ SumoLogsClient.prototype.postToSumo = function (messages, errorHandler, beforeRe
         var total = messagesSent + messageErrors.length;
         if (total == messagesTotal) {
             console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
-            errorHandler(null, 'messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length); // what if some fail and some got success status should be what
+            errorHandler(null, 'messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
         }
     };
     var thatOptions = this.options;
@@ -58,7 +58,7 @@ SumoLogsClient.prototype.postToSumo = function (messages, errorHandler, beforeRe
 
         var req = https.request(thatOptions, function (res) {
             res.setEncoding('utf8');
-            res.on('data', function (chunk) {}); // why this is empty
+            res.on('data', function (chunk) {console.log("Body: ", chunk)});
             res.on('end', function () {
                 if (res.statusCode == 200) {
                     messagesSent++;
