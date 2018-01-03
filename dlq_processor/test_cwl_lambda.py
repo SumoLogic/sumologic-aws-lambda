@@ -137,5 +137,19 @@ class TestLambda(unittest.TestCase):
         s3.upload_file(filename, bucket_name, filename)
 
 
+def generate_fixtures(region, count):
+    data = []
+    sqs = boto3.client('sqs', region)
+    for x in range(0, count, 10):
+        response = sqs.receive_message(
+            QueueUrl='https://sqs.us-east-2.amazonaws.com/456227676011/SumoCWDeadLetterQueue',
+            MaxNumberOfMessages=10,
+        )
+        for msg in response['Messages']:
+            data.append(eval(msg['Body']))
+
+    return data[:count]
+
+
 if __name__ == '__main__':
     unittest.main()
