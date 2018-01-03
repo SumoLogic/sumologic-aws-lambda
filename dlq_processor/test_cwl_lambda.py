@@ -2,6 +2,7 @@ import unittest
 import boto3
 import json
 from time import sleep
+import os
 
 
 class TestLambda(unittest.TestCase):
@@ -12,7 +13,8 @@ class TestLambda(unittest.TestCase):
 
     def setUp(self):
         self.config = {
-            'AWS_REGION_NAME': 'us-east-1'
+            'AWS_REGION_NAME': os.environ.get("AWS_DEFAULT_REGION",
+                                              "us-east-1")
         }
         # aws_access_key_id aws_secret_access_key
         self.stack_name = "TestCWLStack"
