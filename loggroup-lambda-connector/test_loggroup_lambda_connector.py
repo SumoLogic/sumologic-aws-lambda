@@ -2,6 +2,7 @@ import unittest
 import boto3
 from time import sleep
 import json
+import os
 
 
 class TestLambda(unittest.TestCase):
@@ -15,7 +16,7 @@ class TestLambda(unittest.TestCase):
 
     ZIP_FILE = 'loggroup-lambda-connector.zip'
     ZIP_FILE_S3BUCKET = 'appdevfiles'
-    AWS_REGION = 'us-east-2'
+    AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
     FILTER_NAME = 'SumoLGLBDFilter'
     LOG_GROUP_NAME = 'testloggroup'
     FUNCTION_NAME = 'SumoLogGroupLambdaConnector'
@@ -41,10 +42,9 @@ class TestLambda(unittest.TestCase):
         self.create_stack()
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
-        import ipdb;ipdb.set_trace()
         self.create_log_group(self.LOG_GROUP_NAME)
-        self.check_subscription_filter_exists(self.LOG_GROUP_NAME,
-                                              self.FILTER_NAME)
+        self.assertTrue(self.check_subscription_filter_exists(
+            self.LOG_GROUP_NAME, self.FILTER_NAME))
         # self.invoke_lambda()
 
     def stack_exists(self, stack_name):
