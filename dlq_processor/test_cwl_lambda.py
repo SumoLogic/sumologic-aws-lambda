@@ -28,7 +28,7 @@ class TestLambda(unittest.TestCase):
             self.delete_stack()
 
     def test_lambda(self):
-        self.upload_code_in_S3()
+        upload_code_in_S3(self.config['AWS_REGION_NAME'])
         self.create_stack()
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
@@ -131,12 +131,56 @@ class TestLambda(unittest.TestCase):
 
         return template_data
 
-    def upload_code_in_S3(self):
-        print("Uploading zip file in S3")
-        s3 = boto3.client('s3', self.config['AWS_REGION_NAME'])
-        filename = 'dlqprocessor.zip'
-        bucket_name = 'appdevfiles'
-        s3.upload_file(filename, bucket_name, filename)
+
+def upload_code_in_multiple_regions():
+    regions = [
+        "us-east-2",
+        "us-east-1",
+        "us-west-1",
+        "us-west-2",
+        "ap-south-1",
+        "ap-northeast-2",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-northeast-1",
+        "ca-central-1",
+    # "cn-north-1",
+        "eu-central-1",
+        "eu-west-1",
+        "eu-west-2",
+        "eu-west-3",
+        "sa-east-1"
+    ]
+
+    # for region in regions:
+    #     create_bucket(region)
+
+    for region in regions:
+        upload_code_in_S3(region)
+
+
+def get_bucket_name(region):
+    return '%s-%s' % ("appdevstore", region)
+
+
+def create_bucket(region):
+    s3 = boto3.client('s3', region)
+    bucket_name = get_bucket_name(region)
+    if region == "us-east-1":
+        response = s3.create_bucket(Bucket=bucket_name)
+    else:
+        response = s3.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
+            'LocationConstraint': region
+        })
+    print("Creating bucket", region, response)
+
+
+def upload_code_in_S3(region):
+    print("Uploading zip file in S3")
+    s3 = boto3.client('s3', region)
+    filename = 'dlqprocessor.zip'
+    bucket_name = get_bucket_name(region)
+    s3.upload_file(filename, bucket_name, filename)
 
 
 def generate_fixtures(region, count):
@@ -155,3 +199,4 @@ def generate_fixtures(region, count):
 
 if __name__ == '__main__':
     unittest.main()
+    # upload_code_in_multiple_regions()
