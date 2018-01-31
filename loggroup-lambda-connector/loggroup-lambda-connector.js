@@ -40,7 +40,7 @@ exports.handler = function (event, context, callback) {
             console.log(err, msg);
             callback(err);
         } else {
-            console.log(msg);
+            console.log("Success", msg);
             callback(null, "Success");
         }
     });

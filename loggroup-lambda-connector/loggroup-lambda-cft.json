@@ -7,10 +7,10 @@
                 "FunctionName": { "Ref": "SumoLogGroupLambdaConnector" },
                 "Action": "lambda:InvokeFunction",
                 "Principal": "events.amazonaws.com",
-                "SourceArn": { "Fn::GetAtt": ["SumoCWCreateLogGroupTrigger", "Arn"] }
+                "SourceArn": { "Fn::GetAtt": ["SumoLGCnCreateLogGroupTrigger", "Arn"] }
             }
         },
-        "SumoCWCreateLogGroupTrigger": {
+        "SumoLGCnCreateLogGroupTrigger": {
             "Type": "AWS::Events::Rule",
             "Properties": {
                 "Description": "Trigger on CreateLogGroup event",
@@ -37,7 +37,7 @@
                 }]
             }
         },
-        "SumoCWLambdaExecutionRole": {
+        "SumoLGCnLambdaExecutionRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -76,16 +76,16 @@
         "SumoLogGroupLambdaConnector": {
             "Type": "AWS::Lambda::Function",
             "DependsOn": [
-                "SumoCWLambdaExecutionRole"
+                "SumoLGCnLambdaExecutionRole"
             ],
             "Properties": {
                 "Code": {
-                    "S3Bucket": "appdevstore",
+                    "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
                     "S3Key": "loggroup-lambda-connector.zip"
                 },
                 "Role": {
                     "Fn::GetAtt": [
-                        "SumoCWLambdaExecutionRole",
+                        "SumoLGCnLambdaExecutionRole",
                         "Arn"
                     ]
                 },
@@ -104,7 +104,7 @@
                                   { "Ref" : "AWS::Region" },
                                   ":",
                                   { "Ref" : "AWS::AccountId" },
-                                  ":function:SumoCWLogsLambda"
+                                  ":function:TestLambda"
                                 ]
                             ]
                         },
