@@ -1,29 +1,8 @@
 # LogGroup Lambda Connector
 This is used to automatically subscribe newly created Cloudwatch LogGroups to a Lambda function.
 
-### Prerequisites
-
-```
-    npm install
-```
-
-### Building
-
-
-```
-    npm run build
-```
-Upload the generated loggroup-lambda-connector.zip in S3 bucket(specify it's bucket and key in cloudformation template default is  bucketname: appdevstore and key: loggroup-lambda-connector.zip).
-
 ### Creating Stack in AWS Cloudformation
-you can create the stack by using [aws-cli](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html) or directly from aws console using webbrowser and uploading loggroup-lambda-cft.json.
-
-
-### Running Test Cases
-Run the following command after building the zip file
-```
-    python test_loggroup_lambda_connector.py
-```
+you can create the stack by using [aws-cli](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html) or directly from aws console using webbrowser and uploading loggroup-lambda-cft.json. For more details checkout it's [documentation](https://help.sumologic.com/?cid=39393)
 
 ### Configuring Lambda
 It has two environment variables
@@ -50,5 +29,3 @@ It has two environment variables
         ]
     }
 ```
-
-
