@@ -146,7 +146,7 @@
             "Properties": {
                 "FunctionName": "SumoCWLogsLambda",
                 "Code": {
-                    "S3Bucket": {"Fn::Join": ["", ["appdevstore-", { "Ref" : "AWS::Region" }] ] },
+                    "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
                     "S3Key": "dlqprocessor.zip"
                 },
                 "Role": {
@@ -203,7 +203,7 @@
             ],
             "Properties": {
                 "Code": {
-                    "S3Bucket": {"Fn::Join": ["", ["appdevstore-", { "Ref" : "AWS::Region" }] ] },
+                    "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
                     "S3Key": "dlqprocessor.zip"
                 },
                 "Role": {

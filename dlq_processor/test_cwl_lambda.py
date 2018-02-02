@@ -14,7 +14,7 @@ class TestLambda(unittest.TestCase):
     def setUp(self):
         self.config = {
             'AWS_REGION_NAME': os.environ.get("AWS_DEFAULT_REGION",
-                                              "us-east-1")
+                                              "us-east-2")
         }
         # aws_access_key_id aws_secret_access_key
         self.stack_name = "TestCWLStack"
@@ -160,7 +160,7 @@ def upload_code_in_multiple_regions():
 
 
 def get_bucket_name(region):
-    return '%s-%s' % ("appdevstore", region)
+    return '%s-%s' % ("appdevzipfiles", region)
 
 
 def create_bucket(region):
@@ -169,9 +169,10 @@ def create_bucket(region):
     if region == "us-east-1":
         response = s3.create_bucket(Bucket=bucket_name)
     else:
-        response = s3.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
-            'LocationConstraint': region
-        })
+        response = s3.create_bucket(Bucket=bucket_name,
+                                    CreateBucketConfiguration={
+                                        'LocationConstraint': region
+                                    })
     print("Creating bucket", region, response)
 
 
@@ -180,7 +181,8 @@ def upload_code_in_S3(region):
     s3 = boto3.client('s3', region)
     filename = 'dlqprocessor.zip'
     bucket_name = get_bucket_name(region)
-    s3.upload_file(filename, bucket_name, filename)
+    s3.upload_file(filename, bucket_name, filename,
+                   ExtraArgs={'ACL': 'public-read'})
 
 
 def generate_fixtures(region, count):
@@ -198,5 +200,5 @@ def generate_fixtures(region, count):
 
 
 if __name__ == '__main__':
-    unittest.main()
     # upload_code_in_multiple_regions()
+    unittest.main()
