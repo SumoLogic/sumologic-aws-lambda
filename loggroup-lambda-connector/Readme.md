@@ -29,3 +29,25 @@ It has two environment variables
         ]
     }
 ```
+
+### For Developers
+
+Installing Dependencies
+```
+  npm install
+```
+
+Building zip file
+```
+  npm run build
+```
+Upload the generated loggroup-lambda-connector.zip in S3 bucket(don't forget to change bucket name and key in cloudformation template)
+
+Running the test cases
+
+```
+  python test_loggroup_lambda_connector.py
+```
+Run the above command after building the zip file
+
+
