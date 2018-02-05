@@ -248,8 +248,10 @@ def upload_code_in_S3(region):
     s3 = boto3.client('s3', region)
     bucket_name = get_bucket_name(region)
     filename = TestLambda.ZIP_FILE
-    s3.upload_file(filename, bucket_name, filename)
+    s3.upload_file(filename, bucket_name, filename,
+                   ExtraArgs={'ACL': 'public-read'})
 
 
 if __name__ == '__main__':
+    # upload_code_in_multiple_regions()
     unittest.main()
