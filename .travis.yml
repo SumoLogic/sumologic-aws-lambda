@@ -2,10 +2,9 @@ sudo: required
 dist: trusty
 language: node_js
 node_js:
-- '4.3'
-- '6.10'
+- "4.3"
 python:
-- '2.7'
+- "2.7"
 before_install:
 - sudo apt-get install python-pip
 - cd $FUNCTION_DIR
