@@ -3,6 +3,9 @@ import boto3
 import json
 from time import sleep
 import os
+import sys
+
+BUCKET_PREFIX = "appdevstore"
 
 
 class TestLambda(unittest.TestCase):
@@ -16,18 +19,20 @@ class TestLambda(unittest.TestCase):
             'AWS_REGION_NAME': os.environ.get("AWS_DEFAULT_REGION",
                                               "us-east-2")
         }
-        # aws_access_key_id aws_secret_access_key
         self.stack_name = "TestCWLStack"
         self.cf = boto3.client('cloudformation',
                                self.config['AWS_REGION_NAME'])
         self.template_name = 'DLQLambdaCloudFormation.json'
         self.template_data = self._parse_template(self.template_name)
+        # replacing prod zipfile location to test zipfile location
+        self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
             self.delete_stack()
 
     def test_lambda(self):
+
         upload_code_in_S3(self.config['AWS_REGION_NAME'])
         self.create_stack()
         print("Testing Stack Creation")
@@ -160,7 +165,7 @@ def upload_code_in_multiple_regions():
 
 
 def get_bucket_name(region):
-    return '%s-%s' % ("appdevzipfiles", region)
+    return '%s-%s' % (BUCKET_PREFIX, region)
 
 
 def create_bucket(region):
@@ -200,5 +205,8 @@ def generate_fixtures(region, count):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        BUCKET_PREFIX = sys.argv.pop()
+
     # upload_code_in_multiple_regions()
     unittest.main()
