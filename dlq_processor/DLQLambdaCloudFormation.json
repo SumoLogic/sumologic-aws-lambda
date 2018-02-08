@@ -146,7 +146,7 @@
             "Properties": {
                 "FunctionName": "SumoCWLogsLambda",
                 "Code": {
-                    "S3Bucket": "appdevstore",
+                    "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
                     "S3Key": "dlqprocessor.zip"
                 },
                 "Role": {
@@ -203,7 +203,7 @@
             ],
             "Properties": {
                 "Code": {
-                    "S3Bucket": "appdevstore",
+                    "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
                     "S3Key": "dlqprocessor.zip"
                 },
                 "Role": {
@@ -214,6 +214,14 @@
                 },
                 "Timeout": 300,
                 "Handler": "DLQProcessor.handler",
+                "DeadLetterConfig": {
+                    "TargetArn" : {
+                        "Fn::GetAtt": [
+                            "SumoCWDeadLetterQueue",
+                            "Arn"
+                        ]
+                    }
+                },
                 "Runtime": "nodejs4.3",
                 "MemorySize": 128,
                 "Environment": {
@@ -236,6 +244,40 @@
                     }
                 }
             }
+        },
+        "SumoCWEmailSNSTopic": {
+            "Type":"AWS::SNS::Topic",
+            "Properties":{
+                "Subscription":[ {
+                    "Endpoint" : "hpal@sumologic.com",
+                    "Protocol" : "email"
+                }]
+            }
+        },
+        "SumoCWSpilloverAlarm":{
+            "Type":"AWS::CloudWatch::Alarm",
+            "Properties":{
+                "AlarmActions":[
+                    {
+                        "Ref":"SumoCWEmailSNSTopic"
+                    }
+                ],
+                "AlarmDescription":"Notify via email if number of messages in DeadLetterQueue exceeds threshold",
+                "ComparisonOperator":"GreaterThanThreshold",
+                "Dimensions":[
+                  {
+                    "Name": "QueueName",
+                    "Value": "SumoCWDeadLetterQueue"
+                  }
+                ],
+                "EvaluationPeriods":"1",
+                "MetricName":"ApproximateNumberOfMessagesVisible",
+                "Namespace":"AWS/SQS",
+                "Period":"3600",
+                "Statistic":"Sum",
+                "Threshold":"100000"
+            },
+            "DependsOn": ["SumoCWEmailSNSTopic"]
         }
     }
 }

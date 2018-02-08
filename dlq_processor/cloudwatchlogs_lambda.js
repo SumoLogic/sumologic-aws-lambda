@@ -16,7 +16,7 @@ var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+
 
 // Used to extract RequestID
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
-
+var stream = require('stream');
 var zlib = require('zlib');
 var url = require('url');
 var generateHeaders = require('./sumo-dlq-function-utils').generateHeaders;
@@ -26,7 +26,7 @@ function sumoMetaKey(headerObj) {
     return headerObj['X-Sumo-Name'] + ':' + headerObj['X-Sumo-Category'] + ':' + headerObj['X-Sumo-Host'];
 }
 
-function getConfig(env) {
+function getConfig(env, errorHandler) {
     var config = {
         // SumoLogic Endpoint to post logs
         "SumoURL": env.SUMO_ENDPOINT,
@@ -40,17 +40,6 @@ function getConfig(env) {
         // CloudWatch logs encoding
         "encoding": env.ENCODING || 'utf-8'  // default is utf-8
     };
-    return config;
-}
-
-
-exports.processLogs = function (env, eventAwslogsData, errorHandler) {
-
-    var config = getConfig(env);
-    var SumoLogsClientObj = new SumoLogsClient(config);
-
-    // Used to hold chunks of messages to post to SumoLogic
-    var messageList = {};
 
     // Validate URL has been set
     var urlObject = url.parse(config.SumoURL);
@@ -58,9 +47,20 @@ exports.processLogs = function (env, eventAwslogsData, errorHandler) {
         errorHandler(new Error('Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL), 'Error in SumoURL');
     }
 
-    var zippedInput = new Buffer(eventAwslogsData, 'base64');
+    return config;
+}
 
-    zlib.gunzip(zippedInput, function (e, buffer) {
+
+exports.processLogs = function (env, eventAwslogsData, errorHandler) {
+
+    var config = getConfig(env, errorHandler);
+    var SumoLogsClientObj = new SumoLogsClient(config);
+
+    // Used to hold chunks of messages to post to SumoLogic
+    var messageList = {};
+
+    var zippedInput = new Buffer(eventAwslogsData, 'base64');
+    var cb = function (e, buffer) {
         if (e) {
             errorHandler(e, "Error in Unzipping");
             return;
@@ -136,7 +136,19 @@ exports.processLogs = function (env, eventAwslogsData, errorHandler) {
                 'X-Sumo-Client': config.SUMO_CLIENT_HEADER
             };
         });
+    };
+    var uncompressed_bytes = [];
+    var gunzip = zlib.createGunzip();
+    gunzip.on('data', function (data) {
+        uncompressed_bytes.push(data.toString());
+    }).on("end", function () {
+        cb(null, uncompressed_bytes.join(""));
+    }).on("error", function (e) {
+        cb(e);
     });
+    var bufferStream = new stream.PassThrough();
+    bufferStream.end(zippedInput);
+    bufferStream.pipe(gunzip);
 };
 
 

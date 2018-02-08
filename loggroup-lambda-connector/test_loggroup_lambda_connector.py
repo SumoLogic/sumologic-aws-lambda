@@ -1,8 +1,11 @@
 import unittest
 import boto3
-from time import sleep, time
+from time import sleep
 import json
 import os
+import sys
+
+BUCKET_PREFIX = "appdevstore"
 
 
 class TestLambda(unittest.TestCase):
@@ -14,7 +17,6 @@ class TestLambda(unittest.TestCase):
     '''
 
     ZIP_FILE = 'loggroup-lambda-connector.zip'
-    ZIP_FILE_S3BUCKET = 'appdevzipfiles'
     AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
     FILTER_NAME = 'SumoLGLBDFilter'
     LOG_GROUP_NAME = 'testloggroup'
@@ -30,6 +32,8 @@ class TestLambda(unittest.TestCase):
                                self.config['AWS_REGION_NAME'])
         self.template_name = 'loggroup-lambda-cft.json'
         self.template_data = self._parse_template(self.template_name)
+        # replacing prod zipfile location to test zipfile location
+        self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
@@ -227,7 +231,7 @@ def upload_code_in_multiple_regions():
 
 
 def get_bucket_name(region):
-    return '%s-%s' % (TestLambda.ZIP_FILE_S3BUCKET, region)
+    return '%s-%s' % (BUCKET_PREFIX, region)
 
 
 def create_bucket(region):
@@ -253,5 +257,9 @@ def upload_code_in_S3(region):
 
 
 if __name__ == '__main__':
+
+    if len(sys.argv) > 1:
+        BUCKET_PREFIX = sys.argv.pop()
+
     # upload_code_in_multiple_regions()
     unittest.main()

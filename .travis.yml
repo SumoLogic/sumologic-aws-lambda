@@ -2,22 +2,21 @@ sudo: required
 dist: trusty
 language: node_js
 node_js:
-- '4.3'
+- "4.3"
 python:
-- '2.7'
+- "2.7"
 before_install:
 - sudo apt-get install python-pip
-- cd loggroup-lambda-connector/
+- cd $FUNCTION_DIR
 install:
 - npm install
 - sudo pip install -r requirements.txt
 script:
 - npm run build
-- python test_loggroup_lambda_connector.py
-branches:
-  only:
-  - hpal_loggroup_connector
+- python test_*.py
 env:
+  - FUNCTION_DIR=dlq_processor
+  - FUNCTION_DIR=loggroup-lambda-connector
   global:
   - secure: gjAqDCx1ptfxDTP248YikvK42geXEere4gPEyGc7p+OotBjOykJBRll0dGRaBVOVFRHgXxhfdzqzUBpkrTDQ2dyMUDWOFlXqEvLROlRH725GUIT4gNzJX76CA//LbXQxP5PDYPkVYEDy+ZMCmFOa0G+rrEIBBy3Yde5h0JTeP2W6bUrGeDIXgzxKmFELuUpE8ekKdt633JUVxbAwTBjc6Wdjrq8bfH78rsCJLYQytff8Jk0IrXlLgUH9s8IgksejsHAubqrUfksrZTscJkdL0ftttwV14Rbjo4TFYs22W6Znf4pXxdgpUwxIa/+RJSXIWDiVb3vlY7HtDlInD/PqiVvm+ASDFKWxP/iTZy89h/sYVZIJH7VLpOQVXLU0F5Q/JWrHS0HXGQGu4sRpE7KRvNc8kZFVSZlZse0crn9GpRjGWDtA2MEeTjLIA3UwH9m6gVU/mher/vPQbRqhEvwVP/u/zcWHvfm6VytI+0DcL4QYETciCpSrOXN+WtXbfheQcOCvpN8Ik3FuFYTtvRH/XxOVJSN1kZw0bfsHJevyfXhCja2t1yi31wzCtMxZ59qjOJBKEphqnWi0rCOfJsT5X9pIAjk98mGLtZhEemDxtrX84xXq8Nmycv96vuWSMu4v8MGR+HZGDYkPeaBXi8LTMmSh+8C6sEEjBMErvdIkPzA=
   - secure: CBkTMY6DvbY4J/71aoK18lXFj64KHI2X9A4VXTeu14IATXgaIMQYtBkWX+XzptnOD0ImK+r/6ahYxfiWUbxuJvarU/CLN+KEZ0FZuqQROq/CjritXvr9h/w3dC2BukjcVr2s+wOcAb8yxTRJdLTq/eCUe9mq4pkD8BwNETg/KyDOQUPfCMrk58OStLPlU8U4GQKHXXTYTaovnjS9Jm8XsPVhNDIDaT1SLDS5xWfvyjI+VvIgzHa2sp/dXjWgcJc1TqfZZciBOeAQWrVvaCE/UcAejCp5bzjjsc+XdAvPT6AVALblcMLWJOyfb3MBCdFJupznypPQAmjlLPxydUfUnksH4iX8a9UDRkbF8Gc46pcRFb47ye2Gr29lm3Zhq1s7f3gjmUcAUQyAkCRBtMpML8lJTMuWg9PYLlrylIHi0+6hOLr/IjKAXx6gMlFJRMwI9+mvtGr5ahYI2M+Cq7mypqgD/P2b3Px9xfa74QQ7ptxEoubfZNtylFEHF6NjtSELBkK1YgHr0shoQcJIsk/gidzwNE4trMzHpcZxdCayLOQnKL1Na8EM3/2mkgwZpY9WijB0cfznsfacGsCnJqaCpLuG+ztz8FEwZKfv+EvTyXshv0ZOMmDRH/h4XNwOZPNTmwBE7blunrkscvg+WZUYvraFFWzHUOe7DVVENUdkMm0=
