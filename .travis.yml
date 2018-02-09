@@ -15,6 +15,7 @@ script:
 - npm run build
 - python test_*.py
 env:
+  matrix:
   - FUNCTION_DIR=dlq_processor
   - FUNCTION_DIR=loggroup-lambda-connector
   global:
