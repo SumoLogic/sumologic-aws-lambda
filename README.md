@@ -18,4 +18,4 @@ Testing with TravisCI
 
 * All the dependencies(defined in package.json) of lambda function are installed first and then build is created.Currently testing is done for node 4.3 and node 6.10.
 
-* For adding test for new function you need to specify FUNCTION_DIR(lambda function's folder) and node_js(node js version) under jobs field in travis.yml. This is done because currently testing same function in parallel with differet node versions throws function resource exists error (name collision) and therefore are run sequentially.
+* For adding test for new function you need to specify FUNCTION_DIR(lambda function's folder) and node_js(node js version) under jobs field in travis.yml. This is done because currently testing same function in parallel with different node versions throws function resource exists error (name collision) and therefore are run sequentially.
