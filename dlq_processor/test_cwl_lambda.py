@@ -182,7 +182,7 @@ def create_bucket(region):
 
 
 def upload_code_in_S3(region):
-    print("Uploading zip file in S3")
+    print("Uploading zip file in S3", region)
     s3 = boto3.client('s3', region)
     filename = 'dlqprocessor.zip'
     bucket_name = get_bucket_name(region)
@@ -204,9 +204,19 @@ def generate_fixtures(region, count):
     return data[:count]
 
 
+def prod_deploy():
+    upload_code_in_multiple_regions()
+    print("Uploading template file in S3")
+    s3 = boto3.client('s3', "us-east-1")
+    filename = 'DLQLambdaCloudFormation.json'
+    bucket_name = "appdev-cloudformation-templates"
+    s3.upload_file(filename, bucket_name, filename,
+                   ExtraArgs={'ACL': 'public-read'})
+    print("Deployment Successfull: ALL files copied to Sumocontent")
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         BUCKET_PREFIX = sys.argv.pop()
 
-    # upload_code_in_multiple_regions()
     unittest.main()

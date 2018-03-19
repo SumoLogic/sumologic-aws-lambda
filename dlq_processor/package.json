@@ -9,7 +9,8 @@
   "devDependencies": {},
   "scripts": {
     "test": "node -e 'require('./test').test()'",
-    "build": "zip -r dlqprocessor.zip DLQProcessor.js cloudwatchlogs_lambda.js package.json sumo-dlq-function-utils/ node_modules/"
+    "build": "zip -r dlqprocessor.zip DLQProcessor.js cloudwatchlogs_lambda.js package.json sumo-dlq-function-utils/ node_modules/",
+    "prod_deploy": "python -c 'from test_cwl_lambda import prod_deploy;prod_deploy()'"
   },
   "author": "Himanshu Pal",
   "license": "Apache-2.0"

@@ -240,7 +240,7 @@
                             ]
                         },
                         "NUM_OF_WORKERS": 4,
-                        "SUMO_CLIENT_HEADER": "dlq-cwl-lambda"
+                        "SUMO_CLIENT_HEADER": "dlq-aws-lambda"
                     }
                 }
             }
