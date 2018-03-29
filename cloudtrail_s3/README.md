@@ -61,5 +61,7 @@ AND
 
 Once the function is created, you can tie it to the source S3 bucket. From the S3 Management console, select the bucket, goto its Properties, select Events and add a Notification. From there, provide a name for the notification, select *ObjectCreated (All)* as the Events, and select *Lambda* as the *Send To* option. Finally, select the Lambda function created above and Save.
 
+This function should just work. If you are going to "test" this function under the AWS console, make sure you are feeding a "good" S3 CreateObject Event sample message. The default "hello world" event sample will error out.
+
 KNOWN ISSUE:
 Occassionally, the function will fail with either TypeError or Socket Error. AWS has built-in retries to launch the function again with the same parameters (bucket/filename). There shouldn't be any data loss, but the function log will show those errors. Also, using Sumo to log this Lambda run is highly recommended.
