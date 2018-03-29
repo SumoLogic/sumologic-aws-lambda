@@ -63,5 +63,9 @@ Once the function is created, you can tie it to the source S3 bucket. From the S
 
 This function should just work. If you are going to "test" this function under the AWS console, make sure you are feeding a "good" S3 CreateObject Event sample message. The default "hello world" event sample will error out.
 
+Note on elapsed time: This value really depended on when did the event was written into the S3 file (file name contains the file creation time) and when did that S3:CreateObject was fired. To analyze the elapsed time, use the example query below.
+
+_sourceCategory="global/aws/cloudtrail" | _receipttime-_messagetime as delta | delta/1000/60 as delta_min | timeslice 1m | avg(delta_min), max(delta_min), min(delta_min) by _timeslice
+
 KNOWN ISSUE:
 Occassionally, the function will fail with either TypeError or Socket Error. AWS has built-in retries to launch the function again with the same parameters (bucket/filename). There shouldn't be any data loss, but the function log will show those errors. Also, using Sumo to log this Lambda run is highly recommended.
