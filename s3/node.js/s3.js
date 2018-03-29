@@ -15,6 +15,9 @@ var options = { 'hostname': 'endpoint1.collection.sumologic.com',
 
 
 function s3LogsToSumo(bucket, objKey,context) {
+    options.headers = {
+        'X-Sumo-Client': 's3-aws-lambda'
+    };
     var req = https.request(options, function(res) {
                 var body = '';
                 console.log('Status:', res.statusCode);

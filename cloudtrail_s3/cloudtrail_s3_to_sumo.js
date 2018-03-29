@@ -22,7 +22,8 @@ function s3LogsToSumo(bucket, objKey,context) {
         'method': 'POST'
     };
     options.headers = {
-        'X-Sumo-Name': objKey,      
+        'X-Sumo-Name': objKey,
+        'X-Sumo-Client': 'cloudtrail_s3-aws-lambda'
     };
     var req = https.request(options, function(res) {
                 var body = '';

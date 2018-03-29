@@ -40,12 +40,13 @@ def sendSumo(msg, toCompress = False):
     else:
         headers = {"Content-type": "text/html","Accept": "text/plain"}
         finalData =msg
+    headers.update({"X-Sumo-Client": "inspector-aws-lambda"})
     conn.request(options['method'], options['path'], finalData,headers)
     response = conn.getresponse()
     conn.close()
     return (response.status,response.reason)
-    
-    
+
+
 # Simple function to compress data
 def compress(data, compresslevel=9):
     compress = zlib.compressobj(compresslevel, zlib.DEFLATED, 16 + zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0)
