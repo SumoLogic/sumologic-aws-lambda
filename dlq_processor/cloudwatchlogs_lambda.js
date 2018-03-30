@@ -36,7 +36,7 @@ function getConfig(env, errorHandler) {
         "sourceCategoryOverride": env.SOURCE_CATEGORY_OVERRIDE || 'none',  // If none sourceCategoryOverride will not be overridden
         "sourceHostOverride": env.SOURCE_HOST_OVERRIDE || 'none',          // If none sourceHostOverride will not be set to the name of the logGroup
         "sourceNameOverride": env.SOURCE_NAME_OVERRIDE || 'none',          // If none sourceNameOverride will not be set to the name of the logStream
-        "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-lambda',
+        "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-aws-lambda',
         // CloudWatch logs encoding
         "encoding": env.ENCODING || 'utf-8'  // default is utf-8
     };

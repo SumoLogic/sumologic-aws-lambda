@@ -47,16 +47,17 @@ function postToSumo(context, messages) {
             }
         }
     };
-    
-    
+
+
     Object.keys(messages).forEach(function (key, index) {
         var headerArray = key.split(':');
         options.headers = {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
-            'X-Sumo-Host': headerArray[2]
-        }; 
-        
+            'X-Sumo-Host': headerArray[2],
+            'X-Sumo-Client': 'cloudwatchevents-aws-lambda'
+        };
+
         var req = https.request(options, function (res) {
             res.setEncoding('utf8');
             res.on('data', function (chunk) {});

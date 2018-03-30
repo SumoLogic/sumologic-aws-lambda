@@ -102,7 +102,8 @@ function postToSumo(context, messages) {
         options.headers = {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
-            'X-Sumo-Host': headerArray[2]
+            'X-Sumo-Host': headerArray[2],
+            'X-Sumo-Client': 'kinesis-aws-lambda'
         };
 
         var req = https.request(options, function (res) {
