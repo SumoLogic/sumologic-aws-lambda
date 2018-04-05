@@ -9,7 +9,8 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "zip -r loggroup-lambda-connector.zip loggroup-lambda-connector.js package.json node_modules/"
+    "build": "rm -f loggroup-lambda-connector.zip && zip -r loggroup-lambda-connector.zip loggroup-lambda-connector.js package.json",
+    "prod_deploy": "python -c 'from test_loggroup_lambda_connector import prod_deploy;prod_deploy()'"
   },
   "keywords": [
     "AWS"
