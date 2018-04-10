@@ -40,8 +40,8 @@ exports.handler = (event, context, callback) => {
         'message': 'something happened..',
         '_sumo_metadata': {
             'category': 'prod/appa/console',
-            'source': 'other_source',
-            'host': serverIp
+            'sourceName': 'other_source',
+            'sourceHost': serverIp
         }
 
     }));

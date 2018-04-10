@@ -31,7 +31,7 @@ function getConfig(env, errorHandler) {
         // SumoLogic Endpoint to post logs
         "SumoURL": env.SUMO_ENDPOINT,
 
-        // The following parameters override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
+        // The following parameters override the sourceCategory, sourceHost and sourceName metadata fields within SumoLogic.
         // Not these can also be overridden via json within the message payload. See the README for more information.
         "sourceCategoryOverride": ("SOURCE_CATEGORY_OVERRIDE" in env) ?  env.SOURCE_CATEGORY_OVERRIDE: '',  // If none sourceCategoryOverride will not be overridden
         "sourceHostOverride": ("SOURCE_HOST_OVERRIDE" in env) ? env.SOURCE_HOST_OVERRIDE : '',          // If none sourceHostOverride will not be set to the name of the logGroup
