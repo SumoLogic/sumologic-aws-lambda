@@ -31,11 +31,11 @@ function getConfig(env, errorHandler) {
         // SumoLogic Endpoint to post logs
         "SumoURL": env.SUMO_ENDPOINT,
 
-        // The following parameters override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
+        // The following parameters override the sourceCategory, sourceHost and sourceName metadata fields within SumoLogic.
         // Not these can also be overridden via json within the message payload. See the README for more information.
-        "sourceCategoryOverride": env.SOURCE_CATEGORY_OVERRIDE || 'none',  // If none sourceCategoryOverride will not be overridden
-        "sourceHostOverride": env.SOURCE_HOST_OVERRIDE || 'none',          // If none sourceHostOverride will not be set to the name of the logGroup
-        "sourceNameOverride": env.SOURCE_NAME_OVERRIDE || 'none',          // If none sourceNameOverride will not be set to the name of the logStream
+        "sourceCategoryOverride": ("SOURCE_CATEGORY_OVERRIDE" in env) ?  env.SOURCE_CATEGORY_OVERRIDE: '',  // If none sourceCategoryOverride will not be overridden
+        "sourceHostOverride": ("SOURCE_HOST_OVERRIDE" in env) ? env.SOURCE_HOST_OVERRIDE : '',          // If none sourceHostOverride will not be set to the name of the logGroup
+        "sourceNameOverride": ("SOURCE_NAME_OVERRIDE" in env) ? env.SOURCE_NAME_OVERRIDE : '',          // If none sourceNameOverride will not be set to the name of the logStream
         "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-aws-lambda',
         // CloudWatch logs encoding
         "encoding": env.ENCODING || 'utf-8'  // default is utf-8
@@ -129,12 +129,18 @@ exports.processLogs = function (env, eventAwslogsData, errorHandler) {
         // Push messages to Sumo
         SumoLogsClientObj.postToSumo(messageList, errorHandler, function (options, messages, key) {
             var headerArray = key.split(':');
-            options.headers = {
+            var headers = {
                 'X-Sumo-Name': headerArray[0],
                 'X-Sumo-Category': headerArray[1],
                 'X-Sumo-Host': headerArray[2],
                 'X-Sumo-Client': config.SUMO_CLIENT_HEADER
             };
+            // removing headers with 'none'
+            for (var key in headers) {
+                if (!headers[key] || (headers[key].toLowerCase() === 'none'))
+                    delete headers[key]
+            }
+            options.headers = headers
         });
     };
     var uncompressed_bytes = [];

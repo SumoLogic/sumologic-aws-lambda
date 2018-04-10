@@ -25,7 +25,7 @@ class TestLambda(unittest.TestCase):
         self.template_name = 'DLQLambdaCloudFormation.json'
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
-        self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
+        self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
@@ -205,6 +205,8 @@ def generate_fixtures(region, count):
 
 
 def prod_deploy():
+    global BUCKET_PREFIX
+    BUCKET_PREFIX = 'appdevzipfiles'
     upload_code_in_multiple_regions()
     print("Uploading template file in S3")
     s3 = boto3.client('s3', "us-east-1")

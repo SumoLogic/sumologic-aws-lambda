@@ -23,6 +23,32 @@ The following AWS Lambda environment variables are supported in both the lambda 
 SumoCWProcessDLQLambda supports one extra environment variable
 * NUM_OF_WORKERS(REQUIRED): It’s default value is 4. It controls the number of instances of SumoCWProcessDLQLambda to spawn if there is no failure in first attempt.It helps in faster processing of pending messages in dead letter queue.
 
+# Dynamic Metadata Fields
+
+The lambda supports dynamically overriding the _sourceName, _sourceHost and _sourceCategory per log message by setting `_sumo_metadata` within a json log.
+
+This can be useful when writing to CloudWatch Logs via a lambda function.
+
+For example:
+
+```
+exports.handler = (event, context, callback) => {
+
+    var serverIp = '123.123.123.123'
+
+    console.log(JSON.stringify({
+        'message': 'something happened..',
+        '_sumo_metadata': {
+            'category': 'prod/appa/console',
+            'sourceName': 'other_source',
+            'sourceHost': serverIp
+        }
+
+    }));
+    console.log('some other log message with default sourceCategory');
+};
+
+```
 
 ### For Developers
 

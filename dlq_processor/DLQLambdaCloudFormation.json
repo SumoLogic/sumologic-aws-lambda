@@ -249,7 +249,7 @@
             "Type":"AWS::SNS::Topic",
             "Properties":{
                 "Subscription":[ {
-                    "Endpoint" : "hpal@sumologic.com",
+                    "Endpoint" : "test@gmail.com",
                     "Protocol" : "email"
                 }]
             }
