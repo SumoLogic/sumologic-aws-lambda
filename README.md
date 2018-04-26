@@ -1,6 +1,10 @@
 Sumo Logic AWS Lambda Functions
 ==============================
 
+| TLS Deprecation Notice |
+| --- |
+| In keeping with industry standard security best practices, as of May 31, 2018, the Sumo Logic service will only support TLS version 1.2 going forward. Verify that all connections to Sumo Logic endpoints are made from software that supports TLS 1.2. |
+
 ## What does AWS Lambda do? ##
 AWS Lambda is a compute service that allows users to run code, in response to events, without having to provision and manage servers. A Lambda Function can be triggered automatically from other Amazon services, or from a web or mobile application.  For more information, please visit the [AWS Lambda site](https://aws.amazon.com/lambda/).
 
