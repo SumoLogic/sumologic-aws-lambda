@@ -1,10 +1,17 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters" : {
+      "SumoEndPointURL" : {
+        "Type" : "String",
+        "Default" : "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA==",
+        "Description" : "Enter SUMO_ENDPOINT"
+      }
+    },
     "Resources": {
         "SumoCWLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-                "LogGroupName": "SumoCWLogGroup",
+                "LogGroupName": { "Fn::Join": [ "-", [ "SumoCWLogGroup", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                 "RetentionInDays": 7
             }
         },
@@ -50,7 +57,7 @@
         "SumoCWDeadLetterQueue": {
             "Type": "AWS::SQS::Queue",
             "Properties": {
-                "QueueName": "SumoCWDeadLetterQueue"
+                "QueueName": { "Fn::Join": [ "-", [ "SumoCWDeadLetterQueue", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] }
             }
         },
         "SumoCWLambdaExecutionRole": {
@@ -67,7 +74,7 @@
                 "Path": "/",
                 "Policies": [
                     {
-                        "PolicyName": "SQSCreateLogsRolePolicy",
+                        "PolicyName": { "Fn::Join": [ "-", [ "SQSCreateLogsRolePolicy", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [{
@@ -102,7 +109,7 @@
                         }
                     },
                     {
-                        "PolicyName": "CloudWatchCreateLogsRolePolicy",
+                        "PolicyName": { "Fn::Join": [ "-", [ "CloudWatchCreateLogsRolePolicy", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [{
@@ -144,7 +151,7 @@
                 "SumoCWDeadLetterQueue"
             ],
             "Properties": {
-                "FunctionName": "SumoCWLogsLambda",
+                "FunctionName": { "Fn::Join": [ "-", [ "SumoCWLogsLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                 "Code": {
                     "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
                     "S3Key": "dlqprocessor.zip"
@@ -169,7 +176,7 @@
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
-                        "SUMO_ENDPOINT": "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA=="
+                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"}
                     }
                 }
             }
@@ -202,6 +209,7 @@
                 "SumoCWDeadLetterQueue"
             ],
             "Properties": {
+                "FunctionName": { "Fn::Join": [ "-", [ "SumoCWProcessDLQLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                 "Code": {
                     "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
                     "S3Key": "dlqprocessor.zip"
@@ -226,7 +234,7 @@
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
-                        "SUMO_ENDPOINT": "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA==",
+                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
                         "TASK_QUEUE_URL": {
                             "Fn::Join": [
                                 "",
@@ -235,7 +243,8 @@
                                   { "Ref" : "AWS::Region" },
                                   ".amazonaws.com/",
                                   { "Ref" : "AWS::AccountId" },
-                                  "/SumoCWDeadLetterQueue"
+                                  "/",
+                                  {"Fn::GetAtt": ["SumoCWDeadLetterQueue", "QueueName"]}
                                 ]
                             ]
                         },
