@@ -47,7 +47,11 @@ SumoLogsClient.prototype.postToSumo = function (messages, errorHandler, beforeRe
         var total = messagesSent + messageErrors.length;
         if (total == messagesTotal) {
             console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
-            errorHandler(null, 'messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
+            if (messageErrors.length > 0) {
+                errorHandler(messageErrors.join(), 'messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
+            } else {
+                errorHandler(null, 'messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
+            }
         }
     };
     var thatOptions = this.options;
@@ -63,6 +67,7 @@ SumoLogsClient.prototype.postToSumo = function (messages, errorHandler, beforeRe
                 if (res.statusCode == 200) {
                     messagesSent++;
                 } else {
+                    //Server Error
                     messageErrors.push('HTTP Return code ' + res.statusCode);
                 }
                 responseCallback();
@@ -70,6 +75,10 @@ SumoLogsClient.prototype.postToSumo = function (messages, errorHandler, beforeRe
         });
 
         req.on('error', function (e) {
+            // General error, i.e.
+            // - ECONNRESET - server closed the socket unexpectedly
+            // - ECONNREFUSED - server did not listen
+            // - HPE_* codes - server returned garbage
             messageErrors.push(e.message);
             responseCallback();
         });
