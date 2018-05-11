@@ -4,22 +4,25 @@ import json
 from time import sleep
 import os
 import sys
+import datetime
 
 BUCKET_PREFIX = "appdevstore"
 
 
 class TestLambda(unittest.TestCase):
-    DLQ_QUEUE_NAME = 'SumoCWDeadLetterQueue'
-    PROCESS_DLQ_LAMBDA = 'SumoCWProcessDLQLambda'
     TEMPLATE_KEYS_TO_REMOVE = ['SumoCWProcessDLQScheduleRule',
                                'SumoCWEventsInvokeLambdaPermission']
 
     def setUp(self):
+        self.DLQ_QUEUE_NAME = 'SumoCWDeadLetterQueue'
+        self.DLQ_Lambda_FnName = 'SumoCWProcessDLQLambda'
+
         self.config = {
             'AWS_REGION_NAME': os.environ.get("AWS_DEFAULT_REGION",
                                               "us-east-2")
         }
-        self.stack_name = "TestCWLStack"
+        self.stack_name = "TestCWLStack-%s" % (
+            datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"))
         self.cf = boto3.client('cloudformation',
                                self.config['AWS_REGION_NAME'])
         self.template_name = 'DLQLambdaCloudFormation.json'
@@ -38,7 +41,7 @@ class TestLambda(unittest.TestCase):
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
         self.insert_mock_logs_in_DLQ()
-        self.assertTrue(int(self._get_message_count()) == 50)
+        self.assertTrue(int(self.initial_log_count) == 50)
         self.invoke_lambda()
         self.check_consumed_messages_count()
 
@@ -47,10 +50,16 @@ class TestLambda(unittest.TestCase):
         for stack in stacks:
             if stack['StackStatus'] == 'DELETE_COMPLETE':
                 continue
-            if stack_name == stack['StackName'] and stack['StackStatus'] == 'CREATE_COMPLETE':
+            if self.stack_id_suffix == stack['StackId'].split("/")[2] and stack['StackStatus'] == 'CREATE_COMPLETE':
                 print("%s stack exists" % stack_name)
                 return True
         return False
+
+    def set_stack_id(self, stack_result):
+        self.stack_id_suffix = stack_result['StackId'].split("/")[2]
+        self.DLQ_QUEUE_NAME = "%s-%s" % (self.DLQ_QUEUE_NAME, self.stack_id_suffix)
+        self.DLQ_Lambda_FnName = "%s-%s" % (self.DLQ_Lambda_FnName,
+                                            self.stack_id_suffix)
 
     def create_stack(self):
         params = {
@@ -59,6 +68,7 @@ class TestLambda(unittest.TestCase):
             'Capabilities': ['CAPABILITY_IAM']
         }
         stack_result = self.cf.create_stack(**params)
+        self.set_stack_id(stack_result)
         print('Creating {}'.format(self.stack_name), stack_result)
         waiter = self.cf.get_waiter('stack_create_complete')
         print("...waiting for stack to be ready...")
@@ -77,7 +87,8 @@ class TestLambda(unittest.TestCase):
     def _get_dlq_url(self):
         if (not hasattr(self, 'dlq_queue_url')):
             sqs = boto3.resource('sqs', self.config['AWS_REGION_NAME'])
-            queue = sqs.get_queue_by_name(QueueName=self.DLQ_QUEUE_NAME)
+            queue_name = self._get_queue_name(sqs, self.DLQ_QUEUE_NAME)
+            queue = sqs.get_queue_by_name(QueueName=queue_name)
             self.dlq_queue_url = queue.url
 
         return self.dlq_queue_url
@@ -97,25 +108,36 @@ class TestLambda(unittest.TestCase):
 
     def _get_message_count(self):
         sqs = boto3.resource('sqs', self.config['AWS_REGION_NAME'])
-        queue = sqs.get_queue_by_name(QueueName=self.DLQ_QUEUE_NAME)
+        queue_name = self._get_queue_name(sqs, self.DLQ_QUEUE_NAME)
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
         return int(queue.attributes.get('ApproximateNumberOfMessages'))
+
+    def _get_queue_name(self, sqs_client, pattern):
+        import re
+        for queue in sqs_client.queues.all():
+            queue_name = queue.attributes['QueueArn'].split(':')[-1]
+            if re.search(pattern, queue_name):
+                print("QueueName: %s" % queue_name)
+                return queue_name
+        return ''
 
     def _get_dlq_function_name(self, lambda_client, pattern):
         import re
         for func in lambda_client.list_functions()['Functions']:
             if re.search(pattern, func['FunctionName']):
+                print("FunctionName: %s" % func['FunctionName'])
                 return func['FunctionName']
         return ''
 
     def invoke_lambda(self):
         lambda_client = boto3.client('lambda', self.config['AWS_REGION_NAME'])
         lambda_func_name = self._get_dlq_function_name(lambda_client,
-                                                       self.PROCESS_DLQ_LAMBDA)
+                                                       self.DLQ_Lambda_FnName)
         response = lambda_client.invoke(FunctionName=lambda_func_name)
         print("Invoking lambda function", response)
 
     def check_consumed_messages_count(self):
-        sleep(120)
+        sleep(30)
         final_message_count = self._get_message_count()
         print("Testing number of consumed messages initial: %s final: %s processed: %s" % (
             self.initial_log_count, final_message_count,
