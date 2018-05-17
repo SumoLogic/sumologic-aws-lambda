@@ -38,6 +38,7 @@ The following AWS Lambda environment variables are supported
 * `SOURCE_CATEGORY_OVERRIDE` (OPTIONAL) - Override _sourceCategory metadata field within SumoLogic. If `none` will not be overridden
 * `SOURCE_HOST_OVERRIDE` (OPTIONAL) - Override _sourceHost metadata field within SumoLogic. If `none` will not be overridden
 * `SOURCE_NAME_OVERRIDE` (OPTIONAL) - Override _sourceName metadata field within SumoLogic. If `none` will not be overridden
+* `SET_SOURCE_CATEGORY_FROM_AWS` (Optional) - When set to true the source category will be set to `[AWS Log Group]/[AWS Log Stream]` by default.
 
 # Dynamic Metadata Fields
 
