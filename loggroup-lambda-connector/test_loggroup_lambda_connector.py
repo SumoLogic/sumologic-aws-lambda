@@ -56,6 +56,16 @@ class TestLambda(unittest.TestCase):
         self.assertTrue(self.check_subscription_filter_exists(
             self.LOG_GROUP_NAME, self.FILTER_NAME))
 
+    def test_existing_logs(self):
+        upload_code_in_S3(self.config['AWS_REGION_NAME'])
+        self.template_data.replace("false", "true")
+        self.create_stack()
+        print("Testing Stack Creation")
+        self.assertTrue(self.stack_exists(self.stack_name))
+        self.create_log_group(self.LOG_GROUP_NAME)
+        self.assertTrue(self.check_subscription_filter_exists(
+            self.LOG_GROUP_NAME, self.FILTER_NAME))
+
     def stack_exists(self, stack_name):
         stacks = self.cf.list_stacks()['StackSummaries']
         for stack in stacks:
@@ -137,7 +147,7 @@ class TestLambda(unittest.TestCase):
                 "FunctionName": test_lambda_name,
                 "Timeout": 300,
                 "Handler": "index.handler",
-                "Runtime": "nodejs4.3",
+                "Runtime": "nodejs6.10",
                 "MemorySize": 128
             }
         }

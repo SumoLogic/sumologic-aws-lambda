@@ -10,6 +10,11 @@
             "Type" : "String",
             "Default": "Test",
             "Description": "Enter regex for matching logGroups"
+        },
+        "UseExistingLogs": {
+            "Type" : "String",
+            "Default": "false",
+            "Description": "Enter true for subscribing existing logs"
         }
     },
     "Resources": {
@@ -72,6 +77,7 @@
                                     "logs:CreateLogGroup",
                                     "logs:CreateLogStream",
                                     "logs:PutLogEvents",
+                                    "logs:DescribeLogGroups",
                                     "logs:DescribeLogStreams",
                                     "logs:PutSubscriptionFilter",
                                     "logs:DescribeSubscriptionFilters"
