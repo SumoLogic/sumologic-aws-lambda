@@ -14,6 +14,8 @@ var SumoURL = process.env.SUMO_ENDPOINT;
 var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none';  // If none sourceCategoryOverride will not be overridden
 var sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE || 'none';          // If none sourceHostOverride will not be set to the name of the logGroup
 var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || 'none';          // If none sourceNameOverride will not be set to the name of the logStream
+var setSourceCategoryFromAws = process.env.SET_SOURCE_CATEGORY_FROM_AWS || 'false'; // When set to 'true' and when category is unset by the app or SOURCE_CATEGORY_OVERRIDE
+                                                                                    //  the source category will be set to default values from AWS Log Group and Log Stream
 
 // CloudWatch logs encoding
 var encoding = process.env.ENCODING || 'utf-8';  // default is utf-8
@@ -70,8 +72,14 @@ function sumoMetaKey(awslogsData, message) {
         }
         delete message._sumo_metadata;
     }
+
+    // If sourceCategory is unset default to AWS logs identifiers
+    if (sourceCategory === '' && setSourceCategoryFromAws == 'true') {
+	sourceCategory = awslogsData.logGroup + "/" + awslogsData.logStream;
+    }
+
     return sourceName + ':' + sourceCategory + ':' + sourceHost;
-    
+
 }
 
 function postToSumo(context, messages) {
