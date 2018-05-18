@@ -115,7 +115,8 @@
                 "Environment": {
                     "Variables": {
                         "LAMBDA_ARN": {"Ref": "LambdaARN"},
-                        "LOG_GROUP_PATTERN": {"Ref": "LogGroupPattern"}
+                        "LOG_GROUP_PATTERN": {"Ref": "LogGroupPattern"},
+                        "USE_EXISTING_LOG_GROUPS": {"Ref": "UseExistingLogs"}
                     }
                 }
             }

@@ -35,7 +35,7 @@ class TestLambda(unittest.TestCase):
         self.template_name = 'loggroup-lambda-cft.json'
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
-        self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
+        self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
 
     def get_account_id(self):
         client = boto3.client("sts", self.config['AWS_REGION_NAME'])
@@ -58,7 +58,7 @@ class TestLambda(unittest.TestCase):
 
     def test_existing_logs(self):
         upload_code_in_S3(self.config['AWS_REGION_NAME'])
-        self.template_data.replace("false", "true")
+        self.template_data = self.template_data.replace("false", "true", 1)
         self.create_stack()
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
