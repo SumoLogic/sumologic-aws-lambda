@@ -1,5 +1,23 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "LambdaARN": {
+            "Type" : "String",
+            "Default": "arn:aws:lambda:us-east-1:123456789000:function:TestLambda",
+            "Description": "Enter ARN for target lambda function"
+        },
+        "LogGroupPattern": {
+            "Type" : "String",
+            "Default": "Test",
+            "Description": "Enter regex for matching logGroups"
+        },
+        "UseExistingLogs": {
+            "Type" : "String",
+            "Default": "false",
+            "AllowedValues" : ["true", "false"],
+            "Description": "Select true for subscribing existing logs"
+        }
+    },
     "Resources": {
         "PermissionForEventsToInvokeLambda": {
             "Type": "AWS::Lambda::Permission",
@@ -51,7 +69,7 @@
                 "Path": "/",
                 "Policies": [
                     {
-                        "PolicyName": "CloudWatchCreateLogsRolePolicy",
+                        "PolicyName": { "Fn::Join": [ "-", [ "CloudWatchCreateLogsRolePolicy", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [{
@@ -60,6 +78,7 @@
                                     "logs:CreateLogGroup",
                                     "logs:CreateLogStream",
                                     "logs:PutLogEvents",
+                                    "logs:DescribeLogGroups",
                                     "logs:DescribeLogStreams",
                                     "logs:PutSubscriptionFilter",
                                     "logs:DescribeSubscriptionFilters"
@@ -89,26 +108,16 @@
                         "Arn"
                     ]
                 },
-                "FunctionName": "SumoLogGroupLambdaConnector",
+                "FunctionName": { "Fn::Join": [ "-", [ "SumoLogGroupLambdaConnector", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                 "Timeout": 300,
                 "Handler": "loggroup-lambda-connector.handler",
-                "Runtime": "nodejs4.3",
+                "Runtime": "nodejs8.10",
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
-                        "LAMBDA_ARN": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                  "arn:aws:lambda:",
-                                  { "Ref" : "AWS::Region" },
-                                  ":",
-                                  { "Ref" : "AWS::AccountId" },
-                                  ":function:TestLambda"
-                                ]
-                            ]
-                        },
-                        "LOG_GROUP_PATTERN": "Test"
+                        "LAMBDA_ARN": {"Ref": "LambdaARN"},
+                        "LOG_GROUP_PATTERN": {"Ref": "LogGroupPattern"},
+                        "USE_EXISTING_LOG_GROUPS": {"Ref": "UseExistingLogs"}
                     }
                 }
             }

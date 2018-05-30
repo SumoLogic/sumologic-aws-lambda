@@ -5,6 +5,16 @@
         "Type" : "String",
         "Default" : "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA==",
         "Description" : "Enter SUMO_ENDPOINT"
+      },
+      "EmailID": {
+        "Type": "String",
+        "Default": "test@gmail.com",
+        "Description": "Enter your email for receiving alerts.You will receive confirmation email after the deployment is complete, confirm it to subscribe for alerts."
+      },
+      "NumOfWorkers": {
+        "Type": "Number",
+        "Default": 4,
+        "Description": "Enter the number of lambda function invocations for faster Dead Letter Queue processing."
       }
     },
     "Resources": {
@@ -248,7 +258,7 @@
                                 ]
                             ]
                         },
-                        "NUM_OF_WORKERS": 4,
+                        "NUM_OF_WORKERS": {"Ref": "NumOfWorkers"},
                         "SUMO_CLIENT_HEADER": "dlq-aws-lambda"
                     }
                 }
@@ -258,7 +268,7 @@
             "Type":"AWS::SNS::Topic",
             "Properties":{
                 "Subscription":[ {
-                    "Endpoint" : "test@gmail.com",
+                    "Endpoint" : {"Ref": "EmailID"},
                     "Protocol" : "email"
                 }]
             }

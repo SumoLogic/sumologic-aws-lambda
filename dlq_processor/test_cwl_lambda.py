@@ -28,7 +28,7 @@ class TestLambda(unittest.TestCase):
         self.template_name = 'DLQLambdaCloudFormation.json'
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
-        self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
+        self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
