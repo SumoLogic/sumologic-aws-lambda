@@ -14,7 +14,8 @@
         "UseExistingLogs": {
             "Type" : "String",
             "Default": "false",
-            "Description": "Enter true for subscribing existing logs"
+            "AllowedValues" : ["true", "false"],
+            "Description": "Select true for subscribing existing logs"
         }
     },
     "Resources": {
