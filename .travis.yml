@@ -6,20 +6,12 @@ python:
 
 jobs:
   include:
-    - stage: Node 4
-      node_js: '4.3'
+    - stage: Node 8
+      node_js: '8.10'
       env: FUNCTION_DIR=dlq_processor
 
-    - stage: Node 4
-      node_js: '4.3'
-      env: FUNCTION_DIR=loggroup-lambda-connector
-
-    - stage: Node 6
-      node_js: '6.10'
-      env: FUNCTION_DIR=dlq_processor
-
-    - stage: Node 6
-      node_js: '6.10'
+    - stage: Node 8
+      node_js: '8.10'
       env: FUNCTION_DIR=loggroup-lambda-connector
 
 before_install:
