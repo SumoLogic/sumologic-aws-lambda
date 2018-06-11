@@ -18,7 +18,7 @@ code. In the Environment variable section, set the following Key to the URL prov
 
 In configuration specify index.handler as the Handler. Specify a Role that has
 sufficient privileges to read from the *source* bucket, and invoke a lambda
-function. The code provided is tested with node runtime 8.10, Memory setting at 128MB, Timeout 10s.
+function. The code provided is tested with node runtime 4.3, 6.10 and 8.10, Memory setting at 128MB, Timeout 10s.
 
 Set trigger to S3 bucket create-all events.
  

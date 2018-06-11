@@ -15,6 +15,13 @@ Sumo Logic Lambda Functions are designed to collect and process data from a vari
 We put the Lambda functions to read from a particular AWS service (e.g CloudWatch Logs and S3) under each specific folder. Each folder may then have its own instructions to setup the functions. For example, for reading CloudWatch Logs, please refer to [Sumo Logic’s Lambda Function for Amazon CloudWatch Logs](https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/dlq_processor).
 
 
+Supported Runtimes
+======================
+
+* All the nodejs functions are tested with nodejs runtime 4.3 and 8.10.
+
+* All the python functions are tested with python version 2.7.
+
 Testing with TravisCI
 ======================
 
