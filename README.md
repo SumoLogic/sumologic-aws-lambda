@@ -15,11 +15,18 @@ Sumo Logic Lambda Functions are designed to collect and process data from a vari
 We put the Lambda functions to read from a particular AWS service (e.g CloudWatch Logs and S3) under each specific folder. Each folder may then have its own instructions to setup the functions. For example, for reading CloudWatch Logs, please refer to [Sumo Logic’s Lambda Function for Amazon CloudWatch Logs](https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/dlq_processor).
 
 
+Supported Runtimes
+======================
+
+* All the nodejs functions are tested with nodejs runtime 4.3 and 8.10.
+
+* All the python functions are tested with python version 2.7.
+
 Testing with TravisCI
 ======================
 
 * All the test are currently in python and travis.yml is configured to run any file with prefix "test_" present in lambda function's folder.
 
-* All the dependencies(defined in package.json) of lambda function are installed first and then build is created.Currently testing is done for node 4.3 and node 6.10.
+* All the dependencies(defined in package.json) of lambda function are installed first and then build is created.
 
 * For adding test for new function you need to specify FUNCTION_DIR(lambda function's folder) and node_js(node js version) under jobs field in travis.yml. This is done because currently testing same function in parallel with different node versions throws function resource exists error (name collision) and therefore are run sequentially.
