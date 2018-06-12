@@ -1,5 +1,5 @@
 ===========================================
-Cloudtrail S3 to Sumo Logic [![Build Status](https://travis-ci.org/SumoLogic/sumologic-aws-lambda.svg?branch=master)](https://travis-ci.org/SumoLogic/sumologic-aws-lambda)
+Cloudtrail S3 to Sumo Logic
 ===========================================
 
 Files 
