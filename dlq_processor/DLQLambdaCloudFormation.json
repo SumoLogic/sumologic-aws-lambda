@@ -131,7 +131,7 @@
                                     "logs:DescribeLogStreams"
                                 ],
                                 "Resource": [
-                                       "arn:aws:logs:*:*:*"
+                                    { "Fn::Join": [ ":", ["arn", "aws", "logs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" },"log-group","*" ] ] }
                                 ]
                             }]
                         }
@@ -146,7 +146,7 @@
                                     "lambda:InvokeFunction"
                                 ],
                                 "Resource": [
-                                       "arn:aws:lambda:*:*:*"
+                                       { "Fn::Join": [ ":", ["arn", "aws", "lambda", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "function", { "Fn::Join": [ "-", [ "SumoCWProcessDLQLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] } ] ] }
                                 ]
                             }]
                         }
