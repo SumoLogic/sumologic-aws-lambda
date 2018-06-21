@@ -3,8 +3,8 @@
     "Parameters" : {
       "SumoEndPointURL" : {
         "Type" : "String",
-        "Default" : "https://nite-events.sumologic.net/receiver/v1/http/ZaVnC4dhaV3_T1vGzqOZIeERyqOzOE1e6RjXE59PErnOkZ-PSjb6gGesLBli8dzUvQWzDhRHRhYByGLHWYOlkss6S-vBXYOf7RDk41o2fiVC08g6ogm1dA==",
-        "Description" : "Enter SUMO_ENDPOINT"
+        "Default" : "<Enter URL Here>",
+        "Description" : "Enter SUMO_ENDPOINT created while configuring HTTP Source"
       },
       "EmailID": {
         "Type": "String",

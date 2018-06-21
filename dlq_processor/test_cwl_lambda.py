@@ -26,6 +26,10 @@ class TestLambda(unittest.TestCase):
         self.cf = boto3.client('cloudformation',
                                self.config['AWS_REGION_NAME'])
         self.template_name = 'DLQLambdaCloudFormation.json'
+        try:
+            self.sumo_endpoint_url = os.environ["SumoEndPointURL"]
+        except KeyError:
+            raise Exception("SumoEndpointURL environment variables are not set")
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
         self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
@@ -152,6 +156,7 @@ class TestLambda(unittest.TestCase):
         #removing schedulerule to prevent lambda being triggered while testing
         #becoz we are invoking lambda directly
         template_data = eval(template_data)
+        template_data["Parameters"]["SumoEndPointURL"]["Default"] = self.sumo_endpoint_url
         for key in self.TEMPLATE_KEYS_TO_REMOVE:
             template_data["Resources"].pop(key)
         template_data = str(template_data)
