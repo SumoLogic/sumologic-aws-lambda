@@ -2,18 +2,15 @@ sudo: required
 dist: trusty
 language: node_js
 python:
-- "2.7"
-
+- '2.7'
 jobs:
   include:
-    - stage: Node 8
-      node_js: '8.10'
-      env: FUNCTION_DIR=dlq_processor TEST_FILE=test_cwl_lambda.py
-
-    - stage: Node 8
-      node_js: '8.10'
-      env: FUNCTION_DIR=loggroup-lambda-connector TEST_FILE=test_loggroup_lambda_connector.py
-
+  - stage: Node 8
+    node_js: '8.10'
+    env: FUNCTION_DIR=dlq_processor TEST_FILE=test_cwl_lambda.py
+  - stage: Node 8
+    node_js: '8.10'
+    env: FUNCTION_DIR=loggroup-lambda-connector TEST_FILE=test_loggroup_lambda_connector.py
 before_install:
 - sudo apt-get install python-pip
 - cd $FUNCTION_DIR
@@ -21,7 +18,7 @@ before_install:
 script:
 - npm run build
 - python $TEST_FILE
-
 env:
   global:
-  - secure: sD0RwgZ/hpx+WhuxOU1wNmm9Q+6DC0EOaJY241SrKAgsNUTAVtl6PgDWQ/7oWRpeDH4F0Tl85gFik0YQRvo909IDPZ+VLJ0Low4SlhMsxYQexCww1VvD9NoVR9cKSXNmdPKz0ioAMV9SVLijPKLxfzO4olujcFLXqr45xnwAEa+4nYIC1Q3Rw+NDI+ovN5izVrT2jERpjP4kQJM5aVJIieFD0AaHR2bsLbTaksnx1NC3evxY3UQr1TYUstoS7WBC6SpLRpN2454ecJACqvmxWMMUhK+KhpmWzi8Dsg9R2ENoGb7whBmnK2HIGEqNr5zvcBc/z3UZnDtakzsLvob/RfWwZ5e0Eg34Ru11jiDdStXv1TaO6fZZ6MkjWsdq28OnL2qhc9cgJfq8pVkqeDP3u94mgLdkKN2HgitcPuhgudT4mHSi6c3oy5NAqb65TUrIWUErww4D8iaH6rNp2FWC/ou2fFLN6x+iK+zPtNvKpTqcU6xhBjCu4Lcpq/HBXfLb/bXB3sd9JhPtflR5Ut3B7lNoHpE0/9yEtSj9Hp1ksbI9XizEjskeyqzLbQXECxpwT6T6l+X+eeZLDnZSZ7wsa1EgHrAWq1OhDcWwtzsd8h35r6NeKAaVfgIUecKbwIq+VAyRqbeSbFhJwFVRE7uxKOqXFzYspYTA/13Xht4cnf0=
+  - secure: iGATK/X1PfH8FCJlUpBbJ//mQ57QBQT0jETyDDH2r+GxZxXPnFS46ugPGsWTX0IDDEGjXE+/P6wnm0ORo7aa3yp7DZnfWFDyrgFchgUo1p3unt5sQcHg/9mitkQF7lHFlnAqM1D69AEGP5WU63m/9xQoj0BVYCVb2eUEqatV1AU8lpvRAkFc2juumy1ba4skoDFLOtrsaO2k+SCCBfMKq2SOJkcPnfMZGTOT7niaNnNAZSDYDovAlMYaLDOR10EMUAyklnmmAADyDxNRwSSAG8JKJMmfxSqIe4+s7xjqztjtkApWmEAjevDLpc62v1TWe0O2zCxnb4E4EBN6A31R1XJha4i/IKSeVL99J9X8aV1wIb9feV85qmZmlxVL2EU7/CcFGTdKeAak3qQWHZ1C6X32TBB6x5C0qASSC/x5pwDDJIOyeZr0Z93+dDhnBLNmzz8sA3h7AyzQZfhTqG/f4/SOgxTf7aF13X8BKuoM8BaGfXjy0keaVb0xbTjtDvi9F21EymWPdwNlQHsKca+EcTT2KE3mwFNrHAsTeNhGzMbrzmbZzvNHlmIwjB1C5l9h4GpUkxNb/mqi9SBTx9YfDIgz0bDOds1T92tGIAcBaHfJLTjc2JIgxwgdL13X3cL8GJBiFFwiJqiKJCSz4SxhWqsrrbsGSQBUqN5UoSsyKco=
+  - secure: pmgNH6sLnwPadB/m4e/DtV/NbblVCa84N56Q45vpDkdP7fSIt8YShkvElrxFNJBWXaPyG/uE2gnIrXREtN/7xox+xv2ej+Gsv+cLYwBIIs1oGgHVlm/JG4OBLhuSn23w/DK/RuuHWWjDJ2DsDaXlXgbPTU01EJC2kpM9YnsmeifDnq/HSNPVx8k6bBKhzED7atf8v8yy8XYAkpL3viNwm3B98xU/AvEcgrNwG0XYQexCBTm9nJTQ2q3sBFQfuvQXFNuQoQWuN0wmSlhFuAnGsm0nugk7YJ8HZTsw1X1OUW61J3c9p0BHKL69nWHoYvSkyzl/9kls3QxYhLumF2DepBSbw/+iKMkxNzd4s7DDKGMqM7Y/9omxj3djrGxn8qGpn7GKNyZJR5EqLS+KY9E7xQ6ql1COdUA1W6aTEzLeEelti4abHEoA7a5sEhRSC/rmR0v+PP3sKc2FJjDOB9/eBVG/8V05EgN3Ji7KEu5vsrvIzu1Ng4a7BUyM06gw1vF92H/uOOBGGh25H8LLIZTpB9z//brZ9RtrzSA585KyJPFFW8JdMl34CE+nz8DhGwXSCDBQz/HMh0h1RJ0+8nJkIuxi96yOPH73c1tngUTnhm7OZh7yyNCr1RLT7yS552stnR0WqSv8gSxWK1+Apmzi6P5s5oqraDhEW9CeQe/qkzI=

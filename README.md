@@ -1,4 +1,4 @@
-Sumo Logic AWS Lambda Functions
+Sumo Logic AWS Lambda Functions [![Build Status](https://travis-ci.org/SumoLogic/sumologic-aws-lambda.svg?branch=master)](https://travis-ci.org/SumoLogic/sumologic-aws-lambda)
 ==============================
 
 | TLS Deprecation Notice |
