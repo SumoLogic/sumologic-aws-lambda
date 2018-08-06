@@ -74,7 +74,7 @@ function sumoMetaKey(awslogsData, message) {
     
 }
 
-function postToSumo(context, messages) {
+function postToSumo(callback, messages) {
     var messagesTotal = Object.keys(messages).length;
     var messagesSent = 0;
     var messageErrors = [];
@@ -91,9 +91,9 @@ function postToSumo(context, messages) {
         if (total == messagesTotal) {
             console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
             if (messageErrors.length > 0) {
-                context.fail('errors: ' + messageErrors);
+                callback('errors: ' + messageErrors);
             } else {
-                context.succeed();
+                callback(null, "Success");
             }
         }
     };
@@ -135,29 +135,29 @@ function postToSumo(context, messages) {
 }
 
 
-exports.handler = function (event, context) {
-    
+exports.handler = function (event, context, callback) {
+
     // Used to hold chunks of messages to post to SumoLogic
     var messageList = {};
 
     // Validate URL has been set
     var urlObject = url.parse(SumoURL);
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
-        context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+        callback('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
     }
     
     var zippedInput = new Buffer(event.awslogs.data, 'base64');
     
     zlib.gunzip(zippedInput, function (e, buffer) {
         if (e) {
-            context.fail(e);
+            callback(e);
         }
         
         var awslogsData = JSON.parse(buffer.toString(encoding));
         
         if (awslogsData.messageType === 'CONTROL_MESSAGE') {
             console.log('Control message');
-            context.succeed('Success');
+            callback(null, 'Success');
         }
         
         var lastRequestID = null;
@@ -213,7 +213,7 @@ exports.handler = function (event, context) {
         });
         
         // Push messages to Sumo
-        postToSumo(context, messageList);
-        
+        postToSumo(callback, messageList);
+
     });
 };
