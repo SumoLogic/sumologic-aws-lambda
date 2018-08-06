@@ -10,7 +10,7 @@ import logging
 ##################################################################
 # Configuration                                                  #
 ##################################################################
-# Enter Sumo Http source endpoint here. 
+# Enter Sumo Http source endpoint here.
 sumoEndpoint = "https://endpoint1.collection.sumologic.com/receiver/v1/http/<XXXX>"
 # include auxiliary data (e.g for assessment template, run, or target) in the collected event or not
 contextLookup = True
@@ -25,7 +25,7 @@ options = { 'hostname': up.hostname,
                 'method': 'POST'
             };
 
-# Internal variables used for this Lambda function        
+# Internal variables used for this Lambda function
 resourceMap = {'finding':{},'target':{},'run':{},'template':{}, 'rulesPackage':{}}
 # prepare logger
 logger = logging.getLogger()
@@ -58,7 +58,7 @@ def compress(data, compresslevel=9):
 def lookup(objectId,objectType = 'run'):
     client = boto3.client('inspector')
     finalObj = None
-     
+
     objectMap = resourceMap.get(objectType)
     if (objectMap is None):
         resourceMap[objectType]= objectMap = {}
@@ -89,7 +89,7 @@ def lookup(objectId,objectType = 'run'):
                     finalObj = objectMap[objectId] =  rulesPackages['rulesPackages'][0]
             else:
                 finalObj = rulesPackage
-        elif (objectType=='target'):    
+        elif (objectType=='target'):
             target = objectMap.get(objectId)
             if (target is None):
                 targets = client.describe_assessment_targets(assessmentTargetArns=[objectId])
@@ -129,30 +129,30 @@ def sumo_inspector_handler(event, context):
             msgObj = json.loads(snsObj['Message'])
             if (contextLookup):
                 # do reverse lookup of each of the following items in Message: target, run, template.
-                if ('template' in msgObj): 
-                    lookupItem = lookup(msgObj['template'],'template') 
+                if ('template' in msgObj):
+                    lookupItem = lookup(msgObj['template'],'template')
                     if (lookupItem is not None):
                         logger.info("Got a template item back")
                         msgObj['templateLookup']= lookupItem
                     else:
                         print("Could not lookup template: %s" % msgObj['template'])
-                if ('run' in msgObj): 
-                    lookupItem = lookup(msgObj['run'],'run') 
+                if ('run' in msgObj):
+                    lookupItem = lookup(msgObj['run'],'run')
                     if (lookupItem is not None):
-                        msgObj['runLookup']= lookupItem 
+                        msgObj['runLookup']= lookupItem
                     else:
                         logger.info("Could not lookup run: %s" % msgObj['run'])
-                if ('target' in msgObj): 
-                    lookupItem = lookup(msgObj['target'],'target') 
+                if ('target' in msgObj):
+                    lookupItem = lookup(msgObj['target'],'target')
                     if (lookupItem is not None):
                         msgObj['targetLookup']= lookupItem
                     else:
                         logger.info("Could not lookup target: %s" % msgObj['target'])
             if ('finding' in msgObj):
-                # now query findings 
+                # now query findings
                 finding = lookup(msgObj['finding'],'finding')
                 if (finding is not None):
-                    
+
                     # now query rulesPackage inside the finding
                     rulesPackage = lookup(finding['serviceAttributes']['rulesPackageArn'],'rulesPackage')
                     if (rulesPackage is not None):
@@ -160,12 +160,12 @@ def sumo_inspector_handler(event, context):
                     else:
                         logger.info("Cannot lookup rulesPackageArn: %s"% finding['serviceAttributes']['rulesPackageArn'])
                 msgObj['findingDetails'] = finding
-             # construct final data object    
+             # construct final data object
             dataObj = {'Timestamp':snsObj['Timestamp'],'Message':msgObj,'MessageId':snsObj['MessageId']}
-            
+
             # now send this object to Sumo side
             rs = sendSumo(json.dumps(dataObj,default=json_deserializer),toCompress=True)
-            
+
             if (rs[0]!=200):
                 logger.info('Error sending data to sumo with code: %d and message: %s '% (rs[0],rs[1]))
                 logger.info(json.dumps(dataObj,default=json_deserializer))
@@ -173,4 +173,4 @@ def sumo_inspector_handler(event, context):
                 logger.info("Sent data to Sumo successfully")
     else:
         logger.info('Unrecoganized data')
-    
+
