@@ -36,8 +36,9 @@ var url = require('url');
 
 Promise.retryMax = function(fn,retry,interval,fnParams) {
     return fn.apply(this,fnParams).catch( err => {
-        console.log("inside retry left", retry)
-        return (retry>1? Promise.wait(interval).then(()=> Promise.retryMax(fn,retry-1,interval, fnParams)):Promise.reject(err));
+        var waitTime = typeof interval === 'function' ? interval() : interval;
+        console.log("Retries left " + (retry-1) + " delay(in ms) " + waitTime);
+        return (retry>1? Promise.wait(waitTime).then(()=> Promise.retryMax(fn,retry-1,interval, fnParams)):Promise.reject(err));
     });
 }
 
@@ -48,6 +49,13 @@ Promise.wait = function(delay) {
     });
 };
 
+function exponentialBackoff(seed) {
+    var count = 0;
+    return function() {
+        count++;
+        return count*seed;
+    }
+}
 
 function sumoMetaKey(awslogsData, message, data) {
     var sourceCategory = '';
@@ -137,6 +145,7 @@ function postToSumo(context, messages) {
             for (var i = 0; i < data.length; i++) {
                 req.write(JSON.stringify(data[i]) + '\n');
             }
+            console.log("sending to Sumo...")
             req.end();
         });
     }
@@ -148,7 +157,7 @@ function postToSumo(context, messages) {
             'X-Sumo-Host': headerArray[2],
             'X-Sumo-Client': 'kinesis-aws-lambda'
         };
-        Promise.retryMax(httpSend, 1, 2000, [options, headers, messages[key]]).then((body)=> {
+        Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]).then((body)=> {
             messagesSent++;
             finalizeContext()
         }).catch((e) => {
