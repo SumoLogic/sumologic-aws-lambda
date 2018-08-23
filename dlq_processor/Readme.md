@@ -1,3 +1,6 @@
+# Textio fork
+This fork will only send the raw logs to sumo without trying to pre-parse or wrap in a JSON message.
+
 # SumoLogic Lambda Function for AWS CloudWatch Logs
 
 This is used for collecting Amazon CloudWatch Logs.It provides two lambda functions

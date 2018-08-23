@@ -83,27 +83,8 @@ exports.processLogs = function (env, eventAwslogsData, errorHandler) {
 
             // Remove any trailing \n
             log.message = log.message.replace(/\n$/, '');
-
-            // Try extract requestID
-            var requestId = requestIdRegex.exec(log.message);
-            if (requestId !== null) {
-                lastRequestID = requestId[1];
-            }
-
-            // Attempt to detect console log and auto extract requestID and message
-            var consoleLog = consoleFormatRegex.exec(log.message);
-            if (consoleLog !== null) {
-                lastRequestID = consoleLog[1];
-                log.message = log.message.substring(consoleLog[0].length);
-            }
-
-            // Auto detect if message is json
-            try {
-                log.message = JSON.parse(log.message);
-            } catch (err) {
-                // Do nothing, leave as text
-                log.message = log.message.trim();
-            }
+            // Do nothing, leave as text
+            log.message = log.message.trim();
 
             // delete id as it's not very useful
             delete log.id;
@@ -120,9 +101,9 @@ exports.processLogs = function (env, eventAwslogsData, errorHandler) {
             var metadataKey = sumoMetaKey(headerObj);
 
             if (metadataKey in messageList) {
-                messageList[metadataKey].push(log);
+                messageList[metadataKey].push(log.message);
             } else {
-                messageList[metadataKey] = [log];
+                messageList[metadataKey] = [log.message];
             }
         });
 
