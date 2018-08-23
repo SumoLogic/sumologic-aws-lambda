@@ -12,6 +12,9 @@ var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none';  //
 var sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE || 'none';          // If none sourceHostOverride will not be set to the name of the logGroup
 var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || 'none';          // If none sourceNameOverride will not be set to the name of the logStream
 
+var retryInterval = process.env.RETRY_INTERVAL || 5000; // the interval in millisecs between retries
+var numOfRetries = process.env.NUMBER_OF_RETRIES || 3;  // the number of retries
+
 // CloudWatch logs encoding
 var encoding = process.env.ENCODING || 'utf-8';  // default is utf-8
 
@@ -20,7 +23,7 @@ var includeLogInfo = true;  // default is true
 
 // Regex used to detect logs coming from lambda functions.
 // The regex will parse out the requestID and strip the timestamp
-// Example: 2016-11-10T23:11:54.523Z	108af3bb-a79b-11e6-8bd7-91c363cc05d9    some message
+// Example: 2016-11-10T23:11:54.523Z   108af3bb-a79b-11e6-8bd7-91c363cc05d9    some message
 var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+?-\w+?-\w+?-\w+)\t/;
 
 // Used to extract RequestID
@@ -31,7 +34,22 @@ var zlib = require('zlib');
 var url = require('url');
 
 
-function sumoMetaKey(awslogsData, message) {
+Promise.retryMax = function(fn,retry,interval,fnParams) {
+    return fn.apply(this,fnParams).catch( err => {
+        console.log("inside retry left", retry)
+        return (retry>1? Promise.wait(interval).then(()=> Promise.retryMax(fn,retry-1,interval, fnParams)):Promise.reject(err));
+    });
+}
+
+Promise.wait = function(delay) {
+    return new Promise((fulfill,reject)=> {
+        //console.log(Date.now());
+        setTimeout(fulfill,delay||0);
+    });
+};
+
+
+function sumoMetaKey(awslogsData, message, data) {
     var sourceCategory = '';
     var sourceName = '';
     var sourceHost = '';
@@ -95,42 +113,50 @@ function postToSumo(context, messages) {
         }
     };
 
-
+    function httpSend(options, headers, data) {
+        return new Promise( (resolve,reject) => {
+            var curOptions = options;
+            curOptions.headers = headers;
+            var req = https.request(curOptions, function (res) {
+                var body = '';
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                    body += chunk; // don't really do anything with body
+                });
+                res.on('end', function () {
+                    if (res.statusCode == 200) {
+                        resolve(body);
+                    } else {
+                        reject({'error':'HTTP Return code ' + res.statusCode,'res':res});
+                    }
+                });
+            });
+            req.on('error', function (e) {
+                reject({'error':e,'res':null});
+            });
+            for (var i = 0; i < data.length; i++) {
+                req.write(JSON.stringify(data[i]) + '\n');
+            }
+            req.end();
+        });
+    }
     Object.keys(messages).forEach(function (key, index) {
         var headerArray = key.split(':');
-
-        options.headers = {
+        var headers = {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
             'X-Sumo-Host': headerArray[2],
             'X-Sumo-Client': 'kinesis-aws-lambda'
         };
-
-        var req = https.request(options, function (res) {
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {});
-            res.on('end', function () {
-                if (res.statusCode == 200) {
-                    messagesSent++;
-                } else {
-                    messageErrors.push('HTTP Return code ' + res.statusCode);
-                }
-                finalizeContext();
-            });
-        });
-
-        req.on('error', function (e) {
-            messageErrors.push(e.message);
+        Promise.retryMax(httpSend, 1, 2000, [options, headers, messages[key]]).then((body)=> {
+            messagesSent++;
+            finalizeContext()
+        }).catch((e) => {
+            messageErrors.push(e.error);
             finalizeContext();
         });
-
-        for (var i = 0; i < messages[key].length; i++) {
-            req.write(JSON.stringify(messages[key][i]) + '\n');
-        }
-        req.end();
     });
 }
-
 
 exports.handler = function (event, context) {
 
@@ -144,15 +170,14 @@ exports.handler = function (event, context) {
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
         context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
     }
-
-    event.Records.forEach(function(record) {
+    var numOfRecords = event.Records.length;
+    event.Records.forEach(function(record, index) {
         var zippedInput = new Buffer(record.kinesis.data, 'base64');
 
         zlib.gunzip(zippedInput, function (e, buffer) {
             if (e) {
                 context.fail(e);
             }
-
             var awslogsData = JSON.parse(buffer.toString(encoding));
 
             if (awslogsData.messageType === 'CONTROL_MESSAGE') {
@@ -211,9 +236,10 @@ exports.handler = function (event, context) {
                     messageList[metadataKey] = [log];
                 }
             });
-
             // Push messages to Sumo
-            postToSumo(context, messageList);
+            if (index === numOfRecords-1) {
+                postToSumo(context, messageList);
+            }
         })
 
     });
