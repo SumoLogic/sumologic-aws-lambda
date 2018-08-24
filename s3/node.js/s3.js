@@ -1,7 +1,7 @@
 var AWS = require('aws-sdk');
 var s3 = new AWS.S3();
 var https = require('https');
-var zlib = require('zlib'); 
+var zlib = require('zlib');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Remember to change the hostname and path to match your collection API and specific HTTP-source endpoint
@@ -25,24 +25,24 @@ function s3LogsToSumo(bucket, objKey,context) {
                 res.on('data', function(chunk) { body += chunk; });
                 res.on('end', function() {
                     console.log('Successfully processed HTTPS response');
-                    context.succeed(); 
+                    context.succeed();
                 });
             });
-    
+
     var finalData = '';
     var totalBytes = 0;
     var isCompressed = false;
     if (objKey.match(/\.gz$/)) {
         isCompressed = true;
     }
-    
+
     var finishFnc = function() {
             console.log("End of stream");
             console.log("Final total byte read: "+totalBytes);
             req.end();
             context.succeed();
     }
-    
+
     var s3Stream = s3.getObject({Bucket: bucket, Key: objKey}).createReadStream();
     s3Stream.on('error', function() {
         console.log(
@@ -50,9 +50,9 @@ function s3LogsToSumo(bucket, objKey,context) {
             'Make sure they exist and your bucket is in the same region as this function.');
         context.fail();
     });
-    
+
     req.write('Bucket: '+bucket + ' ObjectKey: ' + objKey +'\n');
-    
+
     if (!isCompressed) {
         s3Stream.on('data',function(data) {
                 //console.log("Read bytes:" +data.length);
@@ -64,7 +64,7 @@ function s3LogsToSumo(bucket, objKey,context) {
     } else {
         var gunzip = zlib.createGunzip();
         s3Stream.pipe(gunzip);
-        
+
         gunzip.on('data',function(data) {
             totalBytes += data.length;
             req.write(data.toString()+'\n');

@@ -28,14 +28,14 @@ function postToSumo(context, messages) {
     var messagesTotal = Object.keys(messages).length;
     var messagesSent = 0;
     var messageErrors = [];
-    
+
     var urlObject = url.parse(SumoURL);
     var options = {
         'hostname': urlObject.hostname,
         'path': urlObject.pathname,
         'method': 'POST'
     };
-    
+
     var finalizeContext = function () {
         var total = messagesSent + messageErrors.length;
         if (total == messagesTotal) {
@@ -71,12 +71,12 @@ function postToSumo(context, messages) {
                 finalizeContext();
             });
         });
-        
+
         req.on('error', function (e) {
             messageErrors.push(e.message);
             finalizeContext();
         });
-        
+
         for (var i = 0; i < messages[key].length; i++) {
             req.write(JSON.stringify(messages[key][i]) + '\n');
         }
@@ -86,7 +86,7 @@ function postToSumo(context, messages) {
 
 
 exports.handler = function (event, context) {
-    
+
     // Used to hold chunks of messages to post to SumoLogic
     var messageList = {};
     var final_event;
@@ -95,13 +95,13 @@ exports.handler = function (event, context) {
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
         context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
     }
-    
+
     //console.log(event);
     if ((event.source==="aws.guardduty") || (removeOuterFields)) {
         final_event =event.detail;
     } else {
         final_event = event;
-    }   
+    }
     messageList[sourceNameOverride+':'+sourceCategoryOverride+':'+sourceHostOverride]=[final_event];
     postToSumo(context, messageList);
 };

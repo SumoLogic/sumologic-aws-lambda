@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                        CloudTrail S3 bucket log to SumoLogic                                    // 
+//                                        CloudTrail S3 bucket log to SumoLogic                                    //
 //               https://github.com/SumoLogic/sumologic-aws-lambda                                                 //
 //                                                                                                                 //
 //        YOU MUST CREATE A SUMO LOGIC ENDPOINT CALLED SUMO_ENDPOINT AND PASTE IN ENVIRONMENTAL VARIABLES BELOW    //
@@ -11,7 +11,7 @@ var SumoURL = process.env.SUMO_ENDPOINT;
 var AWS = require('aws-sdk');
 var s3 = new AWS.S3();
 var https = require('https');
-var zlib = require('zlib'); 
+var zlib = require('zlib');
 var url = require('url');
 
 function s3LogsToSumo(bucket, objKey,context) {
@@ -32,7 +32,7 @@ function s3LogsToSumo(bucket, objKey,context) {
                 res.on('data', function(chunk) { body += chunk; });
                 res.on('end', function() {
                     console.log('Successfully processed HTTPS response');
-                    context.succeed(); 
+                    context.succeed();
                 });
             });
     var finalData = '';
@@ -40,7 +40,7 @@ function s3LogsToSumo(bucket, objKey,context) {
     if (objKey.match(/CloudTrail-Digest/)) {
         console.log("digest file are ignored");
         context.succeed();
-    }    
+    }
 
     var s3Stream = s3.getObject({Bucket: bucket, Key: objKey}).createReadStream();
     s3Stream.on('error', function() {
@@ -58,8 +58,8 @@ function s3LogsToSumo(bucket, objKey,context) {
         var records = JSON.parse(finalData);
         console.log(records.Records.length + " cloudtrail records in this file");
         for (var i = 0, len = records.Records.length; i < len; i++) {
-            req.write(JSON.stringify(records.Records[i]) + '\n'); 
-        } 
+            req.write(JSON.stringify(records.Records[i]) + '\n');
+        }
         req.end();
     }).on('error',function(error) {
         context.fail(error);
