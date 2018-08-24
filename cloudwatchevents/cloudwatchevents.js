@@ -89,7 +89,7 @@ exports.handler = function (event, context) {
 
     // Used to hold chunks of messages to post to SumoLogic
     var messageList = {};
-
+    var final_event;
     // Validate URL has been set
     var urlObject = url.parse(SumoURL);
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
