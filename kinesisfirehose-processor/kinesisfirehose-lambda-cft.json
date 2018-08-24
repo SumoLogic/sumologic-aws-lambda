@@ -1,0 +1,70 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "SumoKFLambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": {"Service": ["lambda.amazonaws.com"] },
+                        "Action": ["sts:AssumeRole"]
+                    } ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": { "Fn::Join": [ "-", [ "CloudWatchCreateLogsRolePolicy", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [{
+                                "Effect": "Allow",
+                                "Action": [
+                                    "logs:CreateLogGroup",
+                                    "logs:CreateLogStream",
+                                    "logs:PutLogEvents",
+                                    "logs:DescribeLogGroups",
+                                    "logs:DescribeLogStreams",
+                                    "logs:PutSubscriptionFilter",
+                                    "logs:DescribeSubscriptionFilters"
+                                ],
+                                "Resource": [
+                                       { "Fn::Join": [ ":", ["arn", "aws", "logs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" },"log-group","*" ] ] }
+                                ]
+                            }]
+                        }
+                    }
+                ]
+            }
+        },
+        "SumoKFLambdaProcessor": {
+            "Type": "AWS::Lambda::Function",
+            "DependsOn": [
+                "SumoKFLambdaExecutionRole"
+            ],
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {"Fn::Join": ["", ["appdevzipfiles-", { "Ref" : "AWS::Region" }] ] },
+                    "S3Key": "kinesisfirehose-processor.zip"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SumoKFLambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "FunctionName": { "Fn::Join": [ "-", [ "SumoKFLambdaProcessor", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "Timeout": 300,
+                "Handler": "kinesisfirehose-processor.handler",
+                "Runtime": "nodejs8.10",
+                "MemorySize": 128
+            }
+        }
+    },
+    "Outputs": {
+        "SumoKFLambdaProcessorArn": {
+            "Value": { "Fn::GetAtt": ["SumoKFLambdaProcessor", "Arn"] }
+        }
+    }
+}

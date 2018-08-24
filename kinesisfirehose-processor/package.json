@@ -1,0 +1,18 @@
+{
+  "name": "kinesisfirehose-processor",
+  "version": "1.0.0",
+  "description": "Lambda Function for transforming incoming data from kinesis firehose",
+  "main": "kinesisfirehose-processor.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -f kinesisfirehose-processor.zip && zip -r kinesisfirehose-processor.zip kinesisfirehose-processor.js package.json"
+  },
+  "keywords": [
+    "AWS",
+    "Kinesis Firehose"
+  ],
+  "author": "Himanshu Pal",
+  "license": "Apache-2.0"
+}
