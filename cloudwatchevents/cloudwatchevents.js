@@ -19,23 +19,48 @@ var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || '';  // If 
 var sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE || '';          // If empty sourceHostOverride will not be set to the name of the logGroup
 var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || '';          // If empty sourceNameOverride will not be set to the name of the logStream
 
+var retryInterval = process.env.RETRY_INTERVAL || 5000; // the interval in millisecs between retries
+var numOfRetries = process.env.NUMBER_OF_RETRIES || 3;  // the number of retries
+
 var https = require('https');
 var zlib = require('zlib');
 var url = require('url');
 
+Promise.retryMax = function(fn,retry,interval,fnParams) {
+    return fn.apply(this,fnParams).catch( err => {
+        var waitTime = typeof interval === 'function' ? interval() : interval;
+        console.log("Retries left " + (retry-1) + " delay(in ms) " + waitTime);
+        return (retry>1? Promise.wait(waitTime).then(()=> Promise.retryMax(fn,retry-1,interval, fnParams)):Promise.reject(err));
+    });
+}
+
+Promise.wait = function(delay) {
+    return new Promise((fulfill,reject)=> {
+        //console.log(Date.now());
+        setTimeout(fulfill,delay||0);
+    });
+};
+
+function exponentialBackoff(seed) {
+    var count = 0;
+    return function() {
+        count++;
+        return count*seed;
+    }
+}
 
 function postToSumo(context, messages) {
     var messagesTotal = Object.keys(messages).length;
     var messagesSent = 0;
     var messageErrors = [];
-    
+
     var urlObject = url.parse(SumoURL);
     var options = {
         'hostname': urlObject.hostname,
         'path': urlObject.pathname,
         'method': 'POST'
     };
-    
+
     var finalizeContext = function () {
         var total = messagesSent + messageErrors.length;
         if (total == messagesTotal) {
@@ -48,45 +73,54 @@ function postToSumo(context, messages) {
         }
     };
 
-
+    function httpSend(options, headers, data) {
+        return new Promise( (resolve,reject) => {
+            var curOptions = options;
+            curOptions.headers = headers;
+            var req = https.request(curOptions, function (res) {
+                var body = '';
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                    body += chunk; // don't really do anything with body
+                });
+                res.on('end', function () {
+                    if (res.statusCode == 200) {
+                        resolve(body);
+                    } else {
+                        reject({'error':'HTTP Return code ' + res.statusCode,'res':res});
+                    }
+                });
+            });
+            req.on('error', function (e) {
+                reject({'error':e,'res':null});
+            });
+            for (var i = 0; i < data.length; i++) {
+                req.write(JSON.stringify(data[i]) + '\n');
+            }
+            console.log("sending to Sumo...")
+            req.end();
+        });
+    }
     Object.keys(messages).forEach(function (key, index) {
         var headerArray = key.split(':');
-        options.headers = {
+        var headers = {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
             'X-Sumo-Host': headerArray[2],
-            'X-Sumo-Client': 'cloudwatchevents-aws-lambda'
+            'X-Sumo-Client': 'kinesis-aws-lambda'
         };
-
-        var req = https.request(options, function (res) {
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {});
-            res.on('end', function () {
-                console.log("Got response code: "+ res.statusCode);
-                if (res.statusCode == 200) {
-                    messagesSent++;
-                } else {
-                    messageErrors.push('HTTP Return code ' + res.statusCode);
-                }
-                finalizeContext();
-            });
-        });
-        
-        req.on('error', function (e) {
-            messageErrors.push(e.message);
+        Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]).then((body)=> {
+            messagesSent++;
+            finalizeContext()
+        }).catch((e) => {
+            messageErrors.push(e.error);
             finalizeContext();
         });
-        
-        for (var i = 0; i < messages[key].length; i++) {
-            req.write(JSON.stringify(messages[key][i]) + '\n');
-        }
-        req.end();
     });
 }
 
-
 exports.handler = function (event, context) {
-    
+
     // Used to hold chunks of messages to post to SumoLogic
     var messageList = {};
     var final_event;
@@ -95,13 +129,13 @@ exports.handler = function (event, context) {
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
         context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
     }
-    
+
     //console.log(event);
     if ((event.source==="aws.guardduty") || (removeOuterFields)) {
         final_event =event.detail;
     } else {
         final_event = event;
-    }   
+    }
     messageList[sourceNameOverride+':'+sourceCategoryOverride+':'+sourceHostOverride]=[final_event];
     postToSumo(context, messageList);
 };
