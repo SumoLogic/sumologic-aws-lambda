@@ -7,6 +7,7 @@ When you enable Firehose data transformation, Firehose buffers incoming data and
 
 ### Creating Stack in AWS Cloudformation
 you can create the stack by using [aws-cli](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html) or directly from aws console using webbrowser and uploading kinesisfirehose-lambda-sam.yaml. For more details checkout it's [documentation](https://help.sumologic.com/?cid=39393)
+Sumo Logic provides a Cloudformation [template](https://s3.amazonaws.com/appdev-cloudformation-templates/kinesisfirehose-lambda-cft.json) for creating the lambda function download and use it for creating the stack.
 
 ### Setting up the Lambda Function
 Below instructions assumes that the delivery stream already exists.One can also configure the lambda at the time of delivery stream creation. Refer [Setting up Delivery Stream](https://docs.aws.amazon.com/firehose/latest/dev/basic-create.html)

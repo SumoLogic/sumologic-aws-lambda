@@ -117,7 +117,7 @@
         "SumoKFLambdaResources" : {
            "Type" : "AWS::CloudFormation::Stack",
            "Properties" : {
-              "TemplateURL" : "https://s3.amazonaws.com/cf-templates-5d0x5unchag-us-east-1/kinesisfirehose-lambda-cft.json",
+              "TemplateURL" : "https://s3.amazonaws.com/appdev-cloudformation-templates/kinesisfirehose-lambda-cft.json",
               "TimeoutInMinutes" : "10"
            }
         }
