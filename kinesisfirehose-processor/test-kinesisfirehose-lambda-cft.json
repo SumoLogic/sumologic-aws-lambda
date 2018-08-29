@@ -1,0 +1,125 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "SumoKFDeliveryStream": {
+            "Type" : "AWS::KinesisFirehose::DeliveryStream",
+            "Properties" : {
+                "DeliveryStreamName": { "Fn::Join": [ "-", [ "SumoKFDeliveryStream", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "DeliveryStreamType" : "DirectPut",
+                "ExtendedS3DestinationConfiguration": {
+                    "BucketARN": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref":"SumoKFS3bucket"}]]},
+                    "BufferingHints": {
+                        "IntervalInSeconds": "300",
+                        "SizeInMBs": "5"
+                    },
+                    "CompressionFormat": "UNCOMPRESSED",
+                    "Prefix": "firehose/",
+                    "RoleARN": {"Fn::GetAtt" : ["SumoKFDeliveryRole", "Arn"] },
+                    "ProcessingConfiguration" : {
+                        "Enabled": "true",
+                        "Processors": [{
+                            "Parameters": [
+                                {
+                                    "ParameterName": "LambdaArn",
+                                    "ParameterValue": { "Fn::GetAtt": [ "SumoKFLambdaResources", "Outputs.SumoKFLambdaProcessorArn" ]}
+                                },
+                                {
+                                    "ParameterName": "NumberOfRetries",
+                                    "ParameterValue": "3"
+                                },
+                                {
+                                    "ParameterName": "BufferSizeInMBs",
+                                    "ParameterValue": "3"
+                                },
+                                {
+                                    "ParameterName": "BufferIntervalInSeconds",
+                                    "ParameterValue": "60"
+                                },
+                            ],
+                            "Type": "Lambda"
+                        }]
+                    },
+                    "CloudWatchLoggingOptions": {
+                        "Enabled" : false
+                    },
+                    "EncryptionConfiguration": {
+                        "NoEncryptionConfig": "NoEncryption"
+                    },
+                    "S3BackupMode": "Disabled"
+                }
+            }
+        },
+        "SumoKFS3bucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+            "VersioningConfiguration": {
+                "Status": "Enabled"
+            }
+          }
+        },
+        "SumoKFDeliveryRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                        "Sid": "",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "firehose.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole",
+                        "Condition": {
+                            "StringEquals": {
+                                "sts:ExternalId": {"Ref":"AWS::AccountId"}
+                            }
+                        }
+                    }]
+                }
+            }
+        },
+        "SumoKFDeliveryPolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": { "Fn::Join": [ "-", [ "firehose_delivery_policy", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:AbortMultipartUpload",
+                                "s3:GetBucketLocation",
+                                "s3:GetObject",
+                                "s3:ListBucket",
+                                "s3:ListBucketMultipartUploads",
+                                "s3:PutObject"
+                            ],
+                            "Resource": [
+                                {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref":"SumoKFS3bucket"}]]},
+                                {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref":"SumoKFS3bucket"}, "*"]]}
+                            ]
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Action": [
+                                "lambda:InvokeFunction",
+                                "lambda:GetFunctionConfiguration"
+                            ],
+                            "Resource": { "Fn::GetAtt": [ "SumoKFLambdaResources", "Outputs.SumoKFLambdaProcessorArn" ]}
+                        }
+                    ]
+                },
+                "Roles": [{"Ref": "SumoKFDeliveryRole"}]
+            }
+        },
+        "SumoKFLambdaResources" : {
+           "Type" : "AWS::CloudFormation::Stack",
+           "Properties" : {
+              "TemplateURL" : "https://s3.amazonaws.com/appdev-cloudformation-templates/kinesisfirehose-lambda-cft.json",
+              "TimeoutInMinutes" : "10"
+           }
+        }
+    }
+}
