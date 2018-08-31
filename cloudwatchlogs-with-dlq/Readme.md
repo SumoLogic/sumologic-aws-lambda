@@ -1,4 +1,4 @@
-# SumoLogic Lambda Function for AWS CloudWatch Logs
+# SumoLogic Lambda Function for AWS CloudWatch Logs With Dead Letter Queue Support
 
 This is used for collecting Amazon CloudWatch Logs.It provides two lambda functions
 

@@ -1,5 +1,5 @@
 # LogGroup Lambda Connector
-This is used to automatically subscribe newly created Cloudwatch LogGroups to a Lambda function.
+This is used to automatically subscribe newly created and existing Cloudwatch LogGroups to a Lambda function.
 
 ### Creating Stack in AWS Cloudformation
 you can create the stack by using [aws-cli](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html) or directly from aws console using webbrowser and uploading loggroup-lambda-cft.json. For more details checkout it's [documentation](https://help.sumologic.com/?cid=39393)

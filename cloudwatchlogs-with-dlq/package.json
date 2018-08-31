@@ -1,7 +1,7 @@
 {
   "name": "dlq_processor",
   "version": "1.0.0",
-  "description": "Lambda function for processing messages from DLQ",
+  "description": "Lambda function for processing messages from CloudWatch with Dead Letter Queue Support",
   "main": "DLQProcessor.js",
   "dependencies": {
     "aws-sdk": "^2.160.0"
@@ -9,7 +9,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "node -e 'require('./test').test()'",
-    "build": "rm -f dlqprocessor.zip && zip -r dlqprocessor.zip DLQProcessor.js cloudwatchlogs_lambda.js package.json sumo-dlq-function-utils/",
+    "build": "rm -f cloudwatchlogs-with-dlq.zip && zip -r cloudwatchlogs-with-dlq.zip DLQProcessor.js cloudwatchlogs_lambda.js package.json sumo-dlq-function-utils/",
     "prod_deploy": "python -c 'from test_cwl_lambda import prod_deploy;prod_deploy()'"
   },
   "author": "Himanshu Pal",
