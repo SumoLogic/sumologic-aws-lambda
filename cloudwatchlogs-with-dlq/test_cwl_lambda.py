@@ -211,7 +211,7 @@ def create_bucket(region):
 def upload_code_in_S3(region):
     print("Uploading zip file in S3", region)
     s3 = boto3.client('s3', region)
-    filename = 'dlqprocessor.zip'
+    filename = 'cloudwatchlogs-with-dlq.zip'
     bucket_name = get_bucket_name(region)
     s3.upload_file(filename, bucket_name, filename,
                    ExtraArgs={'ACL': 'public-read'})
