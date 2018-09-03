@@ -33,6 +33,8 @@ class TestLambda(unittest.TestCase):
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
         self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
+        RUNTIME = "nodejs%s" % os.env.get("NODE_VERSION", "8.10")
+        self.template_data = self.template_data.replace("nodejs8.10", RUNTIME)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
@@ -160,7 +162,6 @@ class TestLambda(unittest.TestCase):
         for key in self.TEMPLATE_KEYS_TO_REMOVE:
             template_data["Resources"].pop(key)
         template_data = str(template_data)
-
         return template_data
 
 

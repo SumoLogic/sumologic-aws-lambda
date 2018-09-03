@@ -2,7 +2,7 @@
 
 This function receives the records published to a SNS Topic by Amazon Inspector.It looks up an Inspector object based on its arn and type and then adds extra context to the final messages which are compressed and send to Sumo Logic HTTP source endpoint.
 
-## Lambda Setup
+## Lambda Setup((docs)[https://help.sumologic.com/Send-Data/Applications-and-Other-Data-Sources/Amazon-Inspector-App/01-Collect-Data-for-Amazon-Inspector])
 
 ### Create an Amazon SNS Topic
 1. Login to the Amazon Console.

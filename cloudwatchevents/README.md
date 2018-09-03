@@ -1,7 +1,7 @@
 # Sumo Logic Function for AWS CloudWatch Events
 
 AWS Lambda function to collect CloudWatch events and post them to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
-AWS Cloudwatch Events invokes the function asynchronously in response to any changes in AWS resources. The event payload received is then send to SumoLogic's HTTP source endpoint.
+AWS Cloudwatch Events invokes the function asynchronously in response to any changes in AWS resources. The event payload received is then sent to a SumoLogic HTTP source endpoint.
 
 # Usage
 
