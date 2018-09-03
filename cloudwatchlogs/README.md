@@ -2,6 +2,9 @@
 
 AWS Lambda function to collector logs from CloudWatch Logs and post them to [SumoLogic](http://www.sumologic.com) via a [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source)
 
+## Warning: This Lambda Function is no longer recommended solution
+We recommend using [SumoLogic Lambda Function for AWS CloudWatch Logs With Dead Letter Queue Support](https://help.sumologic.com/Send-Data/Collect-from-Other-Data-Sources/Amazon-CloudWatch-Logs) as it is configured with Dead Letter Queue which takes care of messages that can't be processed (consumed) successfully.
+
 
 # Usage
 

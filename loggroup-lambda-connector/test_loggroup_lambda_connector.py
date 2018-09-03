@@ -36,7 +36,7 @@ class TestLambda(unittest.TestCase):
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
         self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
-        RUNTIME = "nodejs%s" % os.env.get("NODE_VERSION", "8.10")
+        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "8.10")
         self.template_data = self.template_data.replace("nodejs8.10", RUNTIME)
 
 
