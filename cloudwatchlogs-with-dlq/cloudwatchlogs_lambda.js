@@ -77,6 +77,7 @@ function getConfig(env) {
         // CloudWatch logs encoding
         "encoding": env.ENCODING || 'utf-8',  // default is utf-8
         "LogFormat": env.LOG_FORMAT || 'Others',
+        "compressData": env.COMPRESS_DATA || true,
         "vpcCIDRPrefix": env.VPC_CIDR_PREFIX || '',
         "includeLogInfo": ("INCLUDE_LOG_INFO" in env) ? env.INCLUDE_LOG_INFO === "true" : false,
         "includeSecurityGroupInfo": ("INCLUDE_SECURITY_GROUP_INFO" in env) ? env.INCLUDE_SECURITY_GROUP_INFO === "true" : false
@@ -144,7 +145,7 @@ exports.processLogs = function (env, eventAwslogsData, callback) {
                 var messageList = SumoLogsClientObj.createBuckets(config, records, awslogsData, config.LogFormat === "VPC-RAW");
                 console.log("Buckets Created: " + Object.keys(messageList).length);
                 // console.log(messageList);
-                return SumoLogsClientObj.postToSumo(messageList);
+                return SumoLogsClientObj.postToSumo(messageList, config.compressData);
             });
         }
     }).then(function (result) {

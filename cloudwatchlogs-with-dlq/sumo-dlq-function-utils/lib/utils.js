@@ -89,6 +89,20 @@ var sendRequest = function (Options, data) {
     });
 };
 
+var compressData = function(Options, data) {
+    return new Promise(function (resolve, reject) {
+        Options.headers['Content-Encoding'] = 'gzip';
+        zlib.gzip(data,function(err,compressed_data){
+            if (!err)  {
+                console.log("Data Compressed");
+               resolve(compressed_data);
+            } else {
+                console.log("Failed to CompressData", err);
+                reject(err);
+            }
+        });
+    });
+}
 
 module.exports = {
     encodebase64: encodebase64,
@@ -98,6 +112,7 @@ module.exports = {
     exponentialBackoff: exponentialBackoff,
     gunzipPromise: gunzipPromise,
     sendRequest: sendRequest,
-    filterObj: filterObj
+    filterObj: filterObj,
+    compressData: compressData
 };
 

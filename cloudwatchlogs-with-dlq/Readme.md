@@ -24,9 +24,10 @@ The following AWS Lambda environment variables are supported in both the lambda 
 
 ### Configuring Lambda for VPC Flow Logs
 The following AWS Lambda environment variables are supported in both the lambda functions for VPC flow logs.
-INCLUDE_SECURITY_GROUP_INFO (OPTIONAL) - Set it to true when security-group-ids/direction values needs to be included in logs.The lambda function fetches list of Elastic Network Interfaces using describeNetworkInterfaces api.
+
+* INCLUDE_SECURITY_GROUP_INFO (OPTIONAL) - Set it to true when security-group-ids/direction values needs to be included in logs.The lambda function fetches list of Elastic Network Interfaces using describeNetworkInterfaces api.
 One needs to provide permission to lambda by adding the following inline policy in SumoCWProcessDLQLambda Role.
-Refer this [doc](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html#add-remove-policies-console) for adding inline policy for a role. Choose (creating Policies on the JSON Tab](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create.html#access_policies_create-json-editor) method and paste the below json after adding the arn of both the lambda functions.
+Refer this [doc](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html#add-remove-policies-console) for adding inline policy for a role. Choose [Creating Policies on the JSON Tab](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create.html#access_policies_create-json-editor) method and paste the below json after adding the arn of both the lambda functions.
 ```
 {
     "Version": "2012-10-17",
@@ -42,7 +43,7 @@ Refer this [doc](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policie
 }
 ```
 This will add two extra keys(security-group-ids and direction) in logs. This option works only when LOG_FORMAT is set to VPC-JSON.
-VPC_CIDR_PREFIX (OPTIONAL) - Comma separated list of ip prefixes for filtering out internal traffic. For Ex: lets say we have `vpcCIDRprefix= 10.8.0.0,10.9.0.0` then it will filter out logs whose destinationIP and sourceIP matches any of the two prefixes 10.8.0.0 and 10.9.0.0. This option works only when LOG_FORMAT is set to VPC-JSON or VPC-RAW.
+* VPC_CIDR_PREFIX (OPTIONAL) - Comma separated list of ip prefixes for filtering out internal traffic. For Ex: lets say we have `vpcCIDRprefix= 10.8.0.0,10.9.0.0` then it will filter out logs whose destinationIP and sourceIP matches any of the two prefixes 10.8.0.0 and 10.9.0.0. This option works only when LOG_FORMAT is set to VPC-JSON or VPC-RAW.
 
 
 SumoCWProcessDLQLambda supports one extra environment variable

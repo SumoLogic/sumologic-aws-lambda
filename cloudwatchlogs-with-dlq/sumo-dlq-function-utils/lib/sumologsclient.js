@@ -39,7 +39,7 @@ SumoLogsClient.prototype.generateHeaders = function(config, message, awslogsData
     return headerObj;
 };
 
-SumoLogsClient.prototype.createPromises = function(messages) {
+SumoLogsClient.prototype.createPromises = function(messages, is_compressed) {
     var self = this;
     return Object.keys(messages).map(function (key) {
         var headerArray = key.split(':');
@@ -49,11 +49,11 @@ SumoLogsClient.prototype.createPromises = function(messages) {
             'X-Sumo-Host': headerArray[2],
             'X-Sumo-Client': self.SUMO_CLIENT_HEADER
         };
+        var options = Object.assign({}, self.options);
         // removing headers with 'none'
-        self.options.headers = utils.filterObj(headers, function(k,v) {
+        options.headers = utils.filterObj(headers, function(k,v) {
             return v && (v.toLowerCase() !== 'none');
         });
-
         var data = [];
         for (var i = 0; i < messages[key].length; i++) {
             if (messages[key][i] instanceof Object) {
@@ -62,16 +62,21 @@ SumoLogsClient.prototype.createPromises = function(messages) {
                 data.push(messages[key][i]);
             }
         }
+        data = data.join("\n");
+        var pdata = is_compressed ? utils.compressData(options, data) : Promise.resolve(data);
+
         // handling catch so that if one promise fails others would still be executed
-        return utils.sendRequest(self.options, data.join("\n")).catch(function(err) {
+        return pdata.then(function(payload) {
+            return utils.sendRequest(options, payload);
+        }).catch(function(err) {
             err.failedBucketKey = key;
             return err;
         });
     });
 }
 
-SumoLogsClient.prototype.postToSumo = function(messages) {
-    var all_promises = this.createPromises(messages);
+SumoLogsClient.prototype.postToSumo = function(messages, is_compressed) {
+    var all_promises = this.createPromises(messages, is_compressed);
     return Promise.all(all_promises).then(function (values) {
         console.log(`${values.length} requests finished`);
         var requestSuccessCnt = 0;
