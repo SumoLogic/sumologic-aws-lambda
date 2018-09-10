@@ -1,8 +1,8 @@
 var AWS = require("aws-sdk");
 var processLogsHandler = require('./cloudwatchlogs_lambda').processLogs;
-var Messages = require("./sumo-dlq-function-utils").Messages;
-var AWSUtils = require("./sumo-dlq-function-utils").AWSUtils;
-var invokeLambdas = AWSUtils.invokeLambdas;
+var DLQUtils = require("./sumo-dlq-function-utils").DLQUtils;
+var Messages = DLQUtils.Messages;
+var invokeLambdas = DLQUtils.invokeLambdas;
 
 exports.consumeMessages = function (env, context, callback) {
     var sqs = new AWS.SQS({region: env.AWS_REGION});
@@ -18,6 +18,7 @@ exports.consumeMessages = function (env, context, callback) {
                 (function(idx) {
                     var logdata = JSON.parse(messages[idx].Body).awslogs.data;
                     var receiptHandle = messages[idx].ReceiptHandle;
+                    env.SUMO_CLIENT_HEADER="dlq-aws-lambda";
                     processLogsHandler(env, logdata, function (err, msg) {
                         msgCount++;
                         if (err) {

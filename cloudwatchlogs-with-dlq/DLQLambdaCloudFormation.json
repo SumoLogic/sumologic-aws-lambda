@@ -15,6 +15,12 @@
         "Type": "Number",
         "Default": 4,
         "Description": "Enter the number of lambda function invocations for faster Dead Letter Queue processing."
+      },
+      "ServiceName": {
+        "Type": "String",
+        "Default": "Others",
+        "AllowedValues" : ["VPC-RAW" ,"VPC-JSON", "Others"],
+        "Description": "Choose the Service"
       }
     },
     "Resources": {
@@ -186,7 +192,8 @@
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
-                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"}
+                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
+                        "SERVICE_NAME": {"Ref": "ServiceName"}
                     }
                 }
             }
@@ -258,8 +265,7 @@
                                 ]
                             ]
                         },
-                        "NUM_OF_WORKERS": {"Ref": "NumOfWorkers"},
-                        "SUMO_CLIENT_HEADER": "dlq-aws-lambda"
+                        "NUM_OF_WORKERS": {"Ref": "NumOfWorkers"}
                     }
                 }
             }
