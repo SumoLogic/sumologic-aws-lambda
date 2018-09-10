@@ -16,7 +16,7 @@
         "Default": 4,
         "Description": "Enter the number of lambda function invocations for faster Dead Letter Queue processing."
       },
-      "ServiceName": {
+      "LogFormat": {
         "Type": "String",
         "Default": "Others",
         "AllowedValues" : ["VPC-RAW" ,"VPC-JSON", "Others"],
@@ -193,7 +193,7 @@
                 "Environment": {
                     "Variables": {
                         "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
-                        "SERVICE_NAME": {"Ref": "ServiceName"}
+                        "LOG_FORMAT": {"Ref": "LogFormat"}
                     }
                 }
             }

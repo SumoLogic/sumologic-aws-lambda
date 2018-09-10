@@ -76,7 +76,7 @@ function getConfig(env) {
         "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-aws-lambda',
         // CloudWatch logs encoding
         "encoding": env.ENCODING || 'utf-8',  // default is utf-8
-        "ServiceName": env.SERVICE_NAME || 'Others',
+        "LogFormat": env.LOG_FORMAT || 'Others',
         "vpcCIDRPrefix": env.VPC_CIDR_PREFIX || '',
         "includeLogInfo": ("INCLUDE_LOG_INFO" in env) ? env.INCLUDE_LOG_INFO === "true" : false,
         "includeSecurityGroupInfo": ("INCLUDE_SECURITY_GROUP_INFO" in env) ? env.INCLUDE_SECURITY_GROUP_INFO === "true" : false
@@ -94,7 +94,7 @@ function getConfig(env) {
 
 function transformRecords(config, records) {
     return new Promise(function (resolve, reject) {
-        if (config.ServiceName === "VPC-JSON" && config.includeSecurityGroupInfo) {
+        if (config.LogFormat === "VPC-JSON" && config.includeSecurityGroupInfo) {
             vpcutils.includeSecurityGroupIds(records).then(function (modifiedRecords) {
                 if (modifiedRecords && modifiedRecords.length > 0 && "security-group-ids" in modifiedRecords[0]) {
                     console.log("SecurityGroupInfo Added");
@@ -109,7 +109,7 @@ function transformRecords(config, records) {
 
 function filterRecords(config, records) {
     var filteredRecords = records;
-    if (config.ServiceName.startsWith("VPC") && config.vpcCIDRPrefix) {
+    if (config.LogFormat.startsWith("VPC") && config.vpcCIDRPrefix) {
         filteredRecords = vpcutils.discardInternalTraffic(config.vpcCIDRPrefix, records);
         console.log(records.length - filteredRecords.length + " records discarded as InternalTraffic");
     }
@@ -141,7 +141,7 @@ exports.processLogs = function (env, eventAwslogsData, callback) {
         if (records.length > 0) {
             return transformRecords(config, records).then(function (records) {
                 var SumoLogsClientObj = new SumoLogsClient(config);
-                var messageList = SumoLogsClientObj.createBuckets(config, records, awslogsData, config.ServiceName === "VPC-RAW");
+                var messageList = SumoLogsClientObj.createBuckets(config, records, awslogsData, config.LogFormat === "VPC-RAW");
                 console.log("Buckets Created: " + Object.keys(messageList).length);
                 // console.log(messageList);
                 return SumoLogsClientObj.postToSumo(messageList);
