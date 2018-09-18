@@ -88,7 +88,9 @@ function buildEniToSecurityGroupMapping() {
             `NetworkInterfaces[].{
               interfaceId: NetworkInterfaceId,
               securityGroupIds: Groups[].GroupId,
-              ipAddress: PrivateIpAddresses[?Primary].PrivateIpAddress
+              ipAddress: PrivateIpAddresses[?Primary].PrivateIpAddress,
+              subnetId: SubnetId,
+              vpcId: VpcId
             }`);
     });
 }
@@ -101,6 +103,8 @@ function includeSecurityGroupIds(records) {
             if (eniData) {
                 log['security-group-ids'] = eniData.securityGroupIds;
                 log['direction'] = (vpcMessage[4] === eniData.ipAddress) ? 'inbound' : 'outbound';
+                log['subnet-id'] = eniData.subnetId;
+                log['vpc-id'] = eniData.vpcId;
             } else {
                 console.log(`No ENI data found for interface ${vpcMessage[2]}`);
             }
