@@ -51,7 +51,9 @@ function createRecords(config, events, awslogsData) {
         }
         // delete id as it's not very useful
         delete log.id;
-        delete log.timestamp;
+        if (config.LogFormat.startsWith("VPC")) {
+            delete log.timestamp;
+        }
         delete log.extractedFields;
 
         if (config.includeLogInfo) {
