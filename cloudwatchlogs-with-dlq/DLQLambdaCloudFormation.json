@@ -21,6 +21,12 @@
         "Default": "Others",
         "AllowedValues" : ["VPC-RAW" ,"VPC-JSON", "Others"],
         "Description": "Choose the Service"
+      },
+      "IncludeLogGroupInfo": {
+        "Type": "String",
+        "Default": "false",
+        "AllowedValues" : ["true" ,"false"],
+        "Description": "Select true to get loggroup/logstream values in logs"
       }
     },
     "Resources": {
@@ -193,7 +199,9 @@
                 "Environment": {
                     "Variables": {
                         "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
-                        "LOG_FORMAT": {"Ref": "LogFormat"}
+                        "LOG_FORMAT": {"Ref": "LogFormat"},
+                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"}
+
                     }
                 }
             }
@@ -265,7 +273,9 @@
                                 ]
                             ]
                         },
-                        "NUM_OF_WORKERS": {"Ref": "NumOfWorkers"}
+                        "NUM_OF_WORKERS": {"Ref": "NumOfWorkers"},
+                        "LOG_FORMAT": {"Ref": "LogFormat"},
+                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"}
                     }
                 }
             }
