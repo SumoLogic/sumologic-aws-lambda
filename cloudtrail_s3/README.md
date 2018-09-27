@@ -1,12 +1,15 @@
-===========================================
+# Warning: This Lambda Function has been deprecated
+We recommend using [S3 Event Notifications Integration](https://help.sumologic.com/Send-Data/Sources/02Sources-for-Hosted-Collectors/Amazon_Web_Services/AWS_S3_Source#S3_Event_Notifications_Integration),
+
+
 Cloudtrail S3 to Sumo Logic
 ===========================================
 
-Files 
+Files
 -----
 *	*cloudtrail_s3_to_sumo.js*:  node.js function to read files from an S3 bucket to a Sumo Logic hosted HTTP collector. Files in the source bucket are gzipped. The function receives S3 notifications on new files uploaded to the source S3 bucket, then reads these files, unzips them, and breakdown the records before finally sends the data to the target Sumo endpoint.
 
-## Lambda Setup 
+## Lambda Setup
 For the Sumo collector configuration, do not enable multiline processing or
 one message per request -- Additionally, the timeformat should be adjusted to ensure the eventTime is the messageTime.
 In the source Timestamp Format section, add a format <b>yyyy-MM-dd'T'HH:mm:ss'Z'</b> with Timestamp locator <b>eventTime\":\"(.*)?\"</b>
@@ -21,8 +24,8 @@ sufficient privileges to read from the *source* bucket, and invoke a lambda
 function. The code provided is tested with node runtime 4.3, 6.10 and 8.10, Memory setting at 128MB, Timeout 10s.
 
 Set trigger to S3 bucket create-all events.
- 
-One can use the AWSLambdaBasicExecution and the AWSS3ReadOnlyAccess role, although it is *strongly* recommended to customize them to restrict to relevant resources in production:  
+
+One can use the AWSLambdaBasicExecution and the AWSS3ReadOnlyAccess role, although it is *strongly* recommended to customize them to restrict to relevant resources in production:
 
 <pre>
 {
@@ -41,7 +44,7 @@ One can use the AWSLambdaBasicExecution and the AWSS3ReadOnlyAccess role, althou
 }
 </pre>
 
-AND 
+AND
 
 <pre>
 {

@@ -1,8 +1,9 @@
 ===========================================
 Kinesis to Sumo Logic
 ===========================================
+This function is invoked by AWS Lambda after it detects new records in Kinesis stream. The received collection of events are decompressed, transformed and send to Sumo Logic HTTP source endpoint.
 
-Files 
+Files
 -----
 *	*node.js/k2sl_lambda.js*:  node.js function to read messages from a Kinesis stream and posts them to a Sumo Logic hosted HTTP collector.
 

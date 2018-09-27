@@ -1,4 +1,6 @@
-===========================================
+# Warning: This Lambda Function has been deprecated
+We recommend using [S3 Event Notifications Integration](https://help.sumologic.com/Send-Data/Sources/02Sources-for-Hosted-Collectors/Amazon_Web_Services/AWS_S3_Source#S3_Event_Notifications_Integration),
+
 S3 to Sumo Logic
 ===========================================
 

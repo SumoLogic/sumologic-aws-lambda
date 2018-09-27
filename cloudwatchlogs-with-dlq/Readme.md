@@ -1,4 +1,4 @@
-# SumoLogic Lambda Function for AWS CloudWatch Logs
+# SumoLogic Lambda Function for AWS CloudWatch Logs With Dead Letter Queue Support
 
 This is used for collecting Amazon CloudWatch Logs.It provides two lambda functions
 
@@ -61,7 +61,7 @@ Building zip file
 ```
   npm run build
 ```
-Upload the generated dlqprocessor.zip in S3 bucket(don't forget to change bucket name and key in cloudformation template)
+Upload the generated cloudwatchlogs-with-dlq.zip in S3 bucket(don't forget to change bucket name and key in cloudformation template)
 
 Running the test cases
 
