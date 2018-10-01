@@ -91,7 +91,7 @@ function listNetworkInterfaces(allIPaddresses) {
  *  ]
  */
 function buildEniToSecurityGroupMapping(allIPaddresses) {
-    console.log(allIPaddresses.length + " ip addresses found in logs");
+    //console.log(allIPaddresses.length + " ip addresses found in logs");
     return listNetworkInterfaces(allIPaddresses).then(function (interfaces) {
         console.log(interfaces["NetworkInterfaces"].length + " Interfaces Fetched");
         return jmespath.search(interfaces,
@@ -130,6 +130,7 @@ function includeSecurityGroupIds(records) {
                 }
                 log['subnet-id'] = eniData.subnetId;
                 log['vpc-id'] = eniData.vpcId;
+                log['aws-region'] = process.env.AWS_REGION;
             } else {
                 console.log(`No ENI data found for interface ${vpcMessage[2]}`);
             }
