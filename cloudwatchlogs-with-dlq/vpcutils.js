@@ -50,11 +50,19 @@ function discardInternalTraffic(vpcCIDRPrefix, records) {
  *
  * @return `Promise` for async processing
  */
-function listNetworkInterfaces() {
+function listNetworkInterfaces(allIPaddresses) {
     if (!ec2) {
         ec2 = new EC2({region: process.env.AWS_REGION});
     }
-    return ec2.describeNetworkInterfaces().promise();
+    var params = {
+        Filters: [
+            {
+              Name: 'private-ip-address',
+              Values: allIPaddresses
+            }
+        ]
+    }
+    return ec2.describeNetworkInterfaces(params).promise();
 }
 
 /**
@@ -82,8 +90,10 @@ function listNetworkInterfaces() {
  *    ...
  *  ]
  */
-function buildEniToSecurityGroupMapping() {
-    return listNetworkInterfaces().then(function (interfaces) {
+function buildEniToSecurityGroupMapping(allIPaddresses) {
+    console.log(allIPaddresses.length + " ip addresses found in logs");
+    return listNetworkInterfaces(allIPaddresses).then(function (interfaces) {
+        console.log(interfaces["NetworkInterfaces"].length + " Interfaces Fetched");
         return jmespath.search(interfaces,
             `NetworkInterfaces[].{
               interfaceId: NetworkInterfaceId,
@@ -94,15 +104,30 @@ function buildEniToSecurityGroupMapping() {
             }`);
     });
 }
-
+//filter on interfaceID
 function includeSecurityGroupIds(records) {
-    return buildEniToSecurityGroupMapping().then(function (mapping) {
+    var allIPaddresses = [];
+    records.forEach(function(log) {
+        var vpcMessage = log.message.split(" ");
+        allIPaddresses.push(vpcMessage[3]);
+        allIPaddresses.push(vpcMessage[4]);
+    });
+    allIPaddresses = Array.from(new Set(allIPaddresses));
+    return buildEniToSecurityGroupMapping(allIPaddresses).then(function (mapping) {
         records.forEach(function (log) {
             var vpcMessage = log.message.split(" ");
             var eniData = find(mapping, {'interfaceId': vpcMessage[2]});
             if (eniData) {
                 log['security-group-ids'] = eniData.securityGroupIds;
-                log['direction'] = (vpcMessage[4] === eniData.ipAddress) ? 'inbound' : 'outbound';
+                if (vpcMessage[4] === eniData.ipAddress) {
+                    // destination matches eni's privateIP
+                    var srcEniData = find(mapping, {'ipAddress': vpcMessage[3]});
+                    log['direction'] = (srcEniData ? "internal" : "inbound");
+                } else {
+                    // sources matches eni's privateIP
+                    var destEniData = find(mapping, {'ipAddress': vpcMessage[4]});
+                    log['direction'] = (destEniData ? "internal" : "outbound");
+                }
                 log['subnet-id'] = eniData.subnetId;
                 log['vpc-id'] = eniData.vpcId;
             } else {
