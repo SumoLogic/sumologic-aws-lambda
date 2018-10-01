@@ -117,16 +117,16 @@ function includeSecurityGroupIds(records) {
         records.forEach(function (log) {
             var vpcMessage = log.message.split(" ");
             var eniData = find(mapping, {'interfaceId': vpcMessage[2]});
-            if (eniData) {
+            if (eniData && eniData.ipAddress.length > 0) {
                 log['security-group-ids'] = eniData.securityGroupIds;
-                if (vpcMessage[4] === eniData.ipAddress) {
+                if (vpcMessage[4] === eniData.ipAddress[0]) {
                     // destination matches eni's privateIP
                     var srcEniData = find(mapping, {'ipAddress': vpcMessage[3]});
-                    log['direction'] = (srcEniData ? "internal" : "inbound");
+                    log['direction'] = (srcEniData && (srcEniData.subnetId == eniData.subnetId) ? "internal" : "inbound");
                 } else {
                     // sources matches eni's privateIP
                     var destEniData = find(mapping, {'ipAddress': vpcMessage[4]});
-                    log['direction'] = (destEniData ? "internal" : "outbound");
+                    log['direction'] = (destEniData && (destEniData.subnetId == eniData.subnetId) ? "internal" : "outbound");
                 }
                 log['subnet-id'] = eniData.subnetId;
                 log['vpc-id'] = eniData.vpcId;
