@@ -5,21 +5,12 @@ AWS Cloudwatch Events invokes the function asynchronously in response to any cha
 
 # Usage
 
-First create an [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source) within SumoLogic. You will need the endpoint URL for the lambda function later.
+* First create an [HTTP collector endpoint](http://help.sumologic.com/Send_Data/Sources/02Sources_for_Hosted_Collectors/HTTP_Source) within SumoLogic. You will need the endpoint URL for the lambda function later.
 
-## Create Lambda Function
-
-1. Within the AWS Lambda console select create new Lambda function
-2. Select `Blank Function` on the select blueprint page
-3. Leave triggers empty for now, click next
-4. Configure Lambda
-   * Select Node.js 8.10 as runtime
-   * Copy code from cloudwatchevents.js into the Lambda function code.
-   * Add Environment variables (See below)
-5. Scroll down to the `Lambda function handle and role` section, make sure you set the right values that match the function. For role, you can just use the basic execution role. Click next.
-6. Finally click on "Create function" to create the function.
-7. (Optional) Test this new function with sample AWS CloudWatch Events template provided by AWS
-
+* Go to https://serverlessrepo.aws.amazon.com/applications.
+* Search for sumologic-guardduty-events-processor and click on deploy.
+* In Configure application parameters panel paste the HTTP collector endpoint previously configured.
+* Click on Deploy
 
 # Lambda Environment Variables
 
