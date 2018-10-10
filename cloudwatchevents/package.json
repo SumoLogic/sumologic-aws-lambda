@@ -8,14 +8,13 @@
   "license": "Apache-2.0",
   "dependencies": {},
   "scripts": {
-    "test": "mocha tests/unit/"
+    "test": "cd guardduty && sam local invoke CloudWatchEventFunction -e event.json",
+    "build_guardduty": "cd guardduty && sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml",
+    "deploy_guardduty": "cd guardduty && sam deploy --template-file packaged.yaml --stack-name testingguarddutylambda --capabilities CAPABILITY_IAM --parameter-overrides SumoEndpointUrl=$SUMO_ENDPOINT",
+    "view_deploy_logs": "aws cloudformation describe-stack-events --stack-name testingguarddutylambda"
   },
   "keywords": [
     "lambda",
     "cloudwatch-events"
-  ],
-  "devDependencies": {
-    "chai": "^4.1.2",
-    "mocha": "^5.1.1"
-  }
+  ]
 }

@@ -1,5 +1,0 @@
-{
-    "CloudWatchEventFunction": {
-        "SUMO_ENDPOINT": "https://sumoendpoint"
-    }
-}

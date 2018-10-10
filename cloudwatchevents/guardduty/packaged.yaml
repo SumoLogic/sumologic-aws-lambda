@@ -6,7 +6,7 @@ Description: 'This function is invoked by AWS CloudWatch events in response to s
   '
 Globals:
   Function:
-    Timeout: 5
+    Timeout: 300
 Outputs:
   CloudWatchEventFunction:
     Description: CloudWatchEvent Processor Function ARN
