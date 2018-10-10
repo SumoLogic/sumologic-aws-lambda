@@ -15,6 +15,18 @@
         "Type": "Number",
         "Default": 4,
         "Description": "Enter the number of lambda function invocations for faster Dead Letter Queue processing."
+      },
+      "LogFormat": {
+        "Type": "String",
+        "Default": "Others",
+        "AllowedValues" : ["VPC-RAW" ,"VPC-JSON", "Others"],
+        "Description": "Choose the Service"
+      },
+      "IncludeLogGroupInfo": {
+        "Type": "String",
+        "Default": "false",
+        "AllowedValues" : ["true" ,"false"],
+        "Description": "Select true to get loggroup/logstream values in logs"
       }
     },
     "Resources": {
@@ -186,7 +198,10 @@
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
-                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"}
+                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
+                        "LOG_FORMAT": {"Ref": "LogFormat"},
+                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"}
+
                     }
                 }
             }
@@ -259,7 +274,8 @@
                             ]
                         },
                         "NUM_OF_WORKERS": {"Ref": "NumOfWorkers"},
-                        "SUMO_CLIENT_HEADER": "dlq-aws-lambda"
+                        "LOG_FORMAT": {"Ref": "LogFormat"},
+                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"}
                     }
                 }
             }
