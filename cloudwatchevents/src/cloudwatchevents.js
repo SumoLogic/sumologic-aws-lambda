@@ -107,7 +107,7 @@ function postToSumo(callback, messages) {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
             'X-Sumo-Host': headerArray[2],
-            'X-Sumo-Client': 'kinesis-aws-lambda'
+            'X-Sumo-Client': 'cloudwatchevents-aws-lambda'
         };
         Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]).then((body)=> {
             messagesSent++;
