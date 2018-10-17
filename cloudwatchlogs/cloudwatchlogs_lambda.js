@@ -19,7 +19,7 @@ var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || 'none';          //
 var encoding = process.env.ENCODING || 'utf-8';  // default is utf-8
 
 // Include logStream and logGroup as json fields within the message. Required for SumoLogic AWS Lambda App
-var includeLogInfo = true;  // default is true
+var includeLogInfo = false;  // default is true
 
 // Regex used to detect logs coming from lambda functions.
 // The regex will parse out the requestID and strip the timestamp
