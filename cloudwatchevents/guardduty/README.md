@@ -3,7 +3,7 @@
 This solution creates resources for processing and sending Amazon GuardDuty Events to Sumo logic.
 
 
-Made with ❤️ by AppDev Team. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
+Made with ❤️ by Sumo Logic AppDev Team. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
 ![GuardDuty Event Collection Flow](https://s3.amazonaws.com/appdev-cloudformation-templates/sumologic-guardduty-evetns-processor.png)
 
