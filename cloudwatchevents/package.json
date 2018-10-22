@@ -1,0 +1,20 @@
+{
+  "name": "cloudwatchevents-processor",
+  "version": "1.0.0",
+  "description": "AWS Lambda function to collect CloudWatch events and post them to SumoLogic.",
+  "main": "src/cloudwatchevents.js",
+  "repository": "https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents",
+  "author": "Himanshu Pal",
+  "license": "Apache-2.0",
+  "dependencies": {},
+  "scripts": {
+    "test": "cd guardduty && sam local invoke CloudWatchEventFunction -e event.json",
+    "build_guardduty": "cd guardduty && sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml",
+    "deploy_guardduty": "cd guardduty && sam deploy --template-file packaged.yaml --stack-name testingguarddutylambda --capabilities CAPABILITY_IAM --parameter-overrides SumoEndpointUrl=$SUMO_ENDPOINT",
+    "view_deploy_logs": "aws cloudformation describe-stack-events --stack-name testingguarddutylambda"
+  },
+  "keywords": [
+    "lambda",
+    "cloudwatch-events"
+  ]
+}

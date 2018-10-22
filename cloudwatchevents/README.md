@@ -48,3 +48,29 @@ By default, a CloudWatch Event has a format similar to this:
 ```
 
 This event will be sent as-is to Sumo Logic. If you just want to send the ```detail``` key instead, set the ```removeOuterFields``` variable to true.
+
+# Running Tests
+pip install aws-sam-cli
+Configure credentials in "~/.aws/credentials"
+export SUMO_ENDPOINT = HTTP_SOURCE_URL
+Create a S3 bucket in AWS with following policy
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "serverlessrepo.amazonaws.com"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::bucket_name/*"
+        }
+    ]
+}
+```
+export SAM_S3_BUCKET = bucket_name (configure in previous step)
+npm test
+
+
+

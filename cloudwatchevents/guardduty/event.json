@@ -1,0 +1,42 @@
+{
+    "version": "0",
+    "id": "f81b1e52-fff2-e312-7b6f-66e0a353fee4",
+    "detail-type": "AWS API Call via CloudTrail",
+    "source": "aws.guardduty",
+    "account": "456227676011",
+    "time": "2018-10-03T00:53:52Z",
+    "region": "us-east-2",
+    "resources": [],
+    "detail": {
+        "eventVersion": "1.05",
+        "userIdentity": {
+            "type": "IAMUser",
+            "principalId": "AIDAIFSYASDF6O2ZUR4M",
+            "arn": "arn:aws:iam::45234274376011:user/HELLOWORLD",
+            "accountId": "4562123123011",
+            "accessKeyId": "ASIA123123123MU7V",
+            "userName": "hello",
+            "sessionContext": {
+                "attributes": {
+                    "mfaAuthenticated": "true",
+                    "creationDate": "2018-10-02T23:20:50Z"
+                }
+            },
+            "invokedBy": "signin.amazonaws.com"
+        },
+        "eventTime": "2018-10-03T00:53:52Z",
+        "eventSource": "guardduty.amazonaws.com",
+        "eventName": "CreateSampleFindings",
+        "awsRegion": "us-east-2",
+        "sourceIPAddress": "122.177.239.147",
+        "userAgent": "signin.amazonaws.com",
+        "requestParameters": {
+            "detectorId": "d0b31b9d4905e74c121212b12e79f"
+        },
+        "responseElements": null,
+        "requestID": "cbd191aa-1234-11e8-a342-399aed033d0d",
+        "eventID": "1329e405-1234-4289-adb7-612b503622a5",
+        "readOnly": false,
+        "eventType": "AwsApiCall"
+    }
+}

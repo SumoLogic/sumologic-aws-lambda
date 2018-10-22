@@ -49,7 +49,7 @@ function exponentialBackoff(seed) {
     }
 }
 
-function postToSumo(context, messages) {
+function postToSumo(callback, messages) {
     var messagesTotal = Object.keys(messages).length;
     var messagesSent = 0;
     var messageErrors = [];
@@ -66,9 +66,9 @@ function postToSumo(context, messages) {
         if (total == messagesTotal) {
             console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
             if (messageErrors.length > 0) {
-                context.fail('errors: ' + messageErrors);
+                callback('errors: ' + messageErrors);
             } else {
-                context.succeed();
+                callback(null, "Success");
             }
         }
     };
@@ -107,7 +107,7 @@ function postToSumo(context, messages) {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
             'X-Sumo-Host': headerArray[2],
-            'X-Sumo-Client': 'kinesis-aws-lambda'
+            'X-Sumo-Client': 'cloudwatchevents-aws-lambda'
         };
         Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]).then((body)=> {
             messagesSent++;
@@ -119,7 +119,7 @@ function postToSumo(context, messages) {
     });
 }
 
-exports.handler = function (event, context) {
+exports.handler = function (event, context, callback) {
 
     // Used to hold chunks of messages to post to SumoLogic
     var messageList = {};
@@ -127,7 +127,7 @@ exports.handler = function (event, context) {
     // Validate URL has been set
     var urlObject = url.parse(SumoURL);
     if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
-        context.fail('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+        callback('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
     }
 
     //console.log(event);
@@ -137,5 +137,5 @@ exports.handler = function (event, context) {
         final_event = event;
     }
     messageList[sourceNameOverride+':'+sourceCategoryOverride+':'+sourceHostOverride]=[final_event];
-    postToSumo(context, messageList);
+    postToSumo(callback, messageList);
 };
