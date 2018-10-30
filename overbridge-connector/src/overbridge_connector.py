@@ -5,7 +5,7 @@ import os
 import logging
 import traceback
 import uuid
-from utils import retry
+from src.utils import retry
 
 
 def get_logger():
@@ -29,6 +29,7 @@ def generate_id(search_name, account_id, region_name):
 
 
 def generate_findings(data, account_id, region_name):
+    #Todo remove externalid, change to security hub, add productarn,update sdk, chunking
     all_findings = []
     for row in data['Rows']:
         finding = {
@@ -86,15 +87,14 @@ def insert_findings(findings, region, overbridge_cli=None):
     if not overbridge_cli:
         overbridge_cli = boto3.client('overbridge', region_name=region)
 
-    # import ipdb;ipdb.set_trace()
     resp = overbridge_cli.import_findings(
         Findings=findings
     )
     status_code = resp["ResponseMetadata"].get("HTTPStatusCode")
     failed_count = resp.get("FailedCount", 0)
     success_count = resp.get("SuccessCount")
-    body = "FailedCount: %d SuccessCount: %d " % (
-        failed_count, success_count)
+    body = "FailedCount: %d SuccessCount: %d StatusCode: %d " % (
+        failed_count, success_count, status_code)
 
     if failed_count > 0:
         err_msg = set()
@@ -110,9 +110,8 @@ def lambda_handler(event, context):
     account_id = get_account_id(context)
     region_name = os.environ.get("REGION", os.getenv("AWS_REGION"))
     logger.info("Invoking lambda_handler in Region %s of Account %s" % (region_name, account_id))
-    logger.info("event %s" % event)
-    # import ipdb;ipdb.set_trace()
-    data, err = validate_params(event.body)
+    # logger.info("event %s" % event)
+    data, err = validate_params(event['body'])
     if not err:
         try:
             findings = generate_findings(data, account_id, region_name)
