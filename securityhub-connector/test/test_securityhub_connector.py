@@ -5,7 +5,7 @@ import sys, os
 sys.path.insert(0,
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.overbridge_connector import lambda_handler
+from src.securityhub_connector import lambda_handler
 from src.utils import retry, incrementing_sleep, fixed_sleep
 
 del sys.path[0]

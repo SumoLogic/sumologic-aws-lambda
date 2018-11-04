@@ -1,6 +1,6 @@
-# Sumo Logic Overbridge Connector
+# Sumo Logic SecurityHub Connector
 
-This lambda function is used for importing findings from Sumo Logic to AWS Overbridge.
+This lambda function is used for importing findings from Sumo Logic to AWS Security Hub.
 
 
 ## Setup
