@@ -4,7 +4,7 @@ This lambda function is used for importing findings from Sumo Logic to AWS Overb
 
 
 ## Setup
-1. Create a Lambda function by uploading the [overbridgePackage.zip](https://s3.amazonaws.com/appdevstore/overbridgePackage.zip) file.
+1. Create a Lambda function by uploading the [securityHubPackage.zip](https://s3.amazonaws.com/appdevstore/securityHubPackage.zip) file.
 2. Create a following inline policy in role of lambda function
 ```
 {
@@ -14,8 +14,8 @@ This lambda function is used for importing findings from Sumo Logic to AWS Overb
             "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": [
-                "overbridgebeta:ImportFindings",
-                "overbridgebeta:GetFindings"
+                "securityhub:ImportFindings",
+                "securityhub:GetFindings"
             ],
             "Resource": "*"
         }

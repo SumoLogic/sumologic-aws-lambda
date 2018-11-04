@@ -17,7 +17,7 @@ class TestLambda(unittest.TestCase):
         self.event = {}
         with open("fixtures.json") as f:
             self.event['body'] = f.read()
-
+        os.environ["AWS_REGION"] = "us-east-1"
         class Context:
             invoked_function_arn="arn:aws:lambda:us-east-1:956882708938:function:OverbridgeLambda"
 

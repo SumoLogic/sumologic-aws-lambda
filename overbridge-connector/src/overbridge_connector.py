@@ -35,7 +35,6 @@ def generate_findings(data, account_id, region_name):
         finding = {
             "SchemaVersion": "2018-10-08",
             "ProductArn": "arn:aws:overbridge:%s:%s:provider:private/default" % (region_name, account_id),
-            "ExternalId": "8576f70be0c7e3a70088c00e13569f358576f70be0c7e3a70088c00e13569f358576f70be0c7e3a70088c00e13569f358576f70be0c7e3a70088c00e13569f35",
             "Description": data.get("Description", ""),
             "SourceUrl": data.get("SourceUrl", ""),
             "GeneratorId": data["GeneratorID"],
@@ -82,14 +81,15 @@ def validate_params(data):
 
 
 @retry(ExceptionToCheck=(Exception,), max_retries=3, multiplier=2, logger=logger)
-def insert_findings(findings, region, overbridge_cli=None):
+def insert_findings(findings, region, securityhub_cli=None):
     logger.info("inserting findings %d" % len(findings))
-    if not overbridge_cli:
-        overbridge_cli = boto3.client('overbridge', region_name=region)
+    if not securityhub_cli:
+        securityhub_cli = boto3.client('securityhub', region_name=region)
 
-    resp = overbridge_cli.import_findings(
+    resp = securityhub_cli.import_findings(
         Findings=findings
     )
+
     status_code = resp["ResponseMetadata"].get("HTTPStatusCode")
     failed_count = resp.get("FailedCount", 0)
     success_count = resp.get("SuccessCount")
