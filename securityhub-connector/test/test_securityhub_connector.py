@@ -33,14 +33,14 @@ class TestLambda(unittest.TestCase):
 
     def test_send_failure(self):
         event = copy.copy(self.event)
-        event['body'] = event['body'].replace("2018-10-30T13:22:13", "1")
+        event['body'] = event['body'].replace('\\"severity\\":2.6', '\\"severity\\":2000')
         result = lambda_handler(event, self.context)
         self.assertEqual(result['statusCode'], 200)
-        self.assertTrue(result['body'] == 'FailedCount: 3 SuccessCount: 0 StatusCode: 200 ErrorMessage: Finding does not adhere to Amazon Finding Format. data.FirstObservedAt should match format "date-time", data.CreatedAt should match format "date-time", data.UpdatedAt should match format "date-time"', "%s body is not matching"% result['body'])
+        self.assertTrue(result['body'] == 'FailedCount: 2 SuccessCount: 1 StatusCode: 200 ErrorMessage: Finding does not adhere to Amazon Finding Format. data.Severity.Normalized should be <= 100', "%s body is not matching" % result['body'])
 
     def test_validation(self):
         event = copy.copy(self.event)
-        event['body'] = event['body'].replace('\"Types\": \"Security\",', "")
+        event['body'] = event['body'].replace('\"Types\": \"Software and Configuration Checks/Industry and Regulatory Standards/HIPAA Controls\",', "")
         result = lambda_handler(event, self.context)
         self.assertEqual(result['statusCode'], 400)
         self.assertTrue(result['body'] == "Bad Request: 'Types Fields are missing'", "%s body is not matching" % result['body'])

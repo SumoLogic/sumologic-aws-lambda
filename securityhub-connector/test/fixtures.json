@@ -1,9 +1,9 @@
 {
-    "Types": "Security",
+    "Types": "Software and Configuration Checks/Industry and Regulatory Standards/HIPAA Controls",
     "GeneratorID": "InsertFindingsScheduledSearch",
     "TimeRange": "2018-10-29 14:48:45 IST - 2018-10-29 15:03:45 IST",
     "Description": "This search gives top 10 resources which are accessed in last 15 minutes",
     "SourceUrl":"https://nite-www.sumologic.net/ui/index.html#/search/anFGy9Raymx7JPAHSDqPMxryhhE73yFA2bNfROM9IbHnbByvEui8ItWGuFgYEHfASH9rdYDhdFSNP3eAUSr2fu3yhKpKrSgLDlGLo68wKsDH3L8Rv8U1b0VFtHh2FpDU",
     "FireTime": "2018-10-29 15:04:17 IST",
-    "Rows": "[{\"Timeslice\":1540896600000,\"Events\":30,\"finding_time\":\"2018-10-30T13:22:13.931Z\",\"item_name\":\"A nice dashboard.png\",\"item_type\":\"file\",\"resource_id\":\"A nice dashboard.png\",\"resource_type\":\"file\",\"severity_normalized\":3.0,\"severity_product\":3},{\"Timeslice\":\"2018-10-30T13:22:13.933Z\",\"Events\":26,\"finding_time\":\"2018-10-30T13:22:13.932Z\",\"item_name\":\"Screen Shot 2014-07-30 at 11.39.29 PM.png\",\"item_type\":\"file\",\"resource_id\":\"Screen Shot 2014-07-30 at 11.39.29 PM.png\",\"resource_type\":\"file\",\"severity_normalized\":2.6,\"severity_product\":2},{\"Timeslice\":\"2018-10-30T13:22:13.933Z\",\"Events\":26,\"finding_time\":\"2018-10-30T13:22:13.933Z\",\"item_name\":\"10388049_589057504526630_2031213996_n.jpg\",\"item_type\":\"file\",\"resource_id\":\"10388049_589057504526630_2031213996_n.jpg\",\"resource_type\":\"file\",\"severity_normalized\":2.6,\"severity_product\":2}]"
+    "Rows": "[{\"Timeslice\":1540896600000,\"Events\":30,\"finding_time\":\"1540896600000\",\"item_name\":\"A nice dashboard.png\",\"item_type\":\"file\",\"resource_id\":\"A nice dashboard.png\",\"resource_type\":\"file\",\"severity\":3.0},{\"Timeslice\":\"1540896600001\",\"Events\":26,\"finding_time\":\"1540896600002\",\"item_name\":\"Screen Shot 2014-07-30 at 11.39.29 PM.png\",\"item_type\":\"file\",\"resource_id\":\"Screen Shot 2014-07-30 at 11.39.29 PM.png\",\"resource_type\":\"file\",\"severity\":2.6},{\"Timeslice\":\"1540896600003\",\"Events\":26,\"finding_time\":\"1540896600004\",\"item_name\":\"10388049_589057504526630_2031213996_n.jpg\",\"item_type\":\"file\",\"resource_id\":\"10388049_589057504526630_2031213996_n.jpg\",\"resource_type\":\"file\",\"severity\":2.6}]"
 }

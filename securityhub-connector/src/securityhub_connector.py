@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 import boto3
 import os
 import logging
@@ -28,10 +29,24 @@ def generate_id(search_name, account_id, region_name):
     return fid
 
 
+def convert_to_utc(timestamp):
+    try:
+        ts = timestamp.replace(",", "")
+        ts = int(timestamp)
+        ts = ts/1000 if len(timestamp) >= 13 else ts  # converting to seconds
+        utcdate = datetime.utcfromtimestamp(ts).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    except Exception as e:
+        logger.error("Unable to convert %d Error %s" % (ts, e))
+        utcdate = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+    return utcdate
+
+
 def generate_findings(data, account_id, region_name):
     #Todo remove externalid, change to security hub, add productarn,update sdk, chunking
     all_findings = []
     for row in data['Rows']:
+        row["finding_time"] = convert_to_utc(row["finding_time"])
         finding = {
             "SchemaVersion": "2018-10-08",
             "ProductArn": "arn:aws:overbridge:%s:%s:provider:private/default" % (region_name, account_id),
@@ -40,19 +55,19 @@ def generate_findings(data, account_id, region_name):
             "GeneratorId": data["GeneratorID"],
             "AwsAccountId": row.get("aws_account_id", account_id),
             "Id": generate_id(data["GeneratorID"], account_id, region_name),
-            "Types": [ "SumoLogic/Compliance" if data['Types'] == "Compliance" else "SumoLogic/Security"],
-            "CreatedAt": row["finding_time"], # why not pick up _message_time
+            "Types": [data["Types"]],
+            "CreatedAt": row["finding_time"],
             "UpdatedAt": row["finding_time"],
-            "FirstObservedAt": row["finding_time"], # why not firetime
+            "FirstObservedAt": row["finding_time"],
             "Resources": [{
                 "Type": row["resource_type"],
                 "Id": row["resource_id"]
             }],
             "Severity": {
-                "Product": float(row.get("severity_product")),
-                "Normalized": int(row.get("severity_normalized"))
+                "Normalized": int(row.get("severity"))
             }
         }
+
         all_findings.append(finding)
 
     return all_findings
@@ -60,7 +75,7 @@ def generate_findings(data, account_id, region_name):
 
 def check_required_params(data):
     data_params = set(("GeneratorID", "Types", "Rows"))
-    row_params = set(("finding_time", "resource_type", "resource_id", "severity_product", "severity_normalized"))
+    row_params = set(("finding_time", "resource_type", "resource_id", "severity"))
     missing_fields = data_params - set(data.keys())
     missing_fields = missing_fields | (row_params - set(data['Rows'][0].keys()))
     if missing_fields:
@@ -126,7 +141,3 @@ def lambda_handler(event, context):
         "statusCode": status_code,
         "body": body
     }
-
-
-if __name__ == '__main__':
-    lambda_handler(None, None)
