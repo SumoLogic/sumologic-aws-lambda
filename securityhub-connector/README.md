@@ -39,8 +39,8 @@ This lambda function is used for importing findings from Sumo Logic to AWS Secur
 
 5. Create a [Scheduled Search](https://help.sumologic.com/Dashboards-and-Alerts/Alerts/02-Schedule-a-Search).
 Also the rows in AggregateResultsJson should contain following mandatory fields
-"finding_time", "resource_type", "resource_id", "severity_product", "severity_normalized"
-finding_time should have following date format "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+"finding_time"(timestamp), "resource_type", "resource_id", "severity"
+
 
 ## TroubleShooting
 1) Test the API using mock data [fixtures.json](fixtures.json)
