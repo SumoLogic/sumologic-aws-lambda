@@ -25,18 +25,19 @@ def get_account_id(context):
 
 def generate_id(search_name, account_id, region_name):
     uid = uuid.uuid4()
-    fid = "%s/%s/%s/%s" % (account_id, region_name, search_name, uid)
+    fid = "sumologicinc:%s:%s:%s/finding/%s" % (region_name, account_id, search_name, uid)
     return fid
 
 
 def convert_to_utc(timestamp):
     try:
-        ts = timestamp.replace(",", "")
-        ts = int(timestamp)
+        if not isinstance(timestamp, int):
+            ts = timestamp.replace(",", "")
+            ts = int(timestamp)
         ts = ts/1000 if len(timestamp) >= 13 else ts  # converting to seconds
         utcdate = datetime.utcfromtimestamp(ts).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     except Exception as e:
-        logger.error("Unable to convert %d Error %s" % (ts, e))
+        logger.error("Unable to convert %s Error %s" % (timestamp, e))
         utcdate = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     return utcdate
@@ -49,7 +50,7 @@ def generate_findings(data, account_id, region_name):
         row["finding_time"] = convert_to_utc(row["finding_time"])
         finding = {
             "SchemaVersion": "2018-10-08",
-            "ProductArn": "arn:aws:overbridge:%s:%s:provider:private/default" % (region_name, account_id),
+            "ProductArn": "arn:aws:securityhub:%s:%s:product/sumologicinc/sumologic-lm" % (region_name, account_id),
             "Description": data.get("Description", ""),
             "SourceUrl": data.get("SourceUrl", ""),
             "GeneratorId": data["GeneratorID"],
@@ -64,22 +65,29 @@ def generate_findings(data, account_id, region_name):
                 "Id": row["resource_id"]
             }],
             "Severity": {
-                "Normalized": int(row.get("severity"))
-            }
+                "Normalized": int(data["Severity"])
+            },
+            "Title": row["title"]
         }
-
+        if data.get("ComplianceStatus"):
+            finding["Compliance"] = {"Status": data["ComplianceStatus"]}
         all_findings.append(finding)
 
     return all_findings
 
 
 def check_required_params(data):
-    data_params = set(("GeneratorID", "Types", "Rows"))
-    row_params = set(("finding_time", "resource_type", "resource_id", "severity"))
+    data_params = set(("GeneratorID", "Types", "Rows", "Severity"))
+    row_params = set(("finding_time", "resource_type", "resource_id", "title"))
     missing_fields = data_params - set(data.keys())
     missing_fields = missing_fields | (row_params - set(data['Rows'][0].keys()))
     if missing_fields:
         raise KeyError("%s Fields are missing" % ",".join(missing_fields))
+    severity = int(data.get("Severity"))
+    if severity > 100 or severity < 0:
+        raise ValueError("Severity should be between 0 to 100")
+    if data.get("ComplianceStatus") and data["ComplianceStatus"] not in ("PASSED", "WARNING", "FAILED", "NOT_AVAILABLE"):
+        raise ValueError("ComplianceStatus should be PASSED/WARNING/FAILED/NOT_AVAILABLE")
 
 
 def validate_params(data):
@@ -88,7 +96,7 @@ def validate_params(data):
         data['Rows'] = json.loads(data.get('Rows', '[{}]'))
         check_required_params(data)
     except ValueError:
-        return None, "Decoding JSON has failed"
+        return None, "Param Validation Failed: %s" % str(e)
     except KeyError as e:
         return None, str(e)
     else:
@@ -100,8 +108,7 @@ def insert_findings(findings, region, securityhub_cli=None):
     logger.info("inserting findings %d" % len(findings))
     if not securityhub_cli:
         securityhub_cli = boto3.client('securityhub', region_name=region)
-
-    resp = securityhub_cli.import_findings(
+    resp = securityhub_cli.batch_import_findings(
         Findings=findings
     )
 

@@ -1,9 +1,14 @@
-# Sumo Logic Security Hub Connector
+# sumologic-securityhub-connector
 
 This lambda function is used for importing findings from Sumo Logic to AWS Security Hub.
 
 
+Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
+
+![Sumo to Security Hub Collection Flow](https://s3.amazonaws.com/appdev-cloudformation-templates/sumologic-guardduty-evetns-processor.png)
+
 ## Setup
+
 1. Go to https://serverlessrepo.aws.amazon.com/applications.
 2. Search for sumologic-securityhub-connector and click on deploy.
 3. Click on Deploy
@@ -29,11 +34,11 @@ Also the rows in AggregateResultsJson should contain following mandatory fields
 "finding_time"(timestamp), "resource_type", "resource_id", "title"
 
 
-## TroubleShooting
-1) Test the API using mock data [fixtures.json](fixtures.json)
-2) Monitor the scheduled search logs using following query in Sumo
-```
-_view=sumologic_audit "Scheduled search alert triggered" <webhook name>
-```
-3) Check CloudWatch logs for lambda function
+## License
+
+Apache License 2.0 (Apache-2.0)
+
+
+## Support
+Requests & issues should be filed on GitHub: https://github.com/SumoLogic/sumologic-aws-lambda/issues
 
