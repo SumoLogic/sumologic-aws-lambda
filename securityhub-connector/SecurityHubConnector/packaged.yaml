@@ -53,7 +53,7 @@ Resources:
     Type: AWS::Serverless::Api
   SecurityHubConnectorFunction:
     Properties:
-      CodeUri: s3://cf-templates-5d0x5unchag-us-east-2/976f49f2f26e8410f8798028a5e57c14
+      CodeUri: s3://appdevstore/9fe150ff756a45f1a056f8513abc7448
       Events:
         Api1:
           Properties:

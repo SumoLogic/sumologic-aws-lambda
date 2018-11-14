@@ -18,14 +18,14 @@ logger = get_logger()
 
 
 def get_account_id(context):
-    account_id = context.invoked_function_arn.split(":")[4]
-    account_id = os.getenv("aws_account_id", account_id)
-    return account_id
+    customer_account_id = context.invoked_function_arn.split(":")[4]
+    customer_account_id = os.getenv("aws_account_id", customer_account_id)
+    return customer_account_id
 
 
-def generate_id(search_name, account_id, region_name):
+def generate_id(search_name, customer_account_id, region_name):
     uid = uuid.uuid4()
-    fid = "sumologicinc:%s:%s:%s/finding/%s" % (region_name, account_id, search_name, uid)
+    fid = "sumologic:%s:%s:%s/finding/%s" % (region_name, customer_account_id, search_name, uid)
     return fid
 
 
@@ -43,19 +43,19 @@ def convert_to_utc(timestamp):
     return utcdate
 
 
-def generate_findings(data, account_id, region_name):
+def generate_findings(data, customer_account_id, region_name):
     #Todo remove externalid, change to security hub, add productarn,update sdk, chunking
     all_findings = []
     for row in data['Rows']:
         row["finding_time"] = convert_to_utc(row["finding_time"])
         finding = {
             "SchemaVersion": "2018-10-08",
-            "ProductArn": "arn:aws:securityhub:%s:%s:product/sumologicinc/sumologic-lm" % (region_name, account_id),
+            "ProductArn": "arn:aws:securityhub:%s:956882708938:product/sumologicinc/sumologic-mda" % (region_name),
             "Description": data.get("Description", ""),
             "SourceUrl": data.get("SourceUrl", ""),
             "GeneratorId": data["GeneratorID"],
-            "AwsAccountId": row.get("aws_account_id", account_id),
-            "Id": generate_id(data["GeneratorID"], account_id, region_name),
+            "AwsAccountId": row.get("aws_account_id", customer_account_id),
+            "Id": generate_id(data["GeneratorID"], customer_account_id, region_name),
             "Types": [data["Types"]],
             "CreatedAt": row["finding_time"],
             "UpdatedAt": row["finding_time"],
@@ -95,8 +95,8 @@ def validate_params(data):
         data = json.loads(data)
         data['Rows'] = json.loads(data.get('Rows', '[{}]'))
         check_required_params(data)
-    except ValueError:
-        return None, "Param Validation Failed: %s" % str(e)
+    except ValueError as e:
+        return None, "Param Validation Error - %s" % str(e)
     except KeyError as e:
         return None, str(e)
     else:
@@ -129,14 +129,14 @@ def insert_findings(findings, region, securityhub_cli=None):
 
 
 def lambda_handler(event, context):
-    account_id = get_account_id(context)
+    customer_account_id = get_account_id(context)
     region_name = os.environ.get("REGION", os.getenv("AWS_REGION"))
-    logger.info("Invoking lambda_handler in Region %s of Account %s" % (region_name, account_id))
+    logger.info("Invoking lambda_handler in Region %s of Account %s" % (region_name, customer_account_id))
     # logger.info("event %s" % event)
     data, err = validate_params(event['body'])
     if not err:
         try:
-            findings = generate_findings(data, account_id, region_name)
+            findings = generate_findings(data, customer_account_id, region_name)
             status_code, body = insert_findings(findings, region_name)
         except Exception as e:
             status_code, body = 500, "Error: %s Traceback: %s" % (e, traceback.format_exc())

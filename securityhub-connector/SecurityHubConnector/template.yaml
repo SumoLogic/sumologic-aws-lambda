@@ -46,7 +46,7 @@ Resources:
     Properties:
       Handler: src.securityhub_connector.lambda_handler
       Runtime: python3.6
-      CodeUri: ../test/package_dir/
+      CodeUri: build/
       MemorySize: 128
       Timeout: 300
       Policies:

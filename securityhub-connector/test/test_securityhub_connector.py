@@ -14,6 +14,7 @@ del sys.path[0]
 class TestLambda(unittest.TestCase):
 
     def setUp(self):
+        #Todo:  enable sec hub
         self.event = {}
         with open("fixtures.json") as f:
             self.event['body'] = f.read()
@@ -33,10 +34,19 @@ class TestLambda(unittest.TestCase):
 
     def test_send_failure(self):
         event = copy.copy(self.event)
-        event['body'] = event['body'].replace('\\"severity\\":2.6', '\\"severity\\":2000')
+        event['body'] = event['body'].replace('\"Severity\": 30', '\"Severity\":200')
         result = lambda_handler(event, self.context)
-        self.assertEqual(result['statusCode'], 200)
-        self.assertTrue(result['body'] == 'FailedCount: 2 SuccessCount: 1 StatusCode: 200 ErrorMessage: Finding does not adhere to Amazon Finding Format. data.Severity.Normalized should be <= 100', "%s body is not matching" % result['body'])
+        self.assertEqual(result['statusCode'], 400)
+        self.assertTrue(result['body'] == 'Bad Request: Param Validation Error - Severity should be between 0 to 100', "%s body is not matching" % result['body'])
+
+    def test_compliance_status_failure(self):
+        pass
+
+    def test_different_account_id(self):
+        pass
+
+    def test_different_region(self):
+        pass
 
     def test_validation(self):
         event = copy.copy(self.event)
