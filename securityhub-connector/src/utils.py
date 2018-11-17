@@ -39,12 +39,13 @@ def retry_if_exception_of_type(retryable_types):
 
 
 def retry(ExceptionToCheck=(Exception,), max_retries=4,
-          logger=None, handler_type=exponential_sleep, *args, **kwargs):
+          logger=None, handler_type=exponential_sleep, *hdlrargs, **hdlrkwargs):
 
     def deco_retry(f):
-        delay_handler = handler_type(*args, **kwargs)
+
         @wraps(f)
         def f_retry(*args, **kwargs):
+            delay_handler = handler_type(*hdlrargs, **hdlrkwargs)
             retries_left, wait_time = max_retries, delay_handler()
             while retries_left > 1:
                 try:

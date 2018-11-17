@@ -2,11 +2,17 @@ import json
 import time
 from datetime import datetime
 import boto3
+from botocore.exceptions import ClientError
 import os
 import logging
 import traceback
 import uuid
 from src.utils import retry
+
+
+def get_product_arn(securityhub_region):
+    PROVIDER_ACCOUNT_ID = "956882708938"
+    return "arn:aws:securityhub:%s:%s:product/sumologicinc/sumologic-mda" % (securityhub_region, PROVIDER_ACCOUNT_ID)
 
 
 def get_logger():
@@ -17,15 +23,14 @@ def get_logger():
 logger = get_logger()
 
 
-def get_account_id(context):
-    customer_account_id = context.invoked_function_arn.split(":")[4]
-    customer_account_id = os.getenv("aws_account_id", customer_account_id)
-    return customer_account_id
+def get_lambda_account_id(context):
+    lambda_account_id = context.invoked_function_arn.split(":")[4]
+    return lambda_account_id
 
 
-def generate_id(search_name, customer_account_id, region_name):
+def generate_id(search_name, finding_account_id, securityhub_region):
     uid = uuid.uuid4()
-    fid = "sumologic:%s:%s:%s/finding/%s" % (region_name, customer_account_id, search_name, uid)
+    fid = "sumologic:%s:%s:%s/finding/%s" % (securityhub_region, finding_account_id, search_name, uid)
     return fid
 
 
@@ -43,19 +48,21 @@ def convert_to_utc(timestamp):
     return utcdate
 
 
-def generate_findings(data, customer_account_id, region_name):
+def generate_findings(data, finding_account_id, securityhub_region):
     #Todo remove externalid, change to security hub, add productarn,update sdk, chunking
     all_findings = []
+    product_arn = get_product_arn(securityhub_region)
     for row in data['Rows']:
         row["finding_time"] = convert_to_utc(row["finding_time"])
+        finding_account_id = row.get("aws_account_id", finding_account_id)
         finding = {
             "SchemaVersion": "2018-10-08",
-            "ProductArn": "arn:aws:securityhub:%s:956882708938:product/sumologicinc/sumologic-mda" % (region_name),
+            "ProductArn": product_arn,
             "Description": data.get("Description", ""),
             "SourceUrl": data.get("SourceUrl", ""),
             "GeneratorId": data["GeneratorID"],
-            "AwsAccountId": row.get("aws_account_id", customer_account_id),
-            "Id": generate_id(data["GeneratorID"], customer_account_id, region_name),
+            "AwsAccountId": finding_account_id,
+            "Id": generate_id(data["GeneratorID"], finding_account_id, securityhub_region),
             "Types": [data["Types"]],
             "CreatedAt": row["finding_time"],
             "UpdatedAt": row["finding_time"],
@@ -103,14 +110,34 @@ def validate_params(data):
         return data, None
 
 
-@retry(ExceptionToCheck=(Exception,), max_retries=3, multiplier=2, logger=logger)
-def insert_findings(findings, region, securityhub_cli=None):
+def subscribe_to_sumo(securityhub_cli, securityhub_region):
+    product_arn = get_product_arn(securityhub_region)
+    try:
+        resp = securityhub_cli.start_product_subscription(ProductArn=product_arn)
+        logger.info("Subscribing to Sumo Logic Product %s" % resp)
+    except ClientError as e:
+        status_code = e.response['ResponseMetadata']['HTTPStatusCode']
+        raise "Failed to Subscribe to Sumo Logic Product StatusCode: %s Error: %s" % (status_code,str(e))
+
+
+@retry(ExceptionToCheck=(Exception,), max_retries=1, multiplier=2, logger=logger)
+def insert_findings(findings, securityhub_region, securityhub_cli=None):
     logger.info("inserting findings %d" % len(findings))
+
     if not securityhub_cli:
-        securityhub_cli = boto3.client('securityhub', region_name=region)
-    resp = securityhub_cli.batch_import_findings(
-        Findings=findings
-    )
+        securityhub_cli = boto3.client('securityhub', region_name=securityhub_region)
+    try:
+        resp = securityhub_cli.batch_import_findings(
+            Findings=findings
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'AccessDeniedException':
+            subscribe_to_sumo(securityhub_cli, securityhub_region)
+            resp = securityhub_cli.batch_import_findings(
+                Findings=findings
+            )
+        else:
+            raise
 
     status_code = resp["ResponseMetadata"].get("HTTPStatusCode")
     failed_count = resp.get("FailedCount", 0)
@@ -129,15 +156,17 @@ def insert_findings(findings, region, securityhub_cli=None):
 
 
 def lambda_handler(event, context):
-    customer_account_id = get_account_id(context)
-    region_name = os.environ.get("REGION", os.getenv("AWS_REGION"))
-    logger.info("Invoking lambda_handler in Region %s of Account %s" % (region_name, customer_account_id))
+    lambda_account_id = get_lambda_account_id(context)
+    lambda_region = os.getenv("AWS_REGION")
+    logger.info("Invoking lambda_handler in Region %s AccountId %s" % (lambda_region, lambda_account_id))
+    finding_account_id = os.getenv("AWS_ACCOUNT_ID", lambda_account_id)
+    securityhub_region = os.getenv("REGION", lambda_region)
     # logger.info("event %s" % event)
     data, err = validate_params(event['body'])
     if not err:
         try:
-            findings = generate_findings(data, customer_account_id, region_name)
-            status_code, body = insert_findings(findings, region_name)
+            findings = generate_findings(data, finding_account_id, securityhub_region)
+            status_code, body = insert_findings(findings, securityhub_region)
         except Exception as e:
             status_code, body = 500, "Error: %s Traceback: %s" % (e, traceback.format_exc())
             logger.error(body)

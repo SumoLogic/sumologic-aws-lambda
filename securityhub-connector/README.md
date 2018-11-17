@@ -6,7 +6,7 @@ This lambda function is used for importing findings from Sumo Logic to AWS Secur
 ## Setup
 1. Deploying the SAM Application
     1. Go to https://serverlessrepo.aws.amazon.com/applications.
-    2. Search for sumologic-securityhub-connector and click on deploy.
+    2. Search for sumologic-securityhub-connector.
     3. Click on Deploy
     4. Copy the value of SecurityHubConnectorApiUrl from Output which is the API Gateway endpoint.
 
@@ -28,6 +28,9 @@ Note: SAM application already secures the endpoint with AWS_IAM authorization ty
 3. Create a [Scheduled Search](https://help.sumologic.com/Dashboards-and-Alerts/Alerts/02-Schedule-a-Search).
 Also the rows in AggregateResultsJson should contain following mandatory fields
 "finding_time"(timestamp), "resource_type", "resource_id", "title"
+
+“aws_account_id” is optional field in search results. Lambda function will pick up it’s value in following order
+search results(each row) > aws_account_id environment variable > defaults to the account in which lambda is running
 
 
 ## TroubleShooting
