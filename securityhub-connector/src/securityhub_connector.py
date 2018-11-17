@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime
 import boto3
 from botocore.exceptions import ClientError
@@ -114,31 +113,16 @@ def subscribe_to_sumo(securityhub_cli, securityhub_region):
     product_arn = get_product_arn(securityhub_region)
     try:
         resp = securityhub_cli.start_product_subscription(ProductArn=product_arn)
-        logger.info("Subscribing to Sumo Logic Product %s" % resp)
+        subscription_arn = resp.get("ProductSubscriptionArn")
+        status_code = resp['ResponseMetadata']['HTTPStatusCode']
+        logger.info("Subscribing to Sumo Logic Product StatusCode: %s ProductSubscriptionArn: %s" % (
+            status_code, subscription_arn))
     except ClientError as e:
         status_code = e.response['ResponseMetadata']['HTTPStatusCode']
-        raise "Failed to Subscribe to Sumo Logic Product StatusCode: %s Error: %s" % (status_code,str(e))
+        raise Exception("Failed to Subscribe to Sumo Logic Product StatusCode: %s Error: %s" % (status_code, str(e)))
 
 
-@retry(ExceptionToCheck=(Exception,), max_retries=1, multiplier=2, logger=logger)
-def insert_findings(findings, securityhub_region, securityhub_cli=None):
-    logger.info("inserting findings %d" % len(findings))
-
-    if not securityhub_cli:
-        securityhub_cli = boto3.client('securityhub', region_name=securityhub_region)
-    try:
-        resp = securityhub_cli.batch_import_findings(
-            Findings=findings
-        )
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'AccessDeniedException':
-            subscribe_to_sumo(securityhub_cli, securityhub_region)
-            resp = securityhub_cli.batch_import_findings(
-                Findings=findings
-            )
-        else:
-            raise
-
+def process_response(resp):
     status_code = resp["ResponseMetadata"].get("HTTPStatusCode")
     failed_count = resp.get("FailedCount", 0)
     success_count = resp.get("SuccessCount")
@@ -150,6 +134,29 @@ def insert_findings(findings, securityhub_region, securityhub_cli=None):
         for row in resp["Findings"]:
             err_msg.add(row["ErrorMessage"])
         body += "ErrorMessage: %s" % ",".join(err_msg)
+    return status_code, body
+
+@retry(ExceptionToCheck=(Exception,), max_retries=1, multiplier=2, logger=logger)
+def insert_findings(findings, securityhub_region):
+    logger.info("inserting findings %d" % len(findings))
+
+    securityhub_cli = boto3.client('securityhub', region_name=securityhub_region)
+    try:
+        resp = securityhub_cli.batch_import_findings(
+            Findings=findings
+        )
+        status_code, body = process_response(resp)
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'AccessDeniedException':
+            subscribe_to_sumo(securityhub_cli, securityhub_region)
+            resp = securityhub_cli.batch_import_findings(
+                Findings=findings
+            )
+            status_code, body = process_response(resp)
+        else:
+            status_code = e.response["ResponseMetadata"]["HTTPStatusCode"]
+            body = e.response["Error"]["Message"]
+
 
     logger.info(body)
     return status_code, body

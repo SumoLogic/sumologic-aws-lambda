@@ -51,11 +51,16 @@ Resources:
       Timeout: 300
       Policies:
       - Statement:
-        - Sid: AWSSecurityHubImportFindingsPolicy
+        - Sid: SecurityHubImportFindingsPolicy
           Effect: Allow
           Action:
           - securityhub:BatchImportFindings
-          Resource: '*'
+          Resource: 'arn:aws:securityhub:*:*:*'
+        - Sid: SecurityHubStartSubscriptionPolicy
+          Effect: Allow
+          Action:
+          - securityhub:StartProductSubscription
+          Resource: 'arn:aws:securityhub:*:*:*'
       Events:
         Api1:
           Type: Api
