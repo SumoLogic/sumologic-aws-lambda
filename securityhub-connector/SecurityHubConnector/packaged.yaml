@@ -53,7 +53,7 @@ Resources:
     Type: AWS::Serverless::Api
   SecurityHubConnectorFunction:
     Properties:
-      CodeUri: s3://appdevstore/9fe150ff756a45f1a056f8513abc7448
+      CodeUri: s3://appdevstore/76161cb7a57cbe95fb0849f9a480ea01
       Events:
         Api1:
           Properties:
@@ -69,8 +69,13 @@ Resources:
         - Action:
           - securityhub:BatchImportFindings
           Effect: Allow
-          Resource: '*'
-          Sid: AWSSecurityHubImportFindingsPolicy
+          Resource: arn:aws:securityhub:*:*:*
+          Sid: SecurityHubImportFindingsPolicy
+        - Action:
+          - securityhub:StartProductSubscription
+          Effect: Allow
+          Resource: arn:aws:securityhub:*:*:*
+          Sid: SecurityHubStartSubscriptionPolicy
       Runtime: python3.6
       Timeout: 300
     Type: AWS::Serverless::Function

@@ -43,7 +43,14 @@ class TestLambda(unittest.TestCase):
         pass
 
     def test_different_account_id(self):
-        pass
+        event = copy.copy(self.event)
+        # os.environ["AWS_REGION"] = "us-east-1"
+        # os.environ["AWS_ACCOUNT_ID"] = "456227676011"
+        os.environ["AWS_REGION"] = "us-west-2"
+        os.environ["AWS_ACCOUNT_ID"] = "068873283051"
+        result = lambda_handler(event, self.context)
+        self.assertEqual(result['statusCode'], 200)
+        self.assertTrue(result['body'] == 'FailedCount: 0 SuccessCount: 3 StatusCode: 200 ', "%s body is not matching" % result['body'])
 
     def test_different_region(self):
         pass

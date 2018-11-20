@@ -136,6 +136,7 @@ def process_response(resp):
         body += "ErrorMessage: %s" % ",".join(err_msg)
     return status_code, body
 
+
 @retry(ExceptionToCheck=(Exception,), max_retries=1, multiplier=2, logger=logger)
 def insert_findings(findings, securityhub_region):
     logger.info("inserting findings %d" % len(findings))
@@ -156,7 +157,6 @@ def insert_findings(findings, securityhub_region):
         else:
             status_code = e.response["ResponseMetadata"]["HTTPStatusCode"]
             body = e.response["Error"]["Message"]
-
 
     logger.info(body)
     return status_code, body
