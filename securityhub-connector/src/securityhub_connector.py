@@ -29,11 +29,13 @@ def get_lambda_account_id(context):
 
 def generate_id(search_name, finding_account_id, securityhub_region):
     uid = uuid.uuid4()
+    #Todo uuid generated from fields: ResourceID, ResourceType , Severity, Compliance, Type, Title and AWS AccountId
     fid = "sumologic:%s:%s:%s/finding/%s" % (securityhub_region, finding_account_id, search_name, uid)
     return fid
 
 
 def convert_to_utc(timestamp):
+    #Todo change to convert to RFC3339
     try:
         if not isinstance(timestamp, int):
             ts = timestamp.replace(",", "")
@@ -43,7 +45,6 @@ def convert_to_utc(timestamp):
     except Exception as e:
         logger.error("Unable to convert %s Error %s" % (timestamp, e))
         utcdate = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-
     return utcdate
 
 
@@ -56,6 +57,7 @@ def generate_findings(data, finding_account_id, securityhub_region):
         finding_account_id = row.get("aws_account_id", finding_account_id)
         finding = {
             "SchemaVersion": "2018-10-08",
+            "RecordState": "ACTIVE",
             "ProductArn": product_arn,
             "Description": data.get("Description", ""),
             "SourceUrl": data.get("SourceUrl", ""),
@@ -170,6 +172,7 @@ def lambda_handler(event, context):
     securityhub_region = os.getenv("REGION", lambda_region)
     # logger.info("event %s" % event)
     data, err = validate_params(event['body'])
+    # data, err = validate_params(event)
     if not err:
         try:
             findings = generate_findings(data, finding_account_id, securityhub_region)

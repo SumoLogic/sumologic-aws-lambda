@@ -25,6 +25,7 @@ fi
 # sam local invoke CloudWatchEventFunction -e event.json
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml
 
-# sam deploy --template-file packaged.yaml --stack-name testingsecurityhublambda --capabilities CAPABILITY_IAM --region $AWS_REGION
-#aws cloudformation describe-stack-events --stack-name testingsecurityhublambda
-aws serverlessrepo create-application-version --region us-east-1 --application-id arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-securityhub-connector --semantic-version 1.0.1 --template-body file://packaged.yaml
+sam deploy --template-file packaged.yaml --stack-name testingsecurityhublambda --capabilities CAPABILITY_IAM --region $AWS_REGION
+#aws cloudformation describe-stack-events --stack-name testingsecurityhublambda --region $AWS_REGION
+#aws cloudformation get-template --stack-name testingsecurityhublambda  --region $AWS_REGION
+# aws serverlessrepo create-application-version --region us-east-1 --application-id arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-securityhub-connector --semantic-version 1.0.1 --template-body file://packaged.yaml

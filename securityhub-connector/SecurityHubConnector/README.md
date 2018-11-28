@@ -9,14 +9,15 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
 
 ## Setup
 
+1. Enable Sumo Logic as a finding provider. Refer the [docs](https://www.google.com/url?q=https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-findings-providers.html&sa=D&ust=1543440246819000&usg=AFQjCNEgjGnz7fQlpLFo2Rkqd5ZeQBDQ3w)
 
-1. Deploying the SAM Application
+2. Deploying the SAM Application
     1. Go to https://serverlessrepo.aws.amazon.com/applications.
     2. Search for sumologic-securityhub-connector.
     3. Click on Deploy
     4. Copy the value of SecurityHubConnectorApiUrl from Output which is the API Gateway endpoint.
 
-2. Create a [Webhook connection](https://help.sumologic.com/Manage/Connections-and-Integrations/Webhook-Connections/Webhook-Connection-for-AWS-Lambda).Use the value copied in step 1.4 as URL.
+3. Create a [Webhook connection](https://help.sumologic.com/Manage/Connections-and-Integrations/Webhook-Connections/Webhook-Connection-for-AWS-Lambda).Use the value copied in step 1.4 as URL.
 Note: SAM application already secures the endpoint with AWS_IAM authorization type
    It should have the following payload
 ```{
@@ -31,13 +32,12 @@ Note: SAM application already secures the endpoint with AWS_IAM authorization ty
 ```
   Also make sure the IAM role or IAM user(whose credentials are used) has permissions to invoke the api in API Gateway. Refer the [docs](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html)
 
-3. Create a [Scheduled Search](https://help.sumologic.com/Dashboards-and-Alerts/Alerts/02-Schedule-a-Search).
+4. Create a [Scheduled Search](https://help.sumologic.com/Dashboards-and-Alerts/Alerts/02-Schedule-a-Search).
 Also the rows in AggregateResultsJson should contain following mandatory fields
 "finding_time"(timestamp), "resource_type", "resource_id", "title"
 
 “aws_account_id” is optional field in search results. Lambda function will pick up it’s value in following order
 search results(each row) > aws_account_id environment variable > defaults to the account in which lambda is running
-
 
 ## License
 
