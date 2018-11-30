@@ -1,10 +1,6 @@
 Sumo Logic AWS Lambda Functions [![Build Status](https://travis-ci.org/SumoLogic/sumologic-aws-lambda.svg?branch=master)](https://travis-ci.org/SumoLogic/sumologic-aws-lambda)
 ==============================
 
-| TLS Deprecation Notice |
-| --- |
-| In keeping with industry standard security best practices, as of May 31, 2018, the Sumo Logic service will only support TLS version 1.2 going forward. Verify that all connections to Sumo Logic endpoints are made from software that supports TLS 1.2. |
-
 ## What does AWS Lambda do? ##
 AWS Lambda is a compute service that allows users to run code, in response to events, without having to provision and manage servers. A Lambda Function can be triggered automatically from other Amazon services, or from a web or mobile application.  For more information, please visit the [AWS Lambda site](https://aws.amazon.com/lambda/).
 
@@ -47,3 +43,8 @@ Testing with TravisCI
 * All the dependencies(defined in package.json) of lambda function are installed first and then build is created.
 
 * For adding test for new function you need to specify FUNCTION_DIR(lambda function's folder) and node_js(node js version) under jobs field in travis.yml. This is done because currently testing same function in parallel with different node versions throws function resource exists error (name collision) and therefore are run sequentially.
+
+
+### TLS 1.2 Requirement
+
+Sumo Logic only accepts connections from clients using TLS version 1.2 or greater. To utilize the content of this repo, ensure that it's running in an execution environment that is configured to use TLS 1.2 or greater.
