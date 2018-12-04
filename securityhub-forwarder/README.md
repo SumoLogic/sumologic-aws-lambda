@@ -1,11 +1,11 @@
-# sumologic-securityhub-connector
+# sumologic-securityhub-forwarder
 
 This lambda function is used for importing findings from Sumo Logic to AWS Security Hub.
 
 
 Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
-![Sumo to Security Hub Collection Flow](https://s3.amazonaws.com/appdev-cloudformation-templates/sumologic-securityhub-connector.png)
+![Sumo to Security Hub Collection Flow](https://s3.amazonaws.com/appdev-cloudformation-templates/sumologic-securityhub-forwarder.png)
 
 ## Setup
 
@@ -13,9 +13,9 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
 
 2. Deploying the SAM Application
     1. Go to https://serverlessrepo.aws.amazon.com/applications.
-    2. Search for sumologic-securityhub-connector.
+    2. Search for sumologic-securityhub-forwarder.
     3. Click on Deploy
-    4. Copy the value of SecurityHubConnectorApiUrl from Output which is the API Gateway endpoint.
+    4. Copy the value of SecurityHubForwarderApiUrl from Output which is the API Gateway endpoint.
 
 3. Create a [Webhook connection](https://help.sumologic.com/Manage/Connections-and-Integrations/Webhook-Connections/Webhook-Connection-for-AWS-Lambda).Use the value copied in step 1.4 as URL.
 Note: SAM application already secures the endpoint with AWS_IAM authorization type
