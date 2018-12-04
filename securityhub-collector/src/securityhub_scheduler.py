@@ -1,12 +1,10 @@
 import json
-# import time
 import boto3
 import os
 import logging
 from concurrent import futures
 from datetime import datetime, timezone, timedelta
 import dateutil.parser
-from botocore.exceptions import ClientError
 
 
 FINDING_WINDOW_OFFSET = 5
@@ -93,59 +91,11 @@ def invoke_lambda(product_arn, start_date, last_date, last_event_date):
         "last_event_date": last_event_date
     }), "utf-8")
     response = lambda_cli.invoke(
-        FunctionName=os.getenv('SecurityHubProcessorFnName'),
+        FunctionName=os.getenv('SecurityHubCollectorFnName'),
         InvocationType='Event',
         Payload=payload
     )
     return response
-
-
-def create_provider_lock_table(dynamodbcli, lock_table_name):
-    #Todo remove this code
-    response = dynamodbcli.create_table(
-        AttributeDefinitions=[
-            {
-                'AttributeName': 'product_arn',
-                'AttributeType': 'S'
-            }
-        ],
-        TableName=lock_table_name,
-        KeySchema=[
-            {
-                'AttributeName': 'product_arn',
-                'KeyType': 'HASH'
-            }
-        ],
-        ProvisionedThroughput={
-            'ReadCapacityUnits': 30,
-            'WriteCapacityUnits': 20
-        },
-        StreamSpecification={
-            'StreamEnabled': False
-        }
-    )
-    logger.info("Waiting for table creation...")
-    response.wait_until_exists()
-    logger.info("Table Created!")
-
-
-def check_table_exists(dynamodbcli, table_name):
-    # Todo Remove and test both in normal and without internet case
-    table = dynamodbcli.Table(table_name)
-    table_exists = False
-    try:
-        table.creation_date_time
-        table_exists = True
-        logger.info("%s table exists" % table_name)
-    except ClientError as e:
-        if e.response['Error']['Code'] == "ResourceNotFoundException":
-            table = None
-        else:
-            raise e
-    except Exception as e:
-        raise e
-
-    return table, table_exists
 
 
 def batch_insert_rows(dynamodbcli, rows, table_name):
@@ -248,10 +198,6 @@ def trigger_lambdas():
     lambda_region = os.getenv("AWS_REGION")
     lock_table_name = os.getenv("LOCK_TABLE")
     dynamodbcli = boto3.resource('dynamodb', region_name=lambda_region)
-    # dynamodbcli = boto3.resource('dynamodb', region_name=lambda_region, endpoint_url="http://localhost:8000")
-    # table, is_exists = check_table_exists(dynamodbcli, LOCK_TABLE)
-    # if not is_exists:
-    #     create_provider_lock_table(dynamodbcli)
 
     all_futures = {}
     with futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:

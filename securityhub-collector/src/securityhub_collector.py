@@ -210,7 +210,7 @@ def send_findings(context, start_date, last_date, last_event_date, product_arn, 
 
 def lambda_handler(event, context):
     product_arn = event["product_arn"]
-    logger.info("Invoking SecurityHubProcessor for arn: %s event: %s" % (product_arn, event))
+    logger.info("Invoking SecurityHubCollector for arn: %s event: %s" % (product_arn, event))
     start_date = event["start_date"]
     last_date = event["last_date"]
     # passing last event date because if somehow get_filtered_findings returns empty then we can update table to previous invocation's last event date

@@ -4,11 +4,11 @@ Description: 'This solution consists of two lambda functions which are used to f
 
   '
 Outputs:
-  SecurityHubProcessorFunction:
-    Description: SecurityHubProcessor Function ARN
+  SecurityHubCollectorFunction:
+    Description: SecurityHubCollector Function ARN
     Value:
       Fn::GetAtt:
-      - SecurityHubProcessorFunction
+      - SecurityHubCollectorFunction
       - Arn
   SecurityHubSchedulerFunction:
     Description: SecurityHubScheduler Function ARN
@@ -20,16 +20,16 @@ Parameters:
   S3SourceBucketName:
     Type: String
 Resources:
-  SecurityHubProcessorFunction:
+  SecurityHubCollectorFunction:
     Properties:
-      CodeUri: s3://appdevstore/a39a4e5c6cc674089600942ad8dc65f5
+      CodeUri: s3://appdevstore/547966672c232b399f13584b260cc59b
       Environment:
         Variables:
           LOCK_TABLE:
             Ref: SecurityHubProviderLockTable
           S3_LOG_BUCKET:
             Ref: S3SourceBucketName
-      Handler: src.securityhub_processor.lambda_handler
+      Handler: src.securityhub_collector.lambda_handler
       MemorySize: 128
       Policies:
       - Statement:
@@ -81,13 +81,13 @@ Resources:
     Type: AWS::DynamoDB::Table
   SecurityHubSchedulerFunction:
     Properties:
-      CodeUri: s3://appdevstore/a39a4e5c6cc674089600942ad8dc65f5
+      CodeUri: s3://appdevstore/547966672c232b399f13584b260cc59b
       Environment:
         Variables:
           LOCK_TABLE:
             Ref: SecurityHubProviderLockTable
-          SecurityHubProcessorFnName:
-            Ref: SecurityHubProcessorFunction
+          SecurityHubCollectorFnName:
+            Ref: SecurityHubCollectorFunction
       Events:
         SecurityHubScheduleRule:
           Properties:

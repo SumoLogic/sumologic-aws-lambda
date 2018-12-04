@@ -49,7 +49,7 @@ Resources:
 
       Environment:
         Variables:
-          SecurityHubProcessorFnName: !Ref "SecurityHubProcessorFunction"
+          SecurityHubCollectorFnName: !Ref "SecurityHubCollectorFunction"
           LOCK_TABLE: !Ref SecurityHubProviderLockTable
       Events:
         SecurityHubScheduleRule:
@@ -57,10 +57,10 @@ Resources:
           Properties:
             Schedule: rate(6 minutes)
 
-  SecurityHubProcessorFunction:
+  SecurityHubCollectorFunction:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: src.securityhub_processor.lambda_handler
+        Handler: src.securityhub_collector.lambda_handler
         Runtime: python3.6
         CodeUri: build/
         MemorySize: 128
@@ -121,6 +121,6 @@ Outputs:
       Description: "SecurityHubScheduler Function ARN"
       Value: !GetAtt SecurityHubSchedulerFunction.Arn
 
-    SecurityHubProcessorFunction:
-      Description: "SecurityHubProcessor Function ARN"
-      Value: !GetAtt SecurityHubProcessorFunction.Arn
+    SecurityHubCollectorFunction:
+      Description: "SecurityHubCollector Function ARN"
+      Value: !GetAtt SecurityHubCollectorFunction.Arn

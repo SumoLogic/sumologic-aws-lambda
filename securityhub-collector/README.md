@@ -1,4 +1,4 @@
-# sumologic-securityhub-processor
+# sumologic-securityhub-collector
 
 This solution consists of two lambda functions which are used to fetch findings from AWS Security Hub and ingest to Sumo Logic.
 
@@ -6,7 +6,7 @@ This solution consists of two lambda functions which are used to fetch findings 
 
 Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
-![Sumo to Security Hub Collection Flow](https://s3.amazonaws.com/appdev-cloudformation-templates/sumologic-securityhub-processor.png)
+![Sumo to Security Hub Collection Flow](https://s3.amazonaws.com/appdev-cloudformation-templates/sumologic-securityhub-collector.png)
 
 ## Setup
 
@@ -16,10 +16,12 @@ Specify Format as yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
 Specify Timestamp locator as .*"UpdatedAt":"(.*)".*
 
 2. Deploying the SAM Application
-    1. Go to https://serverlessrepo.aws.amazon.com/applications.
-    2. Search for sumologic-securityhub-processor, click the link in the panel, then click Deploy.
-    3. In the Configure application parameters panel, paste the HTTP collector endpoint you configured previously.
-    4. Click Deploy.
+    1. Open a browser window and enter the following URL: https://serverlessrepo.aws.amazon.com/applications
+    2. In the Serverless Application Repository, search for sumologic.
+    3. Select Show apps that create custom IAM roles or resource policies check box.
+    4. Click the sumologic-securityhub-collector,link, and then click Deploy.
+    5. In the Configure application parameters panel, enter the name of the S3 bucket configured while creating AWS S3 source.
+    Click Deploy.
 
 
 ## License
