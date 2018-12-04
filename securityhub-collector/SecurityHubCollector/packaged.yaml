@@ -22,7 +22,7 @@ Parameters:
 Resources:
   SecurityHubCollectorFunction:
     Properties:
-      CodeUri: s3://appdevstore/547966672c232b399f13584b260cc59b
+      CodeUri: s3://appdevstore/434a0dabcdc7e050bffb15980d1fdac5
       Environment:
         Variables:
           LOCK_TABLE:
@@ -81,7 +81,7 @@ Resources:
     Type: AWS::DynamoDB::Table
   SecurityHubSchedulerFunction:
     Properties:
-      CodeUri: s3://appdevstore/547966672c232b399f13584b260cc59b
+      CodeUri: s3://appdevstore/434a0dabcdc7e050bffb15980d1fdac5
       Environment:
         Variables:
           LOCK_TABLE:

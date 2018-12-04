@@ -199,7 +199,7 @@ def send_findings(context, start_date, last_date, last_event_date, product_arn, 
             filename = "%s-%s-%d-%s" % (product_arn, new_last_event_date, count, context.aws_request_id)
             is_success = post_to_s3(findings, filename)
             if not is_success:
-                return True, last_event_date  # if s3 fails then release lock and update last_event date to last successfully sent date
+                return last_event_date  # if s3 fails then release lock and update last_event date to last successfully sent date
             else:
                 last_event_date = max(last_event_date, new_last_event_date)
         next_request = is_self_invocation_required(context, start_date, last_date, last_event_date, product_arn, next_token)
