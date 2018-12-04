@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This function is invoked by Sumo Logic(via Scheduled Search) through
+  API Gateway. The event payload received is then forwarded to AWS Security Hub.
+
+  '
+Outputs:
+  SecurityHubForwarderApiUrl:
+    Description: URL of your API endpoint
+    Value:
+      Fn::Sub: https://${SecurityHubForwarderApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/findings
+  SecurityHubForwarderFunction:
+    Description: SecurityHubForwarder Function ARN
+    Value:
+      Fn::GetAtt:
+      - SecurityHubForwarderFunction
+      - Arn
+Resources:
+  SecurityHubForwarderApiGateway:
+    Properties:
+      DefinitionBody:
+        info:
+          description: API endpoint for invoking SecurityHubForwarderFunction
+          title:
+            Ref: AWS::StackName
+          version: 1.0.0
+        paths:
+          /findings:
+            post:
+              consumes:
+              - application/json
+              produces:
+              - application/json
+              responses: {}
+              security:
+              - sigv4: []
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                passthroughBehavior: when_no_match
+                requestParameters:
+                  integration.request.header.X-Amz-Invocation-Type: '''RequestResponse'''
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SecurityHubForwarderFunction.Arn}/invocations
+        securityDefinitions:
+          sigv4:
+            in: header
+            name: Authorization
+            type: apiKey
+            x-amazon-apigateway-authtype: awsSigv4
+        swagger: '2.0'
+      EndpointConfiguration: EDGE
+      StageName: prod
+    Type: AWS::Serverless::Api
+  SecurityHubForwarderFunction:
+    Properties:
+      CodeUri: s3://appdevstore/fec5386a468ccbc245641622a25a6ab6
+      Events:
+        Api1:
+          Properties:
+            Method: POST
+            Path: /findings
+            RestApiId:
+              Ref: SecurityHubForwarderApiGateway
+          Type: Api
+      Handler: src.securityhub_forwarder.lambda_handler
+      MemorySize: 128
+      Policies:
+      - Statement:
+        - Action:
+          - securityhub:BatchImportFindings
+          Effect: Allow
+          Resource: arn:aws:securityhub:*:*:*
+          Sid: SecurityHubImportFindingsPolicy
+      Runtime: python3.6
+      Timeout: 300
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31
