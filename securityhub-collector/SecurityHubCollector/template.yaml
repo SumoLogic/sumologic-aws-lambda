@@ -22,23 +22,18 @@ Resources:
         - Sid: SecurityHubGetProductSubscriptionPolicy
           Effect: Allow
           Action:
-          - securityhub:GetProductSubscription
-          Resource: 'arn:aws:securityhub:*:*:*'
-        - Sid: SecurityHubListProductSubscriptionPolicy
-          Effect: Allow
-          Action:
-          - securityhub:ListEnabledProductsForImport
+          - "securityhub:GetProductSubscription"
+          - "securityhub:ListEnabledProductsForImport"
           Resource: 'arn:aws:securityhub:*:*:*'
         - Sid: SecurityHubInvokeLambdaPolicy
           Effect: Allow
           Action:
           - lambda:InvokeFunction
-          Resource: "*"
+          Resource: !GetAtt SecurityHubCollectorFunction.Arn
         - Sid: SecurityHubLockTablePolicy
           Effect: Allow
           Action:
           - "dynamodb:BatchGet*"
-          - "dynamodb:DescribeTable"
           - "dynamodb:Get*"
           - "dynamodb:Query"
           - "dynamodb:Scan"
@@ -76,12 +71,15 @@ Resources:
             Effect: Allow
             Action:
             - lambda:InvokeFunction
-            Resource: "*"
+            Resource:
+              - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-SecurityHubCollector*'
           - Sid: SecurityHubS3PutObjectPolicy
             Effect: Allow
             Action:
             - "s3:PutObject"
-            Resource: "*"
+            Resource:
+            - !Sub 'arn:aws:s3:::${S3SourceBucketName}'
+            - !Sub 'arn:aws:s3:::${S3SourceBucketName}/*'
           - Sid: SecurityHubLockTablePolicy
             Effect: Allow
             Action:

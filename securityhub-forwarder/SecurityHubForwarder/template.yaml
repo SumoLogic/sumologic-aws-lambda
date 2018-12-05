@@ -72,4 +72,4 @@ Outputs:
       Value: !GetAtt SecurityHubForwarderFunction.Arn
     SecurityHubForwarderApiUrl:
       Description: URL of your API endpoint
-      Value: !Sub "https://${SecurityHubForwarderApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/findings"
+      Value: !Sub "https://${SecurityHubForwarderApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/findings"

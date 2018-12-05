@@ -7,7 +7,7 @@ Outputs:
   SecurityHubForwarderApiUrl:
     Description: URL of your API endpoint
     Value:
-      Fn::Sub: https://${SecurityHubForwarderApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/findings
+      Fn::Sub: https://${SecurityHubForwarderApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/findings
   SecurityHubForwarderFunction:
     Description: SecurityHubForwarder Function ARN
     Value:
@@ -53,7 +53,7 @@ Resources:
     Type: AWS::Serverless::Api
   SecurityHubForwarderFunction:
     Properties:
-      CodeUri: s3://appdevstore/fec5386a468ccbc245641622a25a6ab6
+      CodeUri: s3://appdevstore/ee7cf17f72f563cb70e5aaaa8ce7b9ed
       Events:
         Api1:
           Properties:
