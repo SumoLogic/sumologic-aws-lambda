@@ -1,5 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
+    "Description" : "Sumo Logic CloudWatch log collector",
     "Parameters" : {
       "SumoEndPointURL" : {
         "Type" : "String",
@@ -300,10 +301,10 @@
                 "AlarmDescription":"Notify via email if number of messages in DeadLetterQueue exceeds threshold",
                 "ComparisonOperator":"GreaterThanThreshold",
                 "Dimensions":[
-                  {
-                    "Name": "QueueName",
-                    "Value": "SumoCWDeadLetterQueue"
-                  }
+                    {
+                        "Name": "QueueName",
+                        "Value": {"Fn::GetAtt": ["SumoCWDeadLetterQueue", "QueueName"]}
+                    }
                 ],
                 "EvaluationPeriods":"1",
                 "MetricName":"ApproximateNumberOfMessagesVisible",
