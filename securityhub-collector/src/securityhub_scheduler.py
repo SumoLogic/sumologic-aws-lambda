@@ -37,6 +37,17 @@ def get_product_subscription(arn):
     return response
 
 
+def generate_fixed_product_arns():
+    securityhub_region = get_securityhub_region()
+    yield [
+        "arn:aws:securityhub:%s::product/aws/inspector" % securityhub_region,
+        "arn:aws:securityhub:%s::product/aws/securityhub" % securityhub_region,
+        "arn:aws:securityhub:%s:956882708938:product/sumologicinc/sumologic-mda" % securityhub_region,
+        "arn:aws:securityhub:%s::product/aws/macie" % securityhub_region,
+        "arn:aws:securityhub:%s::product/aws/guardduty" % securityhub_region
+    ]
+
+
 def get_product_arns(subscriptions):
     all_product_arns = []
     for subscription_arn in subscriptions:
@@ -188,7 +199,7 @@ def trigger_lambdas():
 
     all_futures = {}
     with futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
-        for product_arns in generate_product_arns():
+        for product_arns in generate_fixed_product_arns():
             # fetching both locked/unlocked arns(no filtering) because then we won't know which arns doesn't exists
             existing_rows = batch_get_items_bypk(dynamodbcli, product_arns, lock_table_name)
             existing_unlocked_rows, existing_old_locked_rows, non_existing_rows = get_rows(product_arns, existing_rows)
