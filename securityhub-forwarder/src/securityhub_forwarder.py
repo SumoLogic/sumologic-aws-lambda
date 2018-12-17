@@ -1,12 +1,14 @@
 import json
 from datetime import datetime
-import boto3
-from botocore.exceptions import ClientError
 import os
 import logging
 import traceback
 import uuid
-from src.utils import retry
+import sys
+sys.path.insert(0, '/opt')
+import boto3
+from botocore.exceptions import ClientError
+from utils import retry
 
 
 def get_product_arn(securityhub_region):

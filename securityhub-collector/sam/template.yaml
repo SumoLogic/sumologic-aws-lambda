@@ -12,9 +12,11 @@ Resources:
   SecurityHubSchedulerFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: src.securityhub_scheduler.lambda_handler
-      Runtime: python3.6
-      CodeUri: build/
+      Handler: securityhub_scheduler.lambda_handler
+      Runtime: python3.7
+      Layers:
+        - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:3
+      CodeUri: ../src/
       MemorySize: 128
       Timeout: 300
       Policies:
@@ -22,7 +24,6 @@ Resources:
         - Sid: SecurityHubGetProductSubscriptionPolicy
           Effect: Allow
           Action:
-          - "securityhub:GetProductSubscription"
           - "securityhub:ListEnabledProductsForImport"
           Resource: 'arn:aws:securityhub:*:*:*'
         - Sid: SecurityHubInvokeLambdaPolicy
@@ -46,6 +47,7 @@ Resources:
         Variables:
           SecurityHubCollectorFnName: !Ref "SecurityHubCollectorFunction"
           LOCK_TABLE: !Ref SecurityHubProviderLockTable
+
       Events:
         SecurityHubScheduleRule:
           Type: Schedule
@@ -55,9 +57,11 @@ Resources:
   SecurityHubCollectorFunction:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: src.securityhub_collector.lambda_handler
-        Runtime: python3.6
-        CodeUri: build/
+        Handler: securityhub_collector.lambda_handler
+        Runtime: python3.7
+        Layers:
+          - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:1
+        CodeUri: ../src/
         MemorySize: 128
         Timeout: 300
         Policies:

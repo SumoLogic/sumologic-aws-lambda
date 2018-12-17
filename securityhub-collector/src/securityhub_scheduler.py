@@ -1,11 +1,14 @@
 import json
-import boto3
 import os
 import logging
 from concurrent import futures
 from datetime import datetime, timezone, timedelta
 import dateutil.parser
+import sys
+sys.path.insert(0, '/opt')  # layer packages are in opt directory
+import boto3
 
+['_PY_TO_OP_NAME', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattr__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_cache', '_client_config', '_convert_to_request_dict', '_emit_api_params', '_endpoint', '_exceptions', '_exceptions_factory', '_get_waiter_config', '_load_exceptions', '_loader', '_make_api_call', '_register_handlers', '_request_signer', '_response_parser', '_serializer', '_service_model', 'accept_invitation', 'batch_disable_standards', 'batch_enable_standards', 'batch_import_findings', 'can_paginate', 'create_insight', 'create_members', 'decline_invitations', 'delete_insight', 'delete_invitations', 'delete_members', 'disable_import_findings_for_product', 'disable_security_hub', 'disassociate_from_master_account', 'disassociate_members', 'enable_import_findings_for_product', 'enable_security_hub', 'exceptions', 'generate_presigned_url', 'get_enabled_standards', 'get_findings', 'get_insight_results', 'get_insights', 'get_invitations_count', 'get_master_account', 'get_members', 'get_paginator', 'get_waiter', 'invite_members', 'list_enabled_products_for_import', 'list_invitations', 'list_members', 'meta', 'update_findings', 'update_insight', 'waiter_names']
 
 FINDING_WINDOW_OFFSET = 5
 NUM_WORKERS = 5
@@ -36,18 +39,13 @@ def get_product_subscription(arn):
 
 def get_product_arns(subscriptions):
     all_product_arns = []
-    with futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
-        all_futures = {executor.submit(get_product_subscription, arn): arn for arn in subscriptions}
-        for future in futures.as_completed(all_futures):
-            arn = all_futures[future]
-            try:
-                response = future.result()  # raises the exception instead of future.exception() which returns it
-                all_product_arns.append(response["ProductArn"])
-            except Exception as exc:
-                logger.error('Error in GetProductSubscription ProductSubscriptionArn: %r: %s' % (arn, exc))
-            else:
-                logger.info('Fetched ProductArn %s' % (response))
-
+    for subscription_arn in subscriptions:
+        pre, account_id, product = subscription_arn.rsplit(':', 2)
+        product = product.replace("product-subscription", "product")
+        if product.startswith("product/aws/"):
+            account_id = ""
+        product_arn = f"{pre}:{account_id}:{product}"
+        all_product_arns.append(product_arn)
     return all_product_arns
 
 
@@ -57,28 +55,17 @@ def generate_product_arns():
     has_next_page = True
     page_num = 0
     next_token = None
-    params = {}  # "MaxResults": max_results
+    params = {"MaxResults": MAX_RESULTS}
     while has_next_page:
         if next_token:
             params["NextToken"] = next_token
-        resp = securityhub_cli.list_product_subscriptions(**params)
+        resp = securityhub_cli.list_enabled_products_for_import(**params)
         next_token = resp.get('NextToken')
         subscriptions = resp["ProductSubscriptions"]
         has_next_page = next_token is not None
         page_num += 1
         logging.info("Generating ProductSubscriptions Page: %d" % page_num)
         yield get_product_arns(subscriptions)
-
-
-def generate_fixed_product_arns():
-    securityhub_region = get_securityhub_region()
-    yield [
-        "arn:aws:securityhub:%s::product/aws/inspector" % securityhub_region,
-        "arn:aws:securityhub:%s::product/aws/securityhub" % securityhub_region,
-        "arn:aws:securityhub:%s:956882708938:product/sumologicinc/sumologic-mda" % securityhub_region,
-        "arn:aws:securityhub:%s::product/aws/macie" % securityhub_region,
-        "arn:aws:securityhub:%s::product/aws/guardduty" % securityhub_region
-    ]
 
 
 def invoke_lambda(product_arn, start_date, last_date, last_event_date):
@@ -201,7 +188,7 @@ def trigger_lambdas():
 
     all_futures = {}
     with futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
-        for product_arns in generate_fixed_product_arns():
+        for product_arns in generate_product_arns():
             # fetching both locked/unlocked arns(no filtering) because then we won't know which arns doesn't exists
             existing_rows = batch_get_items_bypk(dynamodbcli, product_arns, lock_table_name)
             existing_unlocked_rows, existing_old_locked_rows, non_existing_rows = get_rows(product_arns, existing_rows)

@@ -1,12 +1,12 @@
 import unittest
 import copy
-import sys, os
+import sys
+import os
 
-sys.path.insert(0,
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
-from src.securityhub_connector import lambda_handler
-from src.utils import retry, incrementing_sleep, fixed_sleep
+from utils import retry, incrementing_sleep, fixed_sleep
+from securityhub_forwarder import lambda_handler
 
 del sys.path[0]
 

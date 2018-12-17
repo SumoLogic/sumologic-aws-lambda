@@ -22,14 +22,16 @@ Parameters:
 Resources:
   SecurityHubCollectorFunction:
     Properties:
-      CodeUri: s3://appdevstore/a78c5abf42026f2361216a6fd68d6a3c
+      CodeUri: s3://appdevstore/0784f20593712ff72002fce41d9cf43e
       Environment:
         Variables:
           LOCK_TABLE:
             Ref: SecurityHubProviderLockTable
           S3_LOG_BUCKET:
             Ref: S3SourceBucketName
-      Handler: src.securityhub_collector.lambda_handler
+      Handler: securityhub_collector.lambda_handler
+      Layers:
+      - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:1
       MemorySize: 128
       Policies:
       - Statement:
@@ -67,7 +69,7 @@ Resources:
             - - arn:aws:dynamodb:*:*:table
               - Ref: SecurityHubProviderLockTable
           Sid: SecurityHubLockTablePolicy
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 300
     Type: AWS::Serverless::Function
   SecurityHubProviderLockTable:
@@ -84,7 +86,7 @@ Resources:
     Type: AWS::DynamoDB::Table
   SecurityHubSchedulerFunction:
     Properties:
-      CodeUri: s3://appdevstore/a78c5abf42026f2361216a6fd68d6a3c
+      CodeUri: s3://appdevstore/0784f20593712ff72002fce41d9cf43e
       Environment:
         Variables:
           LOCK_TABLE:
@@ -96,12 +98,13 @@ Resources:
           Properties:
             Schedule: rate(6 minutes)
           Type: Schedule
-      Handler: src.securityhub_scheduler.lambda_handler
+      Handler: securityhub_scheduler.lambda_handler
+      Layers:
+      - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:3
       MemorySize: 128
       Policies:
       - Statement:
         - Action:
-          - securityhub:GetProductSubscription
           - securityhub:ListEnabledProductsForImport
           Effect: Allow
           Resource: arn:aws:securityhub:*:*:*
@@ -129,7 +132,7 @@ Resources:
             - - arn:aws:dynamodb:*:*:table
               - Ref: SecurityHubProviderLockTable
           Sid: SecurityHubLockTablePolicy
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 300
     Type: AWS::Serverless::Function
 Transform: AWS::Serverless-2016-10-31

@@ -1,12 +1,13 @@
 import json
-import boto3
 import os
 import logging
-from botocore.exceptions import ClientError
 from decimal import Decimal
 from datetime import datetime, timezone
 import dateutil.parser
-
+import sys
+sys.path.insert(0, '/opt')  # layer packages are in opt directory
+import boto3
+from botocore.exceptions import ClientError
 
 MAX_RESULTS = 10
 LAMBDA_TRIGGER_TIME_OFFSET = 30000
