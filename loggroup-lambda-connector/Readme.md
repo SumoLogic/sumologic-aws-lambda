@@ -1,5 +1,7 @@
-# LogGroup Lambda Connector
+# SumoLogic LogGroup Connector
 This is used to automatically subscribe newly created and existing Cloudwatch LogGroups to a Lambda function.
+
+Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
 ### Deploying the SAM Application
     1. Open a browser window and enter the following URL: https://serverlessrepo.aws.amazon.com/applications
