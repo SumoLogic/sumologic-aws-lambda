@@ -1,0 +1,9 @@
+{
+    "Types": "Software and Configuration Checks/Industry and Regulatory Standards/HIPAA Controls",
+    "Description": "This search gives top 10 resources which are accessed in last 15 minutes",
+    "GeneratorID": "InsertFindingsScheduledSearch",
+    "Severity": 30,
+    "SourceUrl":"https://service.sumologic.com/ui/#/search/RmC8kAUGZbXrkj2rOFmUxmHtzINUgfJnFplh3QWY",
+    "ComplianceStatus": "FAILED",
+    "Rows": "[{\"Timeslice\":1545042427000,\"finding_time\":\"1545042427000\",\"item_name\":\"A nice dashboard.png\",\"title\":\"Vulnerability: Apple iTunes m3u Playlist File Title Parsing Buffer Overflow Vulnerability(34886) found on 207.235.176.3\",\"resource_id\":\"10.178.11.43\",\"resource_type\":\"Other\"},{\"Timeslice\":\"1545042427000\",\"finding_time\":\"1545042427000\",\"item_name\":\"Screen Shot 2014-07-30 at 11.39.29 PM.png\",\"title\":\"PCI Req 01: Traffic to Cardholder Environment: Direct external traffic to secure port on 10.178.11.43\",\"resource_id\":\"10.178.11.42\",\"resource_type\":\"AwsEc2Instance\"},{\"Timeslice\":\"1545042427000\",\"finding_time\":\"1545042427000\",\"item_name\":\"10388049_589057504526630_2031213996_n.jpg\",\"title\":\"Test Check Success for  207.235.176.5\",\"resource_id\":\"10.178.11.41\",\"resource_type\":\"Other\"}]"
+}

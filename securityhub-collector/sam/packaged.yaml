@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This solution consists of two lambda functions which are used to fetch
+  findings from AWS Security Hub and ingest to Sumo Logic.
+
+  '
+Outputs:
+  SecurityHubCollectorFunction:
+    Description: SecurityHubCollector Function ARN
+    Value:
+      Fn::GetAtt:
+      - SecurityHubCollectorFunction
+      - Arn
+  SecurityHubSchedulerFunction:
+    Description: SecurityHubScheduler Function ARN
+    Value:
+      Fn::GetAtt:
+      - SecurityHubSchedulerFunction
+      - Arn
+Parameters:
+  S3SourceBucketName:
+    Type: String
+Resources:
+  SecurityHubCollectorFunction:
+    Properties:
+      CodeUri: s3://appdevstore/d6d324a075082bfb9446aa118eeb64c6
+      Environment:
+        Variables:
+          LOCK_TABLE:
+            Ref: SecurityHubProviderLockTable
+          S3_LOG_BUCKET:
+            Ref: S3SourceBucketName
+      Handler: securityhub_collector.lambda_handler
+      Layers:
+      - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:1
+      MemorySize: 128
+      Policies:
+      - Statement:
+        - Action:
+          - securityhub:GetFindings
+          Effect: Allow
+          Resource: arn:aws:securityhub:*:*:*
+          Sid: SecurityHubGetFindingsPolicy
+        - Action:
+          - lambda:InvokeFunction
+          Effect: Allow
+          Resource:
+          - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-SecurityHubCollector*
+          Sid: SecurityHubInvokeLambdaPolicy
+        - Action:
+          - s3:PutObject
+          Effect: Allow
+          Resource:
+          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}
+          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}/*
+          Sid: SecurityHubS3PutObjectPolicy
+        - Action:
+          - dynamodb:BatchGet*
+          - dynamodb:DescribeTable
+          - dynamodb:Get*
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:BatchWrite*
+          - dynamodb:Update*
+          - dynamodb:PutItem
+          Effect: Allow
+          Resource:
+            Fn::Join:
+            - /
+            - - arn:aws:dynamodb:*:*:table
+              - Ref: SecurityHubProviderLockTable
+          Sid: SecurityHubLockTablePolicy
+      Runtime: python3.7
+      Timeout: 300
+    Type: AWS::Serverless::Function
+  SecurityHubProviderLockTable:
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: product_arn
+        AttributeType: S
+      KeySchema:
+      - AttributeName: product_arn
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: '30'
+        WriteCapacityUnits: '20'
+    Type: AWS::DynamoDB::Table
+  SecurityHubSchedulerFunction:
+    Properties:
+      CodeUri: s3://appdevstore/d6d324a075082bfb9446aa118eeb64c6
+      Environment:
+        Variables:
+          LOCK_TABLE:
+            Ref: SecurityHubProviderLockTable
+          SecurityHubCollectorFnName:
+            Ref: SecurityHubCollectorFunction
+      Events:
+        SecurityHubScheduleRule:
+          Properties:
+            Schedule: rate(6 minutes)
+          Type: Schedule
+      Handler: securityhub_scheduler.lambda_handler
+      Layers:
+      - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:3
+      MemorySize: 128
+      Policies:
+      - Statement:
+        - Action:
+          - securityhub:ListEnabledProductsForImport
+          Effect: Allow
+          Resource: arn:aws:securityhub:*:*:*
+          Sid: SecurityHubGetProductSubscriptionPolicy
+        - Action:
+          - lambda:InvokeFunction
+          Effect: Allow
+          Resource:
+            Fn::GetAtt:
+            - SecurityHubCollectorFunction
+            - Arn
+          Sid: SecurityHubInvokeLambdaPolicy
+        - Action:
+          - dynamodb:BatchGet*
+          - dynamodb:Get*
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:BatchWrite*
+          - dynamodb:Update*
+          - dynamodb:PutItem
+          Effect: Allow
+          Resource:
+            Fn::Join:
+            - /
+            - - arn:aws:dynamodb:*:*:table
+              - Ref: SecurityHubProviderLockTable
+          Sid: SecurityHubLockTablePolicy
+      Runtime: python3.7
+      Timeout: 300
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31
