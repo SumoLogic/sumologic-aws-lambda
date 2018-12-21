@@ -1,0 +1,186 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Outputs": {
+        "SumoLogGroupLambdaConnector": {
+            "Description": "SumoLogGroupLambdaConnector Function ARN",
+            "Value": {
+                "Fn::GetAtt": [
+                    "SumoLogGroupLambdaConnector",
+                    "Arn"
+                ]
+            }
+        }
+    },
+    "Resources": {
+        "SumoLogGroupLambdaConnector": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "appdevstore",
+                    "S3Key": "6bef113d950a9923b446dd438116f2a1"
+                },
+                "Tags": [
+                    {
+                        "Value": "SAM",
+                        "Key": "lambda:createdBy"
+                    }
+                ],
+                "MemorySize": 128,
+                "Environment": {
+                    "Variables": {
+                        "LOG_GROUP_PATTERN": {
+                            "Ref": "LogGroupPattern"
+                        },
+                        "USE_EXISTING_LOG_GROUPS": {
+                            "Ref": "UseExistingLogs"
+                        },
+                        "LAMBDA_ARN": {
+                            "Ref": "LambdaARN"
+                        }
+                    }
+                },
+                "Handler": "loggroup-lambda-connector.handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SumoLogGroupLambdaConnectorRole",
+                        "Arn"
+                    ]
+                },
+                "Timeout": 300,
+                "Runtime": "nodejs8.10"
+            }
+        },
+        "SumoLogGroupLambdaConnectorRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "SumoLogGroupLambdaConnectorRolePolicy0",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "logs:DescribeLogGroups",
+                                        "logs:DescribeLogStreams",
+                                        "logs:PutSubscriptionFilter"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+                                        }
+                                    ],
+                                    "Effect": "Allow",
+                                    "Sid": "ReadWriteFilterPolicy"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "SumoCWLambdaInvokePermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                },
+                "Principal": {
+                    "Fn::Sub": "logs.${AWS::Region}.amazonaws.com"
+                },
+                "FunctionName": {
+                    "Ref": "LambdaARN"
+                },
+                "SourceArn": {
+                    "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*"
+                }
+            }
+        },
+        "SumoLogGroupLambdaConnectorLambdaTrigger": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "EventPattern": {
+                    "source": [
+                        "aws.logs"
+                    ],
+                    "detail": {
+                        "eventName": [
+                            "CreateLogGroup"
+                        ],
+                        "eventSource": [
+                            "logs.amazonaws.com"
+                        ]
+                    }
+                },
+                "Targets": [
+                    {
+                        "Id": "SumoLogGroupLambdaConnectorLambdaTriggerLambdaTarget",
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "SumoLogGroupLambdaConnector",
+                                "Arn"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "SumoLogGroupLambdaConnectorLambdaTriggerPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "Principal": "events.amazonaws.com",
+                "FunctionName": {
+                    "Ref": "SumoLogGroupLambdaConnector"
+                },
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "SumoLogGroupLambdaConnectorLambdaTrigger",
+                        "Arn"
+                    ]
+                }
+            }
+        }
+    },
+    "Description": "\"Lambda Function for automatic subscription of any Sumo Logic lambda function with loggroups matching an input pattern.\"\n",
+    "Parameters": {
+        "UseExistingLogs": {
+            "Default": "false",
+            "Type": "String",
+            "Description": "Select true for subscribing existing logs",
+            "AllowedValues": [
+                "true",
+                "false"
+            ]
+        },
+        "LambdaARN": {
+            "Default": "arn:aws:lambda:us-east-1:123456789000:function:TestLambda",
+            "Type": "String",
+            "Description": "Enter ARN for target lambda function"
+        },
+        "LogGroupPattern": {
+            "Default": "Test",
+            "Type": "String",
+            "Description": "Enter regex for matching logGroups"
+        }
+    }
+}

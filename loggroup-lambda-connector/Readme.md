@@ -1,8 +1,17 @@
 # LogGroup Lambda Connector
 This is used to automatically subscribe newly created and existing Cloudwatch LogGroups to a Lambda function.
 
-### Creating Stack in AWS Cloudformation
-you can create the stack by using [aws-cli](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html) or directly from aws console using webbrowser and uploading loggroup-lambda-cft.json. For more details checkout it's [documentation](https://help.sumologic.com/?cid=39393)
+### Deploying the SAM Application
+    1. Open a browser window and enter the following URL: https://serverlessrepo.aws.amazon.com/applications
+    2. In the Serverless Application Repository, search for sumologic.
+    3. Select Show apps that create custom IAM roles or resource policies check box.
+    4. Click the sumologic-loggroup-connector,link, and then click Deploy.
+    5. In the Configure application parameters panel,
+        LambdaARN: "Enter ARN for target lambda function" All loggroups matching the pattern are subscribed to this function
+        LogGroupPattern: "Enter regex for matching logGroups"
+        UseExistingLogs: "Select true for subscribing existing logs"
+    6. Click Deploy.
+
 
 ### Configuring Lambda
 It has two environment variables
@@ -49,5 +58,13 @@ Running the test cases
   python test_loggroup_lambda_connector.py
 ```
 Run the above command after building the zip file
+
+## License
+
+Apache License 2.0 (Apache-2.0)
+
+
+## Support
+Requests & issues should be filed on GitHub: https://github.com/SumoLogic/sumologic-aws-lambda/issues
 
 

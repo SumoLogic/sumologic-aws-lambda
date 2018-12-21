@@ -10,13 +10,13 @@ jobs:
     env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="8.10"
   - stage: Node 8
     node_js: '8.10'
-    env: FUNCTION_DIR=loggroup-lambda-connector TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="8.10"
+    env: FUNCTION_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="8.10"
   - stage: Node 6
     node_js: '6.10'
     env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="6.10"
   - stage: Node 6
     node_js: '6.10'
-    env: FUNCTION_DIR=loggroup-lambda-connector TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="6.10"
+    env: FUNCTION_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="6.10"
 before_install:
 - sudo apt-get install python-pip
 - cd $FUNCTION_DIR
