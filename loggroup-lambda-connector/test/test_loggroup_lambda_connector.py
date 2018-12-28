@@ -16,7 +16,7 @@ class TestLambda(unittest.TestCase):
         success case testlggrp
         already exists subscription filter idempotent
     '''
-
+    ZIP_FILE = 'loggroup-lambda-connector.zip'
     AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     FILTER_NAME = 'SumoLGLBDFilter'
 
@@ -49,7 +49,7 @@ class TestLambda(unittest.TestCase):
         self.delete_log_group(self.LOG_GROUP_NAME)
 
     def test_lambda(self):
-        # upload_code_in_S3(self.config['AWS_REGION_NAME'])
+        upload_code_in_S3(self.config['AWS_REGION_NAME'])
         self.create_stack()
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
@@ -58,7 +58,7 @@ class TestLambda(unittest.TestCase):
             self.LOG_GROUP_NAME, self.FILTER_NAME))
 
     def test_existing_logs(self):
-        # upload_code_in_S3(self.config['AWS_REGION_NAME'])
+        upload_code_in_S3(self.config['AWS_REGION_NAME'])
         self.template_data = self.template_data.replace("false", "true", 1)
         self.create_stack()
         print("Testing Stack Creation")
