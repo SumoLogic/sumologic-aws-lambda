@@ -16,9 +16,8 @@ class TestLambda(unittest.TestCase):
         success case testlggrp
         already exists subscription filter idempotent
     '''
-
     ZIP_FILE = 'loggroup-lambda-connector.zip'
-    AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
+    AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     FILTER_NAME = 'SumoLGLBDFilter'
 
     def setUp(self):
@@ -38,7 +37,6 @@ class TestLambda(unittest.TestCase):
         self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
         RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "8.10")
         self.template_data = self.template_data.replace("nodejs8.10", RUNTIME)
-
 
     def get_account_id(self):
         client = boto3.client("sts", self.config['AWS_REGION_NAME'])
@@ -128,10 +126,11 @@ class TestLambda(unittest.TestCase):
         template_data = eval(template_data)
         test_lambda_name = "TestLambda-%s" % (
             datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"))
+        template_data['Resources']["SumoCWLambdaInvokePermission"]["DependsOn"] = ["TestLambda"]
         template_data['Resources']["TestLambda"] = {
             "Type": "AWS::Lambda::Function",
             "DependsOn": [
-                "SumoLGCnLambdaExecutionRole"
+                "SumoLogGroupLambdaConnectorRole"
             ],
             "Properties": {
                 "Code": {
@@ -143,7 +142,7 @@ class TestLambda(unittest.TestCase):
                 },
                 "Role": {
                     "Fn::GetAtt": [
-                        "SumoLGCnLambdaExecutionRole",
+                        "SumoLogGroupLambdaConnectorRole",
                         "Arn"
                     ]
                 },
@@ -152,23 +151,6 @@ class TestLambda(unittest.TestCase):
                 "Handler": "index.handler",
                 "Runtime": "nodejs6.10",
                 "MemorySize": 128
-            }
-        }
-        template_data['Resources']['SumoLGCnLambdaPermission'] = {
-            "Type": "AWS::Lambda::Permission",
-            "Properties": {
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "TestLambda",
-                        "Arn"
-                    ]
-                },
-                "Action": "lambda:InvokeFunction",
-                "Principal": {"Fn::Join": [".",
-                                           ["logs", {"Ref": "AWS::Region"},
-                                            "amazonaws.com"]
-                                           ]},
-                "SourceAccount": {"Ref": "AWS::AccountId"}
             }
         }
 

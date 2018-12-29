@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  "Lambda Function for automatic subscription of any Sumo Logic lambda function with loggroups matching an input pattern."
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+    Function:
+        Timeout: 300
+        MemorySize: 128
+
+Parameters:
+    LambdaARN:
+        Type : String
+        Default: "arn:aws:lambda:us-east-1:123456789000:function:TestLambda"
+        Description: "Enter ARN for target lambda function"
+
+    LogGroupPattern:
+        Type : String
+        Default: "Test"
+        Description: "Enter regex for matching logGroups"
+
+    UseExistingLogs:
+        Type : String
+        Default: "false"
+        AllowedValues : ["true", "false"]
+        Description: "Select true for subscribing existing logs"
+
+Resources:
+
+    SumoLogGroupLambdaConnector:
+      Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+      Properties:
+        CodeUri: ../src/
+        Handler: "loggroup-lambda-connector.handler"
+        Runtime: nodejs8.10
+        Environment:
+          Variables:
+            LAMBDA_ARN: !Ref "LambdaARN"
+            LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
+            USE_EXISTING_LOG_GROUPS: !Ref "UseExistingLogs"
+        Policies:
+          - Statement:
+            - Sid: ReadWriteFilterPolicy
+              Effect: Allow
+              Action:
+                - logs:DescribeLogGroups
+                - logs:DescribeLogStreams
+                - logs:PutSubscriptionFilter
+              Resource:
+                - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+        Events:
+          LambdaTrigger:
+            Type: CloudWatchEvent
+            Properties:
+              Pattern:
+                source:
+                  - aws.logs
+                detail:
+                  eventSource:
+                    - logs.amazonaws.com
+                  eventName:
+                    - CreateLogGroup
+    SumoCWLambdaInvokePermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+          Action: lambda:InvokeFunction
+          FunctionName: !Ref "LambdaARN"
+          Principal: !Sub 'logs.${AWS::Region}.amazonaws.com'
+          SourceAccount: !Ref AWS::AccountId
+          SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+
+Outputs:
+
+    SumoLogGroupLambdaConnector:
+      Description: "SumoLogGroupLambdaConnector Function ARN"
+      Value: !GetAtt SumoLogGroupLambdaConnector.Arn

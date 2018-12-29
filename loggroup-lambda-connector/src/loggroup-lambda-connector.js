@@ -78,8 +78,8 @@ function processEvents(env, event, errorHandler) {
 
     var logGroupName = event.detail.requestParameters.logGroupName;
     if (filterLogGroups(event, env.LOG_GROUP_PATTERN)) {
+        console.log("Subscribing: ", logGroupName, env.LAMBDA_ARN);
         subscribeToLambda(logGroupName, env.LAMBDA_ARN, errorHandler);
-        console.log("Subscribed: ", logGroupName, env.LAMBDA_ARN);
     } else {
         console.log("Unsubscribed: ", logGroupName, env.LAMBDA_ARN);
     }
