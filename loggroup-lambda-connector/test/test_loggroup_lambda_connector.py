@@ -16,7 +16,7 @@ class TestLambda(unittest.TestCase):
         success case testlggrp
         already exists subscription filter idempotent
     '''
-    ZIP_FILE = 'loggroup-lambda-connector.zip'
+    ZIP_FILE = os.path.join('test', 'loggroup-lambda-connector.zip')
     AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     FILTER_NAME = 'SumoLGLBDFilter'
 
@@ -220,7 +220,8 @@ def upload_code_in_S3(region):
     s3 = boto3.client('s3', region)
     bucket_name = get_bucket_name(region)
     filename = TestLambda.ZIP_FILE
-    s3.upload_file(filename, bucket_name, filename,
+    key = os.path.basename(filename)
+    s3.upload_file(filename, bucket_name, key,
                    ExtraArgs={'ACL': 'public-read'})
 
 
@@ -230,9 +231,10 @@ def prod_deploy():
     upload_code_in_multiple_regions()
     print("Uploading template file in S3")
     s3 = boto3.client('s3', "us-east-1")
-    filename = 'loggroup-lambda-cft.json'
+    filename = os.path.join('test', 'loggroup-lambda-cft.json')
     bucket_name = "appdev-cloudformation-templates"
-    s3.upload_file(filename, bucket_name, filename,
+    key = os.path.basename(filename)
+    s3.upload_file(filename, bucket_name, key,
                    ExtraArgs={'ACL': 'public-read'})
     print("Deployment Successfull: ALL files copied to Sumocontent")
 

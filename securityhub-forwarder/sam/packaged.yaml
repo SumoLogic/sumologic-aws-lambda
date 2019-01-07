@@ -53,7 +53,7 @@ Resources:
     Type: AWS::Serverless::Api
   SecurityHubForwarderFunction:
     Properties:
-      CodeUri: s3://appdevstore/41f8a1b6d61fef06b4aa56585eff2b40
+      CodeUri: s3://appdevstore/6ced81c9d1118ae4abe428ecf93ae158
       Events:
         Api1:
           Properties:
@@ -64,7 +64,7 @@ Resources:
           Type: Api
       Handler: securityhub_forwarder.lambda_handler
       Layers:
-      - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:3
+      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
       MemorySize: 128
       Policies:
       - Statement:

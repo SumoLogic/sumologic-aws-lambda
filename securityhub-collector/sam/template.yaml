@@ -15,7 +15,7 @@ Resources:
       Handler: securityhub_scheduler.lambda_handler
       Runtime: python3.7
       Layers:
-        - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:3
+        - !Sub 'arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1'
       CodeUri: ../src/
       MemorySize: 128
       Timeout: 300
@@ -60,7 +60,7 @@ Resources:
         Handler: securityhub_collector.lambda_handler
         Runtime: python3.7
         Layers:
-          - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:1
+          - !Sub 'arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1'
         CodeUri: ../src/
         MemorySize: 128
         Timeout: 300
