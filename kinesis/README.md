@@ -56,3 +56,66 @@ too loose for production.
 </pre>
 
 For the Event Source, pick the stream containing the data you want to send to Sumo.
+
+## Lambda test event
+
+Test event in order to test the Lambda
+
+```json
+{
+  "Records": [
+    {
+      "kinesis": {
+        "partitionKey": "partitionKey-03",
+        "kinesisSchemaVersion": "1.0",
+        "data": "H4sICL9JQFwAA2EA3VJNa4MwGL77K0rOdiRRY9KbrK7ssMuUXWYRN0MJqJEkbhTxvy+x4rreB2PvKeT5eJ8nZPQ2doD87LgCuw1AVwP8C9jI00HJoXf4fSOHOleVaK7QzChetbfy8ptbDnrLK222q6ce3vS7Er0RsnsQjeFKW/3rDM6EPddGdJXDwXx7XJQt17o68fzcc7dxn+RJ+ZRmWXJIryKlH7wzPy3H9TSTRO3kAWJRgCAhkDBCGA2CmFLIII5gzCgMsS0SBpgygqIQh5hRjFFE6LJqdTPC5jJV6x5pFmBCowhCeMNb0rvVYwG4S/liu9uWBdgVAN3BoAB+AQbN1WNtUWHOFrFcYwvPnGcpTQEmsBpP/q90ZP+/Ywz/VMfLP/cm7wsfrETjlgMAAA==",
+        "sequenceNumber": "49545115243490985018280067714973144582180062593244200961",
+        "approximateArrivalTimestamp": 1428537600
+      },
+      "eventSource": "aws:kinesis",
+      "eventID": "shardId-000000000000:49545115243490985018280067714973144582180062593244200961",
+      "invokeIdentityArn": "arn:aws:iam::EXAMPLE",
+      "eventVersion": "1.0",
+      "eventName": "aws:kinesis:record",
+      "eventSourceARN": "arn:aws:kinesis:EXAMPLE",
+      "awsRegion": "us-east-1"
+    }
+  ]
+}
+```
+
+
+You should expect to see a response with an array of records. The Data attribute in an Kinesis record is Base64 encoded and compressed with the gzip format. You can examine the raw data from the command line using the following Unix commands:
+
+`echo -n "<Content of Data>" | base64 -d | zcat`
+  
+The Base64 decoded and decompressed data is formatted as JSON with the following structure:
+
+```json
+{
+    "owner": "111111111111",
+    "logGroup": "CloudTrail",
+    "logStream": "111111111111_CloudTrail_us-east-1",
+    "subscriptionFilters": [
+        "Destination"
+    ],
+    "messageType": "DATA_MESSAGE",
+    "logEvents": [
+        {
+            "id": "31953106606966983378809025079804211143289615424298221568",
+            "timestamp": 1432826855000,
+            "message": "{\"eventVersion\":\"1.03\",\"userIdentity\":{\"type\":\"Root\"}"
+        },
+        {
+            "id": "31953106606966983378809025079804211143289615424298221569",
+            "timestamp": 1432826855000,
+            "message": "{\"eventVersion\":\"1.03\",\"userIdentity\":{\"type\":\"Root\"}"
+        },
+        {
+            "id": "31953106606966983378809025079804211143289615424298221570",
+            "timestamp": 1432826855000,
+            "message": "{\"eventVersion\":\"1.03\",\"userIdentity\":{\"type\":\"Root\"}"
+        }
+    ]
+}
+```
