@@ -24,7 +24,7 @@ It has two environment variables
     Test - will match testlogroup, logtestgroup and LogGroupTest
 ```
 
-**LAMBDA_ARN**: This specifies ARN of the lambda functions. Also you have to specify FunctionName attribute in your lambda function so that AWS does not generate random function name.This is to avoid making changes to the lambda function configuration in case your lambda function gets created again.
+**LAMBDA_ARN**: This specifies ARN of the lambda functions. Also you have to specify FunctionName attribute in your lambda function so that AWS does not generate random function name. This is to avoid making changes to the lambda function configuration in case your lambda function gets created again.
 
 ```
     {
@@ -41,7 +41,7 @@ It has two environment variables
     }
 ```
 
-**USE_EXISTING_LOGS**: This is used for subscribing existing log groups. By setting this parameter to true and invoking the function manually, all the existing log groups matching the pattern will be subscribed to lambda function with LAMBDA_ARN as arn
+**USE_EXISTING_LOGS**: This is used for subscribing existing log groups. By setting this parameter to true and invoking the function manually, all the existing log groups matching the pattern will be subscribed to lambda function with `LAMBDA_ARN` as arn
 
 ### For Developers
 
