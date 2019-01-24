@@ -39,9 +39,9 @@ It has two environment variables
             ]
         ]
     }
+```
 
 **USE_EXISTING_LOGS**: This is used for subscribing existing log groups. By setting this parameter to true and invoking the function manually, all the existing log groups matching the pattern will be subscribed to lambda function with LAMBDA_ARN as arn
-```
 
 ### For Developers
 
