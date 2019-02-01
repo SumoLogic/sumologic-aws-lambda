@@ -17,6 +17,7 @@ var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\s(\w+?-\w+
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
 var url = require('url');
 var vpcutils = require('./vpcutils');
+var samplingutils = require('./samplingutils');
 var SumoLogsClient = require('./sumo-dlq-function-utils').SumoLogsClient;
 var Utils = require('./sumo-dlq-function-utils').Utils;
 
@@ -81,6 +82,7 @@ function getConfig(env) {
         "LogFormat": env.LOG_FORMAT || 'Others',
         "compressData": env.COMPRESS_DATA || true,
         "vpcCIDRPrefix": env.VPC_CIDR_PREFIX || '',
+        "samplingPercent": env.SAMPLING_PERCENT || '',
         "includeLogInfo": ("INCLUDE_LOG_INFO" in env) ? env.INCLUDE_LOG_INFO === "true" : false,
         "includeSecurityGroupInfo": ("INCLUDE_SECURITY_GROUP_INFO" in env) ? env.INCLUDE_SECURITY_GROUP_INFO === "true" : false
     };
@@ -112,9 +114,14 @@ function transformRecords(config, records) {
 
 function filterRecords(config, records) {
     var filteredRecords = records;
+    console.log(config)
     if (config.LogFormat.startsWith("VPC") && config.vpcCIDRPrefix) {
         filteredRecords = vpcutils.discardInternalTraffic(config.vpcCIDRPrefix, records);
         console.log(records.length - filteredRecords.length + " records discarded as InternalTraffic");
+    }
+    if (config.samplingPercent) {
+        filteredRecords = samplingutils.sampleTraffic(config.samplingPercent, records);
+        console.log(records.length - filteredRecords.length + " records discarded via Sampling");
     }
     return filteredRecords;
 }
