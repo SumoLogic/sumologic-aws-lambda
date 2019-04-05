@@ -53,7 +53,7 @@ Resources:
     Type: AWS::Serverless::Api
   SecurityHubForwarderFunction:
     Properties:
-      CodeUri: s3://appdevstore/6ced81c9d1118ae4abe428ecf93ae158
+      CodeUri: s3://appdevstore/98ee274ed4543bd1e1344fec701211df
       Events:
         Api1:
           Properties:
