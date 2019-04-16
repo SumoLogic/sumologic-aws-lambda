@@ -10,7 +10,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "node -e 'require('./test').test()'",
-    "build": "rm -f cloudwatchlogs-with-dlq.zip && zip -r cloudwatchlogs-with-dlq.zip DLQProcessor.js cloudwatchlogs_lambda.js vpcutils.js package.json sumo-dlq-function-utils/ node_modules/",
+    "build": "rm -f cloudwatchlogs-with-dlq.zip && npm install && zip -r cloudwatchlogs-with-dlq.zip DLQProcessor.js cloudwatchlogs_lambda.js vpcutils.js package.json sumo-dlq-function-utils/ node_modules/",
     "prod_deploy": "python -c 'from test_cwl_lambda import prod_deploy;prod_deploy()'"
   },
   "author": "Himanshu Pal",
