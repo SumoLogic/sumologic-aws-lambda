@@ -16,7 +16,7 @@ class TestLambda(unittest.TestCase):
         success case testlggrp
         already exists subscription filter idempotent
     '''
-    ZIP_FILE = os.path.join('test', 'loggroup-lambda-connector.zip')
+    ZIP_FILE = 'loggroup-lambda-connector.zip'
     AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     FILTER_NAME = 'SumoLGLBDFilter'
 
