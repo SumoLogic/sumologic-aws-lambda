@@ -46,6 +46,7 @@
             "eu-west-1": {"bucketname": "appdevzipfiles-eu-west-1"},
             "eu-west-2": {"bucketname": "appdevzipfiles-eu-west-2"},
             "eu-west-3": {"bucketname": "appdevzipfiles-eu-west-3"},
+            "eu-north-1": {"bucketname": "appdevzipfiles-eu-north-1s"},
             "sa-east-1": {"bucketname": "appdevzipfiles-sa-east-1"}
         }
     },

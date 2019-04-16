@@ -22,7 +22,7 @@ Parameters:
 Resources:
   SecurityHubCollectorFunction:
     Properties:
-      CodeUri: s3://appdevstore/d6d324a075082bfb9446aa118eeb64c6
+      CodeUri: s3://appdevstore/cc901e7163326ccceb15877d3cc3fe9a
       Environment:
         Variables:
           LOCK_TABLE:
@@ -31,7 +31,7 @@ Resources:
             Ref: S3SourceBucketName
       Handler: securityhub_collector.lambda_handler
       Layers:
-      - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:1
+      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
       MemorySize: 128
       Policies:
       - Statement:
@@ -86,7 +86,7 @@ Resources:
     Type: AWS::DynamoDB::Table
   SecurityHubSchedulerFunction:
     Properties:
-      CodeUri: s3://appdevstore/d6d324a075082bfb9446aa118eeb64c6
+      CodeUri: s3://appdevstore/cc901e7163326ccceb15877d3cc3fe9a
       Environment:
         Variables:
           LOCK_TABLE:
@@ -100,7 +100,7 @@ Resources:
           Type: Schedule
       Handler: securityhub_scheduler.lambda_handler
       Layers:
-      - arn:aws:lambda:us-east-1:956882708938:layer:securityhub_deps:3
+      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
       MemorySize: 128
       Policies:
       - Statement:

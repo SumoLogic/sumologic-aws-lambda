@@ -40,8 +40,11 @@ def convert_to_utc(timestamp):
     #Todo change to convert to RFC3339
     try:
         if not isinstance(timestamp, int):
-            ts = timestamp.replace(",", "")
+            timestamp = timestamp.replace(",", "")
             ts = int(timestamp)
+        else:
+            ts = timestamp
+            timestamp = str(timestamp)
         ts = ts/1000 if len(timestamp) >= 13 else ts  # converting to seconds
         utcdate = datetime.utcfromtimestamp(ts).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     except Exception as e:
