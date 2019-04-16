@@ -7,23 +7,22 @@ jobs:
   include:
   - stage: Node 8
     node_js: '8.10'
-    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="8.10"
+    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="8.10"
   - stage: Node 8
     node_js: '8.10'
-    env: FUNCTION_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="8.10"
+    env: FUNCTION_DIR=loggroup-lambda-connector TEST_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="8.10"
   - stage: Node 6
     node_js: '6.10'
-    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="6.10"
+    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="6.10"
   - stage: Node 6
     node_js: '6.10'
-    env: FUNCTION_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="6.10"
+    env: FUNCTION_DIR=loggroup-lambda-connector TEST_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="6.10"
 before_install:
 - sudo apt-get install python-pip
-- cd $FUNCTION_DIR
-- sudo pip install -r requirements.txt
+- cd $TEST_DIR && sudo pip install -r requirements.txt && cd -
 script:
-- npm run build
-- python $TEST_FILE
+- cd $FUNCTION_DIR && npm run build && cd -
+- cd $TEST_DIR && python $TEST_FILE && cd -
 env:
   global:
   - secure: iGATK/X1PfH8FCJlUpBbJ//mQ57QBQT0jETyDDH2r+GxZxXPnFS46ugPGsWTX0IDDEGjXE+/P6wnm0ORo7aa3yp7DZnfWFDyrgFchgUo1p3unt5sQcHg/9mitkQF7lHFlnAqM1D69AEGP5WU63m/9xQoj0BVYCVb2eUEqatV1AU8lpvRAkFc2juumy1ba4skoDFLOtrsaO2k+SCCBfMKq2SOJkcPnfMZGTOT7niaNnNAZSDYDovAlMYaLDOR10EMUAyklnmmAADyDxNRwSSAG8JKJMmfxSqIe4+s7xjqztjtkApWmEAjevDLpc62v1TWe0O2zCxnb4E4EBN6A31R1XJha4i/IKSeVL99J9X8aV1wIb9feV85qmZmlxVL2EU7/CcFGTdKeAak3qQWHZ1C6X32TBB6x5C0qASSC/x5pwDDJIOyeZr0Z93+dDhnBLNmzz8sA3h7AyzQZfhTqG/f4/SOgxTf7aF13X8BKuoM8BaGfXjy0keaVb0xbTjtDvi9F21EymWPdwNlQHsKca+EcTT2KE3mwFNrHAsTeNhGzMbrzmbZzvNHlmIwjB1C5l9h4GpUkxNb/mqi9SBTx9YfDIgz0bDOds1T92tGIAcBaHfJLTjc2JIgxwgdL13X3cL8GJBiFFwiJqiKJCSz4SxhWqsrrbsGSQBUqN5UoSsyKco=
