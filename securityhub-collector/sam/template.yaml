@@ -3,80 +3,26 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: >
     This solution consists of two lambda functions which are used to fetch findings from AWS Security Hub and ingest to Sumo Logic.
 
+Globals:
+    Function:
+        Timeout: 300
+
 Parameters:
     S3SourceBucketName:
         Type: String
 
 Resources:
 
-  SecurityHubSchedulerFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: securityhub_scheduler.lambda_handler
-      Runtime: python3.7
-      Layers:
-        - !Sub 'arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1'
-      CodeUri: ../src/
-      MemorySize: 128
-      Timeout: 300
-      Policies:
-      - Statement:
-        - Sid: SecurityHubGetProductSubscriptionPolicy
-          Effect: Allow
-          Action:
-          - "securityhub:ListEnabledProductsForImport"
-          Resource: 'arn:aws:securityhub:*:*:*'
-        - Sid: SecurityHubInvokeLambdaPolicy
-          Effect: Allow
-          Action:
-          - lambda:InvokeFunction
-          Resource: !GetAtt SecurityHubCollectorFunction.Arn
-        - Sid: SecurityHubLockTablePolicy
-          Effect: Allow
-          Action:
-          - "dynamodb:BatchGet*"
-          - "dynamodb:Get*"
-          - "dynamodb:Query"
-          - "dynamodb:Scan"
-          - "dynamodb:BatchWrite*"
-          - "dynamodb:Update*"
-          - "dynamodb:PutItem"
-          Resource: !Join [ "/", ['arn:aws:dynamodb:*:*:table', !Ref SecurityHubProviderLockTable ] ]
-
-      Environment:
-        Variables:
-          SecurityHubCollectorFnName: !Ref "SecurityHubCollectorFunction"
-          LOCK_TABLE: !Ref SecurityHubProviderLockTable
-
-      Events:
-        SecurityHubScheduleRule:
-          Type: Schedule
-          Properties:
-            Schedule: rate(6 minutes)
-
   SecurityHubCollectorFunction:
       Type: 'AWS::Serverless::Function'
       Properties:
         Handler: securityhub_collector.lambda_handler
         Runtime: python3.7
-        Layers:
-          - !Sub 'arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1'
         CodeUri: ../src/
         MemorySize: 128
         Timeout: 300
         Policies:
         - Statement:
-          - Sid: SecurityHubGetFindingsPolicy
-            Effect: Allow
-            Action:
-            - securityhub:GetFindings
-            Resource: 'arn:aws:securityhub:*:*:*'
-          - Sid: SecurityHubInvokeLambdaPolicy
-            Effect: Allow
-            Action:
-            - lambda:InvokeFunction
-            Resource:
-              - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-SecurityHubCollector*'
           - Sid: SecurityHubS3PutObjectPolicy
             Effect: Allow
             Action:
@@ -84,45 +30,20 @@ Resources:
             Resource:
             - !Sub 'arn:aws:s3:::${S3SourceBucketName}'
             - !Sub 'arn:aws:s3:::${S3SourceBucketName}/*'
-          - Sid: SecurityHubLockTablePolicy
-            Effect: Allow
-            Action:
-            - "dynamodb:BatchGet*"
-            - "dynamodb:DescribeTable"
-            - "dynamodb:Get*"
-            - "dynamodb:Query"
-            - "dynamodb:Scan"
-            - "dynamodb:BatchWrite*"
-            - "dynamodb:Update*"
-            - "dynamodb:PutItem"
-            Resource: !Join [ "/", ['arn:aws:dynamodb:*:*:table', !Ref SecurityHubProviderLockTable ] ]
 
         Environment:
           Variables:
             S3_LOG_BUCKET: !Ref S3SourceBucketName
-            LOCK_TABLE: !Ref SecurityHubProviderLockTable
 
-  SecurityHubProviderLockTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: "product_arn"
-            AttributeType: "S"
-        KeySchema:
-          -
-            AttributeName: "product_arn"
-            KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: "30"
-          WriteCapacityUnits: "20"
+        Events:
+          CloudWatchEventTrigger:
+              Type: CloudWatchEvent
+              Properties:
+                Pattern:
+                  source:
+                    - aws.securityhub
 
 Outputs:
-
-    SecurityHubSchedulerFunction:
-      Description: "SecurityHubScheduler Function ARN"
-      Value: !GetAtt SecurityHubSchedulerFunction.Arn
-
     SecurityHubCollectorFunction:
       Description: "SecurityHubCollector Function ARN"
       Value: !GetAtt SecurityHubCollectorFunction.Arn
