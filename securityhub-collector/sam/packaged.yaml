@@ -1,8 +1,45 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'This solution consists of two lambda functions which are used to fetch
-  findings from AWS Security Hub and ingest to Sumo Logic.
+Transform: AWS::Serverless-2016-10-31
+Description: 'This solution consists of a lambda function which which gets triggered
+  by CloudWatch events with findings as payload which are then ingested to Sumo Logic
+  via S3 source
 
   '
+Globals:
+  Function:
+    Timeout: 300
+Parameters:
+  S3SourceBucketName:
+    Type: String
+Resources:
+  SecurityHubCollectorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: securityhub_collector.lambda_handler
+      Runtime: python3.7
+      CodeUri: s3://appdevstore/3821fd9c5288ebaca71e4ea0b26629ab
+      MemorySize: 128
+      Timeout: 300
+      Policies:
+      - Statement:
+        - Sid: SecurityHubS3PutObjectPolicy
+          Effect: Allow
+          Action:
+          - s3:PutObject
+          Resource:
+          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}
+          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}/*
+      Environment:
+        Variables:
+          S3_LOG_BUCKET:
+            Ref: S3SourceBucketName
+      Events:
+        CloudWatchEventTrigger:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+              - aws.securityhub
 Outputs:
   SecurityHubCollectorFunction:
     Description: SecurityHubCollector Function ARN
@@ -10,129 +47,3 @@ Outputs:
       Fn::GetAtt:
       - SecurityHubCollectorFunction
       - Arn
-  SecurityHubSchedulerFunction:
-    Description: SecurityHubScheduler Function ARN
-    Value:
-      Fn::GetAtt:
-      - SecurityHubSchedulerFunction
-      - Arn
-Parameters:
-  S3SourceBucketName:
-    Type: String
-Resources:
-  SecurityHubCollectorFunction:
-    Properties:
-      CodeUri: s3://appdevstore/cc901e7163326ccceb15877d3cc3fe9a
-      Environment:
-        Variables:
-          LOCK_TABLE:
-            Ref: SecurityHubProviderLockTable
-          S3_LOG_BUCKET:
-            Ref: S3SourceBucketName
-      Handler: securityhub_collector.lambda_handler
-      Layers:
-      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
-      MemorySize: 128
-      Policies:
-      - Statement:
-        - Action:
-          - securityhub:GetFindings
-          Effect: Allow
-          Resource: arn:aws:securityhub:*:*:*
-          Sid: SecurityHubGetFindingsPolicy
-        - Action:
-          - lambda:InvokeFunction
-          Effect: Allow
-          Resource:
-          - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-SecurityHubCollector*
-          Sid: SecurityHubInvokeLambdaPolicy
-        - Action:
-          - s3:PutObject
-          Effect: Allow
-          Resource:
-          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}
-          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}/*
-          Sid: SecurityHubS3PutObjectPolicy
-        - Action:
-          - dynamodb:BatchGet*
-          - dynamodb:DescribeTable
-          - dynamodb:Get*
-          - dynamodb:Query
-          - dynamodb:Scan
-          - dynamodb:BatchWrite*
-          - dynamodb:Update*
-          - dynamodb:PutItem
-          Effect: Allow
-          Resource:
-            Fn::Join:
-            - /
-            - - arn:aws:dynamodb:*:*:table
-              - Ref: SecurityHubProviderLockTable
-          Sid: SecurityHubLockTablePolicy
-      Runtime: python3.7
-      Timeout: 300
-    Type: AWS::Serverless::Function
-  SecurityHubProviderLockTable:
-    Properties:
-      AttributeDefinitions:
-      - AttributeName: product_arn
-        AttributeType: S
-      KeySchema:
-      - AttributeName: product_arn
-        KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: '30'
-        WriteCapacityUnits: '20'
-    Type: AWS::DynamoDB::Table
-  SecurityHubSchedulerFunction:
-    Properties:
-      CodeUri: s3://appdevstore/cc901e7163326ccceb15877d3cc3fe9a
-      Environment:
-        Variables:
-          LOCK_TABLE:
-            Ref: SecurityHubProviderLockTable
-          SecurityHubCollectorFnName:
-            Ref: SecurityHubCollectorFunction
-      Events:
-        SecurityHubScheduleRule:
-          Properties:
-            Schedule: rate(6 minutes)
-          Type: Schedule
-      Handler: securityhub_scheduler.lambda_handler
-      Layers:
-      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
-      MemorySize: 128
-      Policies:
-      - Statement:
-        - Action:
-          - securityhub:ListEnabledProductsForImport
-          Effect: Allow
-          Resource: arn:aws:securityhub:*:*:*
-          Sid: SecurityHubGetProductSubscriptionPolicy
-        - Action:
-          - lambda:InvokeFunction
-          Effect: Allow
-          Resource:
-            Fn::GetAtt:
-            - SecurityHubCollectorFunction
-            - Arn
-          Sid: SecurityHubInvokeLambdaPolicy
-        - Action:
-          - dynamodb:BatchGet*
-          - dynamodb:Get*
-          - dynamodb:Query
-          - dynamodb:Scan
-          - dynamodb:BatchWrite*
-          - dynamodb:Update*
-          - dynamodb:PutItem
-          Effect: Allow
-          Resource:
-            Fn::Join:
-            - /
-            - - arn:aws:dynamodb:*:*:table
-              - Ref: SecurityHubProviderLockTable
-          Sid: SecurityHubLockTablePolicy
-      Runtime: python3.7
-      Timeout: 300
-    Type: AWS::Serverless::Function
-Transform: AWS::Serverless-2016-10-31
