@@ -8,7 +8,7 @@ from collections import defaultdict
 
 
 BUCKET_NAME = os.getenv("S3_LOG_BUCKET")
-BUCKET_REGION = "us-east-1"  # os.getenv("AWS_REGION")
+BUCKET_REGION = os.getenv("AWS_REGION")
 s3cli = boto3.client('s3', region_name=BUCKET_REGION)
 
 

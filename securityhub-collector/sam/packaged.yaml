@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'This solution consists of two lambda functions which are used to fetch
-  findings from AWS Security Hub and ingest to Sumo Logic.
+Description: 'This solution consists of a lambda function which which gets triggered
+  by CloudWatch events with findings as payload which are then ingested to Sumo Logic
+  via S3 source
 
   '
 Globals:
@@ -16,7 +17,7 @@ Resources:
     Properties:
       Handler: securityhub_collector.lambda_handler
       Runtime: python3.7
-      CodeUri: s3://appdevstore/4f53828416975cb22a96ae1aaf6dcd6c
+      CodeUri: s3://appdevstore/3821fd9c5288ebaca71e4ea0b26629ab
       MemorySize: 128
       Timeout: 300
       Policies:

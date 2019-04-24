@@ -1,7 +1,6 @@
 # sumologic-securityhub-collector
 
-This solution consists of two lambda functions which are used to fetch findings from AWS Security Hub and ingest to Sumo Logic.
-
+This solution consists of a lambda function which which gets triggered by CloudWatch events with findings as payload which are then ingested to Sumo Logic via S3 source
 
 
 Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
