@@ -51,7 +51,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.2
+        SemanticVersion: 1.0.3
       Parameters:
         SumoAccessKey: !Ref SumoAccessKey
         SumoAccessCode: !Ref SumoAccessCode
@@ -81,7 +81,7 @@ Resources:
       Region: !Ref "AWS::Region"
       AppName: GuardDuty
       AppSources:
-        logsrc: !Ref SourceCategoryName
+        logsrc: !Sub "_sourceCategory=${SourceCategoryName}"
 
 Outputs:
 
