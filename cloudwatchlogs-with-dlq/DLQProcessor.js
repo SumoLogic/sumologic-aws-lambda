@@ -16,8 +16,17 @@ exports.consumeMessages = function (env, context, callback) {
             console.log("Messages Received", messages.length);
             for (var i = 0; i < messages.length; i++) {
                 (function(idx) {
-                    var logdata = JSON.parse(messages[idx].Body).awslogs.data;
+                    var payload = JSON.parse(messages[idx].Body);
                     var receiptHandle = messages[idx].ReceiptHandle;
+                    if (!(payload.awslogs && payload.awslogs.data)) {
+                        console.log("Message does not contain awslogs or awslogs.data attributes", payload);
+                        //deleting msg in DLQ after injesting in sumo
+                        MessagesObj.deleteMessage(receiptHandle, function (err, data) {
+                            if (err) console.log(err, err.stack);
+                        });
+                        return;
+                    }
+                    var logdata = payload.awslogs.data;
                     env.SUMO_CLIENT_HEADER="dlq-aws-lambda";
                     processLogsHandler(env, logdata, function (err, msg) {
                         msgCount++;
