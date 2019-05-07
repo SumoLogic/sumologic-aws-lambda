@@ -88,12 +88,18 @@ if __name__ == '__main__':
         zip_bucket_prefix = "appdevstore"
         template_bucket = "cf-templates-5d0x5unchag-us-east-1"
 
-    if not os.path.isfile(args.templatefile):
-        raise Exception("templatefile does not exists")
-    if not os.path.isfile(args.zipfile):
-        raise Exception("zipfile does not exists")
+    # create_buckets(zip_bucket_prefix)
+    print(args)
+    if args.templatefile:
+        if not os.path.isfile(args.templatefile):
+            raise Exception("templatefile does not exists")
+        else:
+            upload_cftemplate(args.templatefile, template_bucket)
 
-    create_buckets(zip_bucket_prefix)
-    upload_code_in_multiple_regions(args.zipfile, zip_bucket_prefix)
-    upload_cftemplate(args.templatefile, template_bucket)
+    if args.zipfile:
+        if not os.path.isfile(args.zipfile):
+            raise Exception("zipfile does not exists")
+        else:
+            upload_code_in_multiple_regions(args.zipfile, zip_bucket_prefix)
+
     print("Deployment Successfull: ALL files copied to %s" % args.deployment)
