@@ -29,11 +29,11 @@ aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/ --region $AWS_REGION
 
 sam package --template-file sumo_app_utils.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_sumo_app_utils.yaml
 
-sam deploy --template-file packaged_sumo_app_utils.yaml --stack-name testingsumoapputils --capabilities CAPABILITY_IAM --region $AWS_REGION --parameter-overrides SumoAccessKey=$SUMO_ACCESS_KEY SumoAccessCode=$SUMO_ACCESS_CODE DeploymentName=$SUMO_DEPLOYMENT
+sam deploy --template-file packaged_sumo_app_utils.yaml --stack-name testingsumoapputils --capabilities CAPABILITY_IAM --region $AWS_REGION
 
-sam package --template-file /Users/hpal/git/sumologic-aws-lambda/cloudwatchevents/guardduty/template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file guardduty_packaged.yaml
+sam package --template-file /Users/hpal/git/sumologic-aws-lambda/cloudwatchevents/guardduty/template_v2.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file /Users/hpal/git/sumologic-aws-lambda/cloudwatchevents/guardduty/packaged_v2.yaml
 
-sam deploy --template-file guardduty_packaged.yaml --stack-name guarddutysamdemo --capabilities CAPABILITY_IAM --region $AWS_REGION
+sam deploy --template-file /Users/hpal/git/sumologic-aws-lambda/cloudwatchevents/guardduty/packaged_v2.yaml --stack-name guarddutysamdemo --capabilities CAPABILITY_IAM --region $AWS_REGION --parameter-overrides SumoAccessKey=$SUMO_ACCESS_KEY SumoAccessCode=$SUMO_ACCESS_CODE SumoDeployment=$SUMO_DEPLOYMENT
 
 #aws cloudformation describe-stack-events --stack-name testingsecurityhublambda --region $AWS_REGION
 #aws cloudformation get-template --stack-name testingsecurityhublambda  --region $AWS_REGION

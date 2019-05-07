@@ -21,6 +21,8 @@ class SumoLogic(object):
             self.endpoint = self._get_endpoint()
         else:
             self.endpoint = endpoint
+        if self.endpoint[-1:] == "/":
+            raise Exception("Endpoint should not end with a slash character")
 
     def _get_endpoint(self):
         """
@@ -120,7 +122,7 @@ class SumoLogic(object):
         return self.put('/collectors/' + str(collector['collector']['id']), collector, headers)
 
     def delete_collector(self, collector):
-        return self.delete('/collectors/' + str(collector['id']))
+        return self.delete('/collectors/' + str(collector['collector']['id']))
 
     def sources(self, collector_id, limit=None, offset=None):
         params = {'limit': limit, 'offset': offset}
@@ -191,6 +193,3 @@ class SumoLogic(object):
 
     def get_personal_folder(self):
         return self.get('/content/folders/personal', version='v2')
-
-
-

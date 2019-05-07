@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    This function is invoked by AWS CloudWatch events in response to state change in your AWS resources which matches a event target definition. The event payload received is then forwarded to Sumo Logic HTTP source endpoint.
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+    Function:
+        Timeout: 300
+
+Parameters:
+  CollectorName:
+    Type: String
+    Default: GuarddutyCollector
+  SourceName:
+    Type: String
+    Default: GuarddutyEvents
+  SourceCategoryName:
+    Type: String
+    Default: Labs/AWS/Guardduty
+  SumoAccessKey:
+    Type: String
+  SumoAccessCode:
+    Type: String
+  SumoDeployment:
+    Type: String
+    AllowedValues:
+      - au
+      - ca
+      - de
+      - eu
+      - jp
+      - us2
+      - us1
+      - nite
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Description: To delete collector, sources and app when stack is deleted, set this parameter to true.
+    Type: String
+
+Resources:
+  CloudWatchEventFunction:
+    Properties:
+      CodeUri: s3://appdevstore/e62e525a25bb080e521d8bf64909ea41
+      Environment:
+        Variables:
+          SUMO_ENDPOINT: !GetAtt SumoHTTPSource.SUMO_ENDPOINT
+      Events:
+        CloudWatchEventTrigger:
+          Properties:
+            Pattern:
+              source:
+              - aws.guardduty
+          Type: CloudWatchEvent
+      Handler: cloudwatchevents.handler
+      Runtime: nodejs8.10
+    Type: AWS::Serverless::Function
+
+  SumoAppUtils:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
+        SemanticVersion: 1.0.3
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref CollectorName
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoAccessCode: !Ref SumoAccessCode
+      SumoDeployment: !Ref SumoDeployment
+
+  SumoHTTPSource:
+    Type: Custom::HTTPSource
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      SourceName: !Ref SourceName
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceCategory: !Ref SourceCategoryName
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoAccessCode: !Ref SumoAccessCode
+      SumoDeployment: !Ref SumoDeployment
+
+  SumoGuarddutyApp:
+    Type: Custom::App
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      AppName: GuardDuty
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        logsrc: !Sub "_sourceCategory=${SourceCategoryName}"
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoAccessCode: !Ref SumoAccessCode
+      SumoDeployment: !Ref SumoDeployment
+
+Outputs:
+
+    CloudWatchEventFunction:
+      Description: "CloudWatchEvent Processor Function ARN"
+      Value: !GetAtt CloudWatchEventFunction.Arn
+    GuarddutyApp:
+      Description: "Folder Name"
+      Value: !GetAtt SumoGuarddutyApp.APP_FOLDER_NAME
+

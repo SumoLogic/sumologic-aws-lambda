@@ -101,7 +101,6 @@ class Collector(Resource):
             collector_id = json.loads(resp.text)['collector']['id']
             print("created collector %s" % collector_id)
         except Exception as e:
-            print(e.response.json())
             if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 collector = self._get_collector_by_name(collector_name, collector_type.lower())
                 collector_id = collector['id']
@@ -121,19 +120,21 @@ class Collector(Resource):
         print("updated collector %s" % collector_id)
         return {"COLLECTOR_ID": collector_id}, collector_id
 
-    def delete(self, collector_id, *args, **kwargs):
+    def delete(self, collector_id, remove_on_delete_stack, *args, **kwargs):
         '''
         this should not have any sources?
         '''
-        response = self.sumologic_cli.delete_collector({"id": collector_id})
-        print("deleted collector %s : %s" % (collector_id, response.text))
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_collector({"collector": {"id": collector_id}})
+            print("deleted collector %s : %s" % (collector_id, response.text))
+        else:
+            print("skipping collector deletion")
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
         collector_id = None
         if event.get('PhysicalResourceId'):
             _, collector_id = event['PhysicalResourceId'].split("/")
-
         return {
             "collector_type": props.get("CollectorType"),
             "collector_name": props.get("CollectorName"),
@@ -190,9 +191,12 @@ class HTTPSource(Resource):
         print("updated source %s" % data["id"])
         return {"SUMO_ENDPOINT": data["url"]}, data["id"]
 
-    def delete(self, collector_id, source_id, *args, **kwargs):
-        response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
-        print("deleted source %s : %s" % (source_id, response.text))
+    def delete(self, collector_id, source_id, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
+            print("deleted source %s : %s" % (source_id, response.text))
+        else:
+            print("skipping source deletion")
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -307,7 +311,8 @@ class App(Resource):
                 matched = re.search('(?<=ContentId\()\d+', msg)
                 if matched:
                     folder_id = matched[0]
-
+            else:
+                raise
         return folder_id
 
     def _get_app_content(self, appname, source_params):
@@ -356,9 +361,12 @@ class App(Resource):
         print("updated app appFolderId: %s " % app_folder_id)
         return data, app_folder_id
 
-    def delete(self, app_folder_id, *args, **kwargs):
-        response = self.sumologic_cli.delete_folder(app_folder_id)
-        print("deleting app folder %s : %s" % (app_folder_id, response.text))
+    def delete(self, app_folder_id, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_folder(app_folder_id)
+            print("deleting app folder %s : %s" % (app_folder_id, response.text))
+        else:
+            print("skipping app folder deletion")
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")

@@ -22,9 +22,8 @@ Parameters:
     Type: String
   SumoAccessCode:
     Type: String
-  DeploymentName:
+  SumoDeployment:
     Type: String
-    Default: us1
     AllowedValues:
     - au
     - ca
@@ -34,6 +33,14 @@ Parameters:
     - us2
     - us1
     - nite
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+    - true
+    - false
+    Default: false
+    Description: To delete collector, sources and app when stack is deleted, set this
+      parameter to true.
+    Type: String
 Resources:
   CloudWatchEventFunction:
     Properties:
@@ -60,13 +67,6 @@ Resources:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
         SemanticVersion: 1.0.3
-      Parameters:
-        SumoAccessKey:
-          Ref: SumoAccessKey
-        SumoAccessCode:
-          Ref: SumoAccessCode
-        DeploymentName:
-          Ref: DeploymentName
   SumoHostedCollector:
     Type: Custom::Collector
     Properties:
@@ -77,8 +77,16 @@ Resources:
       Region:
         Ref: AWS::Region
       CollectorType: Hosted
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
       CollectorName:
         Ref: CollectorName
+      SumoAccessKey:
+        Ref: SumoAccessKey
+      SumoAccessCode:
+        Ref: SumoAccessCode
+      SumoDeployment:
+        Ref: SumoDeployment
   SumoHTTPSource:
     Type: Custom::HTTPSource
     Properties:
@@ -90,12 +98,20 @@ Resources:
         Ref: AWS::Region
       SourceName:
         Ref: SourceName
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
       SourceCategory:
         Ref: SourceCategoryName
       CollectorId:
         Fn::GetAtt:
         - SumoHostedCollector
         - COLLECTOR_ID
+      SumoAccessKey:
+        Ref: SumoAccessKey
+      SumoAccessCode:
+        Ref: SumoAccessCode
+      SumoDeployment:
+        Ref: SumoDeployment
   SumoGuarddutyApp:
     Type: Custom::App
     Properties:
@@ -106,9 +122,17 @@ Resources:
       Region:
         Ref: AWS::Region
       AppName: GuardDuty
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
       AppSources:
         logsrc:
           Fn::Sub: _sourceCategory=${SourceCategoryName}
+      SumoAccessKey:
+        Ref: SumoAccessKey
+      SumoAccessCode:
+        Ref: SumoAccessCode
+      SumoDeployment:
+        Ref: SumoDeployment
 Outputs:
   CloudWatchEventFunction:
     Description: CloudWatchEvent Processor Function ARN

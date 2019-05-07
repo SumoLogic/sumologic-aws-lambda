@@ -1,8 +1,18 @@
-import os
 from crhelper import CfnResource
 from api import ResourceFactory
 
 helper = CfnResource(json_logging=False, log_level='DEBUG')
+
+
+def get_resource(event):
+    resource_type = event.get("ResourceType").split("::")[-1]
+    resource_class = ResourceFactory.get_resource(resource_type)
+    props = event.get("ResourceProperties")
+    resource = resource_class(props["SumoAccessKey"], props["SumoAccessCode"], props["SumoDeployment"])
+    params = resource.extract_params(event)
+    params["remove_on_delete_stack"] = props.get("RemoveOnDeleteStack") == 'true'
+    print(params)
+    return resource, resource_type, params
 
 
 @helper.create
@@ -11,28 +21,19 @@ def create(event, context):
     # Optionally return an ID that will be used for the resource PhysicalResourceId,
     # if None is returned an ID will be generated. If a poll_create function is defined
     # return value is placed into the poll event as event['CrHelperData']['PhysicalResourceId']
-    resource_type = event.get("ResourceType").split("::")[-1]
-    resource_class = ResourceFactory.get_resource(resource_type)
-    resource = resource_class(os.getenv("SUMO_ACCESS_KEY"), os.getenv("SUMO_ACCESS_CODE"), os.getenv("DEPLOYMENT"))
-    params = resource.extract_params(event)
-    print(resource_type)
-    print(params)
+    resource, resource_type, params = get_resource(event)
     data, resource_id = resource.create(**params)
     print(data)
     print(resource_id)
     helper.Data.update(data)
     helper.Status = "SUCCESS"
+    print("Created %s" % resource_type)
     return "%s/%s" % (event.get('LogicalResourceId', ''), resource_id)
 
 
 @helper.update
 def update(event, context):
-    resource_type = event.get("ResourceType").split("::")[-1]
-    resource_class = ResourceFactory.get_resource(resource_type)
-    resource = resource_class(os.getenv("SUMO_ACCESS_KEY"), os.getenv("SUMO_ACCESS_CODE"), os.getenv("DEPLOYMENT"))
-    params = resource.extract_params(event)
-    print(resource_type)
-    print(params)
+    resource, resource_type, params = get_resource(event)
     data, resource_id = resource.create(**params)
     print(data)
     print(resource_id)
@@ -49,12 +50,7 @@ def delete(event, context):
     if "/" not in event.get('PhysicalResourceId', ""):
         print("%s resource_id not found" % event.get('PhysicalResourceId'))
         return
-    resource_type = event.get("ResourceType").split("::")[-1]
-    resource_class = ResourceFactory.get_resource(resource_type)
-    resource = resource_class(os.getenv("SUMO_ACCESS_KEY"), os.getenv("SUMO_ACCESS_CODE"), os.getenv("DEPLOYMENT"))
-    params = resource.extract_params(event)
-    print(resource_type)
-    print(params)
+    resource, resource_type, params = get_resource(event)
     resource.delete(**params)
     helper.Status = "SUCCESS"
     print("Deleted %s" % resource_type)

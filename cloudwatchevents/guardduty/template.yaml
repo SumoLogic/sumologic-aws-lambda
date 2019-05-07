@@ -9,86 +9,29 @@ Globals:
         Timeout: 300
 
 Parameters:
-  CollectorName:
-    Type: String
-    Default: GuarddutyCollector
-  SourceName:
-    Type: String
-    Default: GuarddutyEvents
-  SourceCategoryName:
-    Type: String
-    Default: Labs/AWS/Guardduty
-  SumoAccessKey:
-    Type: String
-  SumoAccessCode:
-    Type: String
-  DeploymentName:
-    Type: String
-    Default: us1
-    AllowedValues : ["au", "ca", "de", "eu", "jp", "us2", "us1", "nite"]
-
+    SumoEndpointUrl:
+        Type: String
 
 Resources:
-  CloudWatchEventFunction:
-    Properties:
-      CodeUri: s3://appdevstore/e62e525a25bb080e521d8bf64909ea41
-      Environment:
-        Variables:
-          SUMO_ENDPOINT: !GetAtt SumoHTTPSource.SUMO_ENDPOINT
-      Events:
-        CloudWatchEventTrigger:
-          Properties:
-            Pattern:
-              source:
-              - aws.guardduty
-          Type: CloudWatchEvent
-      Handler: cloudwatchevents.handler
-      Runtime: nodejs8.10
-    Type: AWS::Serverless::Function
 
-  SumoAppUtils:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.3
-      Parameters:
-        SumoAccessKey: !Ref SumoAccessKey
-        SumoAccessCode: !Ref SumoAccessCode
-        DeploymentName: !Ref DeploymentName
-
-  SumoHostedCollector:
-    Type: Custom::Collector
-    Properties:
-      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
-      Region: !Ref "AWS::Region"
-      CollectorType: Hosted
-      CollectorName: !Ref CollectorName
-
-  SumoHTTPSource:
-    Type: Custom::HTTPSource
-    Properties:
-      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
-      Region: !Ref "AWS::Region"
-      SourceName: !Ref SourceName
-      SourceCategory: !Ref SourceCategoryName
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
-
-  SumoGuarddutyApp:
-    Type: Custom::App
-    Properties:
-      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
-      Region: !Ref "AWS::Region"
-      AppName: GuardDuty
-      AppSources:
-        logsrc: !Sub "_sourceCategory=${SourceCategoryName}"
-
+    CloudWatchEventFunction:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            CodeUri: ../src/
+            Handler: cloudwatchevents.handler
+            Runtime: nodejs8.10
+            Environment:
+              Variables:
+                SUMO_ENDPOINT: !Ref SumoEndpointUrl
+            Events:
+                CloudWatchEventTrigger:
+                    Type: CloudWatchEvent
+                    Properties:
+                      Pattern:
+                        source:
+                          - aws.guardduty
 Outputs:
 
     CloudWatchEventFunction:
       Description: "CloudWatchEvent Processor Function ARN"
       Value: !GetAtt CloudWatchEventFunction.Arn
-    GuarddutyApp:
-      Description: "Folder Name"
-      Value: !GetAtt SumoGuarddutyApp.APP_FOLDER_NAME
-
