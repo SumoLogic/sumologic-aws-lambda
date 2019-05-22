@@ -11,20 +11,25 @@ Globals:
 
 Parameters:
     LambdaARN:
-        Type : String
+        Type: String
         Default: "arn:aws:lambda:us-east-1:123456789000:function:TestLambda"
         Description: "Enter ARN for target lambda function"
 
     LogGroupPattern:
-        Type : String
+        Type: String
         Default: "Test"
         Description: "Enter regex for matching logGroups"
 
     UseExistingLogs:
-        Type : String
+        Type: String
         Default: "false"
-        AllowedValues : ["true", "false"]
+        AllowedValues: ["true", "false"]
         Description: "Select true for subscribing existing logs"
+
+    Concurrency:
+        Type: Number
+        Default: -1
+        Description: "Reserved concurrent executions for the lambdas. -1 for unreserved, 0 to stop the lambdas."
 
 Resources:
 
@@ -34,6 +39,7 @@ Resources:
         CodeUri: ../src/
         Handler: "loggroup-lambda-connector.handler"
         Runtime: nodejs8.10
+        ReservedConcurrentExecutions: !Ref "Concurrency"
         Environment:
           Variables:
             LAMBDA_ARN: !Ref "LambdaARN"
