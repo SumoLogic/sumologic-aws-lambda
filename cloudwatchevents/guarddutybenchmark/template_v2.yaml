@@ -25,6 +25,7 @@ Metadata:
           - CollectorName
           - SourceName
           - SourceCategoryName
+          - RemoveSumoResourcesOnDeleteStack
     ParameterLabels:
       SumoDeployment:
         default: "Deployment Name"
@@ -38,7 +39,8 @@ Metadata:
         default: "Source Name"
       SourceCategoryName:
         default: "Source Category Name"
-
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Remove Sumo Resources On Delete Stack"
 
 Parameters:
   CollectorName:
@@ -66,7 +68,7 @@ Parameters:
       - us1
       - nite
     Description: "Enter au, ca ,de ,eu ,jp ,us2 ,us1"
-    RemoveSumoResourcesOnDeleteStack:
+  RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
       - false
@@ -131,7 +133,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
-      AppName: GuardDuty
+      AppName: "Amazon GuardDuty Benchmark"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         logsrc: !Sub "_sourceCategory=${SourceCategoryName}"

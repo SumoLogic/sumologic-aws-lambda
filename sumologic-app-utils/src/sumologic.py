@@ -174,12 +174,6 @@ class SumoLogic(object):
         r = self.post('/metrics/results', params)
         return json.loads(r.text)
 
-    def sync_folder(self, folder_id, content):
-        return self.post('/content/folders/%s/synchronize' % folder_id, params=content, version='v2')
-
-    def check_sync_folder(self, folder_id, job_id):
-        return self.get('/content/folders/%s/synchronize/%s/status' % (folder_id, job_id), version='v2')
-
     def delete_folder(self, folder_id):
         return self.delete('/content/%s/delete' % folder_id, version='v2')
 
@@ -193,3 +187,9 @@ class SumoLogic(object):
 
     def get_personal_folder(self):
         return self.get('/content/folders/personal', version='v2')
+
+    def import_content(self, folder_id, content, is_overwrite="false"):
+        return self.post('/content/folders/%s/import?overwrite=%s' % (folder_id, is_overwrite), params=content, version='v2')
+
+    def check_import_status(self, folder_id, job_id):
+        return self.get('/content/folders/%s/import/%s/status' % (folder_id, job_id), version='v2')

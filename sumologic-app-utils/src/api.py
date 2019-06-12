@@ -64,6 +64,19 @@ class Resource(object):
         else:
             return 'https://%s-api.sumologic.net/api' % self.deployment
 
+    def is_enterprise_or_trial_account(self):
+        to_time = int(time.time())*100
+        from_time = to_time - 5*60*1000
+        try:
+            response = self.sumologic_cli.search_job("_sourceCategory=*Guardduty", fromTime=from_time, toTime=to_time)
+            print("job status: %s" % response)
+            return True
+        except Exception as e:
+            if hasattr(e, "response") and e.response.status_code == 403:
+                return False
+            else:
+                raise e
+
 
 class Collector(Resource):
     '''
@@ -151,7 +164,7 @@ class S3Source(Resource):
 class HTTPSource(Resource):
 
     def create(self, collector_id, source_name, source_category,
-               date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
+        date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
 
         endpoint = source_id = None
         params = {
@@ -316,8 +329,8 @@ class App(Resource):
         return folder_id
 
     def _get_app_content(self, appname, source_params):
-        key_name = "ApiExported" + appname+".json"
-        s3url = "https://s3.amazonaws.com/app-json-store/%s" % key_name
+        key_name = "ApiExported-" + re.sub(r"\s+", "-", appname) + ".json"
+        s3url = "https://app-json-store.s3.amazonaws.com/%s" % key_name
         print("Fetching appjson %s" % s3url)
         with requests.get(s3url, stream=True) as r:
             r.raise_for_status()
@@ -333,10 +346,11 @@ class App(Resource):
 
         return appjson
 
-    def _wait_for_sync(self, folder_id, job_id):
+    def _wait_for_folder_creation(self, folder_id, job_id):
+        print("waiting for folder creation folder_id %s job_id %s" % (folder_id, job_id))
         waiting = True
         while waiting:
-            response = self.sumologic_cli.check_sync_folder(folder_id, job_id)
+            response = self.sumologic_cli.check_import_status(folder_id, job_id)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(5)
 
@@ -344,19 +358,22 @@ class App(Resource):
 
     def create(self, appname, source_params, *args, **kwargs):
         # Add  retry if folder sync fails
+        if appname == "Amazon GuardDuty Benchmark" and not self.is_enterprise_or_trial_account():
+            raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
+
         content = self._get_app_content(appname, source_params)
         response = self.sumologic_cli.get_personal_folder()
         personal_folder_id = response.json()['id']
         app_folder_id = self._get_app_folder(content, personal_folder_id)
-        response = self.sumologic_cli.sync_folder(personal_folder_id, content)
+        response = self.sumologic_cli.import_content(personal_folder_id, content, is_overwrite="true")
         job_id = response.json()["id"]
         print("installed app %s: appFolderId: %s personalFolderId: %s jobId: %s" % (
             appname, app_folder_id, personal_folder_id, job_id))
-        self._wait_for_sync(personal_folder_id, job_id)
+        self._wait_for_folder_creation(personal_folder_id, job_id)
         return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
 
     def update(self, app_folder_id, appname, source_params, *args, **kwargs):
-        self.delete(app_folder_id)
+        self.delete(app_folder_id, remove_on_delete_stack=True)
         data, app_folder_id = self.create(appname, source_params)
         print("updated app appFolderId: %s " % app_folder_id)
         return data, app_folder_id
@@ -384,14 +401,14 @@ if __name__ == '__main__':
     params = {
         "access_id": "",
         "access_key": "",
-        "deployment": "nite"
+        "deployment": ""
     }
     collector_id = None
     collector_type = "Hosted"
     collector_name = "GuarddutyCollector"
     source_name = "GuarddutyEvents"
     source_category = "Labs/AWS/Guardduty"
-    appname = "GuardDuty"
+    appname = "Amazon GuardDuty Benchmark"
     source_params = {
         "logsrc": "_sourceCategory=%s" % source_category
     }
@@ -417,7 +434,7 @@ if __name__ == '__main__':
     assert(app_folder_id != new_app_folder_id)
 
     # delete
-    src.delete(collector_id, source_id)
-    col.delete(collector_id)
-    app.delete(new_app_folder_id)
+    src.delete(collector_id, source_id, True)
+    col.delete(collector_id, True)
+    app.delete(new_app_folder_id, True)
 
