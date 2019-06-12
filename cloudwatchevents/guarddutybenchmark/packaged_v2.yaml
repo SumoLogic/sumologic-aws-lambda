@@ -109,7 +109,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.3
+        SemanticVersion: 1.0.5
     Type: AWS::Serverless::Application
   SumoGuarddutyApp:
     Properties:

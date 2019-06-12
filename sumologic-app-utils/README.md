@@ -13,7 +13,6 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
     1. Go to https://serverlessrepo.aws.amazon.com/applications.
     2. Search for sumologic-app-utils.
     3. Click on the sumologic-app-utils application, and then click Deploy.
-
     4. Click Deploy.
 
 
