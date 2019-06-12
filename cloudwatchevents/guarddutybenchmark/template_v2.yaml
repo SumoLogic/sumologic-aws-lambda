@@ -8,6 +8,38 @@ Globals:
     Function:
         Timeout: 300
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Sumo Logic Deployment Configuration"
+        Parameters:
+          - SumoDeployment
+          - SumoAccessID
+          - SumoAccessKey
+      -
+        Label:
+          default: "Collection Configuration"
+        Parameters:
+          - CollectorName
+          - SourceName
+          - SourceCategoryName
+    ParameterLabels:
+      SumoDeployment:
+        default: "Deployment Name"
+      SumoAccessID:
+        default: "Access ID"
+      SumoAccessKey:
+        default: "Access Key"
+      CollectorName:
+        default: "Collector Name"
+      SourceName:
+        default: "Source Name"
+      SourceCategoryName:
+        default: "Source Category Name"
+
+
 Parameters:
   CollectorName:
     Type: String
@@ -18,9 +50,9 @@ Parameters:
   SourceCategoryName:
     Type: String
     Default: Labs/AWS/Guardduty
-  SumoAccessKey:
+  SumoAccessID:
     Type: String
-  SumoAccessCode:
+  SumoAccessKey:
     Type: String
   SumoDeployment:
     Type: String
@@ -33,12 +65,13 @@ Parameters:
       - us2
       - us1
       - nite
-  RemoveSumoResourcesOnDeleteStack:
+    Description: "Enter au, ca ,de ,eu ,jp ,us2 ,us1"
+    RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
       - false
     Default: false
-    Description: To delete collector, sources and app when stack is deleted, set this parameter to true.
+    Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is false.
     Type: String
 
 Resources:
@@ -74,8 +107,8 @@ Resources:
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       CollectorName: !Ref CollectorName
+      SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
-      SumoAccessCode: !Ref SumoAccessCode
       SumoDeployment: !Ref SumoDeployment
 
   SumoHTTPSource:
@@ -87,9 +120,11 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceCategory: !Ref SourceCategoryName
       CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
-      SumoAccessCode: !Ref SumoAccessCode
       SumoDeployment: !Ref SumoDeployment
+      DateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+      DateLocatorRegex: '.*"updatedAt":"(.*)".*'
 
   SumoGuarddutyApp:
     Type: Custom::App
@@ -100,8 +135,8 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         logsrc: !Sub "_sourceCategory=${SourceCategoryName}"
+      SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
-      SumoAccessCode: !Ref SumoAccessCode
       SumoDeployment: !Ref SumoDeployment
 
 Outputs:

@@ -35,7 +35,7 @@ class AutoRegisterResource(ABCMeta):
 @six.add_metaclass(AutoRegisterResource)
 class Resource(object):
 
-    def __init__(self, access_key, access_id, deployment):
+    def __init__(self, access_id, access_key, deployment):
         self.deployment = deployment
         self.sumologic_cli = SumoLogic(access_id, access_key, self.api_endpoint)
 

@@ -8,7 +8,7 @@ def get_resource(event):
     resource_type = event.get("ResourceType").split("::")[-1]
     resource_class = ResourceFactory.get_resource(resource_type)
     props = event.get("ResourceProperties")
-    resource = resource_class(props["SumoAccessKey"], props["SumoAccessCode"], props["SumoDeployment"])
+    resource = resource_class(props["SumoAccessID"], props["SumoAccessKey"], props["SumoDeployment"])
     params = resource.extract_params(event)
     params["remove_on_delete_stack"] = props.get("RemoveOnDeleteStack") == 'true'
     print(params)
