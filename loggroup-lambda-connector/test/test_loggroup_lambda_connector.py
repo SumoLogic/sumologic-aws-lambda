@@ -149,7 +149,7 @@ class TestLambda(unittest.TestCase):
                 "FunctionName": test_lambda_name,
                 "Timeout": 300,
                 "Handler": "index.handler",
-                "Runtime": "nodejs6.10",
+                "Runtime": "nodejs8.10",
                 "MemorySize": 128
             }
         }
