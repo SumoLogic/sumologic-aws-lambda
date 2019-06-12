@@ -66,8 +66,7 @@ Parameters:
       - jp
       - us2
       - us1
-      - nite
-    Description: "Enter au, ca ,de ,eu ,jp ,us2 ,us1"
+    Description: "Enter au, ca, de, eu, jp, us2, or us1"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -128,7 +127,7 @@ Resources:
       DateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
       DateLocatorRegex: '.*"updatedAt":"(.*)".*'
 
-  SumoGuarddutyApp:
+  SumoGuardDutyBenchmarkApp:
     Type: Custom::App
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
@@ -136,7 +135,7 @@ Resources:
       AppName: "Amazon GuardDuty Benchmark"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
-        logsrc: !Sub "_sourceCategory=${SourceCategoryName}"
+        gdbenchmark: !Sub "_sourceCategory=${SourceCategoryName}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -146,7 +145,7 @@ Outputs:
     CloudWatchEventFunction:
       Description: "CloudWatchEvent Processor Function ARN"
       Value: !GetAtt CloudWatchEventFunction.Arn
-    GuarddutyApp:
+    GuarddutyBenchmarkAppFolder:
       Description: "Folder Name"
-      Value: !GetAtt SumoGuarddutyApp.APP_FOLDER_NAME
+      Value: !GetAtt SumoGuardDutyBenchmarkApp.APP_FOLDER_NAME
 

@@ -45,11 +45,11 @@ Outputs:
       Fn::GetAtt:
       - CloudWatchEventFunction
       - Arn
-  GuarddutyApp:
+  GuarddutyBenchmarkAppFolder:
     Description: Folder Name
     Value:
       Fn::GetAtt:
-      - SumoGuarddutyApp
+      - SumoGuardDutyBenchmarkApp
       - APP_FOLDER_NAME
 Parameters:
   CollectorName:
@@ -82,8 +82,7 @@ Parameters:
     - jp
     - us2
     - us1
-    - nite
-    Description: Enter au, ca ,de ,eu ,jp ,us2 ,us1
+    Description: Enter au, ca, de, eu, jp, us2, or us1
     Type: String
 Resources:
   CloudWatchEventFunction:
@@ -111,11 +110,11 @@ Resources:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
         SemanticVersion: 1.0.5
     Type: AWS::Serverless::Application
-  SumoGuarddutyApp:
+  SumoGuardDutyBenchmarkApp:
     Properties:
       AppName: Amazon GuardDuty Benchmark
       AppSources:
-        logsrc:
+        gdbenchmark:
           Fn::Sub: _sourceCategory=${SourceCategoryName}
       Region:
         Ref: AWS::Region
