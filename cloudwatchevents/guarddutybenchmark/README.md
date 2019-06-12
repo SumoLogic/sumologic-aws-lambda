@@ -13,12 +13,12 @@ Made with ❤️ by Sumo Logic AppDev Team. Available on the [AWS Serverless App
 2. Go to https://serverlessrepo.aws.amazon.com/applications.
 3. Search for sumologic-guardduty-benchmark and click on deploy.
 4. In the Configure application parameters panel, enter the following parameters
-        - Access Key(Required): Sumo Logic Access Key generated from Step 1
-        - Access Code(Required): Sumo Logic Access Code generated from Step 1
-        - Deployment Name(Required): Deployment name (environment name in lower case as per [docs](https://help.sumologic.com/APIs/General-API-Information/Sumo-Logic-Endpoints-and-Firewall-Security))
-        - Collector Name: Enter the name of the Hosted Collector which will be created in Sumo Logic.
-        - Source Name: Enter the name of the HTTP Source which will be created within the collector.
-        - Source Category Name: Enter the name of the Source Category which will be used for writing search queries.
+    * Access ID(Required): Sumo Logic Access ID generated from Step 1
+    * Access Key(Required): Sumo Logic Access Key generated from Step 1
+    * Deployment Name(Required): Deployment name (environment name in lower case as per [docs](https://help.sumologic.com/APIs/General-API-Information/Sumo-Logic-Endpoints-and-Firewall-Security))
+    * Collector Name: Enter the name of the Hosted Collector which will be created in Sumo Logic.
+    * Source Name: Enter the name of the HTTP Source which will be created within the collector.
+    * Source Category Name: Enter the name of the Source Category which will be used for writing search queries.
 5. Click on Deploy
 
 
