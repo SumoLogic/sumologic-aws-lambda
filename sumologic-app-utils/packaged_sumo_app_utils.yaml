@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This solution consists of a lambda function which which gets triggered
+  when CF stack is deployed. This is used for creating sumologic resources like collector,
+  source and app folders.
+
+  '
+Globals:
+  Function:
+    Timeout: 300
+Outputs:
+  SumoAppUtilsFunction:
+    Description: SumoAppUtils Function ARN
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-SumoAppUtilsFunction
+    Value:
+      Fn::GetAtt:
+      - SumoAppUtilsFunction
+      - Arn
+Resources:
+  SumoAppUtilsFunction:
+    Properties:
+      CodeUri: s3://appdevstore/sumo_app_utils.zip
+      Handler: main.handler
+      MemorySize: 128
+      Runtime: python3.7
+      Timeout: 300
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31
