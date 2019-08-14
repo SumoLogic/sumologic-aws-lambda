@@ -404,12 +404,10 @@ class App(Resource):
 if __name__ == '__main__':
 
     params = {
-        # "access_id": "su7SgzaX1GEFj1",
-        # "access_key": "IPBdLkE64u6tgeGzxM3UkpVRghfvFhbkhD3koufHNj2SGIy70NqOIL6GS7f88gfz",
-        # "deployment": "us2"
-        "access_id": "suNNLllvfjDK4s",
-        "access_key": "lbCmtyd09TcK0uSZX7WmIhDuwBqIKs5U1FvJ8Q5TFYkdWNodhVQYtntIPq4GhMuX",
-        "deployment": "us1"
+
+        "access_id": "",
+        "access_key": "",
+        "deployment": ""
 
     }
     collector_id = None
