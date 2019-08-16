@@ -181,75 +181,74 @@ exports.handler = function (event, context) {
     }
     var numOfRecords = event.Records.length;
     event.Records.forEach(function(record, index) {
-        var zippedInput = new Buffer(record.kinesis.data, 'base64');
+        var awslogsData = {};
 
-        zlib.gunzip(zippedInput, function (e, buffer) {
-            if (e) {
-                context.fail(e);
+        try {
+            awslogsData = JSON.parse(zlib.gunzipSync(new Buffer(record.kinesis.data, 'base64')).toString(encoding));
+        } catch (e) {
+            context.fail(e);
+        }
+
+        if (awslogsData.messageType === 'CONTROL_MESSAGE') {
+            console.log('Control message');
+            context.succeed('Success');
+        }
+
+        var lastRequestID = null;
+
+        console.log('Log events: ' + awslogsData.logEvents.length);
+
+        // Chunk log events before posting to SumoLogic
+        awslogsData.logEvents.forEach(function (log, idx, arr) {
+
+            // Remove any trailing \n
+            log.message = log.message.replace(/\n$/, '');
+
+            // Try extract requestID
+            var requestId = requestIdRegex.exec(log.message);
+            if (requestId !== null) {
+                lastRequestID = requestId[1];
             }
-            var awslogsData = JSON.parse(buffer.toString(encoding));
 
-            if (awslogsData.messageType === 'CONTROL_MESSAGE') {
-                console.log('Control message');
-                context.succeed('Success');
+            // Attempt to detect console log and auto extract requestID and message
+            var consoleLog = consoleFormatRegex.exec(log.message);
+            if (consoleLog !== null) {
+                lastRequestID = consoleLog[1];
+                log.message = log.message.substring(consoleLog[0].length);
             }
 
-            var lastRequestID = null;
-
-            console.log('Log events: ' + awslogsData.logEvents.length);
-
-            // Chunk log events before posting to SumoLogic
-            awslogsData.logEvents.forEach(function (log, idx, arr) {
-
-                // Remove any trailing \n
-                log.message = log.message.replace(/\n$/, '');
-
-                // Try extract requestID
-                var requestId = requestIdRegex.exec(log.message);
-                if (requestId !== null) {
-                    lastRequestID = requestId[1];
-                }
-
-                // Attempt to detect console log and auto extract requestID and message
-                var consoleLog = consoleFormatRegex.exec(log.message);
-                if (consoleLog !== null) {
-                    lastRequestID = consoleLog[1];
-                    log.message = log.message.substring(consoleLog[0].length);
-                }
-
-                // Auto detect if message is json
-                try {
-                    log.message = JSON.parse(log.message);
-                } catch (err) {
-                    // Do nothing, leave as text
-                    log.message.trim();
-                }
-
-                // delete id as it's not very useful
-                delete log.id;
-
-                if (includeLogInfo) {
-                    log.logStream = awslogsData.logStream;
-                    log.logGroup = awslogsData.logGroup;
-                }
-
-                if (lastRequestID) {
-                    log.requestID = lastRequestID;
-                }
-
-                var metadataKey = sumoMetaKey(awslogsData, log.message);
-
-                if (metadataKey in messageList) {
-                    messageList[metadataKey].push(log);
-                } else {
-                    messageList[metadataKey] = [log];
-                }
-            });
-            // Push messages to Sumo
-            if (index === numOfRecords-1) {
-                postToSumo(context, messageList);
+            // Auto detect if message is json
+            try {
+                log.message = JSON.parse(log.message);
+            } catch (err) {
+                // Do nothing, leave as text
+                log.message.trim();
             }
-        })
+
+            // delete id as it's not very useful
+            delete log.id;
+
+            if (includeLogInfo) {
+                log.logStream = awslogsData.logStream;
+                log.logGroup = awslogsData.logGroup;
+            }
+
+            if (lastRequestID) {
+                log.requestID = lastRequestID;
+            }
+
+            var metadataKey = sumoMetaKey(awslogsData, log.message);
+
+            if (metadataKey in messageList) {
+                messageList[metadataKey].push(log);
+            } else {
+                messageList[metadataKey] = [log];
+            }
+        });
+        // Push messages to Sumo
+        if (index === numOfRecords-1) {
+            postToSumo(context, messageList);
+        }        
 
     });
 };
