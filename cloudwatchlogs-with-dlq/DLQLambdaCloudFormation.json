@@ -28,6 +28,11 @@
         "Default": "false",
         "AllowedValues" : ["true" ,"false"],
         "Description": "Select true to get loggroup/logstream values in logs"
+      },
+      "Concurrency": {
+        "Type": "Number",
+        "Default": -1,
+        "Description": "Reserved concurrent executions for the lambdas. -1 for unreserved, 0 to stop the lambdas."
       }
     },
     "Mappings" : {
@@ -206,6 +211,7 @@
                     ]
                 },
                 "Timeout": 300,
+                "ReservedConcurrentExecutions": {"Ref": "Concurrency"},
                 "DeadLetterConfig": {
                     "TargetArn" : {
                         "Fn::GetAtt": [
@@ -267,6 +273,7 @@
                     ]
                 },
                 "Timeout": 300,
+                "ReservedConcurrentExecutions": {"Ref": "Concurrency"},
                 "Handler": "DLQProcessor.handler",
                 "DeadLetterConfig": {
                     "TargetArn" : {
