@@ -82,7 +82,11 @@ function getConfig(env) {
         "compressData": env.COMPRESS_DATA || true,
         "vpcCIDRPrefix": env.VPC_CIDR_PREFIX || '',
         "includeLogInfo": ("INCLUDE_LOG_INFO" in env) ? env.INCLUDE_LOG_INFO === "true" : false,
-        "includeSecurityGroupInfo": ("INCLUDE_SECURITY_GROUP_INFO" in env) ? env.INCLUDE_SECURITY_GROUP_INFO === "true" : false
+        "includeSecurityGroupInfo": ("INCLUDE_SECURITY_GROUP_INFO" in env) ? env.INCLUDE_SECURITY_GROUP_INFO === "true" : false,
+        // Regex to filter by logStream name prefixes
+        "logStreamPrefixRegex": ("LOG_STREAM_PREFIX" in env)
+                                ? new RegExp('^(' + env.LOG_STREAM_PREFIX.replace(/,/g, '|')  + ')', 'i')
+                                : ''
     };
     if (!config.SumoURL) {
         return new Error('Undefined SUMO_ENDPOINT environment variable');
@@ -134,6 +138,8 @@ exports.processLogs = function (env, eventAwslogsData, callback) {
         var records = [];
         if (awslogsData.messageType === 'CONTROL_MESSAGE') {
             console.log('Skipping Control Message');
+        } else if(config.logStreamPrefixRegex && !awslogsData.logStream.match(config.logStreamPrefixRegex)){
+            console.log('Skipping Non-Applicable Log Stream');
         } else {
             records = createRecords(config, awslogsData.logEvents, awslogsData);
             console.log(records.length + " Records Found");

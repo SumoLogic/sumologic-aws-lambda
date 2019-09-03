@@ -21,6 +21,11 @@ var encoding = process.env.ENCODING || 'utf-8';  // default is utf-8
 // Include logStream and logGroup as json fields within the message. Required for SumoLogic AWS Lambda App
 var includeLogInfo = false;  // default is false
 
+// Regex to filter by logStream name prefixes
+var logStreamPrefixRegex = process.env.LOG_STREAM_PREFIX
+                            ? new RegExp('^(' + process.env.LOG_STREAM_PREFIX.replace(/,/g, '|')  + ')', 'i')
+                            : '';
+
 // Regex used to detect logs coming from lambda functions.
 // The regex will parse out the requestID and strip the timestamp
 // Example: 2016-11-10T23:11:54.523Z	108af3bb-a79b-11e6-8bd7-91c363cc05d9    some message
@@ -158,6 +163,9 @@ exports.handler = function (event, context, callback) {
         if (awslogsData.messageType === 'CONTROL_MESSAGE') {
             console.log('Control message');
             callback(null, 'Success');
+        } else if(logStreamPrefixRegex && !awslogsData.logStream.match(logStreamPrefixRegex)){
+            console.log('Skipping Non-Applicable Log Stream');
+            return callback(null, 'Success');
         }
 
         var lastRequestID = null;
