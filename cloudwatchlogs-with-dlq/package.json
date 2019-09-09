@@ -5,7 +5,7 @@
   "main": "DLQProcessor.js",
   "dependencies": {
     "jmespath": "^0.15.0",
-    "lodash.find": "^4.17.13"
+    "lodash": "^4.17.15"
   },
   "devDependencies": {},
   "scripts": {

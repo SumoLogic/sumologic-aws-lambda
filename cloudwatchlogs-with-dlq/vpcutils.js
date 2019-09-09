@@ -1,4 +1,4 @@
-var find = require('lodash.find');
+var find = require('lodash').find;
 var EC2 = require('aws-sdk/clients/ec2');
 var jmespath = require('jmespath');
 var ec2 = null;
