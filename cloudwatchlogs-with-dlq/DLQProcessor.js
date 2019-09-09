@@ -12,7 +12,7 @@ exports.consumeMessages = function (env, context, callback) {
         if (err) {
             callback(err);
         } else if (messages && messages.length > 0) {
-            var fail_cnt = 0, msgCount = 0, payload = '{"is_worker": "1"}';
+            var fail_cnt = 0, msgCount = 0;
             console.log("Messages Received", messages.length);
             for (var i = 0; i < messages.length; i++) {
                 (function(idx) {
@@ -42,7 +42,7 @@ exports.consumeMessages = function (env, context, callback) {
                         if (msgCount == messages.length) {
                             if (fail_cnt == 0 && (parseInt(env.is_worker) === 0)) {
                                 invokeLambdas(env.AWS_REGION, parseInt(env.NUM_OF_WORKERS),
-                                              context.functionName, payload, context);
+                                              context.functionName, '{"is_worker": "1"}', context);
                             }
                             callback(null, (messages.length-fail_cnt) + ' success');
                         }
