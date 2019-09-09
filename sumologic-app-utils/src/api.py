@@ -65,12 +65,17 @@ class Resource(object):
             return 'https://%s-api.sumologic.net/api' % self.deployment
 
     def is_enterprise_or_trial_account(self):
-        to_time = int(time.time())*100
+        to_time = int(time.time())*1000
         from_time = to_time - 5*60*1000
         try:
-            response = self.sumologic_cli.search_job("_sourceCategory=*Guardduty", fromTime=from_time, toTime=to_time)
+            response = self.sumologic_cli.search_job("benchmarkcat guardduty", fromTime=from_time, toTime=to_time)
+            print("schedule job status: %s" % response)
+            response = self.sumologic_cli.search_job_status(response)
             print("job status: %s" % response)
-            return True
+            if len(response.get("pendingErrors", [])) > 0:
+                return False
+            else:
+                return True
         except Exception as e:
             if hasattr(e, "response") and e.response.status_code == 403:
                 return False
@@ -399,9 +404,11 @@ class App(Resource):
 if __name__ == '__main__':
 
     params = {
+
         "access_id": "",
         "access_key": "",
         "deployment": ""
+
     }
     collector_id = None
     collector_type = "Hosted"
