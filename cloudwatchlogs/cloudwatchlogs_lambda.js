@@ -23,7 +23,7 @@ var includeLogInfo = false;  // default is false
 
 // Regex to filter by logStream name prefixes
 var logStreamPrefixRegex = process.env.LOG_STREAM_PREFIX
-                            ? new RegExp('^(' + process.env.LOG_STREAM_PREFIX.replace(/,/g, '|')  + ')', 'i')
+                            ? new RegExp('^(' + escapeRegExp(process.env.LOG_STREAM_PREFIX).replace(/,/g, '|')  + ')', 'i')
                             : '';
 
 // Regex used to detect logs coming from lambda functions.
@@ -38,6 +38,9 @@ var https = require('https');
 var zlib = require('zlib');
 var url = require('url');
 
+function escapeRegExp(string) {
+  return string.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&');
+}
 
 function sumoMetaKey(awslogsData, message) {
     var sourceCategory = '';

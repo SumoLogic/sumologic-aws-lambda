@@ -85,7 +85,7 @@ function getConfig(env) {
         "includeSecurityGroupInfo": ("INCLUDE_SECURITY_GROUP_INFO" in env) ? env.INCLUDE_SECURITY_GROUP_INFO === "true" : false,
         // Regex to filter by logStream name prefixes
         "logStreamPrefixRegex": ("LOG_STREAM_PREFIX" in env)
-                                ? new RegExp('^(' + env.LOG_STREAM_PREFIX.replace(/,/g, '|')  + ')', 'i')
+                                ? new RegExp('^(' + escapeRegExp(env.LOG_STREAM_PREFIX).replace(/,/g, '|')  + ')', 'i')
                                 : ''
     };
     if (!config.SumoURL) {
@@ -97,6 +97,10 @@ function getConfig(env) {
         return new Error('Invalid SUMO_ENDPOINT environment variable: ' + config.SumoURL);
     }
     return config;
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&');
 }
 
 function transformRecords(config, records) {
