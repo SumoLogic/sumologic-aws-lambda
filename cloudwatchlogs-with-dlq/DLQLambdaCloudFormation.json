@@ -28,6 +28,10 @@
         "Default": "false",
         "AllowedValues" : ["true" ,"false"],
         "Description": "Select true to get loggroup/logstream values in logs"
+      },
+      "LogStreamPrefix": {
+        "Type": "String",
+        "Description": "Enter comma separated list of logStream name prefixes to filter by logStream"
       }
     },
     "Mappings" : {
@@ -221,7 +225,8 @@
                     "Variables": {
                         "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
                         "LOG_FORMAT": {"Ref": "LogFormat"},
-                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"}
+                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"},
+                        "LOG_STREAM_PREFIX": {"Ref": "LogStreamPrefix"}
 
                     }
                 }
@@ -296,7 +301,8 @@
                         },
                         "NUM_OF_WORKERS": {"Ref": "NumOfWorkers"},
                         "LOG_FORMAT": {"Ref": "LogFormat"},
-                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"}
+                        "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"},
+                        "LOG_STREAM_PREFIX": {"Ref": "LogStreamPrefix"}
                     }
                 }
             }
