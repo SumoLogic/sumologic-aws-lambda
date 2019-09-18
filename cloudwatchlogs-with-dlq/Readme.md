@@ -21,6 +21,7 @@ The following AWS Lambda environment variables are supported in both the lambda 
 * SOURCE_NAME_OVERRIDE (OPTIONAL) - Override _sourceName metadata field within SumoLogic.
 * INCLUDE_LOG_INFO (OPTIONAL) - Set it to true when loggroup/logstream values needs to be included in logs. Default is false
 * LOG_FORMAT - Default is Others. One can choose VPC-JSON for VPC flow logs in json format and VPC-RAW for only RAW message line
+* LOG_STREAM_PREFIX (OPTIONAL) - Comma separated list of logStream name prefixes to filter by logStream, especially for AWS Batch logs
 
 ### Configuring Lambda for VPC Flow Logs
 The following AWS Lambda environment variables are supported in both the lambda functions for VPC flow logs.
