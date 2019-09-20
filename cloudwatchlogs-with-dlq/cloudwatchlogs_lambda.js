@@ -70,11 +70,12 @@ function getConfig(env) {
         // SumoLogic Endpoint to post logs
         "SumoURL": env.SUMO_ENDPOINT,
 
-        // The following parameters override the sourceCategory, sourceHost and sourceName metadata fields within SumoLogic.
+        // The following parameters override the sourceCategory, sourceHost, sourceName and sourceFields metadata fields within SumoLogic.
         // Not these can also be overridden via json within the message payload. See the README for more information.
         "sourceCategoryOverride": ("SOURCE_CATEGORY_OVERRIDE" in env) ?  env.SOURCE_CATEGORY_OVERRIDE: '',  // If none sourceCategoryOverride will not be overridden
-        "sourceHostOverride": ("SOURCE_HOST_OVERRIDE" in env) ? env.SOURCE_HOST_OVERRIDE : '',          // If none sourceHostOverride will not be set to the name of the logGroup
-        "sourceNameOverride": ("SOURCE_NAME_OVERRIDE" in env) ? env.SOURCE_NAME_OVERRIDE : '',          // If none sourceNameOverride will not be set to the name of the logStream
+	"sourceFieldsOverride": ("SOURCE_FIELDS_OVERRIDE" in env) ?  env.SOURCE_FIELDS_OVERRIDE: '',        // If none sourceFieldsOverride will not be overridden
+        "sourceHostOverride": ("SOURCE_HOST_OVERRIDE" in env) ? env.SOURCE_HOST_OVERRIDE : '',              // If none sourceHostOverride will not be set to the name of the logGroup
+        "sourceNameOverride": ("SOURCE_NAME_OVERRIDE" in env) ? env.SOURCE_NAME_OVERRIDE : '',              // If none sourceNameOverride will not be set to the name of the logStream
         "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-aws-lambda',
         // CloudWatch logs encoding
         "encoding": env.ENCODING || 'utf-8',  // default is utf-8
