@@ -15,15 +15,17 @@ function SumoLogsClient(config) {
 
 SumoLogsClient.prototype.generateHeaders = function(config, message, awslogsData) {
     var sourceCategory = config.sourceCategoryOverride || '';
+    var sourceFields = config.sourceFieldsOverride || '';
     var sourceName = config.sourceNameOverride || ((awslogsData) ? awslogsData.logStream : '');
     var sourceHost = config.sourceHostOverride || ((awslogsData) ? awslogsData.logGroup : '');
 
     var headerObj = {
         'X-Sumo-Name':sourceName, 'X-Sumo-Category':sourceCategory,
-        'X-Sumo-Host':sourceHost, 'X-Sumo-Client': config.SUMO_CLIENT_HEADER
+        'X-Sumo-Host':sourceHost, 'X-Sumo-Fields':sourceFields,
+        'X-Sumo-Client': config.SUMO_CLIENT_HEADER
     };
 
-    var metadataMap = {category: "X-Sumo-Category", sourceName: "X-Sumo-Name", sourceHost: "X-Sumo-Host"};
+    var metadataMap = {category: "X-Sumo-Category", sourceName: "X-Sumo-Name", sourceHost: "X-Sumo-Host", sourceFieldsOverride: "X-Sumo-Fields"};
     if (message.hasOwnProperty('_sumo_metadata')) {
         var metadataOverride = message._sumo_metadata;
         Object.getOwnPropertyNames(metadataOverride).forEach( function(property) {
@@ -47,6 +49,7 @@ SumoLogsClient.prototype.createPromises = function(messages, is_compressed) {
             'X-Sumo-Name': headerArray[0],
             'X-Sumo-Category': headerArray[1],
             'X-Sumo-Host': headerArray[2],
+            'X-Sumo-Fields': headerArray[3],
             'X-Sumo-Client': self.SUMO_CLIENT_HEADER
         };
         var options = Object.assign({}, self.options);
@@ -100,7 +103,7 @@ SumoLogsClient.prototype.postToSumo = function(messages, is_compressed) {
 };
 
 SumoLogsClient.prototype.getMetaDataKey = function(headerObj) {
-    return headerObj['X-Sumo-Name'] + ':' + headerObj['X-Sumo-Category'] + ':' + headerObj['X-Sumo-Host'];
+    return headerObj['X-Sumo-Name'] + ':' + headerObj['X-Sumo-Category'] + ':' + headerObj['X-Sumo-Host'] + ':' + headerObj['X-Sumo-Fields'];
 };
 
 
