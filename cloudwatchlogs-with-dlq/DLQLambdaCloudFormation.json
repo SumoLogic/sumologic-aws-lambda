@@ -31,7 +31,8 @@
       },
       "LogStreamPrefix": {
         "Type": "String",
-        "Description": "Enter comma separated list of logStream name prefixes to filter by logStream"
+        "Description": "Enter comma separated list of logStream name prefixes to filter by logStream",
+        "Default": ""
       }
     },
     "Mappings" : {
