@@ -33,6 +33,21 @@
         "Type": "String",
         "Description": "(Optional) Enter comma separated list of logStream name prefixes to filter by logStream. Please note this is seperate from a logGroup. This is used to only send certain logStreams within a cloudwatch logGroup(s). LogGroups still need to be subscribed to the created Lambda funciton, regardless of what is input for this value.",
         "Default": ""
+      },
+      "CWLogsLambdaName": {
+        "Type": "String",
+        "Default": "",
+        "AllowedPattern": "[a-zA-Z0-9-_]*",
+        "MinLength": 0,
+        "MaxLength": 64,
+        "Description": "Provide a custom name for the log processor Lambda function. Leave blank (default) to use a CloudFormation-generated name."
+      }
+    },
+    "Conditions" : {
+      "UseCustomCWLogsLambdaName": {
+        "Fn::Not": [{
+          "Fn::Equals": [ {"Ref": "CWLogsLambdaName"}, "" ]
+        }]
       }
     },
     "Mappings" : {
@@ -203,7 +218,11 @@
                 "SumoCWDeadLetterQueue"
             ],
             "Properties": {
-                "FunctionName": { "Fn::Join": [ "-", [ "SumoCWLogsLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "FunctionName": { "Fn::If": [
+                    "UseCustomCWLogsLambdaName",
+                    { "Ref": "CWLogsLambdaName" },
+                    { "Fn::Join": [ "-", [ "SumoCWLogsLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] }
+                ]},
                 "Code": {
                     "S3Bucket": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "bucketname"]},
                     "S3Key": "cloudwatchlogs-with-dlq.zip"
