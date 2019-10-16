@@ -98,7 +98,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.5
+        SemanticVersion: 1.0.6
 
   SumoHostedCollector:
     Type: Custom::Collector

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////
-//                       CloudWatch Logs to SumoLogic                           //
+// CloudWatch Logs to SumoLogic //
 // https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchlogs //
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -8,22 +8,22 @@ var SumoURL = process.env.SUMO_ENDPOINT;
 
 // The following parameters override the sourceCategoryOverride, sourceHostOverride and sourceNameOverride metadata fields within SumoLogic.
 // Not these can also be overridden via json within the message payload. See the README for more information.
-var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none';  // If none sourceCategoryOverride will not be overridden
-var sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE || 'none';          // If none sourceHostOverride will not be set to the name of the logGroup
-var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || 'none';          // If none sourceNameOverride will not be set to the name of the logStream
+var sourceCategoryOverride = process.env.SOURCE_CATEGORY_OVERRIDE || 'none'; // If none sourceCategoryOverride will not be overridden
+var sourceHostOverride = process.env.SOURCE_HOST_OVERRIDE || 'none'; // If none sourceHostOverride will not be set to the name of the logGroup
+var sourceNameOverride = process.env.SOURCE_NAME_OVERRIDE || 'none'; // If none sourceNameOverride will not be set to the name of the logStream
 
 var retryInterval = process.env.RETRY_INTERVAL || 5000; // the interval in millisecs between retries
-var numOfRetries = process.env.NUMBER_OF_RETRIES || 3;  // the number of retries
+var numOfRetries = process.env.NUMBER_OF_RETRIES || 3; // the number of retries
 
 // CloudWatch logs encoding
-var encoding = process.env.ENCODING || 'utf-8';  // default is utf-8
+var encoding = process.env.ENCODING || 'utf-8'; // default is utf-8
 
 // Include logStream and logGroup as json fields within the message. Required for SumoLogic AWS Lambda App
-var includeLogInfo = true;  // default is true
+var includeLogInfo = true; // default is true
 
 // Regex used to detect logs coming from lambda functions.
 // The regex will parse out the requestID and strip the timestamp
-// Example: 2016-11-10T23:11:54.523Z   108af3bb-a79b-11e6-8bd7-91c363cc05d9    some message
+// Example: 2016-11-10T23:11:54.523Z 108af3bb-a79b-11e6-8bd7-91c363cc05d9 some message
 var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+?-\w+?-\w+?-\w+)\t/;
 
 // Used to extract RequestID
@@ -32,7 +32,6 @@ var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
 var https = require('https');
 var zlib = require('zlib');
 var url = require('url');
-
 
 Promise.retryMax = function(fn,retry,interval,fnParams) {
     return fn.apply(this,fnParams).catch( err => {
@@ -106,7 +105,8 @@ function postToSumo(context, messages) {
     var options = {
         'hostname': urlObject.hostname,
         'path': urlObject.pathname,
-        'method': 'POST'
+        'method': 'POST',
+        'port': urlObject.port
     };
 
     var finalizeContext = function () {
@@ -248,7 +248,8 @@ exports.handler = function (event, context) {
         // Push messages to Sumo
         if (index === numOfRecords-1) {
             postToSumo(context, messageList);
-        }        
+        }
 
     });
 };
+

@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 Description: 'This function is invoked by AWS CloudWatch events in response to state
   change in your AWS resources which matches a event target definition. The event
   payload received is then forwarded to Sumo Logic HTTP source endpoint.
@@ -24,56 +25,36 @@ Metadata:
       - SourceCategoryName
       - RemoveSumoResourcesOnDeleteStack
     ParameterLabels:
-      CollectorName:
-        default: Collector Name
-      RemoveSumoResourcesOnDeleteStack:
-        default: Remove Sumo Resources On Delete Stack
-      SourceCategoryName:
-        default: Source Category Name
-      SourceName:
-        default: Source Name
+      SumoDeployment:
+        default: Deployment Name
       SumoAccessID:
         default: Access ID
       SumoAccessKey:
         default: Access Key
-      SumoDeployment:
-        default: Deployment Name
-Outputs:
-  CloudWatchEventFunction:
-    Description: CloudWatchEvent Processor Function ARN
-    Value:
-      Fn::GetAtt:
-      - CloudWatchEventFunction
-      - Arn
-  GuarddutyBenchmarkAppFolder:
-    Description: Folder Name
-    Value:
-      Fn::GetAtt:
-      - SumoGuardDutyBenchmarkApp
-      - APP_FOLDER_NAME
+      CollectorName:
+        default: Collector Name
+      SourceName:
+        default: Source Name
+      SourceCategoryName:
+        default: Source Category Name
+      RemoveSumoResourcesOnDeleteStack:
+        default: Remove Sumo Resources On Delete Stack
 Parameters:
   CollectorName:
+    Type: String
     Default: GuarddutyCollector
-    Type: String
-  RemoveSumoResourcesOnDeleteStack:
-    AllowedValues:
-    - true
-    - false
-    Default: false
-    Description: To delete collector, sources and app when stack is deleted, set this
-      parameter to true. Default is false.
-    Type: String
-  SourceCategoryName:
-    Default: Labs/AWS/Guardduty
-    Type: String
   SourceName:
-    Default: GuarddutyEvents
     Type: String
+    Default: GuarddutyEvents
+  SourceCategoryName:
+    Type: String
+    Default: Labs/AWS/Guardduty
   SumoAccessID:
     Type: String
   SumoAccessKey:
     Type: String
   SumoDeployment:
+    Type: String
     AllowedValues:
     - au
     - ca
@@ -83,6 +64,13 @@ Parameters:
     - us2
     - us1
     Description: Enter au, ca, de, eu, jp, us2, or us1
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+    - true
+    - false
+    Default: false
+    Description: To delete collector, sources and app when stack is deleted, set this
+      parameter to true. Default is false.
     Type: String
 Resources:
   CloudWatchEventFunction:
@@ -105,77 +93,89 @@ Resources:
       Runtime: nodejs8.10
     Type: AWS::Serverless::Function
   SumoAppUtils:
+    Type: AWS::Serverless::Application
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.5
-    Type: AWS::Serverless::Application
-  SumoGuardDutyBenchmarkApp:
+        SemanticVersion: 1.0.6
+  SumoHostedCollector:
+    Type: Custom::Collector
     Properties:
-      AppName: Amazon GuardDuty Benchmark
-      AppSources:
-        gdbenchmark:
-          Fn::Sub: _sourceCategory=${SourceCategoryName}
-      Region:
-        Ref: AWS::Region
-      RemoveOnDeleteStack:
-        Ref: RemoveSumoResourcesOnDeleteStack
       ServiceToken:
         Fn::GetAtt:
         - SumoAppUtils
         - Outputs.SumoAppUtilsFunction
+      Region:
+        Ref: AWS::Region
+      CollectorType: Hosted
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
+      CollectorName:
+        Ref: CollectorName
       SumoAccessID:
         Ref: SumoAccessID
       SumoAccessKey:
         Ref: SumoAccessKey
       SumoDeployment:
         Ref: SumoDeployment
-    Type: Custom::App
   SumoHTTPSource:
+    Type: Custom::HTTPSource
     Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - SumoAppUtils
+        - Outputs.SumoAppUtilsFunction
+      Region:
+        Ref: AWS::Region
+      SourceName:
+        Ref: SourceName
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
+      SourceCategory:
+        Ref: SourceCategoryName
       CollectorId:
         Fn::GetAtt:
         - SumoHostedCollector
         - COLLECTOR_ID
+      SumoAccessID:
+        Ref: SumoAccessID
+      SumoAccessKey:
+        Ref: SumoAccessKey
+      SumoDeployment:
+        Ref: SumoDeployment
       DateFormat: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
       DateLocatorRegex: .*"updatedAt":"(.*)".*
-      Region:
-        Ref: AWS::Region
-      RemoveOnDeleteStack:
-        Ref: RemoveSumoResourcesOnDeleteStack
-      ServiceToken:
-        Fn::GetAtt:
-        - SumoAppUtils
-        - Outputs.SumoAppUtilsFunction
-      SourceCategory:
-        Ref: SourceCategoryName
-      SourceName:
-        Ref: SourceName
-      SumoAccessID:
-        Ref: SumoAccessID
-      SumoAccessKey:
-        Ref: SumoAccessKey
-      SumoDeployment:
-        Ref: SumoDeployment
-    Type: Custom::HTTPSource
-  SumoHostedCollector:
+  SumoGuardDutyBenchmarkApp:
+    Type: Custom::App
     Properties:
-      CollectorName:
-        Ref: CollectorName
-      CollectorType: Hosted
-      Region:
-        Ref: AWS::Region
-      RemoveOnDeleteStack:
-        Ref: RemoveSumoResourcesOnDeleteStack
       ServiceToken:
         Fn::GetAtt:
         - SumoAppUtils
         - Outputs.SumoAppUtilsFunction
+      Region:
+        Ref: AWS::Region
+      AppName: Amazon GuardDuty Benchmark
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        gdbenchmark:
+          Fn::Sub: _sourceCategory=${SourceCategoryName}
       SumoAccessID:
         Ref: SumoAccessID
       SumoAccessKey:
         Ref: SumoAccessKey
       SumoDeployment:
         Ref: SumoDeployment
-    Type: Custom::Collector
-Transform: AWS::Serverless-2016-10-31
+Outputs:
+  CloudWatchEventFunction:
+    Description: CloudWatchEvent Processor Function ARN
+    Value:
+      Fn::GetAtt:
+      - CloudWatchEventFunction
+      - Arn
+  GuarddutyBenchmarkAppFolder:
+    Description: Folder Name
+    Value:
+      Fn::GetAtt:
+      - SumoGuardDutyBenchmarkApp
+      - APP_FOLDER_NAME
