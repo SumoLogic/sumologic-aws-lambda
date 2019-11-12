@@ -90,7 +90,7 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
     Type: AWS::Serverless::Function
 
   SumoAppUtils:

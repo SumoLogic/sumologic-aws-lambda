@@ -33,7 +33,7 @@ Resources:
       Properties:
         CodeUri: ../src/
         Handler: "loggroup-lambda-connector.handler"
-        Runtime: nodejs8.10
+        Runtime: nodejs10.x
         Environment:
           Variables:
             LAMBDA_ARN: !Ref "LambdaARN"
