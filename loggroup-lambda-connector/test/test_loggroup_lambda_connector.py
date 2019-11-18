@@ -219,9 +219,9 @@ def upload_code_in_S3(region):
     print("Uploading zip file in S3 region: %s" % region)
     s3 = boto3.client('s3', region)
     bucket_name = get_bucket_name(region)
-    filename = TestLambda.ZIP_FILE
-    key = os.path.basename(filename)
-    s3.upload_file(filename, bucket_name, key,
+    key = os.path.basename(TestLambda.ZIP_FILE)
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), TestLambda.ZIP_FILE)
+    s3.upload_file(os.path.join(__file__, filename), bucket_name, key,
                    ExtraArgs={'ACL': 'public-read'})
 
 
