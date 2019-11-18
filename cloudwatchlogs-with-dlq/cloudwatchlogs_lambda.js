@@ -129,7 +129,7 @@ function filterRecords(config, records) {
 }
 
 exports.processLogs = function (env, eventAwslogsData, callback) {
-    var zippedInput = new Buffer(eventAwslogsData, 'base64');
+    var zippedInput = Buffer.from(eventAwslogsData, 'base64');
     var config = getConfig(env);
     if (config instanceof Error) {
         console.log("Error in getConfig: ", config);

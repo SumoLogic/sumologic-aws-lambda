@@ -28,7 +28,7 @@ var logStreamPrefixRegex = process.env.LOG_STREAM_PREFIX
 
 // Regex used to detect logs coming from lambda functions.
 // The regex will parse out the requestID and strip the timestamp
-// Example: 2016-11-10T23:11:54.523Z	108af3bb-a79b-11e6-8bd7-91c363cc05d9    some message
+// Example: 2016-11-10T23:11:54.523Z    108af3bb-a79b-11e6-8bd7-91c363cc05d9    some message
 var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\s(\w+?-\w+?-\w+?-\w+?-\w+)\s/;
 
 // Used to extract RequestID
@@ -154,7 +154,7 @@ exports.handler = function (event, context, callback) {
         callback('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
     }
 
-    var zippedInput = new Buffer(event.awslogs.data, 'base64');
+    var zippedInput = Buffer.from(event.awslogs.data, 'base64');
 
     zlib.gunzip(zippedInput, function (e, buffer) {
         if (e) {

@@ -184,7 +184,7 @@ exports.handler = function (event, context) {
         var awslogsData = {};
 
         try {
-            awslogsData = JSON.parse(zlib.gunzipSync(new Buffer(record.kinesis.data, 'base64')).toString(encoding));
+            awslogsData = JSON.parse(zlib.gunzipSync(Buffer.from(record.kinesis.data, 'base64')).toString(encoding));
         } catch (e) {
             context.fail(e);
         }
