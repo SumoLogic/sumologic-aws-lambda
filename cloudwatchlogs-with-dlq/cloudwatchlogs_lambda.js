@@ -24,44 +24,53 @@ function createRecords(config, events, awslogsData) {
     var records = [];
     var lastRequestID = null;
     console.log('Log events: ' + events.length);
-
+    var msgset = new Set();
+    var duplicate_count = 0;
     events.forEach(function (log) {
-        // Remove any trailing \n
-        log.message = log.message.replace(/\n$/, '');
-        // Try extract requestID
-        var requestId = requestIdRegex.exec(log.message);
-        if (requestId !== null) {
-            lastRequestID = requestId[1];
-        }
-        // Attempt to detect console log and auto extract requestID and message
-        var consoleLog = consoleFormatRegex.exec(log.message);
-        if (consoleLog !== null) {
-            lastRequestID = consoleLog[1];
-            log.message = log.message.substring(consoleLog[0].length);
-        }
-        if (lastRequestID) {
-            log.requestID = lastRequestID;
-        }
-        // Auto detect if message is json
-        try {
-            log.message = JSON.parse(log.message);
-        } catch (err) {
-            // Do nothing, leave as text
-            log.message = log.message.trim();
-        }
-        // delete id as it's not very useful
-        delete log.id;
-        if (config.LogFormat.startsWith("VPC")) {
-            delete log.timestamp;
-        }
-        delete log.extractedFields;
 
-        if (config.includeLogInfo) {
-            log.logStream = awslogsData.logStream;
-            log.logGroup = awslogsData.logGroup;
+        if (msgset.has(log.id)) {
+            console.log("Found duplicate message", log.id);
+            duplicate_count += 1;
+        } else {
+            msgset.add(log.id);
+            // Remove any trailing \n
+            log.message = log.message.replace(/\n$/, '');
+            // Try extract requestID
+            var requestId = requestIdRegex.exec(log.message);
+            if (requestId !== null) {
+                lastRequestID = requestId[1];
+            }
+            // Attempt to detect console log and auto extract requestID and message
+            var consoleLog = consoleFormatRegex.exec(log.message);
+            if (consoleLog !== null) {
+                lastRequestID = consoleLog[1];
+                log.message = log.message.substring(consoleLog[0].length);
+            }
+            if (lastRequestID) {
+                log.requestID = lastRequestID;
+            }
+            // Auto detect if message is json
+            try {
+                log.message = JSON.parse(log.message);
+            } catch (err) {
+                // Do nothing, leave as text
+                log.message = log.message.trim();
+            }
+            // delete id as it's not very useful
+            delete log.id;
+            if (config.LogFormat.startsWith("VPC")) {
+                delete log.timestamp;
+            }
+            delete log.extractedFields;
+
+            if (config.includeLogInfo) {
+                log.logStream = awslogsData.logStream;
+                log.logGroup = awslogsData.logGroup;
+            }
+            records.push(log);
         }
-        records.push(log);
     });
+    console.log('Duplicate events: ' + duplicate_count);
     return records;
 }
 
@@ -73,7 +82,7 @@ function getConfig(env) {
         // The following parameters override the sourceCategory, sourceHost, sourceName and sourceFields metadata fields within SumoLogic.
         // Not these can also be overridden via json within the message payload. See the README for more information.
         "sourceCategoryOverride": ("SOURCE_CATEGORY_OVERRIDE" in env) ?  env.SOURCE_CATEGORY_OVERRIDE: '',  // If none sourceCategoryOverride will not be overridden
-	"sourceFieldsOverride": ("SOURCE_FIELDS_OVERRIDE" in env) ?  env.SOURCE_FIELDS_OVERRIDE: '',        // If none sourceFieldsOverride will not be overridden
+        "sourceFieldsOverride": ("SOURCE_FIELDS_OVERRIDE" in env) ?  env.SOURCE_FIELDS_OVERRIDE: '',        // If none sourceFieldsOverride will not be overridden
         "sourceHostOverride": ("SOURCE_HOST_OVERRIDE" in env) ? env.SOURCE_HOST_OVERRIDE : '',              // If none sourceHostOverride will not be set to the name of the logGroup
         "sourceNameOverride": ("SOURCE_NAME_OVERRIDE" in env) ? env.SOURCE_NAME_OVERRIDE : '',              // If none sourceNameOverride will not be set to the name of the logStream
         "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-aws-lambda',
