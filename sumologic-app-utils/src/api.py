@@ -106,12 +106,10 @@ class Collector(Resource):
 
     def create(self, collector_type, collector_name, source_category=None, description='', *args, **kwargs):
         collector_id = None
-        date = str(datetime.now().strftime("%d%m%Y"))
-        collector_name_date = collector_name + '-' + date
         collector = {
             'collector': {
                 'collectorType': collector_type,
-                'name': collector_name_date,
+                'name': collector_name,
                 'description': description,
                 'category': source_category
             }
@@ -122,7 +120,7 @@ class Collector(Resource):
             print("created collector %s" % collector_id)
         except Exception as e:
             if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
-                collector = self._get_collector_by_name(collector_name_date, collector_type.lower())
+                collector = self._get_collector_by_name(collector_name, collector_type.lower())
                 collector_id = collector['id']
                 print("fetched existing collector %s" % collector_id)
             else:
@@ -201,8 +199,8 @@ class Connections(Resource):
             connection_id = json.loads(resp.text)['id']
             print("created connectionId %s" % connection_id)
         except Exception as e:
-            print(e.response.json())
             if hasattr(e, 'response'):
+                print(e.response.json())
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'connection:name_already_exists':
@@ -435,76 +433,10 @@ class HTTPSource(Resource):
 
 class App(Resource):
 
-    def _convert_absolute_time(self, start, end):
-        return {
-
-            "type": "BeginBoundedTimeRange",
-            "from": {
-                "type": "EpochTimeRangeBoundary",
-                "epochMillis": start
-            },
-            "to": {
-                "type": "EpochTimeRangeBoundary",
-                "epochMillis": end
-            }
-
-        }
-
+    ENTERPRISE_ONLY_APPS = {"Amazon GuardDuty Benchmark", "Global Intelligence for AWS CloudTrail"}
     def _convert_to_hour(self, timeoffset):
         hour = timeoffset / 60 * 60 * 1000
         return "%sh" % (hour)
-
-    def _convert_relative_time(self, timeoffset):
-        return {
-            "type": "BeginBoundedTimeRange",
-            "from": {
-                "type": "RelativeTimeRangeBoundary",
-                "relativeTime": self._convert_to_hour(timeoffset)
-            },
-            "to": None
-        }
-
-    def _convert_to_api_format(self, appjson):
-        appjson['type'] = "FolderSyncDefinition"
-        for child in appjson['children']:
-            if 'columns' in child:
-                del child['columns']
-            if child['type'] == "Report":
-                child['type'] = "DashboardSyncDefinition"
-                for panel in child['panels']:
-                    if 'fields' in panel:
-                        del panel['fields']
-                    if 'type' in panel:
-                        del panel['type']
-                    if 'isDisabled' in panel:
-                        del panel['isDisabled']
-                    timejson = json.loads(panel['timeRange'])
-                    if "absolute" in panel['timeRange']:
-                        panel['timeRange'] = self._convert_absolute_time(timejson[0]['d'], timejson[0]['d'])
-                    else:
-                        panel['timeRange'] = self._convert_relative_time(timejson[0]['d'])
-                for dfilter in child.get('filters', []):
-                    if not "defaultValue" in dfilter:
-                        dfilter['defaultValue'] = None
-                    del dfilter['type']
-
-            elif child['type'] == "Search":
-                child['type'] = "SavedSearchWithScheduleSyncDefinition"
-                child['search'] = {
-                    'type': 'SavedSearchSyncDefinition',
-                    'defaultTimeRange': child.pop('defaultTimeRange'),
-                    'byReceiptTime': False,
-                    'viewName': child.pop('viewNameOpt'),
-                    'viewStartTime': child.pop('viewStartTimeOpt'),
-                    'queryText': child.pop('searchQuery')
-                }
-                if 'queryParameters' in child:
-                    child['search']['queryParameters'] = child.pop('queryParameters')
-            elif child['type'] == 'Folder':
-                # taking care of folder in folder case
-                child.update(self.convert_to_api_format(child))
-
-        return appjson
 
     def _replace_source_category(self, appjson_filepath, sourceDict):
         with open(appjson_filepath, 'r') as old_file:
@@ -548,7 +480,6 @@ class App(Resource):
                 fp.flush()
                 fp.seek(0)
                 appjson = self._replace_source_category(fp.name, source_params)
-                # appjson = self._convert_to_api_format(appjson)
                 appjson = self._add_time_suffix(appjson)
 
         return appjson
@@ -592,33 +523,9 @@ class App(Resource):
             else:
                 raise
 
-    def create(self, appid, appname, source_params, *args, **kwargs):
+    def create_by_import_api(self, appname, source_params, *args, **kwargs):
         # Add  retry if folder sync fails
-        if appname == "Amazon GuardDuty Benchmark" and not self.is_enterprise_or_trial_account():
-            raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
-
-        folder_id = self._create_or_fetch_quickstart_apps_parent_folder()
-        content = {'name': appname + datetime.now().strftime("_%d-%b-%Y_%H:%M:%S.%f"), 'description': appname,
-                   'dataSourceValues': source_params,
-                   'destinationFolderId': folder_id}
-        # app_folder_id = self._get_app_folder(content, personal_folder_id)
-
-        response = self.sumologic_cli.install_app(appid, content)
-        job_id = response.json()["id"]
-        print("installed app %s: appFolderId: %s personalFolderId: %s jobId: %s" % (
-            appname, folder_id, folder_id, job_id))
-        response = self._wait_for_app_install(appid, job_id)
-        json_resp = json.loads(response.content)
-        if (json_resp['status'] == 'Success'):
-            folder_name = json_resp['statusMessage'].split(":")[1]
-            return {"APP_FOLDER_NAME": content["name"]}, folder_name
-        else:
-            print("%s installation failed." % appname)
-            response.raise_for_status()
-
-    def create_old(self, appname, source_params, *args, **kwargs):
-        # Add  retry if folder sync fails
-        if appname == "Amazon GuardDuty Benchmark" and not self.is_enterprise_or_trial_account():
+        if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
         content = self._get_app_content(appname, source_params)
@@ -632,9 +539,42 @@ class App(Resource):
         self._wait_for_folder_creation(personal_folder_id, job_id)
         return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
 
-    def update(self, app_folder_id, appname, source_params, *args, **kwargs):
+    def create_by_install_api(self, appid, appname, source_params, *args, **kwargs):
+        if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
+            raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
+
+        if "Amazon QuickStart" in appname:
+            folder_id = self._create_or_fetch_quickstart_apps_parent_folder()
+        else:
+            response = self.sumologic_cli.get_personal_folder()
+            folder_id = response.json()['id']
+        content = {'name': appname + datetime.now().strftime("_%d-%b-%Y_%H:%M:%S.%f"), 'description': appname,
+                   'dataSourceValues': source_params, 'destinationFolderId': folder_id}
+
+        response = self.sumologic_cli.install_app(appid, content)
+        job_id = response.json()["id"]
+        response = self._wait_for_app_install(appid, job_id)
+
+        json_resp = json.loads(response.content)
+        if (json_resp['status'] == 'Success'):
+            app_folder_id = json_resp['statusMessage'].split(":")[1]
+            print("installed app %s: appFolderId: %s parent_folder_id: %s jobId: %s" % (
+                appname, app_folder_id, folder_id, job_id))
+            return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
+        else:
+            print("%s installation failed." % appname)
+            response.raise_for_status()
+
+    def create(self, appname, source_params, appid=None, *args, **kwargs):
+        if appid:
+            return self.create_by_install_api(appid, appname, source_params, *args, **kwargs)
+        else:
+            return self.create_by_import_api(appname, source_params, *args, **kwargs)
+
+
+    def update(self, app_folder_id, appname, source_params, appid=None, *args, **kwargs):
         self.delete(app_folder_id, remove_on_delete_stack=True)
-        data, app_folder_id = self.create(appname, source_params)
+        data, app_folder_id = self.create(appname, source_params, appid)
         print("updated app appFolderId: %s " % app_folder_id)
         return data, app_folder_id
 
@@ -666,52 +606,45 @@ if __name__ == '__main__':
         "deployment": "us1"
 
     }
+    # app_prefix = "CloudTrail"
+    app_prefix = "GuardDuty"
     collector_id = None
     collector_type = "Hosted"
-    collector_name = "S3-audit-collector"
-    source_name = "s3-audit-src"
-    source_category = "Labs/AWS/Guardduty"
-    appname = "Amazon GuardDuty"
+    collector_name = "%sCollector" % app_prefix
+    source_name = "%sEvents" % app_prefix
+    source_category = "Labs/AWS/%s" % app_prefix
+    appname = "Amazon GuardDuty Benchmark"
+    # appname = "AWS CloudTrail"
+    # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
+    appid = None
     source_params = {
         "logsrc": "_sourceCategory=%s" % source_category
     }
     col = Collector(**params)
-    src = S3AuditSource(**params)
+    src = HTTPSource(**params)
     app = App(**params)
 
-    props = {
-        "filters": [{
-            "filterType": "Exclude",
-            "name": "test",
-            "regexp": "version account-id interface-id srcaddr dstaddr srcport dstport protocol packets bytes start end action log-status"
-        }],
-
-        "multilineProcessingEnabled": False,
-        "useAutolineMatching": False
-    }
-
-    print(app._create_or_fetch_quickstart_apps_parent_folder())
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
     # _, source_id = src.create(collector_id, source_name, source_category)
 
-    # _, app_folder_id = app.create('5a58719f-0f8a-4aa7-993f-9cc337a286aa', appname, source_params)
-    # print(app_folder_id)
+    _, app_folder_id = app.create(appname, source_params, appid)
+
 
     # update
-    # _, new_collector_id = col.update(collector_id, collector_type, "GuarddutyCollectorNew", "Labs/AWS/GuarddutyNew",
-    # description="Guardduty Collector")
-    # assert (collector_id == new_collector_id)
-    # _, new_source_id = src.update(collector_id, source_id, "GuarddutyEventsNew", "Labs/AWS/GuarddutyNew",
-    # date_format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", date_locator='\"createTime\":(.*),')
-    # assert (source_id == new_source_id)
-    # new_source_params = {
-    #   "logsrc": "_sourceCategory=%s" % "Labs/AWS/GuarddutyNew"
-    # }
-    # _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params)
-    # assert (app_folder_id != new_app_folder_id)
+    # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
+    # assert(collector_id == new_collector_id)
+    # _, new_source_id = src.update(collector_id, source_id, "%sEventsNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, date_format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", date_locator='\"createTime\":(.*),')
+    # assert(source_id == new_source_id)
+    new_source_params = {
+        "logsrc": "_sourceCategory=%s" % ("Labs/AWS/%sNew" % app_prefix)
+    }
+
+    _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params, appid)
+    assert(app_folder_id != new_app_folder_id)
 
     # delete
     # src.delete(collector_id, source_id, True)
     # col.delete(collector_id, True)
-    # app.delete(app_folder_id, True)
+    app.delete(new_app_folder_id, True)
+
