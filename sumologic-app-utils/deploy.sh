@@ -17,8 +17,7 @@ if [ ! -f sumo_app_utils.zip ]; then
     echo "creating zip file"
     mkdir python
     cd python
-    pip install  crhelper -t .
-    pip install requests -t .
+    pip install -r requirements.txt -t .
     cp -v ../src/*.py .
     zip -r ../sumo_app_utils.zip .
     cd ..
