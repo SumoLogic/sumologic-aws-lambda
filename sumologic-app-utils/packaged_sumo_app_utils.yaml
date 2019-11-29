@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 Description: 'This solution consists of a lambda function which which gets triggered
   when CF stack is deployed. This is used for creating sumologic resources like collector,
   source and app folders.
@@ -7,23 +8,37 @@ Description: 'This solution consists of a lambda function which which gets trigg
 Globals:
   Function:
     Timeout: 300
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This solution consists of a lambda function which which gets triggered
+      when CF stack is deployed. This is used for creating sumologic resources like
+      collector, source and app folders.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+    - lambda
+    - sumologic
+    - serverless
+    Name: sumologic-app-utils
+    SemanticVersion: 1.0.8
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/sumologic-app-utils
+    SpdxLicenseId: Apache-2.0
+Resources:
+  SumoAppUtilsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main.handler
+      Runtime: python3.7
+      CodeUri: s3://appdevstore/sumo_app_utils/v1.0.8/sumo_app_utils.zip
+      MemorySize: 128
+      Timeout: 300
 Outputs:
   SumoAppUtilsFunction:
     Description: SumoAppUtils Function ARN
-    Export:
-      Name:
-        Fn::Sub: ${AWS::StackName}-SumoAppUtilsFunction
     Value:
       Fn::GetAtt:
       - SumoAppUtilsFunction
       - Arn
-Resources:
-  SumoAppUtilsFunction:
-    Properties:
-      CodeUri: s3://appdevstore/sumo_app_utils.zip
-      Handler: main.handler
-      MemorySize: 128
-      Runtime: python3.7
-      Timeout: 300
-    Type: AWS::Serverless::Function
-Transform: AWS::Serverless-2016-10-31
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-SumoAppUtilsFunction

@@ -249,48 +249,85 @@ class Connections(Resource):
         }
 
 
-class S3SourceBase(Resource):
-    def create(self, collector_id, source_name, source_category, bucket_name, path_expression, role_arn, source_type,
-               props, *args, **kwargs):
+class BaseSource(Resource):
 
-        endpoint = source_id = None
-        params = {
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        source_id = None
+        if event.get('PhysicalResourceId'):
+            _, source_id = event['PhysicalResourceId'].split("/")
+        return {
+
+            "collector_id": props.get("CollectorId"),
+            "source_name": props.get("SourceName"),
+            "source_id": source_id,
+            "props": props
+        }
+
+    def build_common_source_params(self, props, source_json=None):
+        # https://help.sumologic.com/03Send-Data/Sources/03Use-JSON-to-Configure-Sources#Common_parameters_for_all_Source_types
+
+        source_json = source_json if source_json else {}
+
+        source_json.update({
+            "category": props.get("SourceCategory"),
+            "name": props.get("SourceName"),
+            "description": "This %s source is created by AWS SAM Application" % (props.get("SourceType", "HTTP"))
+        })
+        # timestamp processing
+        if props.get("DateFormat"):
+            source_json["defaultDateFormats"] = [{"format": props.get("DateFormat"), "locator": props.get("DateLocatorRegex")}]
+
+        # processing rules
+        if 'filters' in props and isinstance(props['filters'], list):
+            filters = [x for x in props['filters'] if x['regexp'].strip()]
+            if filters:
+                source_json['filters'] = filters
+
+        # multi line processing
+        if 'multilineProcessingEnabled' in props:
+            source_json['multilineProcessingEnabled'] = props['multilineProcessingEnabled']
+        if 'useAutolineMatching' in props:
+            source_json['useAutolineMatching'] = props['useAutolineMatching']
+
+        return source_json
+
+
+class AWSSource(BaseSource):
+
+    def build_source_params(self, props, source_json = None):
+        # https://help.sumologic.com/03Send-Data/Sources/03Use-JSON-to-Configure-Sources/JSON-Parameters-for-Hosted-Sources#aws-log-sources
+
+        source_json = source_json if source_json else {}
+        source_json = self.build_common_source_params(props, source_json)
+        source_json.update({
             "sourceType": "Polling",
-            "name": source_name,
-            "messagePerRequest": False,
-            "contentType": source_type,
+            "contentType": props.get("SourceType"),
             "thirdPartyRef": {
                 "resources": [{
-                    "serviceType": source_type,
+                    "serviceType": props.get("SourceType"),
                     "path": {
                         "type": "S3BucketPathExpression",
-                        "bucketName": bucket_name,
-                        "pathExpression": path_expression
+                        "bucketName": props.get("TargetBucketName"),
+                        "pathExpression": props.get("PathExpression")
                     },
                     "authentication": {
                         "type": "AWSRoleBasedAuthentication",
-                        "roleARN": role_arn
+                        "roleARN": props.get("RoleArn")
                     }
                 }]
             },
             "scanInterval": 300000,
             "paused": False,
-            "category": source_category
-        }
+        })
+        return source_json
 
-        if 'filters' in props:
-            filters = props.get('filters')
-            if isinstance(filters, list):
-                filters[:] = [x for x in filters if x['regexp'].strip()]
-                if filters:
-                    params['filters'] = filters
-        if 'multilineProcessingEnabled' in props:
-            params['multilineProcessingEnabled'] = props.get('multilineProcessingEnabled')
-        if 'useAutolineMatching' in props:
-            params['useAutolineMatching'] = props.get('useAutolineMatching')
+    def create(self, collector_id, source_name, props, *args, **kwargs):
 
+        endpoint = source_id = None
+        source_json = {"source": self.build_source_params(props)}
         try:
-            resp = self.sumologic_cli.create_source(collector_id, {"source": params})
+            resp = self.sumologic_cli.create_source(collector_id, source_json)
             data = resp.json()['source']
             source_id = data["id"]
             endpoint = data["url"]
@@ -304,68 +341,33 @@ class S3SourceBase(Resource):
                         print("fetched existing source %s" % source_id)
                         endpoint = source["url"]
             else:
+                print(e, source_json)
                 raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
-    def update(self, collector_id, source_id, source_name, source_category, date_format=None, date_locator=None, *args,
+    def update(self, collector_id, source_id, source_name, props, *args,
                **kwargs):
-        sv, etag = self.sumologic_cli.source(collector_id, source_id)
-        sv['source']['category'] = source_category
-        sv['source']['name'] = source_name
-        if date_format:
-            sv['source']["defaultDateFormats"] = [{"format": date_format, "locator": date_locator}]
-        resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-        data = resp.json()['source']
-        print("updated source %s" % data["id"])
-        return {"SUMO_ENDPOINT": data["url"]}, data["id"]
+        source_json, etag = self.sumologic_cli.source(collector_id, source_id)
+        source_json['source'] = self.build_source_params(props, source_json['source'])
+        try:
+            resp = self.sumologic_cli.update_source(collector_id, source_json, etag)
+            data = resp.json()['source']
+            print("updated source %s" % data["id"])
+            return {"SUMO_ENDPOINT": data["url"]}, data["id"]
+        except Exception as e:
+            print(e, source_json)
+            raise
 
-    def delete(self, collector_id, source_id, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, collector_id, source_id, remove_on_delete_stack, props, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
             print("deleted source %s : %s" % (source_id, response.text))
         else:
             print("skipping source deletion")
 
-    def extract_params(self, event):
-        props = event.get("ResourceProperties")
-        source_id = None
-        if event.get('PhysicalResourceId'):
-            _, source_id = event['PhysicalResourceId'].split("/")
-        return {
-
-            "collector_id": props.get("CollectorId"),
-            "source_name": props.get("SourceName"),
-            "source_category": props.get("SourceCategory"),
-            "bucket_name": props.get("TargetBucketName"),
-            "path_expression": props.get("PathExpression"),
-            "role_arn": props.get("RoleArn"),
-            "source_id": source_id,
-            "props": props
-        }
-
-
-class S3AuditSource(S3SourceBase):
-    def create(self, collector_id, source_name, source_category, bucket_name, path_expression, role_arn, props, *args,
-               **kwargs):
-        return super().create(collector_id, source_name, source_category,
-                              bucket_name, path_expression, role_arn, 'AwsS3AuditBucket', props, *args, **kwargs)
-
-
-class S3Source(S3SourceBase):
-    def create(self, collector_id, source_name, source_category, bucket_name, path_expression, role_arn, props, *args,
-               **kwargs):
-        return super().create(collector_id, source_name, source_category,
-                              bucket_name, path_expression, role_arn, 'AwsS3Bucket', props, *args, **kwargs)
-
-
-class AwsCloudTrail(S3SourceBase):
-    def create(self, collector_id, source_name, source_category, bucket_name, path_expression, role_arn, props, *args,
-               **kwargs):
-        return super().create(collector_id, source_name, source_category,
-                              bucket_name, path_expression, role_arn, 'AwsCloudTrailBucket', props, *args, **kwargs)
-
 
 class HTTPSource(Resource):
+    # Todo refactor this to use basesource class
 
     def create(self, collector_id, source_name, source_category,
                date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
