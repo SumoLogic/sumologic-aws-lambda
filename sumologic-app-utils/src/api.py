@@ -1,3 +1,4 @@
+import os
 from abc import ABCMeta, abstractmethod
 import six
 import re
@@ -7,6 +8,8 @@ from sumologic import SumoLogic
 import tempfile
 from datetime import datetime
 import time
+import boto3
+from botocore.exceptions import ClientError
 
 
 class ResourceFactory(object):
@@ -15,7 +18,7 @@ class ResourceFactory(object):
     @classmethod
     def register(cls, objname, obj):
         print("registering", obj, objname)
-        if objname != "Resource":
+        if objname not in ("SumoResource", "AWSResource"):
             cls.resource_type[objname] = obj
 
     @classmethod
@@ -31,11 +34,95 @@ class AutoRegisterResource(ABCMeta):
         ResourceFactory.register(clsname, newclass)
         return newclass
 
+@six.add_metaclass(AutoRegisterResource)
+class AWSResource(object):
+    @abstractmethod
+    def create(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def update(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def delete(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def extract_params(self, event):
+        pass
+
+
+class AWSTrail(AWSResource):
+
+    boolean_params = ["IncludeGlobalServiceEvents", "IsMultiRegionTrail", "EnableLogFileValidation", "IsOrganizationTrail"]
+
+    def __init__(self, props, *args, **kwargs):
+        self.region = os.environ.get("AWS_REGION", "us-east-1")
+        self.cloudtrailcli = boto3.client('cloudtrail', region_name=self.region)
+
+    def create(self, trail_name, params, *args, **kwargs):
+        try:
+            response = self.cloudtrailcli.create_trail(**params)
+            print("Trail created %s" % trail_name)
+            self.cloudtrailcli.start_logging(Name=trail_name)
+            return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
+        except ClientError as e:
+            print("Error in creating trail %s" % e.response['Error'])
+            raise
+        except Exception as e:
+            print("Error in creating trail %s" % e)
+            raise
+
+    def update(self, trail_name, params, *args, **kwargs):
+        try:
+            response = self.cloudtrailcli.update_trail(**params)
+            print("Trail updated %s" % trail_name)
+            self.cloudtrailcli.start_logging(Name=trail_name)
+            return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
+        except ClientError as e:
+            print("Error in updating trail %s" % e.response['Error'])
+            raise
+        except Exception as e:
+            print("Error in updating trail %s" % e)
+            raise
+
+    def delete(self, trail_name, *args, **kwargs):
+        try:
+            self.cloudtrailcli.delete_trail(
+                Name=trail_name
+            )
+            print("Trail deleted %s" % trail_name)
+        except ClientError as e:
+            print("Error in deleting trail %s" % e.response['Error'])
+            raise
+        except Exception as e:
+            print("Error in deleting trail %s" % e)
+            raise
+
+    def _transform_bool_values(self, k, v):
+        if k in self.boolean_params:
+            return True if v and v == "true" else False
+        else:
+            return v
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        parameters = ["S3BucketName", "S3KeyPrefix", "IncludeGlobalServiceEvents", "IsMultiRegionTrail", "EnableLogFileValidation", "IsOrganizationTrail"]
+        params = {k: self._transform_bool_values(k, v) for k, v in props.items() if k in parameters}
+        params['Name'] = props.get("TrailName")
+        return {
+            "props": props,
+            "trail_name": props.get("TrailName"),
+            "params": params
+        }
+
 
 @six.add_metaclass(AutoRegisterResource)
-class Resource(object):
+class SumoResource(object):
 
-    def __init__(self, access_id, access_key, deployment):
+    def __init__(self, props, *args, **kwargs):
+        access_id, access_key, deployment = props["SumoAccessID"], props["SumoAccessKey"], props["SumoDeployment"]
         self.deployment = deployment
         self.sumologic_cli = SumoLogic(access_id, access_key, self.api_endpoint)
 
@@ -83,7 +170,7 @@ class Resource(object):
                 raise e
 
 
-class Collector(Resource):
+class Collector(SumoResource):
     '''
     what happens if property name changes?
     there might be a case in create that it throws duplicate but user properties are not updated so need to call update again?
@@ -163,7 +250,7 @@ class Collector(Resource):
         }
 
 
-class Connections(Resource):
+class Connections(SumoResource):
 
     def create(self, type, name, description, url, username, password, region, service_name, webhook_type, *args,
                **kwargs):
@@ -249,7 +336,7 @@ class Connections(Resource):
         }
 
 
-class BaseSource(Resource):
+class BaseSource(SumoResource):
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -366,7 +453,7 @@ class AWSSource(BaseSource):
             print("skipping source deletion")
 
 
-class HTTPSource(Resource):
+class HTTPSource(SumoResource):
     # Todo refactor this to use basesource class
 
     def create(self, collector_id, source_name, source_category,
@@ -433,9 +520,10 @@ class HTTPSource(Resource):
         }
 
 
-class App(Resource):
+class App(SumoResource):
 
     ENTERPRISE_ONLY_APPS = {"Amazon GuardDuty Benchmark", "Global Intelligence for AWS CloudTrail"}
+
     def _convert_to_hour(self, timeoffset):
         hour = timeoffset / 60 * 60 * 1000
         return "%sh" % (hour)
@@ -601,6 +689,7 @@ class App(Resource):
 
 
 if __name__ == '__main__':
+
     params = {
 
         "access_id": "",

@@ -16,7 +16,7 @@ Metadata:
     - sumologic
     - serverless
     Name: sumologic-app-utils
-    SemanticVersion: 1.0.8
+    SemanticVersion: 1.0.20
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/sumologic-app-utils
     SpdxLicenseId: Apache-2.0
 
@@ -26,9 +26,19 @@ Resources:
       Properties:
         Handler: main.handler
         Runtime: python3.7
-        CodeUri: s3://appdevstore/sumo_app_utils/v1.0.8/sumo_app_utils.zip
+        CodeUri: s3://appdevstore/sumo_app_utils/v1.0.20/sumo_app_utils.zip
         MemorySize: 128
         Timeout: 300
+        Policies:
+        - Statement:
+          - Action:
+            - cloudtrail:CreateTrail
+            - cloudtrail:DeleteTrail
+            - cloudtrail:UpdateTrail
+            - cloudtrail:StartLogging
+            Effect: Allow
+            Resource: arn:aws:cloudtrail:*:*:*
+            Sid: CreateCloudTrailPolicy
 
 Outputs:
     SumoAppUtilsFunction:
