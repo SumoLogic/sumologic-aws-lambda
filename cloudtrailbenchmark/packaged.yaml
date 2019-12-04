@@ -29,29 +29,6 @@ Metadata:
         default: AWS Resources Configuration
       Parameters:
       - CloudTrailTargetS3BucketName
-    ParameterLabels:
-      SumoDeployment:
-        default: Deployment Name
-      SumoAccessID:
-        default: Access ID
-      SumoAccessKey:
-        default: Access Key
-      SumoOrganizationID:
-        default: Sumo Organization Id
-      CollectorName:
-        default: Collector Name
-      SourceName:
-        default: Source Name
-      SourceCategoryName:
-        default: Source Category Name
-      S3PathExpression:
-        default: S3 Path Expression
-      RemoveSumoResourcesOnDeleteStack:
-        default: Remove Sumo Resources On Delete Stack
-      CloudTrailTargetS3BucketName:
-        default: Name of the S3 bucket
-      DeploymentType:
-        default: Select the deployment type
   AWS::ServerlessRepo::Application:
     Author: Sumo Logic
     Description: This solution creates a trail which exports logs to a S3 bucket which
@@ -66,9 +43,9 @@ Metadata:
     - benchmark
     - cloudtrail
     Name: sumologic-aws-cloudtrail-benchmark
-    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.3/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.3/29017b6007af9e99fcd4a0810b66b857
-    SemanticVersion: 1.0.3
+    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.5/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.5/8a901bb4fbbe82f128fc502dd3077508
+    SemanticVersion: 1.0.5
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 Parameters:
   CollectorName:
@@ -106,21 +83,24 @@ Parameters:
   SumoOrganizationID:
     Type: String
     Description: Sumo logic Organization from Account Overview page 0000000000000131
+    Default: ''
   CloudTrailTargetS3BucketName:
     Type: String
     Description: CloudTrail logs target bucket name.
+    Default: ''
   DeploymentType:
     Type: String
     AllowedValues:
-    - Only App
-    - App + Sumo Resources
-    - App + Sumo Resources + AWS CloudTrail + S3Bucket
-    Default: App + Sumo Resources + AWS CloudTrail + S3Bucket
-    Description: 'Only App: Choose this mode if you already have cloud trail logs
-      in Sumo. It installs only the app. App + Sumo Resources: Choose this mode if
-      you already have a S3 bucket which is getting cloudtrail logs. It installs the
-      collector, source and app. App + Sumo Resources + AWS CloudTrail + S3Bucket:
-      Choose this mode if you do not have Cloudtrail logs configured in your AWS Account'
+    - Only-App
+    - App-SumoResources
+    - App-SumoResources-CloudTrail-S3Bucket
+    Default: App-SumoResources-CloudTrail-S3Bucket
+    Description: 'Only-App: Choose this mode if you already have cloud trail logs
+      in Sumo. It installs only the app. App-SumoResources: Choose this mode if you
+      already have a S3 bucket which is getting cloudtrail logs. It installs the collector,
+      source and app. App-SumoResources-CloudTrail-S3Bucket: Choose this mode if you
+      do not have Cloudtrail logs configured in your AWS Account. It deploys the collector,
+      source, app, s3-bucket and trail'
   S3PathExpression:
     Type: String
     Description: Path expression to match one or more S3 objects. For example, ABC*.log
@@ -130,15 +110,15 @@ Conditions:
   SetUpCloudTrail:
     Fn::Equals:
     - Ref: DeploymentType
-    - App + Sumo Resources + AWS CloudTrail + S3Bucket
+    - App-SumoResources-CloudTrail-S3Bucket
   SetupSumoResources:
     Fn::Or:
     - Fn::Equals:
       - Ref: DeploymentType
-      - App + Sumo Resources + AWS CloudTrail + S3Bucket
+      - App-SumoResources-CloudTrail-S3Bucket
     - Fn::Equals:
       - Ref: DeploymentType
-      - App + Sumo Resources
+      - App-SumoResources
 Resources:
   SumoAppUtils:
     Type: AWS::Serverless::Application
