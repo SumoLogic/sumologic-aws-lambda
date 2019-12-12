@@ -43,8 +43,8 @@ Metadata:
     - benchmark
     - cloudtrail
     Name: sumologic-aws-cloudtrail-benchmark
-    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.5/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.5/8a901bb4fbbe82f128fc502dd3077508
+    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.6/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.6/8a901bb4fbbe82f128fc502dd3077508
     SemanticVersion: 1.0.5
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 Parameters:
@@ -71,6 +71,7 @@ Parameters:
     - jp
     - us2
     - us1
+    - nite
     Description: Enter au, ca, de, eu, jp, us2, or us1
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
@@ -125,7 +126,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.20
+        SemanticVersion: 1.0.22
   SumoRole:
     Condition: SetupSumoResources
     Type: AWS::IAM::Role

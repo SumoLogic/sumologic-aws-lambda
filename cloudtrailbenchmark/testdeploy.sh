@@ -10,7 +10,7 @@ else
 fi
 uid=$(cat /dev/random | LC_CTYPE=C tr -dc "[:lower:]" | head -c 6)
 
-version="1.0.5"
+version="1.0.6"
 
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "cloudtrailbenchmark/v$version"
 
@@ -19,7 +19,9 @@ sam publish --template packaged.yaml --region $AWS_REGION --semantic-version $ve
 
 ACCESS_ID=""
 ACCESS_KEY=""
+
 ORG_ID=""
+SUMO_DEPLOYMENT="us2"
 # DEP_TYPE="App-SumoResources-CloudTrail-S3Bucket"
 DEP_TYPE="Only-App"
 # DEP_TYPE="App-SumoResources"
@@ -29,5 +31,5 @@ DEP_TYPE="Only-App"
 
 
 # only app
-# sam deploy --template-file packaged.yaml --stack-name testingctbenchmarkall --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --region $AWS_REGION --parameter-overrides SumoDeployment="us1" SumoAccessID="$ACCESS_ID" SumoAccessKey="$ACCESS_KEY" DeploymentType="$DEP_TYPE" SourceCategoryName="cloudtrail_bm_logs" RemoveSumoResourcesOnDeleteStack="true"
+# sam deploy --template-file packaged.yaml --stack-name testingctbenchmarktr3 --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --region $AWS_REGION --parameter-overrides SumoDeployment="$SUMO_DEPLOYMENT" SumoAccessID="$ACCESS_ID" SumoAccessKey="$ACCESS_KEY" DeploymentType="$DEP_TYPE" SourceCategoryName="cloudtrail_bm_logs" RemoveSumoResourcesOnDeleteStack="true"
 

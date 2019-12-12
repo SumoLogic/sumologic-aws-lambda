@@ -77,6 +77,7 @@ Parameters:
       - jp
       - us2
       - us1
+      - nite
     Description: "Enter au, ca, de, eu, jp, us2, or us1"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
@@ -121,7 +122,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.20
+        SemanticVersion: 1.0.22
 
   SumoRole:
     Condition: SetupSumoResources
