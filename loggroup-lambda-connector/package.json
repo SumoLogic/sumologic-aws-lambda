@@ -9,7 +9,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo `pwd` && rm -f test/loggroup-lambda-connector.zip && zip -r test/loggroup-lambda-connector.zip src/loggroup-lambda-connector.js package.json",
+    "build": "echo `pwd` && rm -f test/loggroup-lambda-connector.zip && cd src/ && zip -r ../test/loggroup-lambda-connector.zip ./*  ../package.json",
     "prod_deploy": "python -c 'from test.test_loggroup_lambda_connector import prod_deploy;prod_deploy()'"
   },
   "keywords": [
