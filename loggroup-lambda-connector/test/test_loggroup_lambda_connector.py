@@ -35,8 +35,8 @@ class TestLambda(unittest.TestCase):
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
         self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX, 1)
-        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "8.10")
-        self.template_data = self.template_data.replace("nodejs8.10", RUNTIME)
+        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "10.x")
+        self.template_data = self.template_data.replace("nodejs10.x", RUNTIME)
 
     def get_account_id(self):
         client = boto3.client("sts", self.config['AWS_REGION_NAME'])
@@ -219,9 +219,9 @@ def upload_code_in_S3(region):
     print("Uploading zip file in S3 region: %s" % region)
     s3 = boto3.client('s3', region)
     bucket_name = get_bucket_name(region)
-    filename = TestLambda.ZIP_FILE
-    key = os.path.basename(filename)
-    s3.upload_file(filename, bucket_name, key,
+    key = os.path.basename(TestLambda.ZIP_FILE)
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), TestLambda.ZIP_FILE)
+    s3.upload_file(os.path.join(__file__, filename), bucket_name, key,
                    ExtraArgs={'ACL': 'public-read'})
 
 

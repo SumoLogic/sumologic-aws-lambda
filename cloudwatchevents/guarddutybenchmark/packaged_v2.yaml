@@ -75,7 +75,7 @@ Parameters:
 Resources:
   CloudWatchEventFunction:
     Properties:
-      CodeUri: s3://appdevstore/e62e525a25bb080e521d8bf64909ea41
+      CodeUri: s3://appdevstore/GuardDuty/1.0.2/0d13904d1fbd69ecd879992058f1aa41
       Environment:
         Variables:
           SUMO_ENDPOINT:
@@ -90,7 +90,7 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
     Type: AWS::Serverless::Function
   SumoAppUtils:
     Type: AWS::Serverless::Application

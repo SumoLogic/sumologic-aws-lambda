@@ -3,11 +3,11 @@ var zlib = require('zlib');
 var stream = require('stream');
 
 var encodebase64 = function (data) {
-    return (new Buffer(data, 'utf8')).toString('base64');
+    return (Buffer.from(data, 'utf8')).toString('base64');
 };
 
 var decodebase64 = function (data) {
-    return (new Buffer(data, 'base64')).toString('utf8');
+    return (Buffer.from(data, 'base64')).toString('utf8');
 };
 
 Promise.retryMax = function (fn, retry, interval, fnParams) {

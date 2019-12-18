@@ -1,9 +1,9 @@
 function encodebase64(data) {
-    return (new Buffer(data, 'utf8')).toString('base64');
+    return (Buffer.from(data, 'utf8')).toString('base64');
 }
 
 function decodebase64(data) {
-    return (new Buffer(data, 'base64')).toString('utf8');
+    return (Buffer.from(data, 'base64')).toString('utf8');
 }
 
 function addDelimitertoJSON(data, delimiter) {

@@ -5,12 +5,12 @@ python:
 - '2.7'
 jobs:
   include:
-  - stage: Node 8
-    node_js: '8.10'
-    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="8.10"
-  - stage: Node 8
-    node_js: '8.10'
-    env: FUNCTION_DIR=loggroup-lambda-connector TEST_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="8.10"
+  - stage: Node 10
+    node_js: '10.17'
+    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="10.x"
+  - stage: Node 10
+    node_js: '10.17'
+    env: FUNCTION_DIR=loggroup-lambda-connector TEST_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="10.x"
 before_install:
 - sudo apt-get install python-pip
 - cd $TEST_DIR && sudo pip install -r requirements.txt && cd -
