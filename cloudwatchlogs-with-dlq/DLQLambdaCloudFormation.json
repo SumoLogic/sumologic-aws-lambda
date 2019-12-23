@@ -2,6 +2,11 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description" : "Sumo Logic CloudWatch log collector",
     "Parameters" : {
+      "ServiceName" : {
+        "Type" : "String",
+        "Default" : "<Enter Name Here>",
+        "Description" : "Enter Component Name which logs are being transfered to Sumologic"
+      },
       "SumoEndPointURL" : {
         "Type" : "String",
         "Default" : "<Enter URL Here>",
@@ -199,7 +204,7 @@
                 "SumoCWDeadLetterQueue"
             ],
             "Properties": {
-                "FunctionName": { "Fn::Join": [ "-", [ "SumoCWLogsLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "FunctionName": { "Fn::Join": [ "-", [ {"Ref": "ServiceName"}, "SumoCWLogsLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                 "Code": {
                     "S3Bucket": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "bucketname"]},
                     "S3Key": "cloudwatchlogs-with-dlq.zip"
