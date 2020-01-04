@@ -1,3 +1,4 @@
+import os
 from abc import ABCMeta, abstractmethod
 import six
 import re
@@ -7,6 +8,8 @@ from sumologic import SumoLogic
 import tempfile
 from datetime import datetime
 import time
+import boto3
+from botocore.exceptions import ClientError
 
 
 class ResourceFactory(object):
@@ -15,7 +18,7 @@ class ResourceFactory(object):
     @classmethod
     def register(cls, objname, obj):
         print("registering", obj, objname)
-        if objname != "Resource":
+        if objname not in ("SumoResource", "AWSResource"):
             cls.resource_type[objname] = obj
 
     @classmethod
@@ -31,11 +34,95 @@ class AutoRegisterResource(ABCMeta):
         ResourceFactory.register(clsname, newclass)
         return newclass
 
+@six.add_metaclass(AutoRegisterResource)
+class AWSResource(object):
+    @abstractmethod
+    def create(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def update(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def delete(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def extract_params(self, event):
+        pass
+
+
+class AWSTrail(AWSResource):
+
+    boolean_params = ["IncludeGlobalServiceEvents", "IsMultiRegionTrail", "EnableLogFileValidation", "IsOrganizationTrail"]
+
+    def __init__(self, props, *args, **kwargs):
+        self.region = os.environ.get("AWS_REGION", "us-east-1")
+        self.cloudtrailcli = boto3.client('cloudtrail', region_name=self.region)
+
+    def create(self, trail_name, params, *args, **kwargs):
+        try:
+            response = self.cloudtrailcli.create_trail(**params)
+            print("Trail created %s" % trail_name)
+            self.cloudtrailcli.start_logging(Name=trail_name)
+            return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
+        except ClientError as e:
+            print("Error in creating trail %s" % e.response['Error'])
+            raise
+        except Exception as e:
+            print("Error in creating trail %s" % e)
+            raise
+
+    def update(self, trail_name, params, *args, **kwargs):
+        try:
+            response = self.cloudtrailcli.update_trail(**params)
+            print("Trail updated %s" % trail_name)
+            self.cloudtrailcli.start_logging(Name=trail_name)
+            return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
+        except ClientError as e:
+            print("Error in updating trail %s" % e.response['Error'])
+            raise
+        except Exception as e:
+            print("Error in updating trail %s" % e)
+            raise
+
+    def delete(self, trail_name, *args, **kwargs):
+        try:
+            self.cloudtrailcli.delete_trail(
+                Name=trail_name
+            )
+            print("Trail deleted %s" % trail_name)
+        except ClientError as e:
+            print("Error in deleting trail %s" % e.response['Error'])
+            raise
+        except Exception as e:
+            print("Error in deleting trail %s" % e)
+            raise
+
+    def _transform_bool_values(self, k, v):
+        if k in self.boolean_params:
+            return True if v and v == "true" else False
+        else:
+            return v
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        parameters = ["S3BucketName", "S3KeyPrefix", "IncludeGlobalServiceEvents", "IsMultiRegionTrail", "EnableLogFileValidation", "IsOrganizationTrail"]
+        params = {k: self._transform_bool_values(k, v) for k, v in props.items() if k in parameters}
+        params['Name'] = props.get("TrailName")
+        return {
+            "props": props,
+            "trail_name": props.get("TrailName"),
+            "params": params
+        }
+
 
 @six.add_metaclass(AutoRegisterResource)
-class Resource(object):
+class SumoResource(object):
 
-    def __init__(self, access_id, access_key, deployment):
+    def __init__(self, props, *args, **kwargs):
+        access_id, access_key, deployment = props["SumoAccessID"], props["SumoAccessKey"], props["SumoDeployment"]
         self.deployment = deployment
         self.sumologic_cli = SumoLogic(access_id, access_key, self.api_endpoint)
 
@@ -65,10 +152,16 @@ class Resource(object):
             return 'https://%s-api.sumologic.net/api' % self.deployment
 
     def is_enterprise_or_trial_account(self):
-        to_time = int(time.time())*1000
-        from_time = to_time - 5*60*1000
+        to_time = int(time.time()) * 1000
+        from_time = to_time - 5 * 60 * 1000
         try:
-            response = self.sumologic_cli.search_job("benchmarkcat guardduty", fromTime=from_time, toTime=to_time)
+            search_query = '''guardduty*
+                | "IAMUser" as targetresource
+                | "2" as sev
+                | "UserPermissions" as threatName
+                | "Recon" as threatPurpose
+                | benchmark percentage as global_percent from guardduty on threatpurpose=threatPurpose, threatname=threatName, severity=sev, resource=targetresource'''
+            response = self.sumologic_cli.search_job(search_query, fromTime=from_time, toTime=to_time)
             print("schedule job status: %s" % response)
             response = self.sumologic_cli.search_job_status(response)
             print("job status: %s" % response)
@@ -83,7 +176,7 @@ class Resource(object):
                 raise e
 
 
-class Collector(Resource):
+class Collector(SumoResource):
     '''
     what happens if property name changes?
     there might be a case in create that it throws duplicate but user properties are not updated so need to call update again?
@@ -128,7 +221,8 @@ class Collector(Resource):
 
         return {"COLLECTOR_ID": collector_id}, collector_id
 
-    def update(self, collector_id, collector_type, collector_name, source_category=None, description=None, *args, **kwargs):
+    def update(self, collector_id, collector_type, collector_name, source_category=None, description=None, *args,
+               **kwargs):
         cv, etag = self.sumologic_cli.collector(collector_id)
         cv['collector']['category'] = source_category
         cv['collector']['name'] = collector_name
@@ -162,14 +256,214 @@ class Collector(Resource):
         }
 
 
-class S3Source(Resource):
-    pass
+class Connections(SumoResource):
+
+    def create(self, type, name, description, url, username, password, region, service_name, webhook_type, *args,
+               **kwargs):
+        connection_id = None
+        connection = {
+            'type': type,
+            'name': name,
+            'description': description,
+            'headers': [
+                {
+                    'name': 'accessKey',
+                    'value': username
+                },
+                {
+                    'name': 'secretKey',
+                    'value': password
+                },
+                {
+                    'name': 'awsRegion',
+                    'value': region
+                },
+                {
+                    'name': 'serviceName',
+                    'value': service_name
+                }
+            ],
+            'defaultPayload': '{"Types":"HIPAA Controls","Description":"This search","GeneratorID":"InsertFindingsScheduledSearch","Severity":30,"SourceUrl":"https://service.sumologic.com/ui/#/search/RmC8kAUGZbXrkj2rOFmUxmHtzINUgfJnFplh3QWY","ComplianceStatus":"FAILED","Rows":"[{\\"Timeslice\\":1542719060000,\\"finding_time\\":\\"1542719060000\\",\\"item_name\\":\\"A nice dashboard.png\\",\\"title\\":\\"Vulnerability\\",\\"resource_id\\":\\"10.178.11.43\\",\\"resource_type\\":\\"Other\\"}]"}',
+            'url': url,
+            'webhookType': webhook_type
+        }
+        try:
+            resp = self.sumologic_cli.create_connection(connection, headers=None)
+            connection_id = json.loads(resp.text)['id']
+            print("created connectionId %s" % connection_id)
+        except Exception as e:
+            if hasattr(e, 'response'):
+                print(e.response.json())
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'connection:name_already_exists':
+                        connection_id = e.response.json().get('id')
+                        print('Connection already exist', connection_id)
+            else:
+                raise
+
+        return {"CONNECTION_ID": connection_id}, connection_id
+
+    def update(self, connection_id, type, url, description, username, password, *args, **kwargs):
+        cv, etag = self.sumologic_cli.connection(connection_id)
+        cv['type'] = type
+        cv['url'] = url
+        cv['description'] = description
+        cv['username'] = username
+        cv['password'] = password
+        resp = self.sumologic_cli.update_collector(cv, etag)
+        connection_id = json.loads(resp.text)['connections']['id']
+        print("updated connections %s" % connection_id)
+        return {"CONNECTION_ID": connection_id}, connection_id
+
+    def delete(self, connection_id, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_connection(connection_id, 'WebhookConnection')
+            print("deleted connection %s %s" % (connection_id, response.text))
+        else:
+            print("skipping connection deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        if event.get('PhysicalResourceId'):
+            _, connection_id = event['PhysicalResourceId'].split("/")
+        return {
+            "type": props.get("Type"),
+            "name": props.get("Name"),
+            "description": props.get("Description"),
+            "url": props.get("URL"),
+            "username": props.get("UserName"),
+            "password": props.get("Password"),
+            "region": props.get("Region"),
+            "service_name": props.get("ServiceName"),
+            "webhook_type": props.get("WebhookType"),
+            "id": props.get("ConnectionId"),
+            "connection_id": props.get('connection_id')
+        }
 
 
-class HTTPSource(Resource):
+class BaseSource(SumoResource):
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        source_id = None
+        if event.get('PhysicalResourceId'):
+            _, source_id = event['PhysicalResourceId'].split("/")
+        return {
+
+            "collector_id": props.get("CollectorId"),
+            "source_name": props.get("SourceName"),
+            "source_id": source_id,
+            "props": props
+        }
+
+    def build_common_source_params(self, props, source_json=None):
+        # https://help.sumologic.com/03Send-Data/Sources/03Use-JSON-to-Configure-Sources#Common_parameters_for_all_Source_types
+
+        source_json = source_json if source_json else {}
+
+        source_json.update({
+            "category": props.get("SourceCategory"),
+            "name": props.get("SourceName"),
+            "description": "This %s source is created by AWS SAM Application" % (props.get("SourceType", "HTTP"))
+        })
+        # timestamp processing
+        if props.get("DateFormat"):
+            source_json["defaultDateFormats"] = [{"format": props.get("DateFormat"), "locator": props.get("DateLocatorRegex")}]
+
+        # processing rules
+        if 'filters' in props and isinstance(props['filters'], list):
+            filters = [x for x in props['filters'] if x['regexp'].strip()]
+            if filters:
+                source_json['filters'] = filters
+
+        # multi line processing
+        if 'multilineProcessingEnabled' in props:
+            source_json['multilineProcessingEnabled'] = props['multilineProcessingEnabled']
+        if 'useAutolineMatching' in props:
+            source_json['useAutolineMatching'] = props['useAutolineMatching']
+
+        return source_json
+
+
+class AWSSource(BaseSource):
+
+    def build_source_params(self, props, source_json = None):
+        # https://help.sumologic.com/03Send-Data/Sources/03Use-JSON-to-Configure-Sources/JSON-Parameters-for-Hosted-Sources#aws-log-sources
+
+        source_json = source_json if source_json else {}
+        source_json = self.build_common_source_params(props, source_json)
+        source_json.update({
+            "sourceType": "Polling",
+            "contentType": props.get("SourceType"),
+            "thirdPartyRef": {
+                "resources": [{
+                    "serviceType": props.get("SourceType"),
+                    "path": {
+                        "type": "S3BucketPathExpression",
+                        "bucketName": props.get("TargetBucketName"),
+                        "pathExpression": props.get("PathExpression")
+                    },
+                    "authentication": {
+                        "type": "AWSRoleBasedAuthentication",
+                        "roleARN": props.get("RoleArn")
+                    }
+                }]
+            },
+            "scanInterval": 300000,
+            "paused": False,
+        })
+        return source_json
+
+    def create(self, collector_id, source_name, props, *args, **kwargs):
+
+        endpoint = source_id = None
+        source_json = {"source": self.build_source_params(props)}
+        try:
+            resp = self.sumologic_cli.create_source(collector_id, source_json)
+            data = resp.json()['source']
+            source_id = data["id"]
+            endpoint = data["url"]
+            print("created source %s" % source_id)
+        except Exception as e:
+            # Todo 100 sources in a collector is good
+            if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+                for source in self.sumologic_cli.sources(collector_id, limit=300):
+                    if source["name"] == source_name:
+                        source_id = source["id"]
+                        print("fetched existing source %s" % source_id)
+                        endpoint = source["url"]
+            else:
+                print(e, source_json)
+                raise
+        return {"SUMO_ENDPOINT": endpoint}, source_id
+
+    def update(self, collector_id, source_id, source_name, props, *args,
+               **kwargs):
+        source_json, etag = self.sumologic_cli.source(collector_id, source_id)
+        source_json['source'] = self.build_source_params(props, source_json['source'])
+        try:
+            resp = self.sumologic_cli.update_source(collector_id, source_json, etag)
+            data = resp.json()['source']
+            print("updated source %s" % data["id"])
+            return {"SUMO_ENDPOINT": data["url"]}, data["id"]
+        except Exception as e:
+            print(e, source_json)
+            raise
+
+    def delete(self, collector_id, source_id, remove_on_delete_stack, props, *args, **kwargs):
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
+            print("deleted source %s : %s" % (source_id, response.text))
+        else:
+            print("skipping source deletion")
+
+
+class HTTPSource(SumoResource):
+    # Todo refactor this to use basesource class
 
     def create(self, collector_id, source_name, source_category,
-        date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
+               date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
 
         endpoint = source_id = None
         params = {
@@ -198,7 +492,8 @@ class HTTPSource(Resource):
                 raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
-    def update(self, collector_id, source_id, source_name, source_category, date_format=None, date_locator=None, *args, **kwargs):
+    def update(self, collector_id, source_id, source_name, source_category, date_format=None, date_locator=None, *args,
+               **kwargs):
         sv, etag = self.sumologic_cli.source(collector_id, source_id)
         sv['source']['category'] = source_category
         sv['source']['name'] = source_name
@@ -231,78 +526,13 @@ class HTTPSource(Resource):
         }
 
 
-class App(Resource):
+class App(SumoResource):
 
-    def _convert_absolute_time(self, start, end):
-        return {
-
-            "type": "BeginBoundedTimeRange",
-            "from": {
-                "type": "EpochTimeRangeBoundary",
-                "epochMillis": start
-            },
-            "to": {
-                "type": "EpochTimeRangeBoundary",
-                "epochMillis": end
-            }
-
-        }
+    ENTERPRISE_ONLY_APPS = {"Amazon GuardDuty Benchmark", "Global Intelligence for AWS CloudTrail"}
 
     def _convert_to_hour(self, timeoffset):
-        hour = timeoffset/60*60*1000
+        hour = timeoffset / 60 * 60 * 1000
         return "%sh" % (hour)
-
-    def _convert_relative_time(self, timeoffset):
-        return{
-            "type": "BeginBoundedTimeRange",
-            "from": {
-                "type": "RelativeTimeRangeBoundary",
-                "relativeTime": self._convert_to_hour(timeoffset)
-            },
-            "to": None
-        }
-
-    def _convert_to_api_format(self, appjson):
-        appjson['type'] = "FolderSyncDefinition"
-        for child in appjson['children']:
-            if 'columns' in child:
-                del child['columns']
-            if child['type'] == "Report":
-                child['type'] = "DashboardSyncDefinition"
-                for panel in child['panels']:
-                    if 'fields' in panel:
-                        del panel['fields']
-                    if 'type' in panel:
-                        del panel['type']
-                    if 'isDisabled' in panel:
-                        del panel['isDisabled']
-                    timejson = json.loads(panel['timeRange'])
-                    if "absolute" in panel['timeRange']:
-                        panel['timeRange'] = self._convert_absolute_time(timejson[0]['d'], timejson[0]['d'])
-                    else:
-                        panel['timeRange'] = self._convert_relative_time(timejson[0]['d'])
-                for dfilter in child.get('filters', []):
-                    if not "defaultValue" in dfilter:
-                        dfilter['defaultValue'] = None
-                    del dfilter['type']
-
-            elif child['type'] == "Search":
-                child['type'] = "SavedSearchWithScheduleSyncDefinition"
-                child['search'] = {
-                    'type': 'SavedSearchSyncDefinition',
-                    'defaultTimeRange': child.pop('defaultTimeRange'),
-                    'byReceiptTime': False,
-                    'viewName': child.pop('viewNameOpt'),
-                    'viewStartTime': child.pop('viewStartTimeOpt'),
-                    'queryText': child.pop('searchQuery')
-                }
-                if 'queryParameters' in child:
-                    child['search']['queryParameters'] = child.pop('queryParameters')
-            elif child['type'] == 'Folder':
-                # taking care of folder in folder case
-                child.update(self.convert_to_api_format(child))
-
-        return appjson
 
     def _replace_source_category(self, appjson_filepath, sourceDict):
         with open(appjson_filepath, 'r') as old_file:
@@ -346,7 +576,6 @@ class App(Resource):
                 fp.flush()
                 fp.seek(0)
                 appjson = self._replace_source_category(fp.name, source_params)
-                # appjson = self._convert_to_api_format(appjson)
                 appjson = self._add_time_suffix(appjson)
 
         return appjson
@@ -361,9 +590,38 @@ class App(Resource):
 
         print("job status: %s" % response.text)
 
-    def create(self, appname, source_params, *args, **kwargs):
+    def _wait_for_app_install(self, app_id, job_id):
+        print("waiting for app installation app_id %s job_id %s" % (app_id, job_id))
+        waiting = True
+        while waiting:
+            response = self.sumologic_cli.check_app_install_status(app_id, job_id)
+            waiting = response.json()['status'] == "InProgress"
+            time.sleep(5)
+        print("job status: %s" % response.text)
+        return response
+
+    def _create_or_fetch_quickstart_apps_parent_folder(self):
+        response = self.sumologic_cli.get_personal_folder()
+        folder_name = "SumoLogic Amazon QuickStart Apps " + str(datetime.now().strftime("%d-%m-%Y"))
+        description = "This folder contains all the apps created as a part of SumoLogic Amazon QuickStart Apps."
+        try:
+            folder = self.sumologic_cli.create_folder(folder_name, description, response.json()['id'])
+            return folder.json()["id"]
+        except Exception as e:
+            if hasattr(e, 'response') and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'content:duplicate_content':
+                        if "children" in response.json():
+                            for children in response.json()["children"]:
+                                if "name" in children and children["name"] == folder_name:
+                                    return children["id"]
+            else:
+                raise
+
+    def create_by_import_api(self, appname, source_params, *args, **kwargs):
         # Add  retry if folder sync fails
-        if appname == "Amazon GuardDuty Benchmark" and not self.is_enterprise_or_trial_account():
+        if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
         content = self._get_app_content(appname, source_params)
@@ -377,9 +635,42 @@ class App(Resource):
         self._wait_for_folder_creation(personal_folder_id, job_id)
         return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
 
-    def update(self, app_folder_id, appname, source_params, *args, **kwargs):
+    def create_by_install_api(self, appid, appname, source_params, *args, **kwargs):
+        if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
+            raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
+
+        if "Amazon QuickStart" in appname:
+            folder_id = self._create_or_fetch_quickstart_apps_parent_folder()
+        else:
+            response = self.sumologic_cli.get_personal_folder()
+            folder_id = response.json()['id']
+        content = {'name': appname + datetime.now().strftime("_%d-%b-%Y_%H:%M:%S.%f"), 'description': appname,
+                   'dataSourceValues': source_params, 'destinationFolderId': folder_id}
+
+        response = self.sumologic_cli.install_app(appid, content)
+        job_id = response.json()["id"]
+        response = self._wait_for_app_install(appid, job_id)
+
+        json_resp = json.loads(response.content)
+        if (json_resp['status'] == 'Success'):
+            app_folder_id = json_resp['statusMessage'].split(":")[1]
+            print("installed app %s: appFolderId: %s parent_folder_id: %s jobId: %s" % (
+                appname, app_folder_id, folder_id, job_id))
+            return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
+        else:
+            print("%s installation failed." % appname)
+            response.raise_for_status()
+
+    def create(self, appname, source_params, appid=None, *args, **kwargs):
+        if appid:
+            return self.create_by_install_api(appid, appname, source_params, *args, **kwargs)
+        else:
+            return self.create_by_import_api(appname, source_params, *args, **kwargs)
+
+
+    def update(self, app_folder_id, appname, source_params, appid=None, *args, **kwargs):
         self.delete(app_folder_id, remove_on_delete_stack=True)
-        data, app_folder_id = self.create(appname, source_params)
+        data, app_folder_id = self.create(appname, source_params, appid)
         print("updated app appFolderId: %s " % app_folder_id)
         return data, app_folder_id
 
@@ -396,10 +687,12 @@ class App(Resource):
         if event.get('PhysicalResourceId'):
             _, app_folder_id = event['PhysicalResourceId'].split("/")
         return {
+            "appid": props.get("AppId"),
             "appname": props.get("AppName"),
             "source_params": props.get("AppSources"),
             "app_folder_id": app_folder_id
         }
+
 
 if __name__ == '__main__':
 
@@ -407,15 +700,20 @@ if __name__ == '__main__':
 
         "access_id": "",
         "access_key": "",
-        "deployment": ""
+        "deployment": "us1"
 
     }
+    # app_prefix = "CloudTrail"
+    app_prefix = "GuardDuty"
     collector_id = None
     collector_type = "Hosted"
-    collector_name = "GuarddutyCollector"
-    source_name = "GuarddutyEvents"
-    source_category = "Labs/AWS/Guardduty"
+    collector_name = "%sCollector" % app_prefix
+    source_name = "%sEvents" % app_prefix
+    source_category = "Labs/AWS/%s" % app_prefix
     appname = "Amazon GuardDuty Benchmark"
+    # appname = "AWS CloudTrail"
+    # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
+    appid = None
     source_params = {
         "logsrc": "_sourceCategory=%s" % source_category
     }
@@ -424,24 +722,26 @@ if __name__ == '__main__':
     app = App(**params)
 
     # create
-    _, collector_id = col.create(collector_type, collector_name, source_category)
-    _, source_id = src.create(collector_id, source_name, source_category)
-    _, app_folder_id = app.create(appname, source_params)
+    # _, collector_id = col.create(collector_type, collector_name, source_category)
+    # _, source_id = src.create(collector_id, source_name, source_category)
+
+    _, app_folder_id = app.create(appname, source_params, appid)
 
 
     # update
-    _, new_collector_id = col.update(collector_id, collector_type, "GuarddutyCollectorNew", "Labs/AWS/GuarddutyNew", description="Guardduty Collector")
-    assert(collector_id == new_collector_id)
-    _, new_source_id = src.update(collector_id, source_id, "GuarddutyEventsNew", "Labs/AWS/GuarddutyNew", date_format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", date_locator='\"createTime\":(.*),')
-    assert(source_id == new_source_id)
+    # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
+    # assert(collector_id == new_collector_id)
+    # _, new_source_id = src.update(collector_id, source_id, "%sEventsNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, date_format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", date_locator='\"createTime\":(.*),')
+    # assert(source_id == new_source_id)
     new_source_params = {
-        "logsrc": "_sourceCategory=%s" % "Labs/AWS/GuarddutyNew"
+        "logsrc": "_sourceCategory=%s" % ("Labs/AWS/%sNew" % app_prefix)
     }
-    _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params)
+
+    _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params, appid)
     assert(app_folder_id != new_app_folder_id)
 
     # delete
-    src.delete(collector_id, source_id, True)
-    col.delete(collector_id, True)
+    # src.delete(collector_id, source_id, True)
+    # col.delete(collector_id, True)
     app.delete(new_app_folder_id, True)
 

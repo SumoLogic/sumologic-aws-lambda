@@ -1,5 +1,5 @@
 from crhelper import CfnResource
-from api import ResourceFactory
+from api import ResourceFactory, SumoResource
 
 helper = CfnResource(json_logging=False, log_level='DEBUG')
 
@@ -8,9 +8,10 @@ def get_resource(event):
     resource_type = event.get("ResourceType").split("::")[-1]
     resource_class = ResourceFactory.get_resource(resource_type)
     props = event.get("ResourceProperties")
-    resource = resource_class(props["SumoAccessID"], props["SumoAccessKey"], props["SumoDeployment"])
+    resource = resource_class(props)
     params = resource.extract_params(event)
-    params["remove_on_delete_stack"] = props.get("RemoveOnDeleteStack") == 'true'
+    if isinstance(resource, SumoResource):
+        params["remove_on_delete_stack"] = props.get("RemoveOnDeleteStack") == 'true'
     print(params)
     return resource, resource_type, params
 
@@ -59,3 +60,7 @@ def delete(event, context):
 
 def handler(event, context):
     helper(event, context)
+
+if __name__ == "__main__":
+    event = {}
+    create(event, None)

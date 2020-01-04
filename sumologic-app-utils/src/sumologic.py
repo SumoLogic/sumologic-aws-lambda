@@ -1,5 +1,7 @@
 import json
 import requests
+import time
+import random
 
 try:
     import cookielib
@@ -42,7 +44,7 @@ class SumoLogic(object):
         return endpoint
 
     def get_versioned_endpoint(self, version):
-        return self.endpoint+'/%s' % version
+        return self.endpoint + '/%s' % version
 
     def delete(self, method, params=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
@@ -103,6 +105,20 @@ class SumoLogic(object):
     def delete_search_job(self, search_job):
         return self.delete('/search/jobs/' + str(search_job['id']))
 
+    def connection(self, connection_id):
+        r = self.get('/connections/' + str(connection_id))
+        return json.loads(r.text), r.headers['etag']
+
+    def create_connection(self, connection, headers=None):
+        return self.post('/connections', connection, headers)
+
+    def update_connection(self, connection, etag):
+        headers = {'If-Match': etag}
+        return self.put('/connections/' + str(connection['connection']['id']), connection, headers)
+
+    def delete_connection(self, connection_id, type):
+        return self.delete('/connections/' + connection_id + '?type=' + type)
+
     def collectors(self, limit=None, offset=None, filter_type=None):
         params = {'limit': limit, 'offset': offset}
         if filter_type:
@@ -158,12 +174,13 @@ class SumoLogic(object):
 
     def search_metrics(self, query, fromTime=None, toTime=None, requestedDataPoints=600, maxDataPoints=800):
         '''Perform a single Sumo metrics query'''
+
         def millisectimestamp(ts):
             '''Convert UNIX timestamp to milliseconds'''
-            if ts > 10**12:
-                ts = ts/(10**(len(str(ts))-13))
+            if ts > 10 ** 12:
+                ts = ts / (10 ** (len(str(ts)) - 13))
             else:
-                ts = ts*10**(12-len(str(ts)))
+                ts = ts * 10 ** (12 - len(str(ts)))
             return int(ts)
 
         params = {'query': [{"query": query, "rowId": "A"}],
@@ -189,7 +206,15 @@ class SumoLogic(object):
         return self.get('/content/folders/personal', version='v2')
 
     def import_content(self, folder_id, content, is_overwrite="false"):
-        return self.post('/content/folders/%s/import?overwrite=%s' % (folder_id, is_overwrite), params=content, version='v2')
+        return self.post('/content/folders/%s/import?overwrite=%s' % (folder_id, is_overwrite), params=content,
+                         version='v2')
 
     def check_import_status(self, folder_id, job_id):
         return self.get('/content/folders/%s/import/%s/status' % (folder_id, job_id), version='v2')
+
+    def install_app(self, app_id, content):
+        time.sleep(random.randint(1, 10))
+        return self.post('/apps/%s/install' % (app_id), params=content)
+
+    def check_app_install_status(self, app_id, job_id):
+        return self.get('/apps/%s/install/%s/status' % (app_id, job_id))

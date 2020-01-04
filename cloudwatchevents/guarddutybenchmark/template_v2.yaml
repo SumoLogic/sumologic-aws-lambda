@@ -42,6 +42,23 @@ Metadata:
       RemoveSumoResourcesOnDeleteStack:
         default: "Remove Sumo Resources On Delete Stack"
 
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This function is invoked by AWS CloudWatch events in response to state change in your AWS resources which matches a event target definition. The event payload received is then forwarded to Sumo Logic HTTP source endpoint.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+    - sumologic
+    - serverless
+    - guarddutybenchmark
+    - security
+    - benchmark
+    - guardduty
+    Name: sumologic-guardduty-benchmark
+    LicenseUrl: ./LICENSE
+    ReadmeUrl: ./README.md
+    SemanticVersion: 1.0.8
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
+
 Parameters:
   CollectorName:
     Type: String
@@ -78,7 +95,7 @@ Parameters:
 Resources:
   CloudWatchEventFunction:
     Properties:
-      CodeUri: s3://appdevstore/GuardDuty/1.0.2/0d13904d1fbd69ecd879992058f1aa41
+      CodeUri: ../src/
       Environment:
         Variables:
           SUMO_ENDPOINT: !GetAtt SumoHTTPSource.SUMO_ENDPOINT
@@ -98,7 +115,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.6
+        SemanticVersion: 1.0.22
 
   SumoHostedCollector:
     Type: Custom::Collector
