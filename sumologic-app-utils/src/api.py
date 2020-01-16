@@ -594,7 +594,7 @@ class App(SumoResource):
         print("waiting for app installation app_id %s job_id %s" % (app_id, job_id))
         waiting = True
         while waiting:
-            response = self.sumologic_cli.check_app_install_status(app_id, job_id)
+            response = self.sumologic_cli.check_app_install_status(job_id)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(5)
         print("job status: %s" % response.text)
@@ -693,6 +693,247 @@ class App(SumoResource):
             "app_folder_id": app_folder_id
         }
 
+
+class TagAWSResources(SumoResource):
+
+    def _get_regions(self, resource_type, region_value):
+        if region_value == "all":
+            aws_client = boto3.client(resource_type)
+            regions = [region['RegionName'] for region in aws_client.describe_regions()['Regions']]
+        else:
+            regions = [region_value]
+        return regions
+
+    def _tag_resources_in_group(self, region, resource_arn_list, tags, delete_flag):
+        client = boto3.client('resourcegroupstaggingapi', region_name=region)
+        if not delete_flag:
+            client.tag_resources(ResourceARNList=resource_arn_list, Tags=tags)
+        else:
+            client.untag_resources(ResourceARNList=resource_arn_list, TagKeys=tags)
+
+    def batch_size_chunk(self, iterable, size=1):
+        length = len(iterable)
+        for idx in range(0, length, size):
+            data = iterable[idx:min(idx + size, length)]
+            yield data
+
+    def _tag_aws_resources(self, region, aws_resource, props, delete_flag=False):
+        client = boto3.client(aws_resource, region_name=region)
+        next_token = None
+        while next_token != 'END':
+
+            values, tags, next_token = self._call_aws_resource_for_tagging(region, aws_resource, client, next_token,
+                                                                           props, delete_flag)
+
+            if values:
+                print("TAG AWS RESOURCES - %s Resources are %s for region %s" % (aws_resource, values, region))
+                chunk_records = self.batch_size_chunk(values, 20)
+                for record in chunk_records:
+                    self._tag_resources_in_group(region, record, tags, delete_flag)
+
+            if not next_token:
+                next_token = 'END'
+
+    def _call_aws_resource_for_tagging(self, region, aws_resource, client, next_token, props, delete_flag):
+        if aws_resource == 'ec2':
+            return self._tag_ec2_resources(region, client, next_token, props, delete_flag)
+        if aws_resource == 'elbv2':
+            return self._tag_alb_resources(client, next_token, props, delete_flag)
+        if aws_resource == 'apigateway':
+            return self._tag_api_gateway_resources(region, client, next_token, props, delete_flag)
+        if aws_resource == 'lambda':
+            return self._tag_lambda_resources(client, next_token, props, delete_flag)
+        if aws_resource == 'rds':
+            return self._tag_rds_clusters_resources(region, client, next_token, props, delete_flag)
+
+    def _tag_ec2_resources(self, region, client, next_token, props, delete_flag):
+        instances = []
+        if next_token:
+            response = client.describe_instances(MaxResults=1000, NextToken=next_token)
+        else:
+            response = client.describe_instances(MaxResults=1000)
+
+        for reservation in response['Reservations']:
+            account_id = reservation['OwnerId']
+            for ec2_instance in reservation['Instances']:
+                instances.append("arn:aws:ec2:" + region + ":" + account_id + ":instance/" + ec2_instance['InstanceId'])
+
+        if delete_flag:
+            tags = ['account']
+        else:
+            tags = {'account': props.get("Account"), "namespace": props.get("Namespace")}
+
+        return instances, tags, response["NextToken"] if "NextToken" in response else None
+
+    def _tag_alb_resources(self, client, next_token, props, delete_flag):
+        albs = []
+
+        if next_token:
+            response = client.describe_load_balancers(PageSize=400, Marker=next_token)
+        else:
+            response = client.describe_load_balancers(PageSize=400)
+
+        for loadBalancer in response['LoadBalancers']:
+            albs.append(loadBalancer['LoadBalancerArn'])
+
+        if delete_flag:
+            tags = ['account']
+        else:
+            tags = {'account': props.get("Account")}
+
+        return albs, tags, response["NextMarker"] if "NextMarker" in response else None
+
+    def _tag_api_gateway_resources(self, region, client, next_token, props, delete_flag):
+        api_gateways = []
+        if next_token:
+            response = client.get_rest_apis(limit=500, position=next_token)
+        else:
+            response = client.get_rest_apis(limit=500)
+
+        for api in response["items"]:
+            id = api["id"]
+            api_arn = "arn:aws:apigateway:" + region + "::/restapis/" + id
+            api_gateways.append(api_arn)
+
+            stages = client.get_stages(restApiId=id)
+            for stage in stages["item"]:
+                stage_arn = "arn:aws:apigateway:" + region + "::/restapis/" + id + "/stages/" + stage["stageName"]
+                api_gateways.append(stage_arn)
+
+        if delete_flag:
+            tags = ['account']
+        else:
+            tags = {'account': props.get("Account")}
+
+        return api_gateways, tags, response["position"] if "position" in response else None
+
+    def _tag_lambda_resources(self, client, next_token, props, delete_flag):
+        lambdas = []
+        if next_token:
+            response = client.list_functions(MaxItems=1000, Marker=next_token)
+        else:
+            response = client.list_functions(MaxItems=1000)
+
+        for function_name in response["Functions"]:
+            function_arn = function_name['FunctionArn']
+            lambdas.append(function_arn)
+
+        if delete_flag:
+            tags = ['account']
+        else:
+            tags = {'account': props.get("Account")}
+
+        return lambdas, tags, response["NextMarker"] if "NextMarker" in response else None
+
+    def _tag_rds_clusters_resources(self, region, client, next_token, props, delete_flag):
+        if next_token:
+            response = client.describe_db_clusters(MaxRecords=100, Marker=next_token)
+        else:
+            response = client.describe_db_clusters(MaxRecords=100)
+
+        self._tag_rds_resources(region, client, response, "DBClusters", 'DBClusterArn', props, delete_flag)
+
+        for function_name in response["DBClusters"]:
+            cluster_name = function_name['DBClusterIdentifier']
+            next_token = None
+            filters = [{'Name': 'db-cluster-id', 'Values': [cluster_name]}]
+            while next_token != 'END':
+                values, tags, next_token = self._tag_rds_instances_resources(region, client, next_token, props
+                                                                             , filters, delete_flag)
+
+                if not next_token:
+                    next_token = 'END'
+
+        return None, None, response["Marker"] if "Marker" in response else None
+
+    def _tag_rds_instances_resources(self, region, client, next_token, props, filters, delete_flag):
+        if next_token:
+            response = client.describe_db_instances(MaxRecords=100, Marker=next_token, Filters=filters)
+        else:
+            response = client.describe_db_instances(MaxRecords=100, Filters=filters)
+
+        self._tag_rds_resources(region, client, response, "DBInstances", 'DBInstanceArn', props, delete_flag)
+
+        return None, None, response["Marker"] if "Marker" in response else None
+
+    def _tag_rds_resources(self, region, aws_api, response, root_element, arn_name, props, delete_flag):
+        values = []
+        for function_name in response[root_element]:
+            function_arn = function_name[arn_name]
+            cluster_name = function_name['DBClusterIdentifier']
+            values.append(function_arn)
+            if not delete_flag:
+                aws_api.add_tags_to_resource(ResourceName=function_arn,
+                                             Tags=[{'Key': 'account', 'Value': props.get("Account")},
+                                                   {'Key': 'cluster', 'Value': cluster_name}])
+            else:
+                aws_api.remove_tags_from_resource(ResourceName=function_arn, TagKeys=['account', 'cluster'])
+
+        print("TAG AWS RESOURCES - RDS Resources are %s for region %s" % (values, region))
+
+    def create(self, region_value, aws_resource, props, *args, **kwargs):
+        print("TAG AWS RESOURCES - Starting the AWS resources Tag addition.")
+        regions = self._get_regions('ec2', region_value)
+        for region in regions:
+            self._tag_aws_resources(region, aws_resource, props)
+        print("TAG AWS RESOURCES - Completed the AWS resources Tag addition.")
+
+        return {"TAG_CREATION": "Successful"}, "Tag"
+
+    def update(self, *args, **kwargs):
+        return {"TAG_UPDATE": "Successful"}, "Tag"
+
+    def delete(self, region_value, aws_resource, props, remove_on_delete_stack, *args, **kwargs):
+        print("TAG AWS RESOURCES - Starting the AWS resources Tag deletion.")
+        if remove_on_delete_stack:
+            regions = self._get_regions('ec2', region_value)
+            for region in regions:
+                self._tag_aws_resources(region, aws_resource, props, True)
+            print("TAG AWS RESOURCES - Completed the AWS resources Tag deletion.")
+        else:
+            print("TAG AWS RESOURCES - Skipping AWS resources tags deletion.")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        return {
+            "region_value": props.get("AWSRegion"),
+            "aws_resource": props.get("AWSResource"),
+            "props": props
+        }
+
+
+class SumoLogicAWSExplorer(SumoResource):
+    def create(self, explorer_name, *args, **kwargs):
+        response = self.sumologic_cli.create_explorer_view(explorer_name)
+        if "errors" in response:
+            print("AWS EXPLORER -  creation failed with Name %s" % explorer_name)
+            response.raise_for_status()
+        else:
+            job_id = response.json()["id"]
+            print("AWS EXPLORER -  creation successful with ID %s" % job_id)
+            return {"EXPLORER_NAME": response.json()["name"]}, job_id
+
+    def update(self, *args, **kwargs):
+        return {"EXPLORER_UPDATE": "Successful"}, "Tag"
+
+    def delete(self, explorer_id, explorer_name, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_explorer_view(explorer_id)
+            print(
+                    "AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
+                explorer_name, response.text))
+        else:
+            print("AWS EXPLORER - Skipping the AWS Explorer deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        explorer_id = None
+        if event.get('PhysicalResourceId'):
+            _, explorer_id = event['PhysicalResourceId'].split("/")
+        return {
+            "explorer_name": props.get("ExplorerName"),
+            "explorer_id": explorer_id
+        }
 
 if __name__ == '__main__':
 

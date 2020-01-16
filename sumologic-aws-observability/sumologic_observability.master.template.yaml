@@ -1,0 +1,237 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: "Sumo Logic Deployment Configuration (Required)"
+        Parameters:
+          - SumoDeployment
+          - SumoAccessID
+          - SumoAccessKey
+          - RemoveSumoResourcesOnDeleteStack
+          - SumoOrganizationId
+          - S3BucketPrefix
+
+      - Label:
+          default: "AWS Resources Tag Configuration"
+        Parameters:
+          - AccountAlias
+          - AWSRegion
+
+      - Label:
+          default: "Sumo Logic Explorer View Tag Configuration"
+        Parameters:
+          - CreateExplorerView
+          - ExplorerName
+
+      - Label:
+          default: "Select the Sumo Logic Apps that you want to Deploy:"
+        Parameters:
+          - InstallDynamoDBApp
+          - InstallALBApp
+          - InstallAPIGatewayApp
+          - InstallRDSApp
+          - InstallEC2MetricsApp
+          - InstallLambdaApp
+
+      - Label:
+          default: "Sumo Logic Quick Start configuration"
+        Parameters:
+          - QSS3BucketName
+          - QSS3KeyPrefix
+
+    ParameterLabels:
+      SumoDeployment:
+        default: "Sumo Logic Deployment Name."
+      SumoAccessID:
+        default: "Sumo Logic Access ID."
+      SumoAccessKey:
+        default: "Sumo Logic Access Key."
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Delete Sumo Logic Resources when stack is deleted."
+      SumoOrganizationId:
+        default: "Sumo Logic Organization Id."
+      S3BucketPrefix:
+        default: "Prefix For Your S3 Buckets."
+      AWSRegion:
+        default: "AWS Region for the resources that need to be tagged."
+      AccountAlias:
+        default: "Value for Account Tag."
+      CreateExplorerView:
+        default: "Do you need to create AWS Explorer view in Sumo Logic?"
+      ExplorerName:
+        default: "Name for AWS Explorer View."
+      InstallDynamoDBApp:
+        default: "Do you need to install AWS Dynamo DB App?"
+      InstallALBApp:
+        default: "Do you need to install AWS ALB App?"
+      InstallAPIGatewayApp:
+        default: "Do you need to install AWS API Gateway App?"
+      InstallRDSApp:
+        default: "Do you need to install AWS RDS App?"
+      InstallEC2MetricsApp:
+        default: "Do you need to install AWS EC2 Metrics App?"
+      InstallLambdaApp:
+        default: "Do you need to install AWS Lambda App?"
+      QSS3BucketName:
+        default: "Quick Start S3 bucket name."
+      QSS3KeyPrefix:
+        default: "Quick Start S3 key prefix."
+
+Parameters:
+  SumoOrganizationId:
+    Description: The Account Overview page displays information about your Sumo Logic organization.
+    Type: String
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+  SumoDeployment:
+    Type: String
+    AllowedValues:
+      - au
+      - ca
+      - de
+      - eu
+      - jp
+      - us2
+      - us1
+    Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
+    Type: String
+  S3BucketPrefix:
+    Type: String
+    Description: Provide a unique S3 Bucket prefix. This will be applied to all S3 buckets created using this Quickstart template.
+
+  AccountAlias:
+    Type: String
+    Description: Provide the Value for Account Tag.
+  AWSRegion:
+    Type: String
+    Default: 'Current Region'
+    Description: AWS Region for the resources that need to be tagged.
+    AllowedValues:
+      - 'Current Region'
+      - 'All Regions'
+
+  CreateExplorerView:
+    Type: String
+    Default: 'Yes'
+    Description: Do you need to create AWS Explorer view in Sumo Logic?
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  ExplorerName:
+    Type: String
+    Default: 'AWS Explorer View'
+    Description: Name for AWS Explorer View.
+
+  InstallDynamoDBApp:
+    Type: String
+    Default: 'Yes'
+    Description: Do you need to install AWS Dynamo DB App?
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  InstallALBApp:
+    Type: String
+    Default: 'Yes'
+    Description: Do you need to install AWS ALB App?
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  InstallAPIGatewayApp:
+    Type: String
+    Default: 'Yes'
+    Description: Do you need to install AWS API Gateway App?
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  InstallRDSApp:
+    Type: String
+    Default: 'Yes'
+    Description: Do you need to install AWS RDS App?
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  InstallEC2MetricsApp:
+    Type: String
+    Default: 'Yes'
+    Description: Do you need to install AWS EC2 Metrics App?
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  InstallLambdaApp:
+    Type: String
+    Default: 'Yes'
+    Description: Do you need to install AWS Lambda App?
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+
+  QSS3BucketName:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Default: "sumologicawsobservabilityhelper"
+    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Type: "String"
+
+  QSS3KeyPrefix:
+    AllowedPattern: "^[0-9a-zA-Z-/]*$"
+    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Default: "sumologic-aws-observability/"
+    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Type: "String"
+
+Conditions:
+  region_value: !Equals [!Ref AWSRegion, 'All Regions']
+  install_dynamo_db_app: !Equals [!Ref InstallDynamoDBApp, 'Yes']
+  install_alb_app: !Equals [!Ref InstallALBApp, 'Yes']
+  install_api_gateway_app: !Equals [!Ref InstallAPIGatewayApp, 'Yes']
+  install_rds_app: !Equals [!Ref InstallRDSApp, 'Yes']
+  install_ec2_metrics_app: !Equals [!Ref InstallEC2MetricsApp, 'Yes']
+  install_lambda_app: !Equals [!Ref InstallLambdaApp, 'Yes']
+  create_explorer_view: !Equals [!Ref CreateExplorerView, 'Yes']
+
+Resources:
+
+  TagAWSResources:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}submodules/TagResourceTemplate/tag_resource.template.yaml"
+      Parameters:
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        SumoDeployment: !Ref SumoDeployment
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AccountAlias: !Ref AccountAlias
+        AddTagsForALBResources: !Ref InstallALBApp
+        AddTagsForAPIGatewayResources: !Ref InstallAPIGatewayApp
+        AddTagsForRDSResources: !Ref InstallRDSApp
+        AddTagsForEC2MetricsResources: !Ref InstallEC2MetricsApp
+        AddTagsForLambdaResources: !Ref InstallLambdaApp
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+
+  CreateSumoLogicAWSExplorerView:
+    Type: Custom::SumoLogicAWSExplorer
+    DependsOn: TagAWSResources
+    Condition: create_explorer_view
+    Properties:
+      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      ExplorerName: !Ref ExplorerName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
