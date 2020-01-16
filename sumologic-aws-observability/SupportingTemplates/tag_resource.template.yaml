@@ -180,7 +180,7 @@ Resources:
       Runtime: python3.7
       CodeUri:
         Bucket: !Ref QSS3BucketName
-        Key: !Sub "${QSS3KeyPrefix}submodules/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:

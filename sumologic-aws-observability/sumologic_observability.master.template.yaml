@@ -207,7 +207,7 @@ Resources:
   TagAWSResources:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}submodules/SupportingTemplates/tag_resource.template.yaml"
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/tag_resource.template.yaml"
       Parameters:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
