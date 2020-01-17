@@ -444,7 +444,7 @@ Resources:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !Ref QSS3BucketName
+        Bucket: !Sub "${QSS3BucketName}-${AWS::Region}"
         Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
@@ -499,7 +499,7 @@ Resources:
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
-    DependsOn: TagAWSResources
+    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: create_explorer_view
     Properties:
       ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
@@ -511,7 +511,7 @@ Resources:
 
   sumoEC2MetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: TagAWSResources
+    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: install_ec2_metrics_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/ec2_metrics_app.template.yaml"
@@ -542,7 +542,7 @@ Resources:
 
   sumoAlbMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: [TagAWSResources, sumoAlbMetricsAppStackWaitCondition]
+    DependsOn: [SumoLogicAWSObservabilityHelper, sumoAlbMetricsAppStackWaitCondition]
     Condition: install_alb_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/alb_app.template.yaml"
@@ -560,7 +560,7 @@ Resources:
 
   sumoDynamoDBMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: TagAWSResources
+    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: install_dynamo_db_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/dynamodb_app.template.yaml"
@@ -590,7 +590,7 @@ Resources:
 
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: [TagAWSResources, sumoRdsMetricsAppStackWaitCondition]
+    DependsOn: [SumoLogicAWSObservabilityHelper, sumoRdsMetricsAppStackWaitCondition]
     Condition: install_rds_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/rds_app.template.yaml"
@@ -607,7 +607,7 @@ Resources:
 
   sumoLambdaMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: TagAWSResources
+    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: install_lambda_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/lambda_app.template.yaml"
@@ -638,7 +638,7 @@ Resources:
 
   sumoApiGatewayMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: [TagAWSResources, sumoApiGatewayMetricsAppStackWaitCondition]
+    DependsOn: [SumoLogicAWSObservabilityHelper, sumoApiGatewayMetricsAppStackWaitCondition]
     Condition: install_api_gateway_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/api_gateway_app.template.yaml"

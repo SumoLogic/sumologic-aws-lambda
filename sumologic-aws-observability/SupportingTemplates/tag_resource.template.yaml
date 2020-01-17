@@ -156,17 +156,17 @@ Conditions:
     - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
     - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
   add_api_gateway_tags: !Or
-    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
+    - !Equals [ !Ref AddTagsForAPIGatewayResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForAPIGatewayResources, "App-SumoResources-AWSTags-S3Bucket" ]
   add_rds_tags: !Or
-    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags" ]
+    - !Equals [ !Ref AddTagsForRDSResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForRDSResources, "App-SumoResources-AWSTags" ]
   add_ec2_metrics_tags: !Or
-    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags" ]
+    - !Equals [ !Ref AddTagsForEC2MetricsResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForEC2MetricsResources, "App-SumoResources-AWSTags" ]
   add_lambda_tags: !Or
-    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
+    - !Equals [ !Ref AddTagsForLambdaResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForLambdaResources, "App-SumoResources-AWSTags-S3Bucket" ]
 
 Resources:
 
