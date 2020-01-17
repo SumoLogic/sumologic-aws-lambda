@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: "Sumo Logic Deployment Configuration (Required)"
+        Parameters:
+          - SumoDeployment
+          - SumoAccessID
+          - SumoAccessKey
+          - RemoveSumoResourcesOnDeleteStack
+
+      - Label:
+          default: "AWS Lambda App Configuration"
+        Parameters:
+          - LambdaMetricsSourceCategoryName
+          - LambdaLogSourceCategoryName
+          - LambdaDataEventsSourceCategoryName
+
+    ParameterLabels:
+      SumoDeployment:
+        default: "Sumo Logic Deployment Name."
+      SumoAccessID:
+        default: "Sumo Logic Access ID."
+      SumoAccessKey:
+        default: "Sumo Logic Access Key."
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Delete Sumo Logic Resources when stack is deleted."
+
+      LambdaMetricsSourceCategoryName:
+        default: "Lambda App Metric Data Source Category Name."
+      LambdaLogSourceCategoryName:
+        default: "Lambda App Log Data Source Category Name."
+      LambdaDataEventsSourceCategoryName:
+        default: "Lambda App Data Events Logs Source Category Name."
+
+Parameters:
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+  SumoDeployment:
+    Type: String
+    AllowedValues:
+      - au
+      - ca
+      - de
+      - eu
+      - jp
+      - us2
+      - us1
+    Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
+    Type: String
+
+  LambdaMetricsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/lambda/metrics
+  LambdaLogSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/lambda/logs
+  LambdaDataEventsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/lambda/dataevents
+
+Resources:
+
+  sumoLambdaApp:
+    Type: Custom::App
+    Properties:
+      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      Region: !Ref "AWS::Region"
+      AppName: "Amazon QuickStart Lambda App"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        metricssrc: !Sub "_sourceCategory=${LambdaMetricsSourceCategoryName}"
+        logsrccw: !Sub "_sourceCategory=${LambdaLogSourceCategoryName}"
+        logsrcct: !Sub "_sourceCategory=${LambdaDataEventsSourceCategoryName}"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment

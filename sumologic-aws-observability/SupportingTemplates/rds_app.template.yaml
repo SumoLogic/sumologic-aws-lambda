@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: "Sumo Logic Deployment Configuration (Required)"
+        Parameters:
+          - SumoDeployment
+          - SumoAccessID
+          - SumoAccessKey
+          - RemoveSumoResourcesOnDeleteStack
+
+      - Label:
+          default: "AWS RDS App Configuration"
+        Parameters:
+          - RdsAppSourceCategoryName
+
+    ParameterLabels:
+      SumoDeployment:
+        default: "Sumo Logic Deployment Name."
+      SumoAccessID:
+        default: "Sumo Logic Access ID."
+      SumoAccessKey:
+        default: "Sumo Logic Access Key."
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Delete Sumo Logic Resources when stack is deleted."
+
+      RdsAppSourceCategoryName:
+        default: "RDS App Metric Data Source Category Name."
+
+Parameters:
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+  SumoDeployment:
+    Type: String
+    AllowedValues:
+      - au
+      - ca
+      - de
+      - eu
+      - jp
+      - us2
+      - us1
+    Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
+    Type: String
+
+  RdsAppSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/rds/metrics
+
+Resources:
+
+  sumoRdsApp:
+    Type: Custom::App
+    Properties:
+      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      Region: !Ref "AWS::Region"
+      AppName: "Amazon QuickStart Rds App"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        paramId123: !Sub "_sourceCategory=${RdsAppSourceCategoryName}"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment

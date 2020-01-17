@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: "Sumo Logic Deployment Configuration (Required)"
+        Parameters:
+          - SumoDeployment
+          - SumoAccessID
+          - SumoAccessKey
+          - RemoveSumoResourcesOnDeleteStack
+
+      - Label:
+          default: "AWS ALB App Configuration"
+        Parameters:
+          - AlbMetricsSourceCategoryName
+          - AlbLogsSourceCategoryName
+
+    ParameterLabels:
+      SumoDeployment:
+        default: "Sumo Logic Deployment Name."
+      SumoAccessID:
+        default: "Sumo Logic Access ID."
+      SumoAccessKey:
+        default: "Sumo Logic Access Key."
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Delete Sumo Logic Resources when stack is deleted."
+
+      AlbMetricsSourceCategoryName:
+        default: "ALB App Metric Data Source Category Name."
+      AlbLogsSourceCategoryName:
+        default: "ALB App Logs Data Source Category Name."
+
+Parameters:
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+  SumoDeployment:
+    Type: String
+    AllowedValues:
+      - au
+      - ca
+      - de
+      - eu
+      - jp
+      - us2
+      - us1
+    Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
+    Type: String
+
+  AlbMetricsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/alb/metrics
+  AlbLogsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/alb/logs
+
+Resources:
+
+  sumoAlbApp:
+    Type: Custom::App
+    Properties:
+      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      Region: !Ref "AWS::Region"
+      AppName: "Amazon QuickStart Alb App"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        metricsrc: !Sub "_sourceCategory=${AlbMetricsSourceCategoryName}"
+        logsrc: !Sub "_sourceCategory=${AlbLogsSourceCategoryName}"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment

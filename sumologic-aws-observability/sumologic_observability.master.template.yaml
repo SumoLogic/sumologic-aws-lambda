@@ -37,6 +37,41 @@ Metadata:
           - InstallLambdaApp
 
       - Label:
+          default: "AWS EC2 Metrics App Configuration"
+        Parameters:
+          - Ec2AppSourceCategoryName
+
+      - Label:
+          default: "AWS ALB App Configuration"
+        Parameters:
+          - AlbMetricsSourceCategoryName
+          - AlbLogsSourceCategoryName
+
+      - Label:
+          default: "AWS DynamoDB App Configuration"
+        Parameters:
+          - DynamoDbMetricsSourceCategoryName
+          - DynamoDbLogsSourceCategoryName
+
+      - Label:
+          default: "AWS RDS App Configuration"
+        Parameters:
+          - RdsAppSourceCategoryName
+
+      - Label:
+          default: "AWS Lambda App Configuration"
+        Parameters:
+          - LambdaMetricsSourceCategoryName
+          - LambdaLogSourceCategoryName
+          - LambdaDataEventsSourceCategoryName
+
+      - Label:
+          default: "AWS Api Gateway App Configuration"
+        Parameters:
+          - ApiGatewayMetricsSourceCategoryName
+          - ApiGatewayLogSourceCategoryName
+
+      - Label:
           default: "Sumo Logic Quick Start configuration"
         Parameters:
           - QSS3BucketName
@@ -75,6 +110,35 @@ Metadata:
         default: "Do you need to install AWS EC2 Metrics App?"
       InstallLambdaApp:
         default: "Do you need to install AWS Lambda App?"
+
+      Ec2AppSourceCategoryName:
+        default: "EC2 App Metric Data Source Category Name."
+
+      AlbMetricsSourceCategoryName:
+        default: "ALB App Metric Data Source Category Name."
+      AlbLogsSourceCategoryName:
+        default: "ALB App Logs Data Source Category Name."
+
+      DynamoDbMetricsSourceCategoryName:
+        default: "Dynamo DB App Metric Data Source Category Name."
+      DynamoDbLogsSourceCategoryName:
+        default: "Dynamo DB App Logs Data Source Category Name."
+
+      RdsAppSourceCategoryName:
+        default: "RDS App Metric Data Source Category Name."
+
+      LambdaMetricsSourceCategoryName:
+        default: "Lambda App Metric Data Source Category Name."
+      LambdaLogSourceCategoryName:
+        default: "Lambda App Log Data Source Category Name."
+      LambdaDataEventsSourceCategoryName:
+        default: "Lambda App Data Events Logs Source Category Name."
+
+      ApiGatewayMetricsSourceCategoryName:
+        default: "Api Gateway App Metric Data Source Category Name."
+      ApiGatewayLogSourceCategoryName:
+        default: "Api Gateway App Log Data Source Category Name."
+
       QSS3BucketName:
         default: "Quick Start S3 bucket name."
       QSS3KeyPrefix:
@@ -178,6 +242,56 @@ Parameters:
       - 'Yes'
       - 'No'
 
+  Ec2AppSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/ec2/metrics
+
+  AlbMetricsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/alb/metrics
+  AlbLogsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/alb/logs
+
+  DynamoDbMetricsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/dynamodb/metrics
+  DynamoDbLogsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/dynamodb/logs
+
+  RdsAppSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/rds/metrics
+
+  LambdaMetricsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/lambda/metrics
+  LambdaLogSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/lambda/logs
+  LambdaDataEventsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/lambda/dataevents
+
+  ApiGatewayMetricsSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/apigateway/metrics
+  ApiGatewayLogSourceCategoryName:
+    Type: String
+    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Default: AWS/apigateway/logs
+
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
     ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
@@ -203,6 +317,9 @@ Conditions:
   create_explorer_view: !Equals [!Ref CreateExplorerView, 'Yes']
 
 Resources:
+
+  WaitHandle:
+    Type: "AWS::CloudFormation::WaitConditionHandle"
 
   TagAWSResources:
     Type: AWS::CloudFormation::Stack
@@ -235,3 +352,121 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
+  sumoEC2MetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: TagAWSResources
+    Condition: install_ec2_metrics_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/ec2_metrics_app.template.yaml"
+      Parameters:
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        Ec2AppSourceCategoryName: !Ref Ec2AppSourceCategoryName
+
+  sumoAlbMetricsAppStackWaitHandle:
+    Condition: install_ec2_metrics_app
+    DependsOn: sumoEC2MetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoAlbMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_ec2_metrics_app, !Ref sumoAlbMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "10"
+      Count: 0
+
+  sumoAlbMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [TagAWSResources, sumoAlbMetricsAppStackWaitCondition]
+    Condition: install_alb_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/alb_app.template.yaml"
+      Parameters:
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        AlbMetricsSourceCategoryName: !Ref AlbMetricsSourceCategoryName
+        AlbLogsSourceCategoryName: !Ref AlbLogsSourceCategoryName
+
+  sumoDynamoDBMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: TagAWSResources
+    Condition: install_dynamo_db_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/dynamodb_app.template.yaml"
+      Parameters:
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
+        DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
+
+  sumoRdsMetricsAppStackWaitHandle:
+    Condition: install_dynamo_db_app
+    DependsOn: sumoDynamoDBMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoRdsMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_dynamo_db_app, !Ref sumoRdsMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "10"
+      Count: 0
+
+  sumoRdsMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [TagAWSResources, sumoRdsMetricsAppStackWaitCondition]
+    Condition: install_rds_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/rds_app.template.yaml"
+      Parameters:
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        RdsAppSourceCategoryName: !Ref RdsAppSourceCategoryName
+
+  sumoLambdaMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: TagAWSResources
+    Condition: install_lambda_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/lambda_app.template.yaml"
+      Parameters:
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        LambdaMetricsSourceCategoryName: !Ref LambdaMetricsSourceCategoryName
+        LambdaLogSourceCategoryName: !Ref LambdaLogSourceCategoryName
+        LambdaDataEventsSourceCategoryName: !Ref LambdaDataEventsSourceCategoryName
+
+  sumoApiGatewayMetricsAppStackWaitHandle:
+    Condition: install_lambda_app
+    DependsOn: sumoLambdaMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoApiGatewayMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_lambda_app, !Ref sumoApiGatewayMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "10"
+      Count: 0
+
+  sumoApiGatewayMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [TagAWSResources, sumoApiGatewayMetricsAppStackWaitCondition]
+    Condition: install_api_gateway_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/api_gateway_app.template.yaml"
+      Parameters:
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        ApiGatewayMetricsSourceCategoryName: !Ref ApiGatewayMetricsSourceCategoryName
+        ApiGatewayLogSourceCategoryName: !Ref ApiGatewayLogSourceCategoryName
