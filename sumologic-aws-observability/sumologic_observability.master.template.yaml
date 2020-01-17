@@ -15,6 +15,16 @@ Metadata:
           - S3BucketPrefix
 
       - Label:
+          default: "Select the Resources that you want to Deploy:"
+        Parameters:
+          - DynamoDBDeploymentType
+          - ALBDeploymentType
+          - APIGatewayDeploymentType
+          - RDSDeploymentType
+          - EC2MetricsDeploymentType
+          - LambdaDeploymentType
+
+      - Label:
           default: "AWS Resources Tag Configuration"
         Parameters:
           - AccountAlias
@@ -25,16 +35,6 @@ Metadata:
         Parameters:
           - CreateExplorerView
           - ExplorerName
-
-      - Label:
-          default: "Select the Sumo Logic Apps that you want to Deploy:"
-        Parameters:
-          - InstallDynamoDBApp
-          - InstallALBApp
-          - InstallAPIGatewayApp
-          - InstallRDSApp
-          - InstallEC2MetricsApp
-          - InstallLambdaApp
 
       - Label:
           default: "AWS EC2 Metrics App Configuration"
@@ -98,18 +98,19 @@ Metadata:
         default: "Do you need to create AWS Explorer view in Sumo Logic?"
       ExplorerName:
         default: "Name for AWS Explorer View."
-      InstallDynamoDBApp:
-        default: "Do you need to install AWS Dynamo DB App?"
-      InstallALBApp:
-        default: "Do you need to install AWS ALB App?"
-      InstallAPIGatewayApp:
-        default: "Do you need to install AWS API Gateway App?"
-      InstallRDSApp:
-        default: "Do you need to install AWS RDS App?"
-      InstallEC2MetricsApp:
-        default: "Do you need to install AWS EC2 Metrics App?"
-      InstallLambdaApp:
-        default: "Do you need to install AWS Lambda App?"
+
+      DynamoDBDeploymentType:
+        default: "Do you need to install Resources for AWS Dynamo DB App?"
+      ALBDeploymentType:
+        default: "Do you need to install Resources for AWS ALB App?"
+      APIGatewayDeploymentType:
+        default: "Do you need to install Resources for AWS API Gateway App?"
+      RDSDeploymentType:
+        default: "Do you need to install Resources for AWS RDS App?"
+      EC2MetricsDeploymentType:
+        default: "Do you need to install Resources for AWS EC2 Metrics App?"
+      LambdaDeploymentType:
+        default: "Do you need to install Resources for AWS Lambda App?"
 
       Ec2AppSourceCategoryName:
         default: "EC2 App Metric Data Source Category Name."
@@ -199,48 +200,76 @@ Parameters:
     Default: 'AWS Explorer View'
     Description: Name for AWS Explorer View.
 
-  InstallDynamoDBApp:
+  DynamoDBDeploymentType:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to install AWS Dynamo DB App?
     AllowedValues:
-      - 'Yes'
-      - 'No'
-  InstallALBApp:
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-S3Bucket"
+    Default: "App-SumoResources-S3Bucket"
+    Description: "Only-App: Choose this mode if you already have DynamoDB metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting DynamoDB logs. It installs the collector, source and app.
+          App-SumoResources-S3Bucket: Choose this mode if you do not have DynamoDB logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket."
+  ALBDeploymentType:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to install AWS ALB App?
     AllowedValues:
-      - 'Yes'
-      - 'No'
-  InstallAPIGatewayApp:
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags-S3Bucket"
+    Default: "App-SumoResources-AWSTags-S3Bucket"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+  APIGatewayDeploymentType:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to install AWS API Gateway App?
     AllowedValues:
-      - 'Yes'
-      - 'No'
-  InstallRDSApp:
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags-S3Bucket"
+    Default: "App-SumoResources-AWSTags-S3Bucket"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+  RDSDeploymentType:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to install AWS RDS App?
     AllowedValues:
-      - 'Yes'
-      - 'No'
-  InstallEC2MetricsApp:
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags"
+    Default: "App-SumoResources-AWSTags"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+  EC2MetricsDeploymentType:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to install AWS EC2 Metrics App?
     AllowedValues:
-      - 'Yes'
-      - 'No'
-  InstallLambdaApp:
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags"
+    Default: "App-SumoResources-AWSTags"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+  LambdaDeploymentType:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to install AWS Lambda App?
     AllowedValues:
-      - 'Yes'
-      - 'No'
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags-S3Bucket"
+    Default: "App-SumoResources-AWSTags-S3Bucket"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
 
   Ec2AppSourceCategoryName:
     Type: String
@@ -308,12 +337,30 @@ Parameters:
 
 Conditions:
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_dynamo_db_app: !Equals [!Ref InstallDynamoDBApp, 'Yes']
-  install_alb_app: !Equals [!Ref InstallALBApp, 'Yes']
-  install_api_gateway_app: !Equals [!Ref InstallAPIGatewayApp, 'Yes']
-  install_rds_app: !Equals [!Ref InstallRDSApp, 'Yes']
-  install_ec2_metrics_app: !Equals [!Ref InstallEC2MetricsApp, 'Yes']
-  install_lambda_app: !Equals [!Ref InstallLambdaApp, 'Yes']
+  install_dynamo_db_app: !Or
+    - !Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources-S3Bucket" ]
+  install_alb_app: !Or
+    - !Equals [ !Ref ALBDeploymentType, "Only-App" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
+  install_api_gateway_app: !Or
+    - !Equals [ !Ref APIGatewayDeploymentType, "Only-App" ]
+    - !Equals [ !Ref APIGatewayDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref APIGatewayDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
+  install_rds_app: !Or
+    - !Equals [ !Ref RDSDeploymentType, "Only-App" ]
+    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources-AWSTags" ]
+  install_ec2_metrics_app: !Or
+    - !Equals [ !Ref EC2MetricsDeploymentType, "Only-App" ]
+    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources-AWSTags" ]
+  install_lambda_app: !Or
+    - !Equals [ !Ref LambdaDeploymentType, "Only-App" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
   create_explorer_view: !Equals [!Ref CreateExplorerView, 'Yes']
 
 Resources:
@@ -332,11 +379,11 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
         AccountAlias: !Ref AccountAlias
-        AddTagsForALBResources: !Ref InstallALBApp
-        AddTagsForAPIGatewayResources: !Ref InstallAPIGatewayApp
-        AddTagsForRDSResources: !Ref InstallRDSApp
-        AddTagsForEC2MetricsResources: !Ref InstallEC2MetricsApp
-        AddTagsForLambdaResources: !Ref InstallLambdaApp
+        AddTagsForALBResources: !Ref ALBDeploymentType
+        AddTagsForAPIGatewayResources: !Ref APIGatewayDeploymentType
+        AddTagsForRDSResources: !Ref RDSDeploymentType
+        AddTagsForEC2MetricsResources: !Ref EC2MetricsDeploymentType
+        AddTagsForLambdaResources: !Ref LambdaDeploymentType
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
@@ -364,6 +411,7 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        EC2MetricsDeploymentType: !Ref EC2MetricsDeploymentType
         Ec2AppSourceCategoryName: !Ref Ec2AppSourceCategoryName
 
   sumoAlbMetricsAppStackWaitHandle:
@@ -390,6 +438,7 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        ALBDeploymentType: !Ref ALBDeploymentType
         AlbMetricsSourceCategoryName: !Ref AlbMetricsSourceCategoryName
         AlbLogsSourceCategoryName: !Ref AlbLogsSourceCategoryName
 
@@ -405,6 +454,7 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        DynamoDBDeploymentType: !Ref DynamoDBDeploymentType
         DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
         DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
 
@@ -432,6 +482,7 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        RDSDeploymentType: !Ref RDSDeploymentType
         RdsAppSourceCategoryName: !Ref RdsAppSourceCategoryName
 
   sumoLambdaMetricsAppStack:
@@ -446,6 +497,7 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        LambdaDeploymentType: !Ref LambdaDeploymentType
         LambdaMetricsSourceCategoryName: !Ref LambdaMetricsSourceCategoryName
         LambdaLogSourceCategoryName: !Ref LambdaLogSourceCategoryName
         LambdaDataEventsSourceCategoryName: !Ref LambdaDataEventsSourceCategoryName
@@ -474,5 +526,6 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        APIGatewayDeploymentType: !Ref APIGatewayDeploymentType
         ApiGatewayMetricsSourceCategoryName: !Ref ApiGatewayMetricsSourceCategoryName
         ApiGatewayLogSourceCategoryName: !Ref ApiGatewayLogSourceCategoryName

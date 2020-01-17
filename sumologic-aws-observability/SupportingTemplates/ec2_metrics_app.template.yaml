@@ -11,6 +11,7 @@ Metadata:
           - SumoAccessID
           - SumoAccessKey
           - RemoveSumoResourcesOnDeleteStack
+          - EC2MetricsDeploymentType
 
       - Label:
           default: "AWS EC2 Metrics App Configuration"
@@ -31,7 +32,8 @@ Metadata:
         default: "Sumo Logic Access Key."
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted."
-
+      EC2MetricsDeploymentType:
+        default: "Do you need to install Resources for AWS EC2 Metrics App?"
       Ec2AppSourceCategoryName:
         default: "EC2 App Metric Data Source Category Name."
 
@@ -63,6 +65,18 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
+  EC2MetricsDeploymentType:
+    Type: String
+    AllowedValues:
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags"
+    Default: "App-SumoResources-AWSTags"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
 
   Ec2AppSourceCategoryName:
     Type: String
@@ -73,7 +87,25 @@ Parameters:
     Type: String
     Description: Service token for lambda ARN.
 
+Conditions:
+  setupsumoresources: !Or
+    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources-AWSTags" ]
+
 Resources:
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Condition: setupsumoresources
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Arn
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref CollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
 
   sumoEC2MetricsApp:
     Type: Custom::App

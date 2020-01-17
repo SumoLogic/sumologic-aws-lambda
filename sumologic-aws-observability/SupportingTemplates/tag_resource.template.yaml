@@ -93,41 +93,68 @@ Parameters:
   AWSRegion:
     Type: String
     Description: AWS Region for the resources that need to be tagged.
+
   AddTagsForALBResources:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to add Tags for AWS ALB Resources?
     AllowedValues:
-      - 'Yes'
-      - 'No'
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags-S3Bucket"
+    Default: "App-SumoResources-AWSTags-S3Bucket"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+            Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+            App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+            App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
   AddTagsForAPIGatewayResources:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to add Tags for AWS API Gateway Resources?
     AllowedValues:
-      - 'Yes'
-      - 'No'
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags-S3Bucket"
+    Default: "App-SumoResources-AWSTags-S3Bucket"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
   AddTagsForRDSResources:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to add Tags for AWS RDS Resources?
     AllowedValues:
-      - 'Yes'
-      - 'No'
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags"
+    Default: "App-SumoResources-AWSTags"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
   AddTagsForEC2MetricsResources:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to add Tags for AWS EC2 Metrics Resources?
     AllowedValues:
-      - 'Yes'
-      - 'No'
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags"
+    Default: "App-SumoResources-AWSTags"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
   AddTagsForLambdaResources:
     Type: String
-    Default: 'Yes'
-    Description: Do you need to add Tags for AWS Lambda Resources?
     AllowedValues:
-      - 'Yes'
-      - 'No'
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags-S3Bucket"
+    Default: "App-SumoResources-AWSTags-S3Bucket"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+                Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+                App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+                App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+
 
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
@@ -144,11 +171,21 @@ Parameters:
     Type: "String"
 
 Conditions:
-  install_alb_app: !Equals [!Ref AddTagsForALBResources, 'Yes']
-  install_api_gateway_app: !Equals [!Ref AddTagsForAPIGatewayResources, 'Yes']
-  install_rds_app: !Equals [!Ref AddTagsForRDSResources, 'Yes']
-  install_ec2_metrics_app: !Equals [!Ref AddTagsForEC2MetricsResources, 'Yes']
-  install_lambda_app: !Equals [!Ref AddTagsForLambdaResources, 'Yes']
+  add_alb_tags: !Or
+    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
+  add_api_gateway_tags: !Or
+    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
+  add_rds_tags: !!Or
+    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags" ]
+  add_ec2_metrics_tags: !Or
+    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags" ]
+  add_lambda_tags: !Or
+    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
+    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
 
 Resources:
 
@@ -191,7 +228,7 @@ Resources:
   TagEc2Resources:
     Type: Custom::TagAWSResources
     DependsOn: SumoLogicAWSObservabilityHelper
-    Condition: install_ec2_metrics_app
+    Condition: add_ec2_metrics_tags
     Properties:
       ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -206,7 +243,7 @@ Resources:
   TagAlbResources:
     Type: Custom::TagAWSResources
     DependsOn: SumoLogicAWSObservabilityHelper
-    Condition: install_alb_app
+    Condition: add_alb_tags
     Properties:
       ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -220,7 +257,7 @@ Resources:
   TagApiGatewayResources:
     Type: Custom::TagAWSResources
     DependsOn: SumoLogicAWSObservabilityHelper
-    Condition: install_api_gateway_app
+    Condition: add_api_gateway_tags
     Properties:
       ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -234,7 +271,7 @@ Resources:
   TagLambdaResources:
     Type: Custom::TagAWSResources
     DependsOn: SumoLogicAWSObservabilityHelper
-    Condition: install_lambda_app
+    Condition: add_lambda_tags
     Properties:
       ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -248,7 +285,7 @@ Resources:
   TagRdsResources:
     Type: Custom::TagAWSResources
     DependsOn: SumoLogicAWSObservabilityHelper
-    Condition: install_rds_app
+    Condition: add_rds_tags
     Properties:
       ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

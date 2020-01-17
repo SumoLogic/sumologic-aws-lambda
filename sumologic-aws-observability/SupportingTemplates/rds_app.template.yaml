@@ -11,6 +11,7 @@ Metadata:
           - SumoAccessID
           - SumoAccessKey
           - RemoveSumoResourcesOnDeleteStack
+          - RDSDeploymentType
 
       - Label:
           default: "AWS RDS App Configuration"
@@ -31,6 +32,8 @@ Metadata:
         default: "Sumo Logic Access Key."
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted."
+      RDSDeploymentType:
+        default: "Do you need to install Resources for AWS RDS App?"
 
       RdsAppSourceCategoryName:
         default: "RDS App Metric Data Source Category Name."
@@ -63,6 +66,18 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
+  RDSDeploymentType:
+    Type: String
+    AllowedValues:
+      - "Only-AWSTags"
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-AWSTags"
+    Default: "App-SumoResources-AWSTags"
+    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
+          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
+          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
 
   RdsAppSourceCategoryName:
     Type: String
@@ -72,6 +87,11 @@ Parameters:
   ServiceToken:
     Type: String
     Description: Service token for lambda ARN.
+
+Conditions:
+  setupsumoresources: !Or
+    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources-AWSTags" ]
 
 Resources:
 

@@ -11,6 +11,7 @@ Metadata:
           - SumoAccessID
           - SumoAccessKey
           - RemoveSumoResourcesOnDeleteStack
+          - DynamoDBDeploymentType
 
       - Label:
           default: "AWS DynamoDB App Configuration"
@@ -32,6 +33,8 @@ Metadata:
         default: "Sumo Logic Access Key."
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted."
+      DynamoDBDeploymentType:
+        default: "Do you need to install Resources for AWS Dynamo DB App?"
 
       DynamoDbMetricsSourceCategoryName:
         default: "Dynamo DB App Metric Data Source Category Name."
@@ -66,6 +69,16 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
+  DynamoDBDeploymentType:
+    Type: String
+    AllowedValues:
+      - "Only-App"
+      - "App-SumoResources"
+      - "App-SumoResources-S3Bucket"
+    Default: "App-SumoResources-S3Bucket"
+    Description: "Only-App: Choose this mode if you already have DynamoDB metrics and logs in Sumo. It installs only the app.
+          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting DynamoDB logs. It installs the collector, source and app.
+          App-SumoResources-S3Bucket: Choose this mode if you do not have DynamoDB logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket."
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
@@ -79,6 +92,11 @@ Parameters:
   ServiceToken:
     Type: String
     Description: Service token for lambda ARN.
+
+Conditions:
+  setupsumoresources: !Or
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources-S3Bucket" ]
 
 Resources:
 
