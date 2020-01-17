@@ -17,6 +17,11 @@ Metadata:
         Parameters:
           - Ec2AppSourceCategoryName
 
+      - Label:
+          default: "Local Parameters"
+        Parameters:
+          - ServiceToken
+
     ParameterLabels:
       SumoDeployment:
         default: "Sumo Logic Deployment Name."
@@ -29,6 +34,9 @@ Metadata:
 
       Ec2AppSourceCategoryName:
         default: "EC2 App Metric Data Source Category Name."
+
+      ServiceToken:
+        default: "Service token for lambda ARN."
 
 Parameters:
   SumoAccessID:
@@ -61,12 +69,16 @@ Parameters:
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/ec2/metrics
 
+  ServiceToken:
+    Type: String
+    Description: Service token for lambda ARN.
+
 Resources:
 
   sumoEC2MetricsApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      ServiceToken: !Ref ServiceToken
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart EC2 Metrics App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

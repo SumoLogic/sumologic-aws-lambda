@@ -19,6 +19,11 @@ Metadata:
           - LambdaLogSourceCategoryName
           - LambdaDataEventsSourceCategoryName
 
+      - Label:
+          default: "Local Parameters"
+        Parameters:
+          - ServiceToken
+
     ParameterLabels:
       SumoDeployment:
         default: "Sumo Logic Deployment Name."
@@ -35,6 +40,9 @@ Metadata:
         default: "Lambda App Log Data Source Category Name."
       LambdaDataEventsSourceCategoryName:
         default: "Lambda App Data Events Logs Source Category Name."
+
+      ServiceToken:
+        default: "Service token for lambda ARN."
 
 Parameters:
   SumoAccessID:
@@ -75,12 +83,16 @@ Parameters:
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/lambda/dataevents
 
+  ServiceToken:
+    Type: String
+    Description: Service token for lambda ARN.
+
 Resources:
 
   sumoLambdaApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      ServiceToken: !Ref ServiceToken
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart Lambda App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

@@ -18,6 +18,11 @@ Metadata:
           - DynamoDbMetricsSourceCategoryName
           - DynamoDbLogsSourceCategoryName
 
+      - Label:
+          default: "Local Parameters"
+        Parameters:
+          - ServiceToken
+
     ParameterLabels:
       SumoDeployment:
         default: "Sumo Logic Deployment Name."
@@ -32,6 +37,9 @@ Metadata:
         default: "Dynamo DB App Metric Data Source Category Name."
       DynamoDbLogsSourceCategoryName:
         default: "Dynamo DB App Logs Data Source Category Name."
+
+      ServiceToken:
+        default: "Service token for lambda ARN."
 
 Parameters:
   SumoAccessID:
@@ -68,12 +76,16 @@ Parameters:
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/dynamodb/logs
 
+  ServiceToken:
+    Type: String
+    Description: Service token for lambda ARN.
+
 Resources:
 
   sumoDynamoDbApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      ServiceToken: !Ref ServiceToken
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart DynamoDb App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

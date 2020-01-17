@@ -359,6 +359,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/ec2_metrics_app.template.yaml"
       Parameters:
+        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -384,6 +385,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/alb_app.template.yaml"
       Parameters:
+        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -398,6 +400,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/dynamodb_app.template.yaml"
       Parameters:
+        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -424,6 +427,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/rds_app.template.yaml"
       Parameters:
+        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -437,6 +441,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/lambda_app.template.yaml"
       Parameters:
+        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -464,6 +469,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/api_gateway_app.template.yaml"
       Parameters:
+        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
