@@ -23,7 +23,8 @@ Metadata:
       - Label:
           default: "Local Parameters"
         Parameters:
-          - ServiceToken
+          - LambdaARN
+          - RoleARN
           - AWSRegion
 
     ParameterLabels:
@@ -43,8 +44,10 @@ Metadata:
         default: "EC2 App Collector Name."
       Ec2SourceName:
         default: "EC2 App MetaData Source Name."
-      ServiceToken:
-        default: "Service token for lambda ARN."
+      LambdaARN:
+        default: "ARN for lambda."
+      RoleARN:
+        default: "ARN for Sumo Logic Role."
       AWSRegion:
         default: "AWS Region for the resources that need to be tagged."
 
@@ -99,9 +102,12 @@ Parameters:
     Description: EC2 App MetaData Source Name.
     Default: AWS-Observability-EC2-MetaData-Source
 
-  ServiceToken:
+  LambdaARN:
     Type: String
-    Description: Service token for lambda ARN.
+    Description: ARN for lambda.
+  RoleARN:
+    Type: String
+    Description: ARN for Sumo Logic Role.
   AWSRegion:
     Type: String
     Description: AWS Region for the resources that need to be tagged.
@@ -113,37 +119,11 @@ Conditions:
 
 Resources:
 
-  SumoRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: arn:aws:iam::926226587429:root
-            Action: sts:AssumeRole
-            Condition:
-              StringEquals:
-                sts:ExternalId:
-                  us1:0000000000285A74
-      Path: "/"
-      Policies:
-        - PolicyName: SumoPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - tag:GetResources
-                Resource:
-                  "*"
-
   SumoHostedCollector:
     Type: Custom::Collector
     Condition: setupsumoresources
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !Ref LambdaARN
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -157,7 +137,7 @@ Resources:
       - SumoHostedCollector
     Type: Custom::AWSSource
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !Ref LambdaARN
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsMetadata
@@ -168,12 +148,12 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
-      RoleArn: !GetAtt SumoRole.Arn
+      RoleArn: !Ref RoleARN
 
   sumoEC2MetricsApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !Ref LambdaARN
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart EC2 Metrics App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

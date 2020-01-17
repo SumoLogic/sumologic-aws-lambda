@@ -23,7 +23,8 @@ Metadata:
       - Label:
           default: "Local Parameters"
         Parameters:
-          - ServiceToken
+          - LambdaARN
+          - RoleARN
 
     ParameterLabels:
       SumoDeployment:
@@ -43,8 +44,10 @@ Metadata:
         default: "Api Gateway App Log Data Source Category Name."
       ApiGatewayCollectorName:
         default: "API Gateway App Collector Name."
-      ServiceToken:
-        default: "Service token for lambda ARN."
+      LambdaARN:
+        default: "ARN for lambda."
+      RoleARN:
+        default: "ARN for Sumo Logic Role."
 
 Parameters:
   SumoAccessID:
@@ -97,9 +100,12 @@ Parameters:
     Description: API Gateway App Collector Name.
     Default: AWS-Observability-API-Gateway-Collector
 
-  ServiceToken:
+  LambdaARN:
     Type: String
-    Description: Service token for lambda ARN.
+    Description: ARN for lambda.
+  RoleARN:
+    Type: String
+    Description: ARN for Sumo Logic Role.
 
 Conditions:
   setupsumoresources: !Or
@@ -112,7 +118,7 @@ Resources:
     Type: Custom::Collector
     Condition: setupsumoresources
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !Ref LambdaARN
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -124,7 +130,7 @@ Resources:
   sumoApiGatewayApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !Ref LambdaARN
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart Api Gateway App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

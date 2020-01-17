@@ -17,6 +17,7 @@ Metadata:
         Parameters:
           - AWSRegion
           - AccountAlias
+          - ServiceToken
 
       - Label:
           default: "Select the AWS Resources you want to tag:"
@@ -26,12 +27,6 @@ Metadata:
             - AddTagsForRDSResources
             - AddTagsForEC2MetricsResources
             - AddTagsForLambdaResources
-
-      - Label:
-          default: "Sumo Logic Quick Start configuration"
-          Parameters:
-            - QSS3BucketName
-            - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
@@ -46,6 +41,8 @@ Metadata:
         default: "AWS Region for the resources that need to be tagged."
       AccountAlias:
         default: "Value for Account Tag."
+      ServiceToken:
+        default: "Service token for lambda ARN."
       AddTagsForALBResources:
         default: "Do you need to add Tags for AWS ALB Resources?"
       AddTagsForAPIGatewayResources:
@@ -56,10 +53,6 @@ Metadata:
         default: "Do you need to add Tags for AWS EC2 Metrics Resources?"
       AddTagsForLambdaResources:
         default: "Do you need to add Tags for AWS Lambda Resources?"
-      QSS3BucketName:
-        default: "Quick Start S3 bucket name."
-      QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
 
 Parameters:
   SumoAccessID:
@@ -93,6 +86,9 @@ Parameters:
   AWSRegion:
     Type: String
     Description: AWS Region for the resources that need to be tagged.
+  ServiceToken:
+    Type: String
+    Description: Service token for lambda ARN.
 
   AddTagsForALBResources:
     Type: String
@@ -155,21 +151,6 @@ Parameters:
                 App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
                 App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
 
-
-  QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Default: "sumologicawsobservabilityhelper"
-    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Type: "String"
-
-  QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Default: "sumologic-aws-observability/"
-    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Type: "String"
-
 Conditions:
   add_alb_tags: !Or
     - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
@@ -189,48 +170,11 @@ Conditions:
 
 Resources:
 
-  SumoLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: SumoPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: '*'
-                Resource: '*'
-
-  SumoLogicAWSObservabilityHelper:
-    Type: 'AWS::Serverless::Function'
-    DependsOn: SumoLambdaRole
-    Properties:
-      Handler: main.handler
-      Runtime: python3.7
-      CodeUri:
-        Bucket: !Ref QSS3BucketName
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
-      MemorySize: 128
-      Timeout: 900
-      Role:
-        Fn::GetAtt:
-          - SumoLambdaRole
-          - Arn
-
   TagEc2Resources:
     Type: Custom::TagAWSResources
-    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: add_ec2_metrics_tags
     Properties:
-      ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+      ServiceToken: !Ref ServiceToken
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !Ref AWSRegion
       AWSResource: ec2
@@ -242,10 +186,9 @@ Resources:
 
   TagAlbResources:
     Type: Custom::TagAWSResources
-    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: add_alb_tags
     Properties:
-      ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+      ServiceToken: !Ref ServiceToken
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !Ref AWSRegion
       AWSResource: elbv2
@@ -256,10 +199,9 @@ Resources:
 
   TagApiGatewayResources:
     Type: Custom::TagAWSResources
-    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: add_api_gateway_tags
     Properties:
-      ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+      ServiceToken: !Ref ServiceToken
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !Ref AWSRegion
       AWSResource: apigateway
@@ -270,10 +212,9 @@ Resources:
 
   TagLambdaResources:
     Type: Custom::TagAWSResources
-    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: add_lambda_tags
     Properties:
-      ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+      ServiceToken: !Ref ServiceToken
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !Ref AWSRegion
       AWSResource: lambda
@@ -284,10 +225,9 @@ Resources:
 
   TagRdsResources:
     Type: Custom::TagAWSResources
-    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: add_rds_tags
     Properties:
-      ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+      ServiceToken: !Ref ServiceToken
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !Ref AWSRegion
       AWSResource: rds
@@ -295,8 +235,3 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
-
-Outputs:
-  SumoLogicAWSObservabilityHelperARN:
-    Description: Sumo Logic AWS Observability Lambda Helper
-    Value: !GetAtt SumoLogicAWSObservabilityHelper.Arn

@@ -417,8 +417,70 @@ Resources:
   WaitHandle:
     Type: "AWS::CloudFormation::WaitConditionHandle"
 
+  SumoLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+
+  SumoLogicAWSObservabilityHelper:
+    Type: 'AWS::Serverless::Function'
+    DependsOn: SumoLambdaRole
+    Properties:
+      Handler: main.handler
+      Runtime: python3.7
+      CodeUri:
+        Bucket: !Ref QSS3BucketName
+        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+      MemorySize: 128
+      Timeout: 900
+      Role:
+        Fn::GetAtt:
+          - SumoLambdaRole
+          - Arn
+
+  SumoRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::926226587429:root
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
+      Path: "/"
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - tag:GetResources
+                Resource:
+                  "*"
+
   TagAWSResources:
     Type: AWS::CloudFormation::Stack
+    DependsOn: SumoLogicAWSObservabilityHelper
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/tag_resource.template.yaml"
       Parameters:
@@ -433,15 +495,14 @@ Resources:
         AddTagsForRDSResources: !Ref RDSDeploymentType
         AddTagsForEC2MetricsResources: !Ref EC2MetricsDeploymentType
         AddTagsForLambdaResources: !Ref LambdaDeploymentType
-        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
     DependsOn: TagAWSResources
     Condition: create_explorer_view
     Properties:
-      ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+      ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       ExplorerName: !Ref ExplorerName
       SumoAccessID: !Ref SumoAccessID
@@ -455,7 +516,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/ec2_metrics_app.template.yaml"
       Parameters:
-        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        RoleARN: !GetAtt SumoRole.Arn
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -485,7 +547,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/alb_app.template.yaml"
       Parameters:
-        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        RoleARN: !GetAtt SumoRole.Arn
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -502,7 +565,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/dynamodb_app.template.yaml"
       Parameters:
-        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        RoleARN: !GetAtt SumoRole.Arn
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -531,7 +595,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/rds_app.template.yaml"
       Parameters:
-        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        RoleARN: !GetAtt SumoRole.Arn
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -547,7 +612,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/lambda_app.template.yaml"
       Parameters:
-        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        RoleARN: !GetAtt SumoRole.Arn
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -577,7 +643,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/api_gateway_app.template.yaml"
       Parameters:
-        ServiceToken: !GetAtt TagAWSResources.Outputs.SumoLogicAWSObservabilityHelperARN
+        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        RoleARN: !GetAtt SumoRole.Arn
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
