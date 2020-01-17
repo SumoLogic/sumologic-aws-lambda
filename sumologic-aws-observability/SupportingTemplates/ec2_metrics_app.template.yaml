@@ -94,19 +94,6 @@ Conditions:
 
 Resources:
 
-  SumoHostedCollector:
-    Type: Custom::Collector
-    Condition: setupsumoresources
-    Properties:
-      ServiceToken: !GetAtt SumoAppUtils.Arn
-      Region: !Ref "AWS::Region"
-      CollectorType: Hosted
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      CollectorName: !Ref CollectorName
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
-
   sumoEC2MetricsApp:
     Type: Custom::App
     Properties:

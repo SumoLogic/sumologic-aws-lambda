@@ -177,7 +177,7 @@ Conditions:
   add_api_gateway_tags: !Or
     - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
     - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
-  add_rds_tags: !!Or
+  add_rds_tags: !Or
     - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
     - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags" ]
   add_ec2_metrics_tags: !Or
