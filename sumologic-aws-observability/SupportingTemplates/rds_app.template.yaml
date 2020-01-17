@@ -44,7 +44,7 @@ Metadata:
       RdsCollectorName:
         default: "RDS App Collector Name."
       RdsSourceName:
-        default: "RDS App MetaData Source Name."
+        default: "RDS App CloudWatch Metrics Source Name."
       LambdaARN:
         default: "ARN for lambda."
       RoleARN:
@@ -100,7 +100,7 @@ Parameters:
     Default: AWS-Observability-RDS-Collector
   RdsSourceName:
     Type: String
-    Description: RDS App MetaData Source Name.
+    Description: RDS App CloudWatch Metrics Source Name.
     Default: AWS-Observability-RDS-CloudWatch-Source
 
   LambdaARN:
@@ -133,7 +133,7 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
-  SumoMetaDataSource:
+  SumoCloudwatchSource:
     DependsOn:
       - SumoHostedCollector
     Type: Custom::AWSSource
@@ -143,8 +143,9 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
       AWSRegion: !Ref AWSRegion
+      namespace: AWS/RDS
       SourceName: !Ref RdsSourceName
-      SourceCategory: !Ref Ec2AppSourceCategoryName
+      SourceCategory: !Ref RdsAppSourceCategoryName
       CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey

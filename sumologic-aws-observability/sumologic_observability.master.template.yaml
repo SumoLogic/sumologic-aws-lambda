@@ -62,6 +62,7 @@ Metadata:
         Parameters:
           - RdsAppSourceCategoryName
           - RdsCollectorName
+          - RdsSourceName
 
       - Label:
           default: "AWS Lambda App Configuration"
@@ -144,6 +145,8 @@ Metadata:
         default: "RDS App Metric Data Source Category Name."
       RdsCollectorName:
         default: "RDS App Collector Name."
+      RdsSourceName:
+        default: "RDS App CloudWatch Metrics Source Name."
 
       LambdaMetricsSourceCategoryName:
         default: "Lambda App Metric Data Source Category Name."
@@ -339,6 +342,10 @@ Parameters:
     Type: String
     Description: RDS App Collector Name.
     Default: AWS-Observability-RDS-Collector
+  RdsSourceName:
+    Type: String
+    Description: RDS App CloudWatch Metrics Source Name.
+    Default: AWS-Observability-RDS-CloudWatch-Source
 
   LambdaMetricsSourceCategoryName:
     Type: String
@@ -475,6 +482,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - tag:GetResources
+                  - cloudwatch:ListMetrics
+                  - cloudwatch:GetMetricStatistics
                 Resource:
                   "*"
 
@@ -537,7 +546,7 @@ Resources:
     Type: "AWS::CloudFormation::WaitCondition"
     Properties:
       Handle: !If [install_ec2_metrics_app, !Ref sumoAlbMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "10"
+      Timeout: "5"
       Count: 0
 
   sumoAlbMetricsAppStack:
@@ -558,9 +567,21 @@ Resources:
         AlbMetricsSourceCategoryName: !Ref AlbMetricsSourceCategoryName
         AlbLogsSourceCategoryName: !Ref AlbLogsSourceCategoryName
 
+  sumoDynamoDBMetricsAppStackWaitHandle:
+    Condition: install_alb_app
+    DependsOn: sumoAlbMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoDynamoDBMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_alb_app, !Ref sumoDynamoDBMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "15"
+      Count: 0
+
   sumoDynamoDBMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SumoLogicAWSObservabilityHelper
+    DependsOn: [SumoLogicAWSObservabilityHelper, sumoDynamoDBMetricsAppStackWaitCondition]
     Condition: install_dynamo_db_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/dynamodb_app.template.yaml"
@@ -576,21 +597,9 @@ Resources:
         DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
         DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
 
-  sumoRdsMetricsAppStackWaitHandle:
-    Condition: install_dynamo_db_app
-    DependsOn: sumoDynamoDBMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoRdsMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_dynamo_db_app, !Ref sumoRdsMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "10"
-      Count: 0
-
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: [SumoLogicAWSObservabilityHelper, sumoRdsMetricsAppStackWaitCondition]
+    DependsOn: SumoLogicAWSObservabilityHelper
     Condition: install_rds_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/rds_app.template.yaml"
@@ -601,13 +610,27 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
         RDSDeploymentType: !Ref RDSDeploymentType
         RdsCollectorName: !Ref RdsCollectorName
         RdsAppSourceCategoryName: !Ref RdsAppSourceCategoryName
+        RdsSourceName: !Ref RdsSourceName
+
+  sumoLambdaMetricsAppStackWaitHandle:
+    Condition: install_rds_app
+    DependsOn: sumoRdsMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoLambdaMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_rds_app, !Ref sumoLambdaMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
 
   sumoLambdaMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SumoLogicAWSObservabilityHelper
+    DependsOn: [SumoLogicAWSObservabilityHelper, sumoLambdaMetricsAppStackWaitCondition]
     Condition: install_lambda_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/lambda_app.template.yaml"
@@ -633,7 +656,7 @@ Resources:
     Type: "AWS::CloudFormation::WaitCondition"
     Properties:
       Handle: !If [install_lambda_app, !Ref sumoApiGatewayMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "10"
+      Timeout: "15"
       Count: 0
 
   sumoApiGatewayMetricsAppStack:
