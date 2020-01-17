@@ -17,6 +17,7 @@ Metadata:
           default: "AWS RDS App Configuration"
         Parameters:
           - RdsAppSourceCategoryName
+          - RdsCollectorName
 
       - Label:
           default: "Local Parameters"
@@ -37,7 +38,8 @@ Metadata:
 
       RdsAppSourceCategoryName:
         default: "RDS App Metric Data Source Category Name."
-
+      RdsCollectorName:
+        default: "RDS App Collector Name."
       ServiceToken:
         default: "Service token for lambda ARN."
 
@@ -83,6 +85,10 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/rds/metrics
+  RdsCollectorName:
+    Type: String
+    Description: RDS App Collector Name.
+    Default: AWS-Observability-RDS-Collector
 
   ServiceToken:
     Type: String
@@ -94,6 +100,19 @@ Conditions:
     - !Equals [ !Ref RDSDeploymentType, "App-SumoResources-AWSTags" ]
 
 Resources:
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Condition: setupsumoresources
+    Properties:
+      ServiceToken: !Ref ServiceToken
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref RdsCollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
 
   sumoRdsApp:
     Type: Custom::App

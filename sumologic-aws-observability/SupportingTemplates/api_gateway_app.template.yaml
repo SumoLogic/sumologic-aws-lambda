@@ -18,6 +18,7 @@ Metadata:
         Parameters:
           - ApiGatewayMetricsSourceCategoryName
           - ApiGatewayLogSourceCategoryName
+          - ApiGatewayCollectorName
 
       - Label:
           default: "Local Parameters"
@@ -40,7 +41,8 @@ Metadata:
         default: "Api Gateway App Metric Data Source Category Name."
       ApiGatewayLogSourceCategoryName:
         default: "Api Gateway App Log Data Source Category Name."
-
+      ApiGatewayCollectorName:
+        default: "API Gateway App Collector Name."
       ServiceToken:
         default: "Service token for lambda ARN."
 
@@ -90,6 +92,10 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/apigateway/logs
+  ApiGatewayCollectorName:
+    Type: String
+    Description: API Gateway App Collector Name.
+    Default: AWS-Observability-API-Gateway-Collector
 
   ServiceToken:
     Type: String
@@ -101,6 +107,19 @@ Conditions:
     - !Equals [ !Ref APIGatewayDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
 
 Resources:
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Condition: setupsumoresources
+    Properties:
+      ServiceToken: !Ref ServiceToken
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref ApiGatewayCollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
 
   sumoApiGatewayApp:
     Type: Custom::App

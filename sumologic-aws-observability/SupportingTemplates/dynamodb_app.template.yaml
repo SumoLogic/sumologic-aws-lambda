@@ -18,6 +18,7 @@ Metadata:
         Parameters:
           - DynamoDbMetricsSourceCategoryName
           - DynamoDbLogsSourceCategoryName
+          - DynamoDbCollectorName
 
       - Label:
           default: "Local Parameters"
@@ -40,6 +41,8 @@ Metadata:
         default: "Dynamo DB App Metric Data Source Category Name."
       DynamoDbLogsSourceCategoryName:
         default: "Dynamo DB App Logs Data Source Category Name."
+      DynamoDbCollectorName:
+        default: "Dynamo DB App Collector Name."
 
       ServiceToken:
         default: "Service token for lambda ARN."
@@ -88,6 +91,10 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/dynamodb/logs
+  DynamoDbCollectorName:
+    Type: String
+    Description: Dynamo DB App Collector Name.
+    Default: AWS-Observability-Dynamo-DB-Collector
 
   ServiceToken:
     Type: String
@@ -99,6 +106,19 @@ Conditions:
     - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources-S3Bucket" ]
 
 Resources:
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Condition: setupsumoresources
+    Properties:
+      ServiceToken: !Ref ServiceToken
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref DynamoDbCollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
 
   sumoDynamoDbApp:
     Type: Custom::App

@@ -40,23 +40,28 @@ Metadata:
           default: "AWS EC2 Metrics App Configuration"
         Parameters:
           - Ec2AppSourceCategoryName
+          - Ec2CollectorName
+          - Ec2SourceName
 
       - Label:
           default: "AWS ALB App Configuration"
         Parameters:
           - AlbMetricsSourceCategoryName
           - AlbLogsSourceCategoryName
+          - AlbCollectorName
 
       - Label:
           default: "AWS DynamoDB App Configuration"
         Parameters:
           - DynamoDbMetricsSourceCategoryName
           - DynamoDbLogsSourceCategoryName
+          - DynamoDbCollectorName
 
       - Label:
           default: "AWS RDS App Configuration"
         Parameters:
           - RdsAppSourceCategoryName
+          - RdsCollectorName
 
       - Label:
           default: "AWS Lambda App Configuration"
@@ -64,12 +69,14 @@ Metadata:
           - LambdaMetricsSourceCategoryName
           - LambdaLogSourceCategoryName
           - LambdaDataEventsSourceCategoryName
+          - LambdaCollectorName
 
       - Label:
           default: "AWS Api Gateway App Configuration"
         Parameters:
           - ApiGatewayMetricsSourceCategoryName
           - ApiGatewayLogSourceCategoryName
+          - ApiGatewayCollectorName
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
@@ -114,19 +121,29 @@ Metadata:
 
       Ec2AppSourceCategoryName:
         default: "EC2 App Metric Data Source Category Name."
+      Ec2CollectorName:
+        default: "EC2 App Collector Name."
+      Ec2SourceName:
+        default: "EC2 App MetaData Source Name."
 
       AlbMetricsSourceCategoryName:
         default: "ALB App Metric Data Source Category Name."
       AlbLogsSourceCategoryName:
         default: "ALB App Logs Data Source Category Name."
+      AlbCollectorName:
+        default: "ALB App Collector Name."
 
       DynamoDbMetricsSourceCategoryName:
         default: "Dynamo DB App Metric Data Source Category Name."
       DynamoDbLogsSourceCategoryName:
         default: "Dynamo DB App Logs Data Source Category Name."
+      DynamoDbCollectorName:
+        default: "Dynamo DB App Collector Name."
 
       RdsAppSourceCategoryName:
         default: "RDS App Metric Data Source Category Name."
+      RdsCollectorName:
+        default: "RDS App Collector Name."
 
       LambdaMetricsSourceCategoryName:
         default: "Lambda App Metric Data Source Category Name."
@@ -134,11 +151,15 @@ Metadata:
         default: "Lambda App Log Data Source Category Name."
       LambdaDataEventsSourceCategoryName:
         default: "Lambda App Data Events Logs Source Category Name."
+      LambdaCollectorName:
+        default: "Lambda App Collector Name."
 
       ApiGatewayMetricsSourceCategoryName:
         default: "Api Gateway App Metric Data Source Category Name."
       ApiGatewayLogSourceCategoryName:
         default: "Api Gateway App Log Data Source Category Name."
+      ApiGatewayCollectorName:
+        default: "Api Gateway App Collector Name."
 
       QSS3BucketName:
         default: "Quick Start S3 bucket name."
@@ -275,6 +296,14 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/ec2/metrics
+  Ec2CollectorName:
+    Type: String
+    Description: EC2 App Collector Name.
+    Default: AWS-Observability-EC2-Collector
+  Ec2SourceName:
+    Type: String
+    Description: EC2 App MetaData Source Name.
+    Default: AWS-Observability-EC2-MetaData-Source
 
   AlbMetricsSourceCategoryName:
     Type: String
@@ -284,6 +313,10 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/alb/logs
+  AlbCollectorName:
+    Type: String
+    Description: ALB App Collector Name.
+    Default: AWS-Observability-ALB-Collector
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
@@ -293,11 +326,19 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/dynamodb/logs
+  DynamoDbCollectorName:
+    Type: String
+    Description: Dynamo DB App Collector Name.
+    Default: AWS-Observability-Dynamo-DB-Collector
 
   RdsAppSourceCategoryName:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/rds/metrics
+  RdsCollectorName:
+    Type: String
+    Description: RDS App Collector Name.
+    Default: AWS-Observability-RDS-Collector
 
   LambdaMetricsSourceCategoryName:
     Type: String
@@ -311,6 +352,10 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/lambda/dataevents
+  LambdaCollectorName:
+    Type: String
+    Description: Lambda App Collector Name.
+    Default: AWS-Observability-Lambda-Collector
 
   ApiGatewayMetricsSourceCategoryName:
     Type: String
@@ -320,6 +365,10 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/apigateway/logs
+  ApiGatewayCollectorName:
+    Type: String
+    Description: API Gateway App Collector Name.
+    Default: AWS-Observability-API-Gateway-Collector
 
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
@@ -412,6 +461,9 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         EC2MetricsDeploymentType: !Ref EC2MetricsDeploymentType
+        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        Ec2CollectorName: !Ref Ec2CollectorName
+        Ec2SourceName: !Ref Ec2SourceName
         Ec2AppSourceCategoryName: !Ref Ec2AppSourceCategoryName
 
   sumoAlbMetricsAppStackWaitHandle:
@@ -439,6 +491,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         ALBDeploymentType: !Ref ALBDeploymentType
+        AlbCollectorName: !Ref AlbCollectorName
         AlbMetricsSourceCategoryName: !Ref AlbMetricsSourceCategoryName
         AlbLogsSourceCategoryName: !Ref AlbLogsSourceCategoryName
 
@@ -455,6 +508,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         DynamoDBDeploymentType: !Ref DynamoDBDeploymentType
+        DynamoDbCollectorName: !Ref DynamoDbCollectorName
         DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
         DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
 
@@ -483,6 +537,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         RDSDeploymentType: !Ref RDSDeploymentType
+        RdsCollectorName: !Ref RdsCollectorName
         RdsAppSourceCategoryName: !Ref RdsAppSourceCategoryName
 
   sumoLambdaMetricsAppStack:
@@ -498,6 +553,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         LambdaDeploymentType: !Ref LambdaDeploymentType
+        LambdaCollectorName: !Ref LambdaCollectorName
         LambdaMetricsSourceCategoryName: !Ref LambdaMetricsSourceCategoryName
         LambdaLogSourceCategoryName: !Ref LambdaLogSourceCategoryName
         LambdaDataEventsSourceCategoryName: !Ref LambdaDataEventsSourceCategoryName
@@ -527,5 +583,6 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         APIGatewayDeploymentType: !Ref APIGatewayDeploymentType
+        ApiGatewayCollectorName: !Ref ApiGatewayCollectorName
         ApiGatewayMetricsSourceCategoryName: !Ref ApiGatewayMetricsSourceCategoryName
         ApiGatewayLogSourceCategoryName: !Ref ApiGatewayLogSourceCategoryName

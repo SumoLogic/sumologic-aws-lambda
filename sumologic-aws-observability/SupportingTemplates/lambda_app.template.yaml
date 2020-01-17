@@ -19,6 +19,7 @@ Metadata:
           - LambdaMetricsSourceCategoryName
           - LambdaLogSourceCategoryName
           - LambdaDataEventsSourceCategoryName
+          - LambdaCollectorName
 
       - Label:
           default: "Local Parameters"
@@ -43,7 +44,8 @@ Metadata:
         default: "Lambda App Log Data Source Category Name."
       LambdaDataEventsSourceCategoryName:
         default: "Lambda App Data Events Logs Source Category Name."
-
+      LambdaCollectorName:
+        default: "Lambda App Collector Name."
       ServiceToken:
         default: "Service token for lambda ARN."
 
@@ -98,6 +100,10 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/lambda/dataevents
+  LambdaCollectorName:
+    Type: String
+    Description: Lambda App Collector Name.
+    Default: AWS-Observability-Lambda-Collector
 
   ServiceToken:
     Type: String
@@ -109,6 +115,19 @@ Conditions:
     - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
 
 Resources:
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Condition: setupsumoresources
+    Properties:
+      ServiceToken: !Ref ServiceToken
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref LambdaCollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
 
   sumoLambdaApp:
     Type: Custom::App

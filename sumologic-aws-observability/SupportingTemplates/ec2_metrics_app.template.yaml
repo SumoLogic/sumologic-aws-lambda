@@ -17,11 +17,14 @@ Metadata:
           default: "AWS EC2 Metrics App Configuration"
         Parameters:
           - Ec2AppSourceCategoryName
+          - Ec2CollectorName
+          - Ec2SourceName
 
       - Label:
           default: "Local Parameters"
         Parameters:
           - ServiceToken
+          - AWSRegion
 
     ParameterLabels:
       SumoDeployment:
@@ -36,9 +39,14 @@ Metadata:
         default: "Do you need to install Resources for AWS EC2 Metrics App?"
       Ec2AppSourceCategoryName:
         default: "EC2 App Metric Data Source Category Name."
-
+      Ec2CollectorName:
+        default: "EC2 App Collector Name."
+      Ec2SourceName:
+        default: "EC2 App MetaData Source Name."
       ServiceToken:
         default: "Service token for lambda ARN."
+      AWSRegion:
+        default: "AWS Region for the resources that need to be tagged."
 
 Parameters:
   SumoAccessID:
@@ -82,10 +90,21 @@ Parameters:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/ec2/metrics
+  Ec2CollectorName:
+    Type: String
+    Description: EC2 App Collector Name.
+    Default: AWS-Observability-EC2-Collector
+  Ec2SourceName:
+    Type: String
+    Description: EC2 App MetaData Source Name.
+    Default: AWS-Observability-EC2-MetaData-Source
 
   ServiceToken:
     Type: String
     Description: Service token for lambda ARN.
+  AWSRegion:
+    Type: String
+    Description: AWS Region for the resources that need to be tagged.
 
 Conditions:
   setupsumoresources: !Or
@@ -93,6 +112,63 @@ Conditions:
     - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources-AWSTags" ]
 
 Resources:
+
+  SumoRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::926226587429:root
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId:
+                  us1:0000000000285A74
+      Path: "/"
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - tag:GetResources
+                Resource:
+                  "*"
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Condition: setupsumoresources
+    Properties:
+      ServiceToken: !Ref ServiceToken
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref Ec2CollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  SumoMetaDataSource:
+    DependsOn:
+      - SumoHostedCollector
+    Type: Custom::AWSSource
+    Properties:
+      ServiceToken: !Ref ServiceToken
+      Region: !Ref "AWS::Region"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceType: AwsMetadata
+      AWSRegion: !Ref AWSRegion
+      SourceName: !Ref Ec2SourceName
+      SourceCategory: !Ref Ec2AppSourceCategoryName
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      RoleArn: !GetAtt SumoRole.Arn
 
   sumoEC2MetricsApp:
     Type: Custom::App

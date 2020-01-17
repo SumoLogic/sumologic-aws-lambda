@@ -399,11 +399,7 @@ class AWSSource(BaseSource):
             "thirdPartyRef": {
                 "resources": [{
                     "serviceType": props.get("SourceType"),
-                    "path": {
-                        "type": "S3BucketPathExpression",
-                        "bucketName": props.get("TargetBucketName"),
-                        "pathExpression": props.get("PathExpression")
-                    },
+                    "path": self._get_path(props),
                     "authentication": {
                         "type": "AWSRoleBasedAuthentication",
                         "roleARN": props.get("RoleArn")
@@ -414,6 +410,39 @@ class AWSSource(BaseSource):
             "paused": False,
         })
         return source_json
+
+    def _get_path(self, props):
+        source_type = props.get("SourceType")
+
+        regions = []
+        if "AWSRegion" in props:
+            regions = self._get_regions(props.get("AWSRegion"))
+
+        if source_type == "AwsMetadata":
+            return {
+                "type": "AwsMetadataPath",
+                "limitToRegions": regions
+            }
+        elif source_type == "AwsCloudWatch":
+            return {
+                "type": "CloudWatchPath",
+                "limitToRegions": regions,
+                "limitToNamespaces": [props.get("namespace")]
+            }
+        else:
+            return {
+                "type": "S3BucketPathExpression",
+                "bucketName": props.get("TargetBucketName"),
+                "pathExpression": props.get("PathExpression")
+            }
+
+    def _get_regions(self, region_value):
+        if region_value == "all":
+            aws_client = boto3.client('ec2')
+            regions = [region['RegionName'] for region in aws_client.describe_regions()['Regions']]
+        else:
+            regions = [region_value]
+        return regions
 
     def create(self, collector_id, source_name, props, *args, **kwargs):
 
