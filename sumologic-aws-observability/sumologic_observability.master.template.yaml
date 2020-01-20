@@ -49,6 +49,7 @@ Metadata:
           - AlbMetricsSourceCategoryName
           - AlbLogsSourceCategoryName
           - AlbCollectorName
+          - AlbMetricsSourceName
 
       - Label:
           default: "AWS DynamoDB App Configuration"
@@ -56,6 +57,7 @@ Metadata:
           - DynamoDbMetricsSourceCategoryName
           - DynamoDbLogsSourceCategoryName
           - DynamoDbCollectorName
+          - DynamoDbMetricsSourceName
 
       - Label:
           default: "AWS RDS App Configuration"
@@ -71,6 +73,7 @@ Metadata:
           - LambdaLogSourceCategoryName
           - LambdaDataEventsSourceCategoryName
           - LambdaCollectorName
+          - LambdaMetricsSourceName
 
       - Label:
           default: "AWS Api Gateway App Configuration"
@@ -78,6 +81,7 @@ Metadata:
           - ApiGatewayMetricsSourceCategoryName
           - ApiGatewayLogSourceCategoryName
           - ApiGatewayCollectorName
+          - ApiGatewayMetricsSourceName
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
@@ -133,6 +137,8 @@ Metadata:
         default: "ALB App Logs Data Source Category Name."
       AlbCollectorName:
         default: "ALB App Collector Name."
+      AlbMetricsSourceName:
+        default: "ALB App CloudWatch Metrics Source Name."
 
       DynamoDbMetricsSourceCategoryName:
         default: "Dynamo DB App Metric Data Source Category Name."
@@ -140,6 +146,8 @@ Metadata:
         default: "Dynamo DB App Logs Data Source Category Name."
       DynamoDbCollectorName:
         default: "Dynamo DB App Collector Name."
+      DynamoDbMetricsSourceName:
+        default: "Dynamo DB App CloudWatch Metrics Source Name."
 
       RdsAppSourceCategoryName:
         default: "RDS App Metric Data Source Category Name."
@@ -156,6 +164,8 @@ Metadata:
         default: "Lambda App Data Events Logs Source Category Name."
       LambdaCollectorName:
         default: "Lambda App Collector Name."
+      LambdaMetricsSourceName:
+        default: "Lambda App CloudWatch Metrics Source Name."
 
       ApiGatewayMetricsSourceCategoryName:
         default: "Api Gateway App Metric Data Source Category Name."
@@ -163,6 +173,8 @@ Metadata:
         default: "Api Gateway App Log Data Source Category Name."
       ApiGatewayCollectorName:
         default: "Api Gateway App Collector Name."
+      ApiGatewayMetricsSourceName:
+        default: "API Gateway App CloudWatch Metrics Source Name."
 
       QSS3BucketName:
         default: "Quick Start S3 bucket name."
@@ -320,6 +332,10 @@ Parameters:
     Type: String
     Description: ALB App Collector Name.
     Default: AWS-Observability-ALB-Collector
+  AlbMetricsSourceName:
+    Type: String
+    Description: ALB App CloudWatch Metrics Source Name.
+    Default: AWS-Observability-ALB-CloudWatch-Source
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
@@ -333,6 +349,10 @@ Parameters:
     Type: String
     Description: Dynamo DB App Collector Name.
     Default: AWS-Observability-Dynamo-DB-Collector
+  DynamoDbMetricsSourceName:
+    Type: String
+    Description: Dynamo DB Gateway App CloudWatch Metrics Source Name.
+    Default: AWS-Observability-Dynamo-CloudWatch-Source
 
   RdsAppSourceCategoryName:
     Type: String
@@ -363,6 +383,10 @@ Parameters:
     Type: String
     Description: Lambda App Collector Name.
     Default: AWS-Observability-Lambda-Collector
+  LambdaMetricsSourceName:
+    Type: String
+    Description: Lambda Gateway App CloudWatch Metrics Source Name.
+    Default: AWS-Observability-Lambda-CloudWatch-Source
 
   ApiGatewayMetricsSourceCategoryName:
     Type: String
@@ -376,6 +400,10 @@ Parameters:
     Type: String
     Description: API Gateway App Collector Name.
     Default: AWS-Observability-API-Gateway-Collector
+  ApiGatewayMetricsSourceName:
+    Type: String
+    Description: API Gateway App CloudWatch Metrics Source Name.
+    Default: AWS-Observability-API-CloudWatch-Source
 
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
@@ -566,6 +594,7 @@ Resources:
         AlbCollectorName: !Ref AlbCollectorName
         AlbMetricsSourceCategoryName: !Ref AlbMetricsSourceCategoryName
         AlbLogsSourceCategoryName: !Ref AlbLogsSourceCategoryName
+        AlbMetricsSourceName: !Ref AlbMetricsSourceName
 
   sumoDynamoDBMetricsAppStackWaitHandle:
     Condition: install_alb_app
@@ -596,6 +625,7 @@ Resources:
         DynamoDbCollectorName: !Ref DynamoDbCollectorName
         DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
         DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
+        DynamoDbMetricsSourceName: !Ref DynamoDbMetricsSourceName
 
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
@@ -646,6 +676,7 @@ Resources:
         LambdaMetricsSourceCategoryName: !Ref LambdaMetricsSourceCategoryName
         LambdaLogSourceCategoryName: !Ref LambdaLogSourceCategoryName
         LambdaDataEventsSourceCategoryName: !Ref LambdaDataEventsSourceCategoryName
+        LambdaMetricsSourceName: !Ref LambdaMetricsSourceName
 
   sumoApiGatewayMetricsAppStackWaitHandle:
     Condition: install_lambda_app
@@ -676,3 +707,4 @@ Resources:
         ApiGatewayCollectorName: !Ref ApiGatewayCollectorName
         ApiGatewayMetricsSourceCategoryName: !Ref ApiGatewayMetricsSourceCategoryName
         ApiGatewayLogSourceCategoryName: !Ref ApiGatewayLogSourceCategoryName
+        ApiGatewayMetricsSourceName: !Ref ApiGatewayMetricsSourceName

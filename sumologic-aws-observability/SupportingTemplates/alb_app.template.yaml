@@ -19,12 +19,14 @@ Metadata:
           - AlbMetricsSourceCategoryName
           - AlbLogsSourceCategoryName
           - AlbCollectorName
+          - AlbMetricsSourceName
 
       - Label:
           default: "Local Parameters"
         Parameters:
           - LambdaARN
           - RoleARN
+          - AWSRegion
 
     ParameterLabels:
       SumoDeployment:
@@ -44,10 +46,14 @@ Metadata:
         default: "ALB App Logs Data Source Category Name."
       AlbCollectorName:
         default: "ALB App Collector Name."
+      AlbMetricsSourceName:
+        default: "ALB App CloudWatch Metrics Source Name."
       LambdaARN:
         default: "ARN for lambda."
       RoleARN:
         default: "ARN for Sumo Logic Role."
+      AWSRegion:
+        default: "AWS Region for the resources that need to be tagged."
 
 Parameters:
   SumoAccessID:
@@ -99,6 +105,10 @@ Parameters:
     Type: String
     Description: ALB App Collector Name.
     Default: AWS-Observability-ALB-Collector
+  AlbMetricsSourceName:
+    Type: String
+    Description: ALB App CloudWatch Metrics Source Name.
+    Default: AWS-Observability-ALB-CloudWatch-Source
 
   LambdaARN:
     Type: String
@@ -106,6 +116,9 @@ Parameters:
   RoleARN:
     Type: String
     Description: ARN for Sumo Logic Role.
+  AWSRegion:
+    Type: String
+    Description: AWS Region for the resources that need to be tagged.
 
 Conditions:
   setupsumoresources: !Or
@@ -126,6 +139,25 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
+
+  SumoCloudwatchSource:
+    DependsOn:
+      - SumoHostedCollector
+    Type: Custom::AWSSource
+    Properties:
+      ServiceToken: !Ref LambdaARN
+      Region: !Ref "AWS::Region"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceType: AwsCloudWatch
+      AWSRegion: !Ref AWSRegion
+      namespace: AWS/ApplicationELB
+      SourceName: !Ref AlbMetricsSourceName
+      SourceCategory: !Ref AlbMetricsSourceCategoryName
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      RoleArn: !Ref RoleARN
 
   sumoAlbApp:
     Type: Custom::App
