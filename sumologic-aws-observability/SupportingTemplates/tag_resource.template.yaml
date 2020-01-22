@@ -17,7 +17,6 @@ Metadata:
         Parameters:
           - AWSRegion
           - AccountAlias
-          - ServiceToken
 
       - Label:
           default: "Select the AWS Resources you want to tag:"
@@ -27,6 +26,17 @@ Metadata:
             - AddTagsForRDSResources
             - AddTagsForEC2MetricsResources
             - AddTagsForLambdaResources
+
+      - Label:
+          default: "Local Parameters. Do Not Edit the values."
+          Parameters:
+            - ServiceToken
+
+      - Label:
+          default: "Sumo Logic Quick Start configuration"
+        Parameters:
+          - QSS3BucketName
+          - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
@@ -41,8 +51,6 @@ Metadata:
         default: "AWS Region for the resources that need to be tagged."
       AccountAlias:
         default: "Value for Account Tag."
-      ServiceToken:
-        default: "Service token for lambda ARN."
       AddTagsForALBResources:
         default: "Do you need to add Tags for AWS ALB Resources?"
       AddTagsForAPIGatewayResources:
@@ -53,6 +61,12 @@ Metadata:
         default: "Do you need to add Tags for AWS EC2 Metrics Resources?"
       AddTagsForLambdaResources:
         default: "Do you need to add Tags for AWS Lambda Resources?"
+      ServiceToken:
+        default: "Service token for lambda ARN."
+      QSS3BucketName:
+        default: "Quick Start S3 bucket name."
+      QSS3KeyPrefix:
+        default: "Quick Start S3 key prefix."
 
 Parameters:
   SumoAccessID:
@@ -85,101 +99,125 @@ Parameters:
     Description: Provide the Value for Account Tag.
   AWSRegion:
     Type: String
+    Default: 'Current Region'
     Description: AWS Region for the resources that need to be tagged.
-  ServiceToken:
-    Type: String
-    Description: Service token for lambda ARN.
+    AllowedValues:
+      - 'Current Region'
+      - 'All Regions'
 
   AddTagsForALBResources:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags-S3Bucket"
-    Default: "App-SumoResources-AWSTags-S3Bucket"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-            Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-            App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-            App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
   AddTagsForAPIGatewayResources:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags-S3Bucket"
-    Default: "App-SumoResources-AWSTags-S3Bucket"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
   AddTagsForRDSResources:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags"
-    Default: "App-SumoResources-AWSTags"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
   AddTagsForEC2MetricsResources:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags"
-    Default: "App-SumoResources-AWSTags"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
   AddTagsForLambdaResources:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags-S3Bucket"
-    Default: "App-SumoResources-AWSTags-S3Bucket"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-                Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-                App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-                App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
+
+  ServiceToken:
+    Type: String
+    Default: "CreateRole"
+    Description: Service token for lambda ARN. Do Not Edit the value.
+  QSS3BucketName:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Default: "sumologicawsobservabilityhelper"
+    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Type: "String"
+
+  QSS3KeyPrefix:
+    AllowedPattern: "^[0-9a-zA-Z-/]*$"
+    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Default: "sumologic-aws-observability/"
+    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Type: "String"
 
 Conditions:
-  add_alb_tags: !Or
-    - !Equals [ !Ref AddTagsForALBResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForALBResources, "App-SumoResources-AWSTags-S3Bucket" ]
-  add_api_gateway_tags: !Or
-    - !Equals [ !Ref AddTagsForAPIGatewayResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForAPIGatewayResources, "App-SumoResources-AWSTags-S3Bucket" ]
-  add_rds_tags: !Or
-    - !Equals [ !Ref AddTagsForRDSResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForRDSResources, "App-SumoResources-AWSTags" ]
-  add_ec2_metrics_tags: !Or
-    - !Equals [ !Ref AddTagsForEC2MetricsResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForEC2MetricsResources, "App-SumoResources-AWSTags" ]
-  add_lambda_tags: !Or
-    - !Equals [ !Ref AddTagsForLambdaResources, "Only-AWSTags" ]
-    - !Equals [ !Ref AddTagsForLambdaResources, "App-SumoResources-AWSTags-S3Bucket" ]
+  add_alb_tags: !Equals [!Ref AddTagsForALBResources, 'Yes']
+  add_api_gateway_tags: !Equals [!Ref AddTagsForAPIGatewayResources, 'Yes']
+  add_rds_tags: !Equals [!Ref AddTagsForRDSResources, 'Yes']
+  add_ec2_metrics_tags: !Equals [!Ref AddTagsForEC2MetricsResources, 'Yes']
+  add_lambda_tags: !Equals [!Ref AddTagsForLambdaResources, 'Yes']
+  CreateRole: !Equals [ !Ref ServiceToken, "CreateRole"]
+  region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
 Resources:
+
+  SumoLambdaRole:
+    Type: AWS::IAM::Role
+    Condition: CreateRole
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+
+  SumoLogicAWSObservabilityHelper:
+    Type: 'AWS::Serverless::Function'
+    DependsOn: SumoLambdaRole
+    Properties:
+      Handler: main.handler
+      Runtime: python3.7
+      CodeUri:
+        Bucket: !If [CreateRole, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
+        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+      MemorySize: 128
+      Timeout: 900
+      Role:
+        Fn::GetAtt:
+          - SumoLambdaRole
+          - Arn
 
   TagEc2Resources:
     Type: Custom::TagAWSResources
     Condition: add_ec2_metrics_tags
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !Ref AWSRegion
+      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: ec2
-      Account: !Ref AccountAlias
-      Namespace: hostmetrics
+      Tags:
+        - !Sub "account=${AccountAlias}"
+        - "namespace=hostmetrics"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -188,11 +226,12 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_alb_tags
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !Ref AWSRegion
+      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: elbv2
-      Account: !Ref AccountAlias
+      Tags:
+        - !Sub "account=${AccountAlias}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -201,11 +240,12 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_api_gateway_tags
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !Ref AWSRegion
+      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: apigateway
-      Account: !Ref AccountAlias
+      Tags:
+        - !Sub "account=${AccountAlias}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -214,11 +254,12 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_lambda_tags
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !Ref AWSRegion
+      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: lambda
-      Account: !Ref AccountAlias
+      Tags:
+        - !Sub "account=${AccountAlias}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -227,11 +268,12 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_rds_tags
     Properties:
-      ServiceToken: !Ref ServiceToken
+      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !Ref AWSRegion
+      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: rds
-      Account: !Ref AccountAlias
+      Tags:
+        - !Sub "account=${AccountAlias}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment

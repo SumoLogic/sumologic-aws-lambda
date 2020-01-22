@@ -746,13 +746,13 @@ class TagAWSResources(SumoResource):
             data = iterable[idx:min(idx + size, length)]
             yield data
 
-    def _tag_aws_resources(self, region, aws_resource, props, delete_flag=False):
+    def _tag_aws_resources(self, region, aws_resource, tags, delete_flag=False):
         client = boto3.client(aws_resource, region_name=region)
         next_token = None
         while next_token != 'END':
 
-            values, tags, next_token = self._call_aws_resource_for_tagging(region, aws_resource, client, next_token,
-                                                                           props, delete_flag)
+            values, next_token = self._call_aws_resource_for_tagging(region, aws_resource, client, next_token,
+                                                                     tags, delete_flag)
 
             if values:
                 print("TAG AWS RESOURCES - %s Resources are %s for region %s" % (aws_resource, values, region))
@@ -763,19 +763,19 @@ class TagAWSResources(SumoResource):
             if not next_token:
                 next_token = 'END'
 
-    def _call_aws_resource_for_tagging(self, region, aws_resource, client, next_token, props, delete_flag):
+    def _call_aws_resource_for_tagging(self, region, aws_resource, client, next_token, tags, delete_flag):
         if aws_resource == 'ec2':
-            return self._tag_ec2_resources(region, client, next_token, props, delete_flag)
+            return self._tag_ec2_resources(region, client, next_token)
         if aws_resource == 'elbv2':
-            return self._tag_alb_resources(client, next_token, props, delete_flag)
+            return self._tag_alb_resources(client, next_token)
         if aws_resource == 'apigateway':
-            return self._tag_api_gateway_resources(region, client, next_token, props, delete_flag)
+            return self._tag_api_gateway_resources(region, client, next_token)
         if aws_resource == 'lambda':
-            return self._tag_lambda_resources(client, next_token, props, delete_flag)
+            return self._tag_lambda_resources(client, next_token)
         if aws_resource == 'rds':
-            return self._tag_rds_clusters_resources(region, client, next_token, props, delete_flag)
+            return self._tag_rds_clusters_resources(region, client, next_token, tags, delete_flag)
 
-    def _tag_ec2_resources(self, region, client, next_token, props, delete_flag):
+    def _tag_ec2_resources(self, region, client, next_token):
         instances = []
         if next_token:
             response = client.describe_instances(MaxResults=1000, NextToken=next_token)
@@ -787,14 +787,9 @@ class TagAWSResources(SumoResource):
             for ec2_instance in reservation['Instances']:
                 instances.append("arn:aws:ec2:" + region + ":" + account_id + ":instance/" + ec2_instance['InstanceId'])
 
-        if delete_flag:
-            tags = ['account']
-        else:
-            tags = {'account': props.get("Account"), "namespace": props.get("Namespace")}
+        return instances, response["NextToken"] if "NextToken" in response else None
 
-        return instances, tags, response["NextToken"] if "NextToken" in response else None
-
-    def _tag_alb_resources(self, client, next_token, props, delete_flag):
+    def _tag_alb_resources(self, client, next_token):
         albs = []
 
         if next_token:
@@ -805,14 +800,9 @@ class TagAWSResources(SumoResource):
         for loadBalancer in response['LoadBalancers']:
             albs.append(loadBalancer['LoadBalancerArn'])
 
-        if delete_flag:
-            tags = ['account']
-        else:
-            tags = {'account': props.get("Account")}
+        return albs, response["NextMarker"] if "NextMarker" in response else None
 
-        return albs, tags, response["NextMarker"] if "NextMarker" in response else None
-
-    def _tag_api_gateway_resources(self, region, client, next_token, props, delete_flag):
+    def _tag_api_gateway_resources(self, region, client, next_token):
         api_gateways = []
         if next_token:
             response = client.get_rest_apis(limit=500, position=next_token)
@@ -829,14 +819,9 @@ class TagAWSResources(SumoResource):
                 stage_arn = "arn:aws:apigateway:" + region + "::/restapis/" + id + "/stages/" + stage["stageName"]
                 api_gateways.append(stage_arn)
 
-        if delete_flag:
-            tags = ['account']
-        else:
-            tags = {'account': props.get("Account")}
+        return api_gateways, response["position"] if "position" in response else None
 
-        return api_gateways, tags, response["position"] if "position" in response else None
-
-    def _tag_lambda_resources(self, client, next_token, props, delete_flag):
+    def _tag_lambda_resources(self, client, next_token):
         lambdas = []
         if next_token:
             response = client.list_functions(MaxItems=1000, Marker=next_token)
@@ -847,45 +832,40 @@ class TagAWSResources(SumoResource):
             function_arn = function_name['FunctionArn']
             lambdas.append(function_arn)
 
-        if delete_flag:
-            tags = ['account']
-        else:
-            tags = {'account': props.get("Account")}
+        return lambdas, response["NextMarker"] if "NextMarker" in response else None
 
-        return lambdas, tags, response["NextMarker"] if "NextMarker" in response else None
-
-    def _tag_rds_clusters_resources(self, region, client, next_token, props, delete_flag):
+    def _tag_rds_clusters_resources(self, region, client, next_token, tags, delete_flag):
         if next_token:
             response = client.describe_db_clusters(MaxRecords=100, Marker=next_token)
         else:
             response = client.describe_db_clusters(MaxRecords=100)
 
-        self._tag_rds_resources(region, client, response, "DBClusters", 'DBClusterArn', props, delete_flag)
+        self._tag_rds_resources(region, client, response, "DBClusters", 'DBClusterArn', tags, delete_flag)
 
         for function_name in response["DBClusters"]:
             cluster_name = function_name['DBClusterIdentifier']
             next_token = None
             filters = [{'Name': 'db-cluster-id', 'Values': [cluster_name]}]
             while next_token != 'END':
-                values, tags, next_token = self._tag_rds_instances_resources(region, client, next_token, props
-                                                                             , filters, delete_flag)
+                values, next_token = self._tag_rds_instances_resources(region, client, next_token, tags
+                                                                       , filters, delete_flag)
 
                 if not next_token:
                     next_token = 'END'
 
-        return None, None, response["Marker"] if "Marker" in response else None
+        return None, response["Marker"] if "Marker" in response else None
 
-    def _tag_rds_instances_resources(self, region, client, next_token, props, filters, delete_flag):
+    def _tag_rds_instances_resources(self, region, client, next_token, tags, filters, delete_flag):
         if next_token:
             response = client.describe_db_instances(MaxRecords=100, Marker=next_token, Filters=filters)
         else:
             response = client.describe_db_instances(MaxRecords=100, Filters=filters)
 
-        self._tag_rds_resources(region, client, response, "DBInstances", 'DBInstanceArn', props, delete_flag)
+        self._tag_rds_resources(region, client, response, "DBInstances", 'DBInstanceArn', tags, delete_flag)
 
-        return None, None, response["Marker"] if "Marker" in response else None
+        return None, response["Marker"] if "Marker" in response else None
 
-    def _tag_rds_resources(self, region, aws_api, response, root_element, arn_name, props, delete_flag):
+    def _tag_rds_resources(self, region, aws_api, response, root_element, arn_name, tags, delete_flag):
         values = []
         for function_name in response[root_element]:
             function_arn = function_name[arn_name]
@@ -893,18 +873,18 @@ class TagAWSResources(SumoResource):
             values.append(function_arn)
             if not delete_flag:
                 aws_api.add_tags_to_resource(ResourceName=function_arn,
-                                             Tags=[{'Key': 'account', 'Value': props.get("Account")},
+                                             Tags=[{'Key': 'account', 'Value': tags.get("account")},
                                                    {'Key': 'cluster', 'Value': cluster_name}])
             else:
                 aws_api.remove_tags_from_resource(ResourceName=function_arn, TagKeys=['account', 'cluster'])
 
         print("TAG AWS RESOURCES - RDS Resources are %s for region %s" % (values, region))
 
-    def create(self, region_value, aws_resource, props, *args, **kwargs):
-        print("TAG AWS RESOURCES - Starting the AWS resources Tag addition.")
+    def create(self, region_value, aws_resource, tags, *args, **kwargs):
+        print("TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags %s." % tags)
         regions = self._get_regions('ec2', region_value)
         for region in regions:
-            self._tag_aws_resources(region, aws_resource, props)
+            self._tag_aws_resources(region, aws_resource, tags)
         print("TAG AWS RESOURCES - Completed the AWS resources Tag addition.")
 
         return {"TAG_CREATION": "Successful"}, "Tag"
@@ -912,22 +892,31 @@ class TagAWSResources(SumoResource):
     def update(self, *args, **kwargs):
         return {"TAG_UPDATE": "Successful"}, "Tag"
 
-    def delete(self, region_value, aws_resource, props, remove_on_delete_stack, *args, **kwargs):
-        print("TAG AWS RESOURCES - Starting the AWS resources Tag deletion.")
+    def delete(self, region_value, aws_resource, tags, remove_on_delete_stack, *args, **kwargs):
+        tags_list = []
+        if tags:
+            tags_list = list(tags.keys())
+        print("TAG AWS RESOURCES - Starting the AWS resources Tag deletion with Tags %s." % tags_list)
         if remove_on_delete_stack:
             regions = self._get_regions('ec2', region_value)
             for region in regions:
-                self._tag_aws_resources(region, aws_resource, props, True)
+                self._tag_aws_resources(region, aws_resource, tags_list, True)
             print("TAG AWS RESOURCES - Completed the AWS resources Tag deletion.")
         else:
             print("TAG AWS RESOURCES - Skipping AWS resources tags deletion.")
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
+        tags = {}
+        if "Tags" in props:
+            values = props.get("Tags")
+            for value in values:
+                data = value.split("=")
+                tags[data[0]] = data[1]
         return {
             "region_value": props.get("AWSRegion"),
             "aws_resource": props.get("AWSResource"),
-            "props": props
+            "tags": tags
         }
 
 
@@ -964,8 +953,8 @@ class SumoLogicAWSExplorer(SumoResource):
             "explorer_id": explorer_id
         }
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     params = {
 
         "access_id": "",
@@ -997,7 +986,6 @@ if __name__ == '__main__':
 
     _, app_folder_id = app.create(appname, source_params, appid)
 
-
     # update
     # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
     # assert(collector_id == new_collector_id)
@@ -1008,10 +996,9 @@ if __name__ == '__main__':
     }
 
     _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params, appid)
-    assert(app_folder_id != new_app_folder_id)
+    assert (app_folder_id != new_app_folder_id)
 
     # delete
     # src.delete(collector_id, source_id, True)
     # col.delete(collector_id, True)
     app.delete(new_app_folder_id, True)
-
