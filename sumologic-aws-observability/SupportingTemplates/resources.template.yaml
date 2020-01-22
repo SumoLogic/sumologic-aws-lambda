@@ -147,6 +147,19 @@ Resources:
                 Resource:
                   "*"
 
+  SumoHostedCollector:
+    Type: Custom::Collector
+    DependsOn: SumoLogicLambdaHelper
+    Properties:
+      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref Ec2CollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
 Outputs:
     SumoLogicLambdaHelperARN:
       Description: "Sumo Logic Lambda Helper ARN"
@@ -158,4 +171,9 @@ Outputs:
       Value: !GetAtt SumoSourceRole.Arn
       Export:
         Name: "CreateCommonResources-SumoSourceRoleARN"
+    SumoCollectorID:
+      Description: "Sumo Logic Collector ID"
+      Value: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      Export:
+        Name: "CreateCommonResources-CollectorID"
 

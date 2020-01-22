@@ -23,10 +23,9 @@ Metadata:
           - Ec2SourceName
 
       - Label:
-          default: "Local Parameters"
+          default: "Local Parameters. Do Not Edit the values."
         Parameters:
-          - LambdaARN
-          - RoleARN
+          - ParentStackName
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
@@ -53,10 +52,8 @@ Metadata:
         default: "EC2 App Collector Name."
       Ec2SourceName:
         default: "EC2 App MetaData Source Name."
-      LambdaARN:
-        default: "ARN for lambda."
-      RoleARN:
-        default: "ARN for Sumo Logic Role."
+      ParentStackName:
+        default: "If Any, Name of parent Stack."
       AWSRegion:
         default: "AWS Region for the resources that need to be tagged."
       QSS3BucketName:
@@ -95,15 +92,11 @@ Parameters:
   EC2MetricsDeploymentType:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
       - "Only-App"
       - "App-SumoResources"
-      - "App-SumoResources-AWSTags"
-    Default: "App-SumoResources-AWSTags"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+    Default: "App-SumoResources"
+    Description: "Only-App: Choose to install app.
+                  App-SumoResources: Choose to install app and install Meta Data Source."
 
   Ec2AppSourceCategoryName:
     Type: String
@@ -118,14 +111,10 @@ Parameters:
     Description: EC2 App MetaData Source Name.
     Default: AWS-Observability-EC2-MetaData-Source
 
-  LambdaARN:
+  ParentStackName:
     Type: String
-    Default: "CreateLambda"
-    Description: Service token for lambda ARN. Do Not Edit the value.
-  RoleARN:
-    Type: String
-    Default: "CreateRole"
-    Description: Service token for Role ARN. Do Not Edit the value.
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
   AWSRegion:
     Type: String
     Default: 'Current Region'
@@ -148,17 +137,19 @@ Parameters:
     Type: "String"
 
 Conditions:
-  CreateRole: !Equals [ !Ref RoleARN, "CreateRole"]
-  CreateLambda: !Equals [ !Ref LambdaARN, "CreateLambda"]
+  do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  setupsumoresources: !Or
+  install_collector: !Or
     - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources-AWSTags" ]
+    - !Equals [ !Ref Ec2CollectorName, "FetchCollector" ]
+  install_source: !Or
+    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref Ec2SourceName, "InstallSource" ]
 
 Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
-    Condition: CreateLambda
+    Condition: do_not_use_parent_stack
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -180,12 +171,12 @@ Resources:
   SumoLogicAWSObservabilityHelper:
     Type: 'AWS::Serverless::Function'
     DependsOn: SumoLambdaRole
-    Condition: CreateLambda
+    Condition: do_not_use_parent_stack
     Properties:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [CreateLambda, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
+        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
         Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
@@ -196,7 +187,7 @@ Resources:
 
   SumoRole:
     Type: AWS::IAM::Role
-    Condition: CreateRole
+    Condition: do_not_use_parent_stack
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -224,9 +215,15 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
-    Condition: setupsumoresources
+    Condition: install_collector
     Properties:
-      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -236,27 +233,50 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
 
   SumoMetaDataSource:
-    DependsOn:
-      - SumoHostedCollector
+    Condition: install_source
     Type: Custom::AWSSource
     Properties:
-      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsMetadata
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       SourceName: !Ref Ec2SourceName
       SourceCategory: !Ref Ec2AppSourceCategoryName
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      CollectorId: !If
+        - install_collector
+        - !GetAtt
+          - SumoHostedCollector
+          - COLLECTOR_ID
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-CollectorID'
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
-      RoleArn: !If [CreateRole, !GetAtt SumoRole.Arn, !Ref RoleARN]
+      RoleArn: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoRole
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
 
   sumoEC2MetricsApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart EC2 Metrics App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

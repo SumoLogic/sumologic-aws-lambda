@@ -165,14 +165,14 @@ Conditions:
   add_rds_tags: !Equals [!Ref AddTagsForRDSResources, 'Yes']
   add_ec2_metrics_tags: !Equals [!Ref AddTagsForEC2MetricsResources, 'Yes']
   add_lambda_tags: !Equals [!Ref AddTagsForLambdaResources, 'Yes']
-  use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
+  do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
 Resources:
 
   SumoLambdaRole:
     Type: AWS::IAM::Role
-    Condition: use_parent_stack
+    Condition: do_not_use_parent_stack
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -194,12 +194,12 @@ Resources:
   SumoLogicAWSObservabilityHelper:
     Type: 'AWS::Serverless::Function'
     DependsOn: SumoLambdaRole
-    Condition: use_parent_stack
+    Condition: do_not_use_parent_stack
     Properties:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
+        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
         Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
@@ -213,7 +213,7 @@ Resources:
     Condition: add_ec2_metrics_tags
     Properties:
       ServiceToken: !If
-        - use_parent_stack
+        - do_not_use_parent_stack
         - !GetAtt
           - SumoLogicAWSObservabilityHelper
           - Arn
@@ -234,7 +234,7 @@ Resources:
     Condition: add_alb_tags
     Properties:
       ServiceToken: !If
-        - use_parent_stack
+        - do_not_use_parent_stack
         - !GetAtt
           - SumoLogicAWSObservabilityHelper
           - Arn
@@ -254,7 +254,7 @@ Resources:
     Condition: add_api_gateway_tags
     Properties:
       ServiceToken: !If
-        - use_parent_stack
+        - do_not_use_parent_stack
         - !GetAtt
           - SumoLogicAWSObservabilityHelper
           - Arn
@@ -274,7 +274,7 @@ Resources:
     Condition: add_lambda_tags
     Properties:
       ServiceToken: !If
-        - use_parent_stack
+        - do_not_use_parent_stack
         - !GetAtt
           - SumoLogicAWSObservabilityHelper
           - Arn
@@ -294,7 +294,7 @@ Resources:
     Condition: add_rds_tags
     Properties:
       ServiceToken: !If
-        - use_parent_stack
+        - do_not_use_parent_stack
         - !GetAtt
           - SumoLogicAWSObservabilityHelper
           - Arn
