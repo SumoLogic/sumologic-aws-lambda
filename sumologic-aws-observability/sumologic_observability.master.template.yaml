@@ -420,7 +420,22 @@ Parameters:
     Type: "String"
 
 Conditions:
-  region_value: !Equals [!Ref AWSRegion, 'All Regions']
+  add_alb_tags: !Or
+    - !Equals [ !Ref ALBDeploymentType, "Only-AWSTags" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
+  add_api_gateway_tags: !Or
+    - !Equals [ !Ref APIGatewayDeploymentType, "Only-AWSTags" ]
+    - !Equals [ !Ref APIGatewayDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
+  add_rds_tags: !Or
+    - !Equals [ !Ref RDSDeploymentType, "Only-AWSTags" ]
+    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources-AWSTags" ]
+  add_ec2_tags: !Or
+    - !Equals [ !Ref EC2MetricsDeploymentType, "Only-AWSTags" ]
+    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources-AWSTags" ]
+  add_lambda_tags: !Or
+    - !Equals [ !Ref LambdaDeploymentType, "Only-AWSTags" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
+
   install_dynamo_db_app: !Or
     - !Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]
     - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources" ]
@@ -525,14 +540,16 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         SumoDeployment: !Ref SumoDeployment
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AWSRegion: !Ref AWSRegion
         AccountAlias: !Ref AccountAlias
-        AddTagsForALBResources: !Ref ALBDeploymentType
-        AddTagsForAPIGatewayResources: !Ref APIGatewayDeploymentType
-        AddTagsForRDSResources: !Ref RDSDeploymentType
-        AddTagsForEC2MetricsResources: !Ref EC2MetricsDeploymentType
-        AddTagsForLambdaResources: !Ref LambdaDeploymentType
+        AddTagsForALBResources: !If [add_alb_tags, 'Yes', 'No']
+        AddTagsForAPIGatewayResources: !If [add_api_gateway_tags, 'Yes', 'No']
+        AddTagsForRDSResources: !If [add_rds_tags, 'Yes', 'No']
+        AddTagsForEC2MetricsResources: !If [add_ec2_tags, 'Yes', 'No']
+        AddTagsForLambdaResources: !If [add_lambda_tags, 'Yes', 'No']
         ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
@@ -542,6 +559,11 @@ Resources:
       ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       ExplorerName: !Ref ExplorerName
+      MetadataKeys:
+        - "account"
+        - "region"
+        - "namespace"
+        - "entity"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -560,10 +582,13 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         EC2MetricsDeploymentType: !Ref EC2MetricsDeploymentType
-        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AWSRegion: !Ref AWSRegion
         Ec2CollectorName: !Ref Ec2CollectorName
         Ec2SourceName: !Ref Ec2SourceName
         Ec2AppSourceCategoryName: !Ref Ec2AppSourceCategoryName
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
   sumoAlbMetricsAppStackWaitHandle:
     Condition: install_ec2_metrics_app
@@ -591,11 +616,14 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         ALBDeploymentType: !Ref ALBDeploymentType
-        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AWSRegion: !Ref AWSRegion
         AlbCollectorName: !Ref AlbCollectorName
         AlbMetricsSourceCategoryName: !Ref AlbMetricsSourceCategoryName
         AlbLogsSourceCategoryName: !Ref AlbLogsSourceCategoryName
         AlbMetricsSourceName: !Ref AlbMetricsSourceName
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
   sumoDynamoDBMetricsAppStackWaitHandle:
     Condition: install_alb_app
@@ -623,11 +651,14 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         DynamoDBDeploymentType: !Ref DynamoDBDeploymentType
-        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AWSRegion: !Ref AWSRegion
         DynamoDbCollectorName: !Ref DynamoDbCollectorName
         DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
         DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
         DynamoDbMetricsSourceName: !Ref DynamoDbMetricsSourceName
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
@@ -642,11 +673,14 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AWSRegion: !Ref AWSRegion
         RDSDeploymentType: !Ref RDSDeploymentType
         RdsCollectorName: !Ref RdsCollectorName
         RdsAppSourceCategoryName: !Ref RdsAppSourceCategoryName
         RdsSourceName: !Ref RdsSourceName
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
   sumoLambdaMetricsAppStackWaitHandle:
     Condition: install_rds_app
@@ -674,12 +708,15 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         LambdaDeploymentType: !Ref LambdaDeploymentType
-        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AWSRegion: !Ref AWSRegion
         LambdaCollectorName: !Ref LambdaCollectorName
         LambdaMetricsSourceCategoryName: !Ref LambdaMetricsSourceCategoryName
         LambdaLogSourceCategoryName: !Ref LambdaLogSourceCategoryName
         LambdaDataEventsSourceCategoryName: !Ref LambdaDataEventsSourceCategoryName
         LambdaMetricsSourceName: !Ref LambdaMetricsSourceName
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
   sumoApiGatewayMetricsAppStackWaitHandle:
     Condition: install_lambda_app
@@ -707,8 +744,11 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         APIGatewayDeploymentType: !Ref APIGatewayDeploymentType
-        AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+        AWSRegion: !Ref AWSRegion
         ApiGatewayCollectorName: !Ref ApiGatewayCollectorName
         ApiGatewayMetricsSourceCategoryName: !Ref ApiGatewayMetricsSourceCategoryName
         ApiGatewayLogSourceCategoryName: !Ref ApiGatewayLogSourceCategoryName
         ApiGatewayMetricsSourceName: !Ref ApiGatewayMetricsSourceName
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
