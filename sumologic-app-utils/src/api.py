@@ -922,7 +922,7 @@ class SumoLogicAWSExplorer(SumoResource):
         content = {
             "name": explorer_name,
             "baseFilter": [],
-            "hierarchy": [hierarchy]
+            "hierarchy": hierarchy
         }
         response = self.sumologic_cli.create_explorer_view(content)
         if "errors" in response:
@@ -949,10 +949,17 @@ class SumoLogicAWSExplorer(SumoResource):
         explorer_id = None
         if event.get('PhysicalResourceId'):
             _, explorer_id = event['PhysicalResourceId'].split("/")
+
+        hierarchy = []
+        if "MetadataKeys" in props:
+            metadata_keys = props.get("MetadataKeys")
+            for value in metadata_keys:
+                hierarchy.append({"metadataKey": value})
+
         return {
             "explorer_name": props.get("ExplorerName"),
             "explorer_id": explorer_id,
-            "hierarchy": props.get("Hierarchy")
+            "hierarchy": hierarchy
         }
 
 

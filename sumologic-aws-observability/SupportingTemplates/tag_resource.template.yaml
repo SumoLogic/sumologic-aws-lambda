@@ -194,6 +194,7 @@ Resources:
   SumoLogicAWSObservabilityHelper:
     Type: 'AWS::Serverless::Function'
     DependsOn: SumoLambdaRole
+    Condition: CreateRole
     Properties:
       Handler: main.handler
       Runtime: python3.7
