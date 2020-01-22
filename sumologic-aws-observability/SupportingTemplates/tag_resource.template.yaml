@@ -30,7 +30,7 @@ Metadata:
       - Label:
           default: "Local Parameters. Do Not Edit the values."
           Parameters:
-            - ServiceToken
+            - ParentStackName
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
@@ -61,8 +61,8 @@ Metadata:
         default: "Do you need to add Tags for AWS EC2 Metrics Resources?"
       AddTagsForLambdaResources:
         default: "Do you need to add Tags for AWS Lambda Resources?"
-      ServiceToken:
-        default: "Service token for lambda ARN."
+      ParentStackName:
+        default: "If Any, Name of parent Stack."
       QSS3BucketName:
         default: "Quick Start S3 bucket name."
       QSS3KeyPrefix:
@@ -141,10 +141,10 @@ Parameters:
     Default: 'Yes'
     Description: "Choose if you need to add tags for your AWS Resources."
 
-  ServiceToken:
+  ParentStackName:
     Type: String
-    Default: "CreateRole"
-    Description: Service token for lambda ARN. Do Not Edit the value.
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
     ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
@@ -165,14 +165,14 @@ Conditions:
   add_rds_tags: !Equals [!Ref AddTagsForRDSResources, 'Yes']
   add_ec2_metrics_tags: !Equals [!Ref AddTagsForEC2MetricsResources, 'Yes']
   add_lambda_tags: !Equals [!Ref AddTagsForLambdaResources, 'Yes']
-  CreateRole: !Equals [ !Ref ServiceToken, "CreateRole"]
+  use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
 Resources:
 
   SumoLambdaRole:
     Type: AWS::IAM::Role
-    Condition: CreateRole
+    Condition: use_parent_stack
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -194,12 +194,12 @@ Resources:
   SumoLogicAWSObservabilityHelper:
     Type: 'AWS::Serverless::Function'
     DependsOn: SumoLambdaRole
-    Condition: CreateRole
+    Condition: use_parent_stack
     Properties:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [CreateRole, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
+        Bucket: !If [use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
         Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
@@ -212,7 +212,13 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_ec2_metrics_tags
     Properties:
-      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
+      ServiceToken: !If
+        - use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: ec2
@@ -227,7 +233,13 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_alb_tags
     Properties:
-      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
+      ServiceToken: !If
+        - use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: elbv2
@@ -241,7 +253,13 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_api_gateway_tags
     Properties:
-      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
+      ServiceToken: !If
+        - use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: apigateway
@@ -255,7 +273,13 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_lambda_tags
     Properties:
-      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
+      ServiceToken: !If
+        - use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: lambda
@@ -269,7 +293,13 @@ Resources:
     Type: Custom::TagAWSResources
     Condition: add_rds_tags
     Properties:
-      ServiceToken: !If [CreateRole, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref ServiceToken]
+      ServiceToken: !If
+        - use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: rds
