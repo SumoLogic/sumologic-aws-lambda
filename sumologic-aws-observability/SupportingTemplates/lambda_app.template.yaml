@@ -11,7 +11,9 @@ Metadata:
           - SumoAccessID
           - SumoAccessKey
           - RemoveSumoResourcesOnDeleteStack
+          - SumoOrganizationId
           - LambdaDeploymentType
+          - AWSRegion
 
       - Label:
           default: "AWS Lambda App Configuration"
@@ -27,7 +29,12 @@ Metadata:
         Parameters:
           - LambdaARN
           - RoleARN
-          - AWSRegion
+
+      - Label:
+          default: "Sumo Logic Quick Start configuration"
+        Parameters:
+          - QSS3BucketName
+          - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
@@ -36,6 +43,8 @@ Metadata:
         default: "Sumo Logic Access ID."
       SumoAccessKey:
         default: "Sumo Logic Access Key."
+      SumoOrganizationId:
+        default: "Sumo Logic Organization Id."
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted."
       LambdaDeploymentType:
@@ -57,8 +66,15 @@ Metadata:
         default: "ARN for Sumo Logic Role."
       AWSRegion:
         default: "AWS Region for the resources that need to be tagged."
+      QSS3BucketName:
+        default: "Quick Start S3 bucket name."
+      QSS3KeyPrefix:
+        default: "Quick Start S3 key prefix."
 
 Parameters:
+  SumoOrganizationId:
+    Description: The Account Overview page displays information about your Sumo Logic organization.
+    Type: String
   SumoAccessID:
     Type: String
     Description: The Sumo Logic Access ID.
@@ -120,26 +136,112 @@ Parameters:
 
   LambdaARN:
     Type: String
-    Description: ARN for lambda.
+    Default: "CreateLambda"
+    Description: Service token for lambda ARN. Do Not Edit the value.
   RoleARN:
     Type: String
-    Description: ARN for Sumo Logic Role.
+    Default: "CreateRole"
+    Description: Service token for Role ARN. Do Not Edit the value.
   AWSRegion:
     Type: String
+    Default: 'Current Region'
     Description: AWS Region for the resources that need to be tagged.
+    AllowedValues:
+      - 'Current Region'
+      - 'All Regions'
+  QSS3BucketName:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Default: "sumologicawsobservabilityhelper"
+    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
+    Type: "String"
+
+  QSS3KeyPrefix:
+    AllowedPattern: "^[0-9a-zA-Z-/]*$"
+    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Default: "sumologic-aws-observability/"
+    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
+    Type: "String"
 
 Conditions:
+  CreateRole: !Equals [ !Ref RoleARN, "CreateRole"]
+  CreateLambda: !Equals [ !Ref LambdaARN, "CreateLambda"]
+  region_value: !Equals [!Ref AWSRegion, 'All Regions']
   setupsumoresources: !Or
     - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources" ]
     - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
 
 Resources:
+  SumoLambdaRole:
+    Type: AWS::IAM::Role
+    Condition: CreateLambda
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+
+  SumoLogicAWSObservabilityHelper:
+    Type: 'AWS::Serverless::Function'
+    DependsOn: SumoLambdaRole
+    Properties:
+      Handler: main.handler
+      Runtime: python3.7
+      CodeUri:
+        Bucket: !If [CreateLambda, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
+        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+      MemorySize: 128
+      Timeout: 900
+      Role:
+        Fn::GetAtt:
+          - SumoLambdaRole
+          - Arn
+
+  SumoRole:
+    Type: AWS::IAM::Role
+    Condition: CreateRole
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::926226587429:root
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
+      Path: "/"
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - tag:GetResources
+                  - cloudwatch:ListMetrics
+                  - cloudwatch:GetMetricStatistics
+                Resource:
+                  "*"
 
   SumoHostedCollector:
     Type: Custom::Collector
     Condition: setupsumoresources
     Properties:
-      ServiceToken: !Ref LambdaARN
+      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -153,24 +255,25 @@ Resources:
       - SumoHostedCollector
     Type: Custom::AWSSource
     Properties:
-      ServiceToken: !Ref LambdaARN
+      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
-      AWSRegion: !Ref AWSRegion
-      namespace: AWS/Lambda
+      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+      Namespaces:
+        - 'AWS/Lambda'
       SourceName: !Ref LambdaMetricsSourceName
       SourceCategory: !Ref LambdaMetricsSourceCategoryName
       CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
-      RoleArn: !Ref RoleARN
+      RoleArn: !If [CreateRole, !GetAtt SumoRole.Arn, !Ref RoleARN]
 
   sumoLambdaApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !Ref LambdaARN
+      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart Lambda App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
