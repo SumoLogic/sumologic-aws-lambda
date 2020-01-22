@@ -216,8 +216,8 @@ Resources:
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: ec2
       Tags:
-        - !Sub "account=${AccountAlias}"
-        - "namespace=hostmetrics"
+        account: !Ref AccountAlias
+        namespace: "hostmetrics"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -231,7 +231,7 @@ Resources:
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: elbv2
       Tags:
-        - !Sub "account=${AccountAlias}"
+        account: !Ref AccountAlias
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -245,7 +245,7 @@ Resources:
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: apigateway
       Tags:
-        - !Sub "account=${AccountAlias}"
+        account: !Ref AccountAlias
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -259,7 +259,7 @@ Resources:
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: lambda
       Tags:
-        - !Sub "account=${AccountAlias}"
+        account: !Ref AccountAlias
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -273,7 +273,7 @@ Resources:
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: rds
       Tags:
-        - !Sub "account=${AccountAlias}"
+        account: !Ref AccountAlias
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment

@@ -427,7 +427,7 @@ class AWSSource(BaseSource):
             return {
                 "type": "CloudWatchPath",
                 "limitToRegions": regions,
-                "limitToNamespaces": [props.get("namespace")]
+                "limitToNamespaces": props.get("Namespaces")
             }
         else:
             return {
@@ -909,10 +909,7 @@ class TagAWSResources(SumoResource):
         props = event.get("ResourceProperties")
         tags = {}
         if "Tags" in props:
-            values = props.get("Tags")
-            for value in values:
-                data = value.split("=")
-                tags[data[0]] = data[1]
+            tags = props.get("Tags")
         return {
             "region_value": props.get("AWSRegion"),
             "aws_resource": props.get("AWSResource"),
@@ -921,8 +918,13 @@ class TagAWSResources(SumoResource):
 
 
 class SumoLogicAWSExplorer(SumoResource):
-    def create(self, explorer_name, *args, **kwargs):
-        response = self.sumologic_cli.create_explorer_view(explorer_name)
+    def create(self, explorer_name, hierarchy, *args, **kwargs):
+        content = {
+            "name": explorer_name,
+            "baseFilter": [],
+            "hierarchy": [hierarchy]
+        }
+        response = self.sumologic_cli.create_explorer_view(content)
         if "errors" in response:
             print("AWS EXPLORER -  creation failed with Name %s" % explorer_name)
             response.raise_for_status()
@@ -934,11 +936,10 @@ class SumoLogicAWSExplorer(SumoResource):
     def update(self, *args, **kwargs):
         return {"EXPLORER_UPDATE": "Successful"}, "Tag"
 
-    def delete(self, explorer_id, explorer_name, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, explorer_id, explorer_name, hierarchy, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_explorer_view(explorer_id)
-            print(
-                    "AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
+            print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
                 explorer_name, response.text))
         else:
             print("AWS EXPLORER - Skipping the AWS Explorer deletion")
@@ -950,7 +951,8 @@ class SumoLogicAWSExplorer(SumoResource):
             _, explorer_id = event['PhysicalResourceId'].split("/")
         return {
             "explorer_name": props.get("ExplorerName"),
-            "explorer_id": explorer_id
+            "explorer_id": explorer_id,
+            "hierarchy": props.get("Hierarchy")
         }
 
 

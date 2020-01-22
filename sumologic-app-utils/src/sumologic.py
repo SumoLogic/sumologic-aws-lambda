@@ -219,25 +219,7 @@ class SumoLogic(object):
     def check_app_install_status(self, job_id):
         return self.get('/apps/install/%s/status' % job_id)
 
-    def create_explorer_view(self, explorer_name):
-        content = {
-            "name": explorer_name,
-            "baseFilter": [],
-            "hierarchy": [
-                {
-                    "metadataKey": "account"
-                },
-                {
-                    "metadataKey": "region"
-                },
-                {
-                    "metadataKey": "namespace"
-                },
-                {
-                    "metadataKey": "entity"
-                }
-            ]
-        }
+    def create_explorer_view(self, content):
         return self.post('/topologies', params=content, version='v1alpha')
 
     def delete_explorer_view(self, explorer_id):
