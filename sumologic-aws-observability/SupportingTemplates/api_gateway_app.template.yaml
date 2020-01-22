@@ -232,9 +232,6 @@ Resources:
   SumoHostedCollector:
     Type: Custom::Collector
     Condition: setupsumoresources
-    DependsOn:
-      - SumoRole
-      - SumoLogicAWSObservabilityHelper
     Properties:
       ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
       Region: !Ref "AWS::Region"
@@ -267,9 +264,6 @@ Resources:
 
   sumoApiGatewayApp:
     Type: Custom::App
-    DependsOn:
-      - SumoRole
-      - SumoLogicAWSObservabilityHelper
     Properties:
       ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
       Region: !Ref "AWS::Region"
