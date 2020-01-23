@@ -24,10 +24,9 @@ Metadata:
           - AlbMetricsSourceName
 
       - Label:
-          default: "Local Parameters"
+          default: "Local Parameters. Do Not Edit the values."
         Parameters:
-          - LambdaARN
-          - RoleARN
+          - ParentStackName
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
@@ -57,10 +56,8 @@ Metadata:
         default: "ALB App Collector Name."
       AlbMetricsSourceName:
         default: "ALB App CloudWatch Metrics Source Name."
-      LambdaARN:
-        default: "ARN for lambda."
-      RoleARN:
-        default: "ARN for Sumo Logic Role."
+      ParentStackName:
+        default: "If Any, Name of parent Stack."
       AWSRegion:
         default: "AWS Region for the resources that need to be tagged."
       QSS3BucketName:
@@ -99,15 +96,15 @@ Parameters:
   ALBDeploymentType:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
       - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags-S3Bucket"
-    Default: "App-SumoResources-AWSTags-S3Bucket"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - "App-S3Source"
+      - "App-CloudWatchSource"
+      - "App-S3Source-CloudWatchSource"
+    Default: "App-S3Source-CloudWatchSource"
+    Description: "Only-App - Choose to install only app.
+                  App-S3Source - Choose to install app and AWS S3 bucket with S3 source.
+                  App-CloudWatchSource - Choose to install app and Cloud Watch Metrics Source.
+                  App-S3Source-CloudWatchSource - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with S3 source."
 
   AlbMetricsSourceCategoryName:
     Type: String
@@ -126,14 +123,10 @@ Parameters:
     Description: ALB App CloudWatch Metrics Source Name.
     Default: AWS-Observability-ALB-CloudWatch-Source
 
-  LambdaARN:
+  ParentStackName:
     Type: String
-    Default: "CreateLambda"
-    Description: Service token for lambda ARN. Do Not Edit the value.
-  RoleARN:
-    Type: String
-    Default: "CreateRole"
-    Description: Service token for Role ARN. Do Not Edit the value.
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
   AWSRegion:
     Type: String
     Default: 'Current Region'
@@ -156,17 +149,20 @@ Parameters:
     Type: "String"
 
 Conditions:
-  CreateRole: !Equals [ !Ref RoleARN, "CreateRole"]
-  CreateLambda: !Equals [ !Ref LambdaARN, "CreateLambda"]
+  do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  setupsumoresources: !Or
-    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
+  install_collector: !Not [!Equals [ !Ref ALBDeploymentType, "Only-App" ]]
+  install_cloud_watch_source: !Or
+    - !Equals [ !Ref ALBDeploymentType, "App-CloudWatchSource" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchSource" ]
+  install_s3source_source: !Or
+    - !Equals [ !Ref ALBDeploymentType, "App-S3Source" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchSource" ]
 
 Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
-    Condition: CreateLambda
+    Condition: do_not_use_parent_stack
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -188,12 +184,12 @@ Resources:
   SumoLogicAWSObservabilityHelper:
     Type: 'AWS::Serverless::Function'
     DependsOn: SumoLambdaRole
-    Condition: CreateLambda
+    Condition: do_not_use_parent_stack
     Properties:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [CreateLambda, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
+        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
         Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
@@ -204,7 +200,7 @@ Resources:
 
   SumoRole:
     Type: AWS::IAM::Role
-    Condition: CreateRole
+    Condition: do_not_use_parent_stack
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -232,9 +228,15 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
-    Condition: setupsumoresources
+    Condition: install_collector
     Properties:
-      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
@@ -244,11 +246,16 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
 
   SumoCloudwatchSource:
-    DependsOn:
-      - SumoHostedCollector
+    Condition: install_cloud_watch_source
     Type: Custom::AWSSource
     Properties:
-      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
@@ -257,16 +264,34 @@ Resources:
         - 'AWS/ApplicationELB'
       SourceName: !Ref AlbMetricsSourceName
       SourceCategory: !Ref AlbMetricsSourceCategoryName
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      CollectorId: !If
+        - install_collector
+        - !GetAtt
+          - SumoHostedCollector
+          - COLLECTOR_ID
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-CollectorID'
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
-      RoleArn: !If [CreateRole, !GetAtt SumoRole.Arn, !Ref RoleARN]
+      RoleArn: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoRole
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
 
   sumoAlbApp:
     Type: Custom::App
     Properties:
-      ServiceToken: !If [CreateLambda, !GetAtt SumoLogicAWSObservabilityHelper.Arn, !Ref LambdaARN]
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart Alb App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
