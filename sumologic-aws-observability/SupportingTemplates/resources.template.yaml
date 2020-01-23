@@ -216,23 +216,28 @@ Resources:
       RoleArn: !GetAtt SumoSourceRole.Arn
 
 Outputs:
+    StackName:
+      Description: "Stack Name"
+      Value: !Ref "AWS::StackName"
     SumoLogicLambdaHelperARN:
       Description: "Sumo Logic Lambda Helper ARN"
       Value: !GetAtt SumoLogicLambdaHelper.Arn
       Export:
-        Name: "CreateCommonResources-SumoLogicLambdaHelperARN"
+        Name: !Sub "${AWS::StackName}-SumoLogicLambdaHelperARN"
     SumoSourceRoleARN:
       Description: "Sumo Logic Source Role ARN"
       Value: !GetAtt SumoSourceRole.Arn
       Export:
-        Name: "CreateCommonResources-SumoSourceRoleARN"
+        Name: !Sub "${AWS::StackName}-SumoSourceRoleARN"
     SumoCollectorID:
       Description: "Sumo Logic Collector ID"
+      Condition: install_common_collector_and_source
       Value: !GetAtt SumoHostedCollector.COLLECTOR_ID
       Export:
-        Name: "CreateCommonResources-CollectorID"
+        Name: !Sub "${AWS::StackName}-CollectorID"
     SourceCategoryCloudWatchMetrics:
       Description: "Sumo Logic Collector ID"
+      Condition: install_common_collector_and_source
       Value: "AWS/Observability/CloudWatch/Metrics"
 
 

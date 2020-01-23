@@ -40,8 +40,6 @@ Metadata:
           default: "AWS EC2 Metrics App Configuration"
         Parameters:
           - Ec2AppSourceCategoryName
-          - Ec2CollectorName
-          - Ec2SourceName
 
       - Label:
           default: "AWS ALB App Configuration"
@@ -49,7 +47,6 @@ Metadata:
           - AlbMetricsSourceCategoryName
           - AlbLogsSourceCategoryName
           - AlbCollectorName
-          - AlbMetricsSourceName
 
       - Label:
           default: "AWS DynamoDB App Configuration"
@@ -57,14 +54,11 @@ Metadata:
           - DynamoDbMetricsSourceCategoryName
           - DynamoDbLogsSourceCategoryName
           - DynamoDbCollectorName
-          - DynamoDbMetricsSourceName
 
       - Label:
           default: "AWS RDS App Configuration"
         Parameters:
           - RdsAppSourceCategoryName
-          - RdsCollectorName
-          - RdsSourceName
 
       - Label:
           default: "AWS Lambda App Configuration"
@@ -73,7 +67,6 @@ Metadata:
           - LambdaLogSourceCategoryName
           - LambdaDataEventsSourceCategoryName
           - LambdaCollectorName
-          - LambdaMetricsSourceName
 
       - Label:
           default: "AWS Api Gateway App Configuration"
@@ -81,7 +74,6 @@ Metadata:
           - ApiGatewayMetricsSourceCategoryName
           - ApiGatewayLogSourceCategoryName
           - ApiGatewayCollectorName
-          - ApiGatewayMetricsSourceName
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
@@ -126,10 +118,6 @@ Metadata:
 
       Ec2AppSourceCategoryName:
         default: "EC2 App Metric Data Source Category Name."
-      Ec2CollectorName:
-        default: "EC2 App Collector Name."
-      Ec2SourceName:
-        default: "EC2 App MetaData Source Name."
 
       AlbMetricsSourceCategoryName:
         default: "ALB App Metric Data Source Category Name."
@@ -137,8 +125,6 @@ Metadata:
         default: "ALB App Logs Data Source Category Name."
       AlbCollectorName:
         default: "ALB App Collector Name."
-      AlbMetricsSourceName:
-        default: "ALB App CloudWatch Metrics Source Name."
 
       DynamoDbMetricsSourceCategoryName:
         default: "Dynamo DB App Metric Data Source Category Name."
@@ -146,15 +132,9 @@ Metadata:
         default: "Dynamo DB App Logs Data Source Category Name."
       DynamoDbCollectorName:
         default: "Dynamo DB App Collector Name."
-      DynamoDbMetricsSourceName:
-        default: "Dynamo DB App CloudWatch Metrics Source Name."
 
       RdsAppSourceCategoryName:
         default: "RDS App Metric Data Source Category Name."
-      RdsCollectorName:
-        default: "RDS App Collector Name."
-      RdsSourceName:
-        default: "RDS App CloudWatch Metrics Source Name."
 
       LambdaMetricsSourceCategoryName:
         default: "Lambda App Metric Data Source Category Name."
@@ -164,8 +144,6 @@ Metadata:
         default: "Lambda App Data Events Logs Source Category Name."
       LambdaCollectorName:
         default: "Lambda App Collector Name."
-      LambdaMetricsSourceName:
-        default: "Lambda App CloudWatch Metrics Source Name."
 
       ApiGatewayMetricsSourceCategoryName:
         default: "Api Gateway App Metric Data Source Category Name."
@@ -173,8 +151,6 @@ Metadata:
         default: "Api Gateway App Log Data Source Category Name."
       ApiGatewayCollectorName:
         default: "Api Gateway App Collector Name."
-      ApiGatewayMetricsSourceName:
-        default: "API Gateway App CloudWatch Metrics Source Name."
 
       QSS3BucketName:
         default: "Quick Start S3 bucket name."
@@ -327,12 +303,6 @@ Parameters:
     Type: String
     Description: Provide any existing EC2 Metrics source category name.
     AllowedPattern: ".+"
-  Ec2CollectorName:
-    Type: String
-    Description: Provide any existing EC2 Metrics App Hosted Collector name.
-  Ec2SourceName:
-    Type: String
-    Description: Provide any existing EC2 Metrics App Metadata Source name.
 
   AlbMetricsSourceCategoryName:
     Type: String
@@ -340,13 +310,9 @@ Parameters:
   AlbLogsSourceCategoryName:
     Type: String
     Description: Provide any existing ALB logs source category name.
-    Default: AWS/alb/logs
   AlbCollectorName:
     Type: String
     Description: Provide any existing ALB App Hosted Collector name.
-  AlbMetricsSourceName:
-    Type: String
-    Description: Provide any existing ALB App CloudWatch Metrics Source name.
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
@@ -357,19 +323,10 @@ Parameters:
   DynamoDbCollectorName:
     Type: String
     Description: Provide any existing Dynamo DB App Hosted Collector name.
-  DynamoDbMetricsSourceName:
-    Type: String
-    Description: Provide any existing Dynamo DB App CloudWatch Metrics Source name.
 
   RdsAppSourceCategoryName:
     Type: String
     Description: Provide any existing RDS Metrics source category name.
-  RdsCollectorName:
-    Type: String
-    Description: Provide any existing RDS Metrics App Hosted Collector name.
-  RdsSourceName:
-    Type: String
-    Description: Provide any existing RDS App CloudWatch Metrics Source name.
 
   LambdaMetricsSourceCategoryName:
     Type: String
@@ -383,9 +340,6 @@ Parameters:
   LambdaCollectorName:
     Type: String
     Description: Provide any existing Lambda App Hosted Collector name.
-  LambdaMetricsSourceName:
-    Type: String
-    Description: Provide any existing Lambda App CloudWatch Metrics Source name.
 
   ApiGatewayMetricsSourceCategoryName:
     Type: String
@@ -396,9 +350,6 @@ Parameters:
   ApiGatewayCollectorName:
     Type: String
     Description: Provide any existing API gateway App Hosted Collector name.
-  ApiGatewayMetricsSourceName:
-    Type: String
-    Description: Provide any existing API gateway App CloudWatch Metrics Source name.
 
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
@@ -471,7 +422,7 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        InstallCommonSource: !Condition install_common_collector_and_source
+        InstallCommonSource: !If [install_common_collector_and_source, 'Yes', 'No']
         AWSRegion: !Ref AWSRegion
         # TODO Namespaces: alb_namespaces
 
@@ -492,7 +443,7 @@ Resources:
         AddTagsForRDSResources: !If [install_rds_app, 'Yes', 'No']
         AddTagsForEC2MetricsResources: !If [install_ec2_metrics_app, 'Yes', 'No']
         AddTagsForLambdaResources: !If [install_lambda_app, 'Yes', 'No']
-        ParentStackName: "CreateCommonResources"
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
@@ -520,14 +471,14 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/ec2_metrics_app.template.yaml"
       Parameters:
-        ParentStackName: "CreateCommonResources"
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         EC2MetricsDeploymentType: "Only-App"
         AWSRegion: !Ref AWSRegion
-        Ec2SourceName: !If [install_ec2_sumoresources, "AWS-Observability-EC2-MetaData-Source", !Ref Ec2SourceName]
+        Ec2SourceName: !If [install_ec2_sumoresources, "AWS-Observability-EC2-MetaData-Source", ""]
         Ec2AppSourceCategoryName: !Ref Ec2AppSourceCategoryName
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
@@ -552,14 +503,15 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/alb_app.template.yaml"
       Parameters:
-        ParentStackName: "CreateCommonResources"
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         ALBDeploymentType: !If [install_alb_s3source, "App-S3Source", "Only-App"]
         AWSRegion: !Ref AWSRegion
-        AlbMetricsSourceCategoryName: !If [install_alb_sumoresources, "AWS/alb/metrics", !Ref AlbMetricsSourceCategoryName]
+        AlbCollectorName: !Ref AlbCollectorName
+        AlbMetricsSourceCategoryName: !If [install_alb_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref AlbMetricsSourceCategoryName]
         AlbLogsSourceCategoryName: !If [install_alb_s3source, "AWS/alb/logs", !Ref AlbLogsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
