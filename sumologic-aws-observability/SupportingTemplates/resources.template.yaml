@@ -12,12 +12,19 @@ Metadata:
           - SumoAccessKey
           - RemoveSumoResourcesOnDeleteStack
           - SumoOrganizationId
+          - AWSRegion
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
         Parameters:
           - QSS3BucketName
           - QSS3KeyPrefix
+
+      - Label:
+          default: "Install Sumo Logic Collector and Cloud Watch Metric Source"
+        Parameters:
+          - InstallCommonSource
+          - Namespaces
 
     ParameterLabels:
       SumoDeployment:
@@ -30,11 +37,17 @@ Metadata:
         default: "Delete Sumo Logic Resources when stack is deleted."
       SumoOrganizationId:
         default: "Sumo Logic Organization Id."
+      AWSRegion:
+        default: "AWS Region for the resources that need to be tagged."
 
       QSS3BucketName:
         default: "Quick Start S3 bucket name."
       QSS3KeyPrefix:
         default: "Quick Start S3 key prefix."
+      InstallCommonSource:
+        default: "Install Common Collector and Source."
+      Namespaces:
+        default: "Namespaces to collect for CLoud Watch Metrics."
 
 Parameters:
   SumoOrganizationId:
@@ -81,6 +94,28 @@ Parameters:
     Default: "sumologic-aws-observability/"
     Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
     Type: "String"
+  InstallCommonSource:
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: Choose Yes to install Common Collector and Source.
+    Type: String
+  Namespaces:
+    Default: "AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS"
+    Description: Provide Comma delimited list of the namespaces to collect.
+    Type: CommaDelimitedList
+  AWSRegion:
+    Type: String
+    Default: 'Current Region'
+    Description: AWS Region for the resources that need to be tagged.
+    AllowedValues:
+      - 'Current Region'
+      - 'All Regions'
+
+Conditions:
+  install_common_collector_and_source: !Equals [!Ref InstallCommonSource, 'Yes']
+  region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
 Resources:
 
@@ -149,16 +184,36 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
+    Condition: install_common_collector_and_source
     DependsOn: SumoLogicLambdaHelper
     Properties:
       ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      CollectorName: !Ref Ec2CollectorName
+      CollectorName: "AWS-Observability-Collector"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
+
+  SumoCloudwatchSource:
+    Type: Custom::AWSSource
+    DependsOn: SumoHostedCollector
+    Condition: install_common_collector_and_source
+    Properties:
+      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      Region: !Ref "AWS::Region"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceType: AwsCloudWatch
+      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+      Namespaces: !Ref Namespaces
+      SourceName: "AWS-Observability-CloudWatch-Metrics-Source"
+      SourceCategory: "AWS/Observability/CloudWatch/Metrics"
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      RoleArn: !GetAtt SumoSourceRole.Arn
 
 Outputs:
     SumoLogicLambdaHelperARN:
@@ -176,4 +231,8 @@ Outputs:
       Value: !GetAtt SumoHostedCollector.COLLECTOR_ID
       Export:
         Name: "CreateCommonResources-CollectorID"
+    SourceCategoryCloudWatchMetrics:
+      Description: "Sumo Logic Collector ID"
+      Value: "AWS/Observability/CloudWatch/Metrics"
+
 
