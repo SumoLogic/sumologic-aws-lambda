@@ -105,11 +105,11 @@ Parameters:
   Ec2CollectorName:
     Type: String
     Description: EC2 App Collector Name.
-    Default: AWS-Observability-EC2-Collector
+    Default: AWS-EC2-Collector
   Ec2SourceName:
     Type: String
     Description: EC2 App MetaData Source Name.
-    Default: AWS-Observability-EC2-MetaData-Source
+    Default: AWS-EC2-MetaData-Source
 
   ParentStackName:
     Type: String
@@ -139,12 +139,10 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Or
-    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref Ec2CollectorName, "FetchCollector" ]
+  install_collector: !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
   install_source: !Or
     - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref Ec2SourceName, "InstallSource" ]
+    - !Equals [ !Ref Ec2SourceName, "AWS-Observability-EC2-MetaData-Source" ]
 
 Resources:
   SumoLambdaRole:
