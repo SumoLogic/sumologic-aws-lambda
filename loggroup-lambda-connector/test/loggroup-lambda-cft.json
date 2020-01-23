@@ -69,7 +69,7 @@
                     ]
                 },
                 "Timeout": 300,
-                "Runtime": "nodejs8.10"
+                "Runtime": "nodejs10.x"
             }
         },
         "SumoLogGroupLambdaConnectorRole": {

@@ -24,7 +24,7 @@ if [ ! -f sumo_app_utils.zip ]; then
     cd ..
     rm -r python
 fi
-version="1.0.22"
+version="1.0.23"
 aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
 
 sam package --template-file sumo_app_utils.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_sumo_app_utils.yaml --s3-prefix "sumo_app_utils/v"$version

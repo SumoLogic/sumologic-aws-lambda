@@ -49,7 +49,7 @@ Metadata:
     Name: sumologic-aws-cloudtrail-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.6
+    SemanticVersion: 1.0.7
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 
 
@@ -122,7 +122,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.22
+        SemanticVersion: 1.0.23
 
   SumoRole:
     Condition: SetupSumoResources
@@ -310,6 +310,7 @@ Resources:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
       AppName: "Global Intelligence for AWS CloudTrail"
+      AppId: "570bdc0d-f824-4fcb-96b2-3230d4497180"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         logsrc: !Sub "_sourceCategory=${SourceCategoryName}"

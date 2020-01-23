@@ -590,11 +590,11 @@ class App(SumoResource):
 
         print("job status: %s" % response.text)
 
-    def _wait_for_app_install(self, app_id, job_id):
-        print("waiting for app installation app_id %s job_id %s" % (app_id, job_id))
+    def _wait_for_app_install(self, job_id):
+        print("waiting for app installation job_id %s" % job_id)
         waiting = True
         while waiting:
-            response = self.sumologic_cli.check_app_install_status(app_id, job_id)
+            response = self.sumologic_cli.check_app_install_status(job_id)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(5)
         print("job status: %s" % response.text)
@@ -649,7 +649,7 @@ class App(SumoResource):
 
         response = self.sumologic_cli.install_app(appid, content)
         job_id = response.json()["id"]
-        response = self._wait_for_app_install(appid, job_id)
+        response = self._wait_for_app_install(job_id)
 
         json_resp = json.loads(response.content)
         if (json_resp['status'] == 'Success'):
@@ -696,12 +696,10 @@ class App(SumoResource):
 
 if __name__ == '__main__':
 
-    params = {
-
-        "access_id": "",
-        "access_key": "",
-        "deployment": "us1"
-
+    props = {
+        "SumoAccessID": "",
+        "SumoAccessKey": "",
+        "SumoDeployment": "us1",
     }
     # app_prefix = "CloudTrail"
     app_prefix = "GuardDuty"
@@ -717,9 +715,9 @@ if __name__ == '__main__':
     source_params = {
         "logsrc": "_sourceCategory=%s" % source_category
     }
-    col = Collector(**params)
-    src = HTTPSource(**params)
-    app = App(**params)
+    # col = Collector(**params)
+    # src = HTTPSource(**params)
+    app = App(props)
 
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)

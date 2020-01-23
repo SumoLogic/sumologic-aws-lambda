@@ -216,5 +216,5 @@ class SumoLogic(object):
         time.sleep(random.randint(1, 10))
         return self.post('/apps/%s/install' % (app_id), params=content)
 
-    def check_app_install_status(self, app_id, job_id):
-        return self.get('/apps/%s/install/%s/status' % (app_id, job_id))
+    def check_app_install_status(self, job_id):
+        return self.get('/apps/install/%s/status' % job_id)

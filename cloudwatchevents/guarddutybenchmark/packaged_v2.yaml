@@ -53,9 +53,9 @@ Metadata:
     - benchmark
     - guardduty
     Name: sumologic-guardduty-benchmark
-    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.8/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.8/cab012d7fb7887671b751e6f5c0d2062
-    SemanticVersion: 1.0.8
+    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.9/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.9/cab012d7fb7887671b751e6f5c0d2062
+    SemanticVersion: 1.0.9
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
 Parameters:
   CollectorName:
@@ -93,7 +93,7 @@ Parameters:
 Resources:
   CloudWatchEventFunction:
     Properties:
-      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.8/0d13904d1fbd69ecd879992058f1aa41
+      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.9/0d13904d1fbd69ecd879992058f1aa41
       Environment:
         Variables:
           SUMO_ENDPOINT:
@@ -115,7 +115,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.22
+        SemanticVersion: 1.0.23
   SumoHostedCollector:
     Type: Custom::Collector
     Properties:
@@ -173,6 +173,7 @@ Resources:
       Region:
         Ref: AWS::Region
       AppName: Amazon GuardDuty Benchmark
+      AppId: 8e7efcb3-040a-4a92-9f8d-922fafb24afb
       RemoveOnDeleteStack:
         Ref: RemoveSumoResourcesOnDeleteStack
       AppSources:

@@ -56,7 +56,7 @@ Metadata:
     Name: sumologic-guardduty-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.8
+    SemanticVersion: 1.0.9
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
 
 Parameters:
@@ -115,7 +115,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.22
+        SemanticVersion: 1.0.23
 
   SumoHostedCollector:
     Type: Custom::Collector
@@ -150,6 +150,7 @@ Resources:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
       AppName: "Amazon GuardDuty Benchmark"
+      AppId: "8e7efcb3-040a-4a92-9f8d-922fafb24afb"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         gdbenchmark: !Sub "_sourceCategory=${SourceCategoryName}"

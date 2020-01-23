@@ -9,7 +9,7 @@ else
     AWS_REGION="us-east-2"
 fi
 
-version="1.0.8"
+version="1.0.9"
 
 sam package --template-file template_v2.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_v2.yaml --s3-prefix "guarddutybenchmark/v$version"
 
@@ -18,7 +18,9 @@ sam publish --template packaged_v2.yaml --region $AWS_REGION --semantic-version 
 
 ACCESS_ID=""
 ACCESS_KEY=""
-SUMO_DEPLOYMENT="us2"
+ORG_ID=""
+
+SUMO_DEPLOYMENT="us1"
 
 # sam deploy --template-file packaged_v2.yaml --stack-name testinggdbenchmarknew --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --region $AWS_REGION --parameter-overrides SumoDeployment="$SUMO_DEPLOYMENT" SumoAccessID="$ACCESS_ID" SumoAccessKey="$ACCESS_KEY" RemoveSumoResourcesOnDeleteStack="true"
 
