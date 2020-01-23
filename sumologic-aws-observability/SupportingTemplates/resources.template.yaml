@@ -187,6 +187,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
                   - tag:GetResources
                   - cloudwatch:ListMetrics
                   - cloudwatch:GetMetricStatistics
@@ -247,7 +251,7 @@ Outputs:
       Export:
         Name: !Sub "${AWS::StackName}-CollectorID"
     SourceCategoryCloudWatchMetrics:
-      Description: "Sumo Logic Collector ID"
+      Description: "Sumo Logic Source Category"
       Condition: install_common_source
       Value: "AWS/Observability/CloudWatch/Metrics"
 

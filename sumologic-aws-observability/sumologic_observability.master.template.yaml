@@ -47,6 +47,7 @@ Metadata:
           - AlbMetricsSourceCategoryName
           - AlbLogsSourceCategoryName
           - AlbCollectorName
+          - AlbLogsSourceName
 
       - Label:
           default: "AWS DynamoDB App Configuration"
@@ -125,6 +126,8 @@ Metadata:
         default: "ALB App Logs Data Source Category Name."
       AlbCollectorName:
         default: "ALB App Collector Name."
+      AlbLogsSourceName:
+        default: "ALB App S3 Logs Source Name."
 
       DynamoDbMetricsSourceCategoryName:
         default: "Dynamo DB App Metric Data Source Category Name."
@@ -192,7 +195,7 @@ Parameters:
   S3BucketPrefix:
     Type: String
     Description: Provide a unique S3 Bucket prefix. This will be applied to all S3 buckets created using this Quickstart template.
-    AllowedPattern: "[a-z0-9]+"
+    AllowedPattern: ".+"
   AccountAlias:
     Type: String
     Description: Provide the Value for Account Tag.
@@ -309,6 +312,9 @@ Parameters:
   AlbCollectorName:
     Type: String
     Description: Provide any existing ALB App Hosted Collector name.
+  AlbLogsSourceName:
+    Type: String
+    Description: ALB App S3 Logs Source Name.
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
@@ -494,7 +500,6 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         EC2MetricsDeploymentType: "Only-App"
         AWSRegion: !Ref AWSRegion
-        Ec2SourceName: !If [install_ec2_sumoresources, "AWS-Observability-EC2-MetaData-Source", ""]
         Ec2AppSourceCategoryName: !Ref Ec2AppSourceCategoryName
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
@@ -524,9 +529,8 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        ALBDeploymentType: !If [install_alb_s3source, "App-S3Source", "Only-App"]
+        ALBDeploymentType: "Only-App"
         AWSRegion: !Ref AWSRegion
-        AlbCollectorName: !Ref AlbCollectorName
         AlbMetricsSourceCategoryName: !If [install_alb_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref AlbMetricsSourceCategoryName]
         AlbLogsSourceCategoryName: !If [install_alb_s3source, "AWS/Observability/ALB/logs", !Ref AlbLogsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
@@ -557,9 +561,8 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        DynamoDBDeploymentType: !If [install_dynamodb_s3source, "App-S3Source", "Only-App"]
+        DynamoDBDeploymentType: "Only-App"
         AWSRegion: !Ref AWSRegion
-        DynamoDbCollectorName: !Ref DynamoDbCollectorName
         DynamoDbMetricsSourceCategoryName: !If [install_dynamo_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref DynamoDbMetricsSourceCategoryName]
         DynamoDbLogsSourceCategoryName: !If [install_dynamodb_s3source, "AWS/Observability/DynamoDB/logs", !Ref DynamoDbLogsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
@@ -609,9 +612,8 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        LambdaDeploymentType: !If [install_lambda_s3source, "App-S3Source", "Only-App"]
+        LambdaDeploymentType: "Only-App"
         AWSRegion: !Ref AWSRegion
-        LambdaCollectorName: !Ref LambdaCollectorName
         LambdaMetricsSourceCategoryName: !If [install_lambda_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref LambdaMetricsSourceCategoryName]
         LambdaLogSourceCategoryName: !If [install_lambda_s3source, "AWS/Observability/lambda/logs", !Ref LambdaLogSourceCategoryName]
         LambdaDataEventsSourceCategoryName: !If [install_lambda_s3source, "AWS/Observability/lambda/dataevents", !Ref LambdaDataEventsSourceCategoryName]
@@ -643,9 +645,8 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        APIGatewayDeploymentType: !If [install_api_s3source, "App-S3Source", "Only-App"]
+        APIGatewayDeploymentType: "Only-App"
         AWSRegion: !Ref AWSRegion
-        ApiGatewayCollectorName: !Ref ApiGatewayCollectorName
         ApiGatewayMetricsSourceCategoryName: !If [install_api_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref ApiGatewayMetricsSourceCategoryName]
         ApiGatewayLogSourceCategoryName: !If [install_api_s3source, "AWS/Observability/apigateway/logs", !Ref ApiGatewayLogSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
