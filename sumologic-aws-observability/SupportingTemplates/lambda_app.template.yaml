@@ -19,10 +19,18 @@ Metadata:
           default: "AWS Lambda App Configuration"
         Parameters:
           - LambdaMetricsSourceCategoryName
-          - LambdaLogSourceCategoryName
-          - LambdaDataEventsSourceCategoryName
+          - LambdaCloudWatchLogSourceCategoryName
+          - LambdaCloudTrailDataEventsSourceCategoryName
           - LambdaCollectorName
           - LambdaMetricsSourceName
+          - LambdaCloudTrailLogsSourceName
+          - LambdaCloudWatchLogsSourceName
+          - LambdaCloudTrailBucketPathExpression
+
+      - Label:
+          default: "AWS Resources Configuration"
+        Parameters:
+          - LambdaCloudTrailBucketName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
@@ -51,14 +59,22 @@ Metadata:
 
       LambdaMetricsSourceCategoryName:
         default: "Lambda App Metric Data Source Category Name."
-      LambdaLogSourceCategoryName:
-        default: "Lambda App Log Data Source Category Name."
-      LambdaDataEventsSourceCategoryName:
-        default: "Lambda App Data Events Logs Source Category Name."
+      LambdaCloudWatchLogSourceCategoryName:
+        default: "Lambda App Cloud Watch Log Data Source Category Name."
+      LambdaCloudTrailDataEventsSourceCategoryName:
+        default: "Lambda App Cloud Trail Data Events Logs Source Category Name."
       LambdaCollectorName:
         default: "Lambda App Collector Name."
       LambdaMetricsSourceName:
         default: "Lambda App CloudWatch Metrics Source Name."
+      LambdaCloudTrailBucketPathExpression:
+        default: "Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log"
+      LambdaCloudTrailBucketName:
+        default: "Lambda App CloudTrail Logs target bucket name."
+      LambdaCloudTrailLogsSourceName:
+        default: "Lambda App CloudTrail Logs Source Name."
+      LambdaCloudWatchLogsSourceName:
+        default: "Lambda App CloudWatch Logs Source Name."
       ParentStackName:
         default: "If Any, Name of parent Stack."
       AWSRegion:
@@ -100,25 +116,30 @@ Parameters:
     Type: String
     AllowedValues:
       - "Only-App"
-      - "App-S3Source"
-      - "App-CloudWatchSource"
-      - "App-S3Source-CloudWatchSource"
-    Default: "App-S3Source-CloudWatchSource"
-    Description: "Only-App - Choose to install only app.
-                  App-S3Source - Choose to install app and AWS S3 bucket with S3 source.
-                  App-CloudWatchSource - Choose to install app and Cloud Watch Metrics Source.
-                  App-S3Source-CloudWatchSource - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with S3 source."
+      - "App-CloudTrail"
+      - "App-CloudWatchLogs"
+      - "App-CloudWatchMetrics"
+      - "App-CloudTrail-CloudWatchLogs"
+      - "App-CloudTrail-CloudWatchMetrics"
+      - "App-CloudWatchLogs-CloudWatchMetrics"
+      - "App-CloudTrail-CloudWatchLogs-CloudWatchMetrics"
+    Default: "App-CloudTrail-CloudWatchLogs-CloudWatchMetrics"
+    Description: "Select the choice as per the below details :-
+                  App - Install the app.
+                  CloudTrail - Choose to install AWS S3 bucket with CloudTrail source.
+                  CloudWatchLogs - Choose to install Cloud Watch Logs Source.
+                  CloudWatchMetrics - Choose to install Cloud Watch Metrics Source."
 
 
   LambdaMetricsSourceCategoryName:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/lambda/metrics
-  LambdaLogSourceCategoryName:
+  LambdaCloudWatchLogSourceCategoryName:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/lambda/logs
-  LambdaDataEventsSourceCategoryName:
+  LambdaCloudTrailDataEventsSourceCategoryName:
     Type: String
     Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
     Default: AWS/lambda/dataevents
@@ -129,7 +150,23 @@ Parameters:
   LambdaMetricsSourceName:
     Type: String
     Description: Lambda Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Lambda-CloudWatch-Source
+    Default: AWS-Lambda-CloudWatch-Metrics-Source
+  LambdaCloudTrailBucketPathExpression:
+    Type: String
+    Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
+    Default: "*"
+  LambdaCloudTrailLogsSourceName:
+    Type: String
+    Description: Lambda App CloudTrail Logs Source Name.
+    Default: AWS-Lambda-CloudTrail-Log-Source
+  LambdaCloudWatchLogsSourceName:
+    Type: String
+    Description: Lambda App CloudWatch Logs Source Name.
+    Default: AWS-Lambda-CloudWatch-Log-Source
+  LambdaCloudTrailBucketName:
+    Type: String
+    Description: Lambda App CloudTrail Logs target bucket name.
+    AllowedPattern: ".+"
 
   ParentStackName:
     Type: String
@@ -160,12 +197,21 @@ Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
   install_collector: !Not [!Equals [ !Ref LambdaDeploymentType, "Only-App" ]]
-  install_cloud_watch_source: !Or
-    - !Equals [ !Ref LambdaDeploymentType, "App-CloudWatchSource" ]
-    - !Equals [ !Ref LambdaDeploymentType, "App-S3Source-CloudWatchSource" ]
-  install_s3source_source: !Or
-    - !Equals [ !Ref LambdaDeploymentType, "App-S3Source" ]
-    - !Equals [ !Ref LambdaDeploymentType, "App-S3Source-CloudWatchSource" ]
+  install_cloud_watch_logs_source: !Or
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudWatchLogs" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail-CloudWatchLogs" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudWatchLogs-CloudWatchMetrics" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail-CloudWatchLogs-CloudWatchMetrics" ]
+  install_cloudtrail_source: !Or
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail-CloudWatchLogs" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail-CloudWatchMetrics" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail-CloudWatchLogs-CloudWatchMetrics" ]
+  install_cloud_watch_metric_source: !Or
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudWatchMetrics" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail-CloudWatchMetrics" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudWatchLogs-CloudWatchMetrics" ]
+    - !Equals [ !Ref LambdaDeploymentType, "App-CloudTrail-CloudWatchLogs-CloudWatchMetrics" ]
 
 Resources:
   SumoLambdaRole:
@@ -228,6 +274,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
                   - tag:GetResources
                   - cloudwatch:ListMetrics
                   - cloudwatch:GetMetricStatistics
@@ -254,7 +304,7 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
 
   SumoCloudwatchSource:
-    Condition: install_cloud_watch_source
+    Condition: install_cloud_watch_metric_source
     Type: Custom::AWSSource
     Properties:
       ServiceToken: !If
@@ -305,8 +355,204 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         metricssrc: !Sub "_sourceCategory=${LambdaMetricsSourceCategoryName}"
-        logsrccw: !Sub "_sourceCategory=${LambdaLogSourceCategoryName}"
-        logsrcct: !Sub "_sourceCategory=${LambdaDataEventsSourceCategoryName}"
+        logsrccw: !Sub "_sourceCategory=${LambdaCloudWatchLogSourceCategoryName}"
+        logsrcct: !Sub "_sourceCategory=${LambdaCloudTrailDataEventsSourceCategoryName}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
+
+  SumoCloudTrailExportPolicy:
+    Condition: install_cloudtrail_source
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LambdaCloudTrailBucketName
+      PolicyDocument:
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource:
+              - !Sub "arn:aws:s3:::${LambdaCloudTrailBucketName}"
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource:
+              - !Sub "arn:aws:s3:::${LambdaCloudTrailBucketName}/*"
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+          - Sid: AWSBucketExistenceCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${LambdaCloudTrailBucketName}"
+    DependsOn:
+      - TargetS3Bucket
+
+  SumoCloudTrail:
+    Condition: install_cloudtrail_source
+    Type: Custom::AWSTrail
+    DependsOn:
+      - SumoCloudTrailExportPolicy
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+      IsLogging: true
+      IsMultiRegionTrail: false
+      S3BucketName: !Ref LambdaCloudTrailBucketName
+      TrailName: !Sub "SumoCloudTrail-${AWS::StackName}"
+
+  TargetS3Bucket:
+    Condition: install_cloudtrail_source
+    Type: AWS::S3::Bucket
+    DependsOn:
+      - SumoSNSpolicy
+    Properties:
+      BucketName: !Ref LambdaCloudTrailBucketName
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Event: s3:ObjectCreated:Put
+            Topic: !Ref SumoSNSTopic
+
+  SumoSNSTopic:
+    Condition: install_cloudtrail_source
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
+
+  SumoSNSSubscription:
+    Condition: install_cloudtrail_source
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: SumoSNSTopic
+      Endpoint: !GetAtt SumoCloudTrailSource.SUMO_ENDPOINT
+      Protocol: https
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          numRetries: 40
+          minDelayTarget: 10
+          maxDelayTarget: 300
+          numMinDelayRetries: 3
+          numMaxDelayRetries: 5
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+
+  SumoSNSpolicy:
+    Condition: install_cloudtrail_source
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Id: SumoTopicPolicy
+        Statement:
+          - Action:
+              - sns:Publish
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:s3:::${LambdaCloudTrailBucketName}"
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Resource:
+              - !Ref SumoSNSTopic
+      Topics:
+        - Ref: SumoSNSTopic
+
+  SumoCloudTrailSource:
+    Condition: install_cloudtrail_source
+    Type: Custom::AWSSource
+    Properties:
+      SourceType: AwsCloudTrailBucket
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+      Region: !Ref "AWS::Region"
+      SourceName: !Ref LambdaCloudTrailLogsSourceName
+      TargetBucketName: !Ref LambdaCloudTrailBucketName
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceCategory: !Ref LambdaCloudTrailDataEventsSourceCategoryName
+      CollectorId: !If
+        - install_collector
+        - !GetAtt
+          - SumoHostedCollector
+          - COLLECTOR_ID
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-CollectorID'
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      PathExpression: !Ref LambdaCloudTrailBucketPathExpression
+      RoleArn: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoRole
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
+    DependsOn:
+      - SumoLogicAWSObservabilityHelper
+
+  CloudWatchEventFunction:
+    Condition: install_cloud_watch_logs_source
+    Properties:
+      CodeUri:
+        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
+        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicCloudWatchEvents.zip"
+      Environment:
+        Variables:
+          SUMO_ENDPOINT: !GetAtt SumoHTTPSource.SUMO_ENDPOINT
+      Events:
+        CloudWatchEventTrigger:
+          Properties:
+            Pattern:
+              source:
+                - aws.guardduty
+          Type: CloudWatchEvent
+      Handler: cloudwatchevents.handler
+      Runtime: nodejs10.x
+    Type: AWS::Serverless::Function
+
+  SumoHTTPSource:
+    Condition: install_cloud_watch_logs_source
+    Type: Custom::HTTPSource
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+      Region: !Ref "AWS::Region"
+      SourceName: !Ref LambdaCloudWatchLogsSourceName
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceCategory: !Ref LambdaCloudWatchLogSourceCategoryName
+      CollectorId: !If
+        - install_collector
+        - !GetAtt
+          - SumoHostedCollector
+          - COLLECTOR_ID
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-CollectorID'
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      DateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+      DateLocatorRegex: '.*"updatedAt":"(.*)".*'
