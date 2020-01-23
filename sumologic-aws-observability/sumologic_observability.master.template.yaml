@@ -274,15 +274,11 @@ Parameters:
     Type: String
     AllowedValues:
       - "App-AWSTags"
-      - "App-AWSTags-S3Source"
       - "App-AWSTags-CloudWatchSource"
-      - "App-AWSTags-S3Source-CloudWatchSource"
       - "Do-Not-Install"
-    Default: "App-AWSTags-S3Source-CloudWatchSource"
+    Default: "App-AWSTags-CloudWatchSource"
     Description: "App-AWSTags - Choose to install app and tag AWS Resources.
-                  App-AWSTags-S3Source - Choose to install app, tag AWS Resources and S3 bucket with S3 source.
                   App-AWSTags-CloudWatchSource - Choose to install app, tag AWS Resources and install Cloud Watch Metrics Source.
-                  App-AWSTags-S3Source-CloudWatchSource - Choose to install app, tag AWS Resources, install Cloud Watch Metrics Source and AWS S3 buckets with S3 source.
                   Do-Not-Install - Skip Installation."
   LambdaDeploymentType:
     Type: String
@@ -513,6 +509,40 @@ Resources:
         AlbCollectorName: !Ref AlbCollectorName
         AlbMetricsSourceCategoryName: !If [install_alb_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref AlbMetricsSourceCategoryName]
         AlbLogsSourceCategoryName: !If [install_alb_s3source, "AWS/alb/logs", !Ref AlbLogsSourceCategoryName]
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+
+  sumoDynamoDBMetricsAppStackWaitHandle:
+    Condition: install_alb_app
+    DependsOn: sumoAlbMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoDynamoDBMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_alb_app, !Ref sumoDynamoDBMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "15"
+      Count: 0
+
+  sumoDynamoDBMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [CreateCommonResources, sumoDynamoDBMetricsAppStackWaitCondition]
+    Condition: install_dynamo_db_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/dynamodb_app.template.yaml"
+      Parameters:
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        DynamoDBDeploymentType: !If [install_alb_s3source, "App-S3Source", "Only-App"]
+        AWSRegion: !Ref AWSRegion
+        DynamoDbCollectorName: !Ref DynamoDbCollectorName
+        DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
+        DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
+        DynamoDbMetricsSourceName: !Ref DynamoDbMetricsSourceName
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
