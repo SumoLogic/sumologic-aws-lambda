@@ -22,6 +22,13 @@ Metadata:
           - DynamoDbLogsSourceCategoryName
           - DynamoDbCollectorName
           - DynamoDbMetricsSourceName
+          - DynamoDbCloudTrailLogsSourceName
+          - DynamoDbCloudTrailBucketPathExpression
+
+      - Label:
+          default: "AWS Resources Configuration"
+        Parameters:
+          - DynamoDbCloudTrailBucketName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
@@ -56,6 +63,12 @@ Metadata:
         default: "Dynamo DB App Collector Name."
       DynamoDbMetricsSourceName:
         default: "Dynamo DB App CloudWatch Metrics Source Name."
+      DynamoDbCloudTrailBucketPathExpression:
+        default: "Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log"
+      DynamoDbCloudTrailBucketName:
+        default: "Dynamo DB App CloudTrail Logs target bucket name."
+      DynamoDbCloudTrailLogsSourceName:
+        default: "Dynamo DB App CloudTrail Logs Source Name."
 
       ParentStackName:
         default: "If Any, Name of parent Stack."
@@ -98,14 +111,14 @@ Parameters:
     Type: String
     AllowedValues:
       - "Only-App"
-      - "App-S3Source"
+      - "App-CloudTrail"
       - "App-CloudWatchSource"
-      - "App-S3Source-CloudWatchSource"
-    Default: "App-S3Source-CloudWatchSource"
+      - "App-CloudTrail-CloudWatchSource"
+    Default: "App-CloudTrail-CloudWatchSource"
     Description: "Only-App - Choose to install only app.
-                  App-S3Source - Choose to install app and AWS S3 bucket with S3 source.
+                  App-CloudTrail - Choose to install app and AWS S3 bucket with CloudTrail source.
                   App-CloudWatchSource - Choose to install app and Cloud Watch Metrics Source.
-                  App-S3Source-CloudWatchSource - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with S3 source."
+                  App-S3Source-CloudWatchSource - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with CloudTrail source."
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
@@ -123,6 +136,18 @@ Parameters:
     Type: String
     Description: Dynamo DB Gateway App CloudWatch Metrics Source Name.
     Default: AWS-Dynamo-CloudWatch-Source
+  DynamoDbCloudTrailBucketPathExpression:
+    Type: String
+    Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
+    Default: "*"
+  DynamoDbCloudTrailLogsSourceName:
+    Type: String
+    Description: Dynamo DB App CloudTrail Logs Source Name.
+    Default: AWS-Dynamo-CloudTrail-Log-Source
+  DynamoDbCloudTrailBucketName:
+    Type: String
+    Description: Dynamo DB App CloudTrail Logs target bucket name..
+    AllowedPattern: ".+"
 
   ParentStackName:
     Type: String
@@ -155,10 +180,10 @@ Conditions:
   install_collector: !Not [!Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]]
   install_cloud_watch_source: !Or
     - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudWatchSource" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-S3Source-CloudWatchSource" ]
-  install_s3source_source: !Or
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-S3Source" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-S3Source-CloudWatchSource" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchSource" ]
+  install_cloudtrail_source: !Or
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchSource" ]
 
 Resources:
   SumoLambdaRole:
@@ -221,6 +246,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
                   - tag:GetResources
                   - cloudwatch:ListMetrics
                   - cloudwatch:GetMetricStatistics
@@ -302,3 +331,151 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
+
+  SumoCloudTrailExportPolicy:
+    Condition: install_cloudtrail_source
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DynamoDbCloudTrailBucketName
+      PolicyDocument:
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource:
+              - !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}"
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource:
+              - !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}/*"
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+          - Sid: AWSBucketExistenceCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}"
+    DependsOn:
+      - TargetS3Bucket
+
+  SumoCloudTrail:
+    Condition: install_cloudtrail_source
+    Type: Custom::AWSTrail
+    DependsOn:
+      - SumoCloudTrailExportPolicy
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+      IsLogging: true
+      IsMultiRegionTrail: false
+      S3BucketName: !Ref DynamoDbCloudTrailBucketName
+      TrailName: !Sub "SumoCloudTrail-${AWS::StackName}"
+
+  TargetS3Bucket:
+    Condition: install_cloudtrail_source
+    Type: AWS::S3::Bucket
+    DependsOn:
+      - SumoSNSpolicy
+    Properties:
+      BucketName: !Ref DynamoDbCloudTrailBucketName
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Event: s3:ObjectCreated:Put
+            Topic: !Ref SumoSNSTopic
+
+  SumoSNSTopic:
+    Condition: install_cloudtrail_source
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
+
+  SumoSNSSubscription:
+    Condition: install_cloudtrail_source
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: SumoSNSTopic
+      Endpoint: !GetAtt SumoS3Source.SUMO_ENDPOINT
+      Protocol: https
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          numRetries: 40
+          minDelayTarget: 10
+          maxDelayTarget: 300
+          numMinDelayRetries: 3
+          numMaxDelayRetries: 5
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+
+  SumoSNSpolicy:
+    Condition: install_cloudtrail_source
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Id: SumoTopicPolicy
+        Statement:
+          - Action:
+              - sns:Publish
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}"
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Resource:
+              - !Ref SumoSNSTopic
+      Topics:
+        - Ref: SumoSNSTopic
+
+  SumoS3Source:
+    Condition: install_cloudtrail_source
+    Type: Custom::AWSSource
+    Properties:
+      SourceType: AwsCloudTrailBucket
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+      Region: !Ref "AWS::Region"
+      SourceName: !Ref DynamoDbCloudTrailLogsSourceName
+      TargetBucketName: !Ref DynamoDbCloudTrailBucketName
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceCategory: !Ref DynamoDbLogsSourceCategoryName
+      CollectorId: !If
+        - install_collector
+        - !GetAtt
+          - SumoHostedCollector
+          - COLLECTOR_ID
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-CollectorID'
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      PathExpression: !Ref DynamoDbCloudTrailBucketPathExpression
+      RoleArn: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoRole
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
+    DependsOn:
+      - SumoLogicAWSObservabilityHelper
