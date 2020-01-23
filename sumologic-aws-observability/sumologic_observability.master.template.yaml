@@ -443,7 +443,7 @@ Resources:
         AddTagsForRDSResources: !If [install_rds_app, 'Yes', 'No']
         AddTagsForEC2MetricsResources: !If [install_ec2_metrics_app, 'Yes', 'No']
         AddTagsForLambdaResources: !If [install_lambda_app, 'Yes', 'No']
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
