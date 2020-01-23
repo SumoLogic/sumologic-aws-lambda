@@ -152,9 +152,7 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !And
-    - !Not [!Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]]
-    - !Condition do_not_use_parent_stack
+  install_collector: !Not [!Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]]
   install_cloud_watch_source: !Or
     - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudWatchSource" ]
     - !Equals [ !Ref DynamoDBDeploymentType, "App-S3Source-CloudWatchSource" ]

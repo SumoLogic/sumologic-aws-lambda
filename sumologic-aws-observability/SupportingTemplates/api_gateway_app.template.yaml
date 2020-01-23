@@ -151,9 +151,7 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !And
-    - !Not [!Equals [ !Ref APIGatewayDeploymentType, "Only-App" ]]
-    - !Condition do_not_use_parent_stack
+  install_collector: !Not [!Equals [ !Ref APIGatewayDeploymentType, "Only-App" ]]
   install_cloud_watch_source: !Or
     - !Equals [ !Ref APIGatewayDeploymentType, "App-CloudWatchSource" ]
     - !Equals [ !Ref APIGatewayDeploymentType, "App-S3Source-CloudWatchSource" ]

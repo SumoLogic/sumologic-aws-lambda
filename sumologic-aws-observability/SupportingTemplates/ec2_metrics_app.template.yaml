@@ -140,9 +140,7 @@ Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
   install_collector: !Equals [ !Ref EC2MetricsDeploymentType, "App-MetadataSource" ]
-  install_source: !Or
-    - !Equals [ !Ref EC2MetricsDeploymentType, "App-MetadataSource" ]
-    - !Equals [ !Ref Ec2SourceName, "AWS-Observability-EC2-MetaData-Source" ]
+  install_source: !Equals [ !Ref EC2MetricsDeploymentType, "App-MetadataSource" ]
 
 Resources:
   SumoLambdaRole:
