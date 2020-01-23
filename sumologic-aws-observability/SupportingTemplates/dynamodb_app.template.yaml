@@ -112,13 +112,13 @@ Parameters:
     AllowedValues:
       - "Only-App"
       - "App-CloudTrail"
-      - "App-CloudWatchSource"
-      - "App-CloudTrail-CloudWatchSource"
-    Default: "App-CloudTrail-CloudWatchSource"
+      - "App-CloudWatchMetrics"
+      - "App-CloudTrail-CloudWatchMetrics"
+    Default: "App-CloudTrail-CloudWatchMetrics"
     Description: "Only-App - Choose to install only app.
                   App-CloudTrail - Choose to install app and AWS S3 bucket with CloudTrail source.
-                  App-CloudWatchSource - Choose to install app and Cloud Watch Metrics Source.
-                  App-S3Source-CloudWatchSource - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with CloudTrail source."
+                  App-CloudWatchMetrics - Choose to install app and Cloud Watch Metrics Source.
+                  App-S3Source-CloudWatchMetrics - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with CloudTrail source."
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
@@ -179,11 +179,11 @@ Conditions:
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
   install_collector: !Not [!Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]]
   install_cloud_watch_source: !Or
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudWatchSource" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchSource" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudWatchMetrics" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchMetrics" ]
   install_cloudtrail_source: !Or
     - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchSource" ]
+    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchMetrics" ]
 
 Resources:
   SumoLambdaRole:
@@ -408,7 +408,7 @@ Resources:
     Properties:
       TopicArn:
         Ref: SumoSNSTopic
-      Endpoint: !GetAtt SumoS3Source.SUMO_ENDPOINT
+      Endpoint: !GetAtt SumoCloudTrailSource.SUMO_ENDPOINT
       Protocol: https
       DeliveryPolicy:
         healthyRetryPolicy:
@@ -442,7 +442,7 @@ Resources:
       Topics:
         - Ref: SumoSNSTopic
 
-  SumoS3Source:
+  SumoCloudTrailSource:
     Condition: install_cloudtrail_source
     Type: Custom::AWSSource
     Properties:

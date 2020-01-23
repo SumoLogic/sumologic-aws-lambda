@@ -111,13 +111,13 @@ Parameters:
     AllowedValues:
       - "Only-App"
       - "App-S3Source"
-      - "App-CloudWatchSource"
-      - "App-S3Source-CloudWatchSource"
-    Default: "App-S3Source-CloudWatchSource"
+      - "App-CloudWatchMetrics"
+      - "App-S3Source-CloudWatchMetrics"
+    Default: "App-S3Source-CloudWatchMetrics"
     Description: "Only-App - Choose to install only app.
                   App-S3Source - Choose to install app and AWS S3 bucket with S3 source.
-                  App-CloudWatchSource - Choose to install app and Cloud Watch Metrics Source.
-                  App-S3Source-CloudWatchSource - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with S3 source."
+                  App-CloudWatchMetrics - Choose to install app and Cloud Watch Metrics Source.
+                  App-S3Source-CloudWatchMetrics - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with S3 source."
 
   AlbMetricsSourceCategoryName:
     Type: String
@@ -177,11 +177,11 @@ Conditions:
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
   install_collector: !Not [!Equals [ !Ref ALBDeploymentType, "Only-App" ]]
   install_cloud_watch_source: !Or
-    - !Equals [ !Ref ALBDeploymentType, "App-CloudWatchSource" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchSource" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-CloudWatchMetrics" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchMetrics" ]
   install_s3source_source: !Or
     - !Equals [ !Ref ALBDeploymentType, "App-S3Source" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchSource" ]
+    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchMetrics" ]
 
 Resources:
   SumoLambdaRole:

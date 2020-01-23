@@ -94,10 +94,10 @@ Parameters:
     Type: String
     AllowedValues:
       - "Only-App"
-      - "App-CloudWatchSource"
-    Default: "App-CloudWatchSource"
+      - "App-CloudWatchMetrics"
+    Default: "App-CloudWatchMetrics"
     Description: "Only-App - Choose to install only app.
-                  App-CloudWatchSource - Choose to install app and Cloud Watch Metrics Source."
+                  App-CloudWatchMetrics - Choose to install app and Cloud Watch Metrics Source."
 
   RdsAppSourceCategoryName:
     Type: String
@@ -140,8 +140,8 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Equals [ !Ref RDSDeploymentType, "App-CloudWatchSource" ]
-  install_cloud_watch_source: !Equals [ !Ref RDSDeploymentType, "App-CloudWatchSource" ]
+  install_collector: !Equals [ !Ref RDSDeploymentType, "App-CloudWatchMetrics" ]
+  install_cloud_watch_source: !Equals [ !Ref RDSDeploymentType, "App-CloudWatchMetrics" ]
 
 Resources:
   SumoLambdaRole:
