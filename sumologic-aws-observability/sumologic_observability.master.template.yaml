@@ -434,7 +434,13 @@ Resources:
         InstallCommonCollector: !If [install_common_collector, 'Yes', 'No']
         InstallCommonSource: !If [install_common_cloudwatch_source, 'Yes', 'No']
         AWSRegion: !Ref AWSRegion
-        # TODO Namespaces: alb_namespaces
+        Namespaces: !Join
+          - ","
+          - - !If [install_dynamo_sumoresources, "AWS/DynamoDB", !Ref "AWS::NoValue"]
+            - !If [install_alb_sumoresources, "AWS/ApplicationELB", !Ref "AWS::NoValue"]
+            - !If [install_rds_sumoresources, "AWS/RDS", !Ref "AWS::NoValue"]
+            - !If [install_api_sumoresources, "AWS/ApiGateway", !Ref "AWS::NoValue"]
+            - !If [install_lambda_sumoresources, "AWS/Lambda", !Ref "AWS::NoValue"]
 
   TagAWSResources:
     Type: AWS::CloudFormation::Stack
