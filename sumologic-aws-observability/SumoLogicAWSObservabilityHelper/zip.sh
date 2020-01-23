@@ -14,3 +14,19 @@ if [ ! -f SumoLogicAWSObservabilityHelper.zip ]; then
     cd ..
     rm -r python
 fi
+
+if [ -f SumoLogicCloudWatchEvents.zip ]; then
+    rm SumoLogicCloudWatchEvents.zip
+fi
+
+if [ ! -f SumoLogicCloudWatchEvents.zip ]; then
+    echo "creating zip file"
+    mkdir python
+    cd python
+    pip install  crhelper -t .
+    pip install requests -t .
+    cp -v ../../../cloudwatchevents/src/*.js .
+    zip -r ../SumoLogicCloudWatchEvents.zip .
+    cd ..
+    rm -r python
+fi
