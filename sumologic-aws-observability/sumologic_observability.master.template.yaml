@@ -185,12 +185,15 @@ Parameters:
   SumoOrganizationId:
     Description: The Account Overview page displays information about your Sumo Logic organization.
     Type: String
+    AllowedPattern: ".+"
   SumoAccessID:
     Type: String
     Description: The Sumo Logic Access ID.
+    AllowedPattern: ".+"
   SumoAccessKey:
     Type: String
     Description: The Sumo Logic Access Key.
+    AllowedPattern: ".+"
   SumoDeployment:
     Type: String
     AllowedValues:
@@ -202,6 +205,7 @@ Parameters:
       - us2
       - us1
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
+    AllowedPattern: ".+"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -212,10 +216,11 @@ Parameters:
   S3BucketPrefix:
     Type: String
     Description: Provide a unique S3 Bucket prefix. This will be applied to all S3 buckets created using this Quickstart template.
-
+    AllowedPattern: "[a-z0-9]+"
   AccountAlias:
     Type: String
     Description: Provide the Value for Account Tag.
+    AllowedPattern: ".+"
   AWSRegion:
     Type: String
     Default: 'Current Region'
@@ -235,175 +240,165 @@ Parameters:
     Type: String
     Default: 'AWS Explorer View'
     Description: Name for AWS Explorer View.
+    AllowedPattern: ".+"
 
+  EC2MetricsDeploymentType:
+    Type: String
+    AllowedValues:
+      - "App-AWSTags"
+      - "App-AWSTags-MetadataSource"
+      - "Do-Not-Install"
+    Default: "App-AWSTags-MetadataSource"
+    Description: "App-AWSTags - Choose to install app and tag AWS Resources.
+                  App-AWSTags-MetadataSource - Choose to install app, tag AWS Resources and install Meta Data Source.
+                  Do-Not-Install - Skip Installation."
   DynamoDBDeploymentType:
     Type: String
     AllowedValues:
       - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-S3Bucket"
-    Default: "App-SumoResources-S3Bucket"
-    Description: "Only-App: Choose this mode if you already have DynamoDB metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting DynamoDB logs. It installs the collector, source and app.
-          App-SumoResources-S3Bucket: Choose this mode if you do not have DynamoDB logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket."
+      - "App-S3Source"
+      - "App-CloudWatchSource"
+      - "App-CloudWatchSource-S3Source"
+      - "Do-Not-Install"
+    Default: "App-CloudWatchSource-S3Source"
+    Description: "Only-App - Choose to install only app.
+                  App-S3Source - Choose to install app and AWS S3 bucket with S3 source.
+                  App-CloudWatchSource - Choose to install app and Cloud Watch Metrics Source.
+                  App-S3Source-CloudWatchSource - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with S3 source.
+                  Do-Not-Install - Skip Installation."
   ALBDeploymentType:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags-S3Bucket"
-    Default: "App-SumoResources-AWSTags-S3Bucket"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - "App-AWSTags"
+      - "App-AWSTags-S3Source"
+      - "App-AWSTags-CloudWatchSource"
+      - "App-AWSTags-S3Source-CloudWatchSource"
+      - "Do-Not-Install"
+    Default: "App-AWSTags-S3Source-CloudWatchSource"
+    Description: "App-AWSTags - Choose to install app and tag AWS Resources.
+                  App-AWSTags-S3Source - Choose to install app, tag AWS Resources and S3 bucket with S3 source.
+                  App-AWSTags-CloudWatchSource - Choose to install app, tag AWS Resources and install Cloud Watch Metrics Source.
+                  App-AWSTags-S3Source-CloudWatchSource - Choose to install app, tag AWS Resources, install Cloud Watch Metrics Source and AWS S3 buckets with S3 source.
+                  Do-Not-Install - Skip Installation."
   APIGatewayDeploymentType:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags-S3Bucket"
-    Default: "App-SumoResources-AWSTags-S3Bucket"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - "App-AWSTags"
+      - "App-AWSTags-S3Source"
+      - "App-AWSTags-CloudWatchSource"
+      - "App-AWSTags-S3Source-CloudWatchSource"
+      - "Do-Not-Install"
+    Default: "App-AWSTags-S3Source-CloudWatchSource"
+    Description: "App-AWSTags - Choose to install app and tag AWS Resources.
+                  App-AWSTags-S3Source - Choose to install app, tag AWS Resources and S3 bucket with S3 source.
+                  App-AWSTags-CloudWatchSource - Choose to install app, tag AWS Resources and install Cloud Watch Metrics Source.
+                  App-AWSTags-S3Source-CloudWatchSource - Choose to install app, tag AWS Resources, install Cloud Watch Metrics Source and AWS S3 buckets with S3 source.
+                  Do-Not-Install - Skip Installation."
   RDSDeploymentType:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags"
-    Default: "App-SumoResources-AWSTags"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
-  EC2MetricsDeploymentType:
-    Type: String
-    AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags"
-    Default: "App-SumoResources-AWSTags"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - "App-AWSTags"
+      - "App-AWSTags-S3Source"
+      - "App-AWSTags-CloudWatchSource"
+      - "App-AWSTags-S3Source-CloudWatchSource"
+      - "Do-Not-Install"
+    Default: "App-AWSTags-S3Source-CloudWatchSource"
+    Description: "App-AWSTags - Choose to install app and tag AWS Resources.
+                  App-AWSTags-S3Source - Choose to install app, tag AWS Resources and S3 bucket with S3 source.
+                  App-AWSTags-CloudWatchSource - Choose to install app, tag AWS Resources and install Cloud Watch Metrics Source.
+                  App-AWSTags-S3Source-CloudWatchSource - Choose to install app, tag AWS Resources, install Cloud Watch Metrics Source and AWS S3 buckets with S3 source.
+                  Do-Not-Install - Skip Installation."
   LambdaDeploymentType:
     Type: String
     AllowedValues:
-      - "Only-AWSTags"
-      - "Only-App"
-      - "App-SumoResources"
-      - "App-SumoResources-AWSTags-S3Bucket"
-    Default: "App-SumoResources-AWSTags-S3Bucket"
-    Description: "Only-AWSTags: Choose this mode if you need to only tag your AWS Resources.
-          Only-App: Choose this mode if you already have metrics and logs in Sumo. It installs only the app.
-          App-SumoResources: Choose this mode if you already have a S3 bucket which is getting logs. It installs the collector, source and app.
-          App-SumoResources-AWSTags-S3Bucket: Choose this mode if you do not have logs and Metrics configured in your AWS Account. It deploys the collector, source, app, s3-bucket and Tags."
+      - "App-AWSTags"
+      - "App-AWSTags-S3Source"
+      - "App-AWSTags-CloudWatchSource"
+      - "App-AWSTags-S3Source-CloudWatchSource"
+      - "Do-Not-Install"
+    Default: "App-AWSTags-S3Source-CloudWatchSource"
+    Description: "App-AWSTags - Choose to install app and tag AWS Resources.
+                  App-AWSTags-S3Source - Choose to install app, tag AWS Resources and S3 bucket with S3 source.
+                  App-AWSTags-CloudWatchSource - Choose to install app, tag AWS Resources and install Cloud Watch Metrics Source.
+                  App-AWSTags-S3Source-CloudWatchSource - Choose to install app, tag AWS Resources, install Cloud Watch Metrics Source and AWS S3 buckets with S3 source.
+                  Do-Not-Install - Skip Installation."
 
   Ec2AppSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/ec2/metrics
+    Description: Provide any existing EC2 Metrics source category name.
+    AllowedPattern: ".+"
   Ec2CollectorName:
     Type: String
-    Description: EC2 App Collector Name.
-    Default: AWS-Observability-EC2-Collector
+    Description: Provide any existing EC2 Metrics App Hosted Collector name.
   Ec2SourceName:
     Type: String
-    Description: EC2 App MetaData Source Name.
-    Default: AWS-Observability-EC2-MetaData-Source
+    Description: Provide any existing EC2 Metrics App Metadata Source name.
 
   AlbMetricsSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/alb/metrics
+    Description: Provide any existing ALB Metrics source category name.
   AlbLogsSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
+    Description: Provide any existing ALB logs source category name.
     Default: AWS/alb/logs
   AlbCollectorName:
     Type: String
-    Description: ALB App Collector Name.
-    Default: AWS-Observability-ALB-Collector
+    Description: Provide any existing ALB App Hosted Collector name.
   AlbMetricsSourceName:
     Type: String
-    Description: ALB App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-ALB-CloudWatch-Source
+    Description: Provide any existing ALB App CloudWatch Metrics Source name.
 
   DynamoDbMetricsSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/dynamodb/metrics
+    Description: Provide any existing Dynamo DB Metrics source category name.
   DynamoDbLogsSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/dynamodb/logs
+    Description: Provide any existing Dynamo DB logs source category name.
   DynamoDbCollectorName:
     Type: String
-    Description: Dynamo DB App Collector Name.
-    Default: AWS-Observability-Dynamo-DB-Collector
+    Description: Provide any existing Dynamo DB App Hosted Collector name.
   DynamoDbMetricsSourceName:
     Type: String
-    Description: Dynamo DB Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-Dynamo-CloudWatch-Source
+    Description: Provide any existing Dynamo DB App CloudWatch Metrics Source name.
 
   RdsAppSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/rds/metrics
+    Description: Provide any existing RDS Metrics source category name.
   RdsCollectorName:
     Type: String
-    Description: RDS App Collector Name.
-    Default: AWS-Observability-RDS-Collector
+    Description: Provide any existing RDS Metrics App Hosted Collector name.
   RdsSourceName:
     Type: String
-    Description: RDS App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-RDS-CloudWatch-Source
+    Description: Provide any existing RDS App CloudWatch Metrics Source name.
 
   LambdaMetricsSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/lambda/metrics
+    Description: Provide any existing Lambda Metrics source category name.
   LambdaLogSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/lambda/logs
+    Description: Provide any existing Lambda logs source category name.
   LambdaDataEventsSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/lambda/dataevents
+    Description: Provide any existing Lambda Data Events source category name.
   LambdaCollectorName:
     Type: String
-    Description: Lambda App Collector Name.
-    Default: AWS-Observability-Lambda-Collector
+    Description: Provide any existing Lambda App Hosted Collector name.
   LambdaMetricsSourceName:
     Type: String
-    Description: Lambda Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-Lambda-CloudWatch-Source
+    Description: Provide any existing Lambda App CloudWatch Metrics Source name.
 
   ApiGatewayMetricsSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/apigateway/metrics
+    Description: Provide any existing API gateway Metrics source category name.
   ApiGatewayLogSourceCategoryName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/apigateway/logs
+    Description: Provide any existing API gateway logs source category name.
   ApiGatewayCollectorName:
     Type: String
-    Description: API Gateway App Collector Name.
-    Default: AWS-Observability-API-Gateway-Collector
+    Description: Provide any existing API gateway App Hosted Collector name.
   ApiGatewayMetricsSourceName:
     Type: String
-    Description: API Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-API-CloudWatch-Source
+    Description: Provide any existing API gateway App CloudWatch Metrics Source name.
 
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
@@ -420,119 +415,69 @@ Parameters:
     Type: "String"
 
 Conditions:
-  add_alb_tags: !Or
-    - !Equals [ !Ref ALBDeploymentType, "Only-AWSTags" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
-  add_api_gateway_tags: !Or
-    - !Equals [ !Ref APIGatewayDeploymentType, "Only-AWSTags" ]
-    - !Equals [ !Ref APIGatewayDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
-  add_rds_tags: !Or
-    - !Equals [ !Ref RDSDeploymentType, "Only-AWSTags" ]
-    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources-AWSTags" ]
-  add_ec2_tags: !Or
-    - !Equals [ !Ref EC2MetricsDeploymentType, "Only-AWSTags" ]
-    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources-AWSTags" ]
-  add_lambda_tags: !Or
-    - !Equals [ !Ref LambdaDeploymentType, "Only-AWSTags" ]
-    - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
-
-  install_dynamo_db_app: !Or
-    - !Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-SumoResources-S3Bucket" ]
-  install_alb_app: !Or
-    - !Equals [ !Ref ALBDeploymentType, "Only-App" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
-  install_api_gateway_app: !Or
-    - !Equals [ !Ref APIGatewayDeploymentType, "Only-App" ]
-    - !Equals [ !Ref APIGatewayDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref APIGatewayDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
-  install_rds_app: !Or
-    - !Equals [ !Ref RDSDeploymentType, "Only-App" ]
-    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref RDSDeploymentType, "App-SumoResources-AWSTags" ]
-  install_ec2_metrics_app: !Or
-    - !Equals [ !Ref EC2MetricsDeploymentType, "Only-App" ]
-    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources-AWSTags" ]
-  install_lambda_app: !Or
-    - !Equals [ !Ref LambdaDeploymentType, "Only-App" ]
-    - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources" ]
-    - !Equals [ !Ref LambdaDeploymentType, "App-SumoResources-AWSTags-S3Bucket" ]
   create_explorer_view: !Equals [!Ref CreateExplorerView, 'Yes']
+  region_value: !Equals [!Ref AWSRegion, 'All Regions']
+
+  install_dynamo_db_app:  !Not [!Equals [!Ref DynamoDBDeploymentType, "Do-Not-Install"]]
+  install_alb_app: !Not [!Equals [!Ref ALBDeploymentType, "Do-Not-Install"]]
+  install_api_gateway_app: !Not [!Equals [!Ref APIGatewayDeploymentType, "Do-Not-Install"]]
+  install_rds_app: !Not [!Equals [!Ref RDSDeploymentType, "Do-Not-Install"]]
+  install_ec2_metrics_app: !Not [!Equals [!Ref EC2MetricsDeploymentType, "Do-Not-Install"]]
+  install_lambda_app: !Not [!Equals [!Ref LambdaDeploymentType, "Do-Not-Install"]]
+
+  install_ec2_sumoresources: !Equals [!Ref EC2MetricsDeploymentType, "App-AWSTags-MetadataSource"]
+  install_dynamo_sumoresources: !Or
+    - !Equals [!Ref DynamoDBDeploymentType, "App-CloudWatchSource"]
+    - !Equals [!Ref DynamoDBDeploymentType, "App-CloudWatchSource-S3Source"]
+  install_alb_sumoresources: !Or
+    - !Equals [!Ref ALBDeploymentType, "App-AWSTags-CloudWatchSource"]
+    - !Equals [!Ref ALBDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
+  install_rds_sumoresources: !Or
+    - !Equals [!Ref RDSDeploymentType, "App-AWSTags-CloudWatchSource"]
+    - !Equals [!Ref RDSDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
+  install_api_sumoresources: !Or
+    - !Equals [!Ref APIGatewayDeploymentType, "App-AWSTags-CloudWatchSource"]
+    - !Equals [!Ref APIGatewayDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
+  install_lambda_sumoresources: !Or
+    - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-CloudWatchSource"]
+    - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
+
+  install_common_collector_and_source: !Or
+    - !Condition install_ec2_sumoresources
+    - !Condition install_dynamo_sumoresources
+    - !Condition install_alb_sumoresources
+    - !Condition install_rds_sumoresources
+    - !Condition install_api_sumoresources
+    - !Condition install_lambda_sumoresources
+
+  install_alb_s3source: !Or
+    - !Equals [!Ref ALBDeploymentType, "App-AWSTags-S3Source"]
+    - !Equals [!Ref ALBDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
 
 Resources:
 
   WaitHandle:
     Type: "AWS::CloudFormation::WaitConditionHandle"
 
-  SumoLambdaRole:
-    Type: AWS::IAM::Role
+  CreateCommonResources:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: SumoPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: '*'
-                Resource: '*'
-
-  SumoLogicAWSObservabilityHelper:
-    Type: 'AWS::Serverless::Function'
-    DependsOn: SumoLambdaRole
-    Properties:
-      Handler: main.handler
-      Runtime: python3.7
-      CodeUri:
-        Bucket: !Sub "${QSS3BucketName}-${AWS::Region}"
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
-      MemorySize: 128
-      Timeout: 900
-      Role:
-        Fn::GetAtt:
-          - SumoLambdaRole
-          - Arn
-
-  SumoRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: arn:aws:iam::926226587429:root
-            Action: sts:AssumeRole
-            Condition:
-              StringEquals:
-                sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
-      Path: "/"
-      Policies:
-        - PolicyName: SumoPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - tag:GetResources
-                  - cloudwatch:ListMetrics
-                  - cloudwatch:GetMetricStatistics
-                Resource:
-                  "*"
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/resources.template.yaml"
+      Parameters:
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        SumoDeployment: !Ref SumoDeployment
+        SumoOrganizationId: !Ref SumoOrganizationId
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        InstallCommonSource: !Condition install_common_collector_and_source
+        AWSRegion: !Ref AWSRegion
+        # TODO Namespaces: alb_namespaces
 
   TagAWSResources:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SumoLogicAWSObservabilityHelper
+    DependsOn: CreateCommonResources
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/tag_resource.template.yaml"
       Parameters:
@@ -542,21 +487,21 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         AWSRegion: !Ref AWSRegion
         AccountAlias: !Ref AccountAlias
-        AddTagsForALBResources: !If [add_alb_tags, 'Yes', 'No']
-        AddTagsForAPIGatewayResources: !If [add_api_gateway_tags, 'Yes', 'No']
-        AddTagsForRDSResources: !If [add_rds_tags, 'Yes', 'No']
-        AddTagsForEC2MetricsResources: !If [add_ec2_tags, 'Yes', 'No']
-        AddTagsForLambdaResources: !If [add_lambda_tags, 'Yes', 'No']
-        ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+        AddTagsForALBResources: !If [install_alb_app, 'Yes', 'No']
+        AddTagsForAPIGatewayResources: !If [install_api_gateway_app, 'Yes', 'No']
+        AddTagsForRDSResources: !If [install_rds_app, 'Yes', 'No']
+        AddTagsForEC2MetricsResources: !If [install_ec2_metrics_app, 'Yes', 'No']
+        AddTagsForLambdaResources: !If [install_lambda_app, 'Yes', 'No']
+        ParentStackName: "CreateCommonResources"
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
-    DependsOn: SumoLogicAWSObservabilityHelper
+    DependsOn: CreateCommonResources
     Condition: create_explorer_view
     Properties:
-      ServiceToken: !GetAtt SumoLogicAWSObservabilityHelper.Arn
+      ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       ExplorerName: !Ref ExplorerName
       MetadataKeys:
@@ -570,21 +515,19 @@ Resources:
 
   sumoEC2MetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: SumoLogicAWSObservabilityHelper
+    DependsOn: CreateCommonResources
     Condition: install_ec2_metrics_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/ec2_metrics_app.template.yaml"
       Parameters:
-        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
-        RoleARN: !GetAtt SumoRole.Arn
+        ParentStackName: "CreateCommonResources"
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        EC2MetricsDeploymentType: !Ref EC2MetricsDeploymentType
+        EC2MetricsDeploymentType: "Only-App"
         AWSRegion: !Ref AWSRegion
-        Ec2CollectorName: !Ref Ec2CollectorName
-        Ec2SourceName: !Ref Ec2SourceName
+        Ec2SourceName: !If [install_ec2_sumoresources, "AWS-Observability-EC2-MetaData-Source", !Ref Ec2SourceName]
         Ec2AppSourceCategoryName: !Ref Ec2AppSourceCategoryName
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
@@ -604,151 +547,20 @@ Resources:
 
   sumoAlbMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: [SumoLogicAWSObservabilityHelper, sumoAlbMetricsAppStackWaitCondition]
+    DependsOn: [CreateCommonResources, sumoAlbMetricsAppStackWaitCondition]
     Condition: install_alb_app
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/alb_app.template.yaml"
       Parameters:
-        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
-        RoleARN: !GetAtt SumoRole.Arn
+        ParentStackName: "CreateCommonResources"
         SumoDeployment: !Ref SumoDeployment
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        ALBDeploymentType: !Ref ALBDeploymentType
+        ALBDeploymentType: !If [install_alb_s3source, "App-S3Source", "Only-App"]
         AWSRegion: !Ref AWSRegion
-        AlbCollectorName: !Ref AlbCollectorName
-        AlbMetricsSourceCategoryName: !Ref AlbMetricsSourceCategoryName
-        AlbLogsSourceCategoryName: !Ref AlbLogsSourceCategoryName
-        AlbMetricsSourceName: !Ref AlbMetricsSourceName
-        SumoOrganizationId: !Ref SumoOrganizationId
-        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-
-  sumoDynamoDBMetricsAppStackWaitHandle:
-    Condition: install_alb_app
-    DependsOn: sumoAlbMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoDynamoDBMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_alb_app, !Ref sumoDynamoDBMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "15"
-      Count: 0
-
-  sumoDynamoDBMetricsAppStack:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: [SumoLogicAWSObservabilityHelper, sumoDynamoDBMetricsAppStackWaitCondition]
-    Condition: install_dynamo_db_app
-    Properties:
-      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/dynamodb_app.template.yaml"
-      Parameters:
-        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
-        RoleARN: !GetAtt SumoRole.Arn
-        SumoDeployment: !Ref SumoDeployment
-        SumoAccessID: !Ref SumoAccessID
-        SumoAccessKey: !Ref SumoAccessKey
-        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        DynamoDBDeploymentType: !Ref DynamoDBDeploymentType
-        AWSRegion: !Ref AWSRegion
-        DynamoDbCollectorName: !Ref DynamoDbCollectorName
-        DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
-        DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
-        DynamoDbMetricsSourceName: !Ref DynamoDbMetricsSourceName
-        SumoOrganizationId: !Ref SumoOrganizationId
-        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-
-  sumoRdsMetricsAppStack:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: SumoLogicAWSObservabilityHelper
-    Condition: install_rds_app
-    Properties:
-      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/rds_app.template.yaml"
-      Parameters:
-        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
-        RoleARN: !GetAtt SumoRole.Arn
-        SumoDeployment: !Ref SumoDeployment
-        SumoAccessID: !Ref SumoAccessID
-        SumoAccessKey: !Ref SumoAccessKey
-        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        AWSRegion: !Ref AWSRegion
-        RDSDeploymentType: !Ref RDSDeploymentType
-        RdsCollectorName: !Ref RdsCollectorName
-        RdsAppSourceCategoryName: !Ref RdsAppSourceCategoryName
-        RdsSourceName: !Ref RdsSourceName
-        SumoOrganizationId: !Ref SumoOrganizationId
-        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-
-  sumoLambdaMetricsAppStackWaitHandle:
-    Condition: install_rds_app
-    DependsOn: sumoRdsMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoLambdaMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_rds_app, !Ref sumoLambdaMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "5"
-      Count: 0
-
-  sumoLambdaMetricsAppStack:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: [SumoLogicAWSObservabilityHelper, sumoLambdaMetricsAppStackWaitCondition]
-    Condition: install_lambda_app
-    Properties:
-      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/lambda_app.template.yaml"
-      Parameters:
-        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
-        RoleARN: !GetAtt SumoRole.Arn
-        SumoDeployment: !Ref SumoDeployment
-        SumoAccessID: !Ref SumoAccessID
-        SumoAccessKey: !Ref SumoAccessKey
-        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        LambdaDeploymentType: !Ref LambdaDeploymentType
-        AWSRegion: !Ref AWSRegion
-        LambdaCollectorName: !Ref LambdaCollectorName
-        LambdaMetricsSourceCategoryName: !Ref LambdaMetricsSourceCategoryName
-        LambdaLogSourceCategoryName: !Ref LambdaLogSourceCategoryName
-        LambdaDataEventsSourceCategoryName: !Ref LambdaDataEventsSourceCategoryName
-        LambdaMetricsSourceName: !Ref LambdaMetricsSourceName
-        SumoOrganizationId: !Ref SumoOrganizationId
-        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-
-  sumoApiGatewayMetricsAppStackWaitHandle:
-    Condition: install_lambda_app
-    DependsOn: sumoLambdaMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoApiGatewayMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_lambda_app, !Ref sumoApiGatewayMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "15"
-      Count: 0
-
-  sumoApiGatewayMetricsAppStack:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: [SumoLogicAWSObservabilityHelper, sumoApiGatewayMetricsAppStackWaitCondition]
-    Condition: install_api_gateway_app
-    Properties:
-      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/api_gateway_app.template.yaml"
-      Parameters:
-        LambdaARN: !GetAtt SumoLogicAWSObservabilityHelper.Arn
-        RoleARN: !GetAtt SumoRole.Arn
-        SumoDeployment: !Ref SumoDeployment
-        SumoAccessID: !Ref SumoAccessID
-        SumoAccessKey: !Ref SumoAccessKey
-        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        APIGatewayDeploymentType: !Ref APIGatewayDeploymentType
-        AWSRegion: !Ref AWSRegion
-        ApiGatewayCollectorName: !Ref ApiGatewayCollectorName
-        ApiGatewayMetricsSourceCategoryName: !Ref ApiGatewayMetricsSourceCategoryName
-        ApiGatewayLogSourceCategoryName: !Ref ApiGatewayLogSourceCategoryName
-        ApiGatewayMetricsSourceName: !Ref ApiGatewayMetricsSourceName
+        AlbMetricsSourceCategoryName: !If [install_alb_sumoresources, "AWS/alb/metrics", !Ref AlbMetricsSourceCategoryName]
+        AlbLogsSourceCategoryName: !If [install_alb_s3source, "AWS/alb/logs", !Ref AlbLogsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix

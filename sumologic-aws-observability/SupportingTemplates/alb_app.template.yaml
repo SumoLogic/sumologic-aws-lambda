@@ -228,7 +228,7 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
-    Condition: install_collector
+    Condition: [do_not_use_parent_stack, install_collector]
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
