@@ -151,7 +151,9 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Not [!Equals [ !Ref ALBDeploymentType, "Only-App" ]]
+  install_collector: !And
+    - !Not [!Equals [ !Ref ALBDeploymentType, "Only-App" ]]
+    - !Condition do_not_use_parent_stack
   install_cloud_watch_source: !Or
     - !Equals [ !Ref ALBDeploymentType, "App-CloudWatchSource" ]
     - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchSource" ]
@@ -228,7 +230,7 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
-    Condition: [do_not_use_parent_stack, install_collector]
+    Condition: install_collector
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack

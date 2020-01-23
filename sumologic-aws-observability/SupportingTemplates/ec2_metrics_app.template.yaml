@@ -93,10 +93,10 @@ Parameters:
     Type: String
     AllowedValues:
       - "Only-App"
-      - "App-SumoResources"
-    Default: "App-SumoResources"
+      - "App-MetadataSource"
+    Default: "App-MetadataSource"
     Description: "Only-App: Choose to install app.
-                  App-SumoResources: Choose to install app and install Meta Data Source."
+                  App-MetadataSource: Choose to install app and install Meta Data Source."
 
   Ec2AppSourceCategoryName:
     Type: String
@@ -139,9 +139,9 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
+  install_collector: !Equals [ !Ref EC2MetricsDeploymentType, "App-MetadataSource" ]
   install_source: !Or
-    - !Equals [ !Ref EC2MetricsDeploymentType, "App-SumoResources" ]
+    - !Equals [ !Ref EC2MetricsDeploymentType, "App-MetadataSource" ]
     - !Equals [ !Ref Ec2SourceName, "AWS-Observability-EC2-MetaData-Source" ]
 
 Resources:
