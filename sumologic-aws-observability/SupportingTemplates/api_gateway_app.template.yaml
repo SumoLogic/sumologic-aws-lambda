@@ -117,11 +117,11 @@ Parameters:
   ApiGatewayCollectorName:
     Type: String
     Description: API Gateway App Collector Name.
-    Default: AWS-Observability-API-Gateway-Collector
+    Default: AWS-API-Gateway-Collector
   ApiGatewayMetricsSourceName:
     Type: String
     Description: API Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-API-CloudWatch-Source
+    Default: AWS-API-CloudWatch-Source
 
   ParentStackName:
     Type: String

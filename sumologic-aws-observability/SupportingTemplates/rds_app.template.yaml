@@ -106,11 +106,11 @@ Parameters:
   RdsCollectorName:
     Type: String
     Description: RDS App Collector Name.
-    Default: AWS-Observability-RDS-Collector
+    Default: AWS-RDS-Collector
   RdsSourceName:
     Type: String
     Description: RDS App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-RDS-CloudWatch-Source
+    Default: AWS-RDS-CloudWatch-Source
 
   ParentStackName:
     Type: String

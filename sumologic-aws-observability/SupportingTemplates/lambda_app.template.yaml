@@ -125,11 +125,11 @@ Parameters:
   LambdaCollectorName:
     Type: String
     Description: Lambda App Collector Name.
-    Default: AWS-Observability-Lambda-Collector
+    Default: AWS-Lambda-Collector
   LambdaMetricsSourceName:
     Type: String
     Description: Lambda Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-Lambda-CloudWatch-Source
+    Default: AWS-Lambda-CloudWatch-Source
 
   ParentStackName:
     Type: String

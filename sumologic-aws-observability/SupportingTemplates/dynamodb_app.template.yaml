@@ -118,11 +118,11 @@ Parameters:
   DynamoDbCollectorName:
     Type: String
     Description: Dynamo DB App Collector Name.
-    Default: AWS-Observability-Dynamo-DB-Collector
+    Default: AWS-Dynamo-DB-Collector
   DynamoDbMetricsSourceName:
     Type: String
     Description: Dynamo DB Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-Dynamo-CloudWatch-Source
+    Default: AWS-Dynamo-CloudWatch-Source
 
   ParentStackName:
     Type: String
