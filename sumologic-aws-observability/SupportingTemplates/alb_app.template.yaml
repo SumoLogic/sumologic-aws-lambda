@@ -22,6 +22,13 @@ Metadata:
           - AlbLogsSourceCategoryName
           - AlbCollectorName
           - AlbMetricsSourceName
+          - AlbLogsSourceName
+          - AlbS3PathExpression
+
+      - Label:
+          default: "AWS Resources Configuration"
+        Parameters:
+          - ALbS3BucketName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
@@ -56,6 +63,12 @@ Metadata:
         default: "ALB App Collector Name."
       AlbMetricsSourceName:
         default: "ALB App CloudWatch Metrics Source Name."
+      AlbS3PathExpression:
+        default: "Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log"
+      ALbS3BucketName:
+        default: "ALB Logs target bucket name.."
+      AlbLogsSourceName:
+        default: "ALB App S3 Logs Source Name."
       ParentStackName:
         default: "If Any, Name of parent Stack."
       AWSRegion:
@@ -117,12 +130,23 @@ Parameters:
   AlbCollectorName:
     Type: String
     Description: ALB App Collector Name.
-    Default: AWS-Observability-ALB-Collector
+    Default: AWS-ALB-Collector
   AlbMetricsSourceName:
     Type: String
     Description: ALB App CloudWatch Metrics Source Name.
-    Default: AWS-Observability-ALB-CloudWatch-Source
-
+    Default: AWS-ALB-CloudWatch-Source
+  AlbS3PathExpression:
+    Type: String
+    Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
+    Default: "*"
+  AlbLogsSourceName:
+    Type: String
+    Description: ALB App S3 Logs Source Name.
+    Default: AWS-ALB-S3-Source
+  ALbS3BucketName:
+    Type: String
+    Description: logs target bucket name.
+    AllowedPattern: ".+"
   ParentStackName:
     Type: String
     Default: "ParentStackName"
@@ -151,9 +175,7 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !And
-    - !Not [!Equals [ !Ref ALBDeploymentType, "Only-App" ]]
-    - !Condition do_not_use_parent_stack
+  install_collector: !Not [!Equals [ !Ref ALBDeploymentType, "Only-App" ]]
   install_cloud_watch_source: !Or
     - !Equals [ !Ref ALBDeploymentType, "App-CloudWatchSource" ]
     - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchSource" ]
@@ -222,6 +244,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
                   - tag:GetResources
                   - cloudwatch:ListMetrics
                   - cloudwatch:GetMetricStatistics
@@ -303,3 +329,97 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
+
+  SumoSNSTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: install_s3source_source
+    Properties:
+      TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
+
+  SumoSNSSubscription:
+    Condition: install_s3source_source
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: SumoSNSTopic
+      Endpoint: !GetAtt SumoS3Source.SUMO_ENDPOINT
+      Protocol: https
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          numRetries: 40
+          minDelayTarget: 10
+          maxDelayTarget: 300
+          numMinDelayRetries: 3
+          numMaxDelayRetries: 5
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+
+  SumoSNSpolicy:
+    Condition: install_s3source_source
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Id: SumoTopicPolicy
+        Statement:
+          - Action:
+              - sns:Publish
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:s3:::${ALbS3BucketName}"
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Resource:
+              - !Ref SumoSNSTopic
+      Topics:
+        - Ref: SumoSNSTopic
+
+  TargetS3Bucket:
+    Type: AWS::S3::Bucket
+    Condition: install_s3source_source
+    DependsOn:
+      - SumoSNSpolicy
+    Properties:
+      BucketName: !Ref ALbS3BucketName
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Event: s3:ObjectCreated:Put
+            Topic: !Ref SumoSNSTopic
+
+  SumoS3Source:
+    Condition: install_s3source_source
+    Type: Custom::AWSSource
+    Properties:
+      SourceType: AwsS3Bucket
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+      Region: !Ref "AWS::Region"
+      SourceName: !Ref AlbLogsSourceName
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceCategory: !Ref AlbLogsSourceCategoryName
+      CollectorId: !If
+        - install_collector
+        - !GetAtt
+          - SumoHostedCollector
+          - COLLECTOR_ID
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-CollectorID'
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      TargetBucketName: !Ref ALbS3BucketName
+      PathExpression: !Ref AlbS3PathExpression
+      RoleArn: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoRole
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
