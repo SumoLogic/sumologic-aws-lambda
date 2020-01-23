@@ -363,7 +363,6 @@ Parameters:
 
 Conditions:
   create_explorer_view: !Equals [!Ref CreateExplorerView, 'Yes']
-  region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
   install_dynamo_db_app:  !Not [!Equals [!Ref DynamoDBDeploymentType, "Do-Not-Install"]]
   install_alb_app: !Not [!Equals [!Ref ALBDeploymentType, "Do-Not-Install"]]
@@ -373,15 +372,13 @@ Conditions:
   install_lambda_app: !Not [!Equals [!Ref LambdaDeploymentType, "Do-Not-Install"]]
 
   install_ec2_sumoresources: !Equals [!Ref EC2MetricsDeploymentType, "App-AWSTags-MetadataSource"]
+  install_rds_sumoresources: !Equals [!Ref RDSDeploymentType, "App-AWSTags-CloudWatchSource"]
   install_dynamo_sumoresources: !Or
     - !Equals [!Ref DynamoDBDeploymentType, "App-CloudWatchSource"]
     - !Equals [!Ref DynamoDBDeploymentType, "App-CloudWatchSource-S3Source"]
   install_alb_sumoresources: !Or
     - !Equals [!Ref ALBDeploymentType, "App-AWSTags-CloudWatchSource"]
     - !Equals [!Ref ALBDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
-  install_rds_sumoresources: !Or
-    - !Equals [!Ref RDSDeploymentType, "App-AWSTags-CloudWatchSource"]
-    - !Equals [!Ref RDSDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
   install_api_sumoresources: !Or
     - !Equals [!Ref APIGatewayDeploymentType, "App-AWSTags-CloudWatchSource"]
     - !Equals [!Ref APIGatewayDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
@@ -389,8 +386,15 @@ Conditions:
     - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-CloudWatchSource"]
     - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
 
-  install_common_collector_and_source: !Or
+  install_common_collector: !Or
     - !Condition install_ec2_sumoresources
+    - !Condition install_dynamo_sumoresources
+    - !Condition install_alb_sumoresources
+    - !Condition install_rds_sumoresources
+    - !Condition install_api_sumoresources
+    - !Condition install_lambda_sumoresources
+
+  install_common_cloudwatch_source: !Or
     - !Condition install_dynamo_sumoresources
     - !Condition install_alb_sumoresources
     - !Condition install_rds_sumoresources
@@ -400,6 +404,15 @@ Conditions:
   install_alb_s3source: !Or
     - !Equals [!Ref ALBDeploymentType, "App-AWSTags-S3Source"]
     - !Equals [!Ref ALBDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
+  install_dynamodb_s3source: !Or
+    - !Equals [!Ref DynamoDBDeploymentType, "App-S3Source"]
+    - !Equals [!Ref DynamoDBDeploymentType, "App-CloudWatchSource-S3Source"]
+  install_lambda_s3source: !Or
+    - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-S3Source"]
+    - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
+  install_api_s3source: !Or
+    - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-S3Source"]
+    - !Equals [!Ref LambdaDeploymentType, "App-AWSTags-S3Source-CloudWatchSource"]
 
 Resources:
 
@@ -418,7 +431,8 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        InstallCommonSource: !If [install_common_collector_and_source, 'Yes', 'No']
+        InstallCommonCollector: !If [install_common_collector, 'Yes', 'No']
+        InstallCommonSource: !If [install_common_cloudwatch_source, 'Yes', 'No']
         AWSRegion: !Ref AWSRegion
         # TODO Namespaces: alb_namespaces
 
@@ -508,7 +522,7 @@ Resources:
         AWSRegion: !Ref AWSRegion
         AlbCollectorName: !Ref AlbCollectorName
         AlbMetricsSourceCategoryName: !If [install_alb_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref AlbMetricsSourceCategoryName]
-        AlbLogsSourceCategoryName: !If [install_alb_s3source, "AWS/alb/logs", !Ref AlbLogsSourceCategoryName]
+        AlbLogsSourceCategoryName: !If [install_alb_s3source, "AWS/Observability/ALB/logs", !Ref AlbLogsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
@@ -537,12 +551,97 @@ Resources:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        DynamoDBDeploymentType: !If [install_alb_s3source, "App-S3Source", "Only-App"]
+        DynamoDBDeploymentType: !If [install_dynamodb_s3source, "App-S3Source", "Only-App"]
         AWSRegion: !Ref AWSRegion
         DynamoDbCollectorName: !Ref DynamoDbCollectorName
-        DynamoDbMetricsSourceCategoryName: !Ref DynamoDbMetricsSourceCategoryName
-        DynamoDbLogsSourceCategoryName: !Ref DynamoDbLogsSourceCategoryName
-        DynamoDbMetricsSourceName: !Ref DynamoDbMetricsSourceName
+        DynamoDbMetricsSourceCategoryName: !If [install_dynamo_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref DynamoDbMetricsSourceCategoryName]
+        DynamoDbLogsSourceCategoryName: !If [install_dynamodb_s3source, "AWS/Observability/DynamoDB/logs", !Ref DynamoDbLogsSourceCategoryName]
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+
+  sumoRdsMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: CreateCommonResources
+    Condition: install_rds_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/rds_app.template.yaml"
+      Parameters:
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        AWSRegion: !Ref AWSRegion
+        RDSDeploymentType: "Only-App"
+        RdsAppSourceCategoryName: !If [install_rds_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref RdsAppSourceCategoryName]
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+
+  sumoLambdaMetricsAppStackWaitHandle:
+    Condition: install_rds_app
+    DependsOn: sumoRdsMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoLambdaMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_rds_app, !Ref sumoLambdaMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
+  sumoLambdaMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [CreateCommonResources, sumoLambdaMetricsAppStackWaitCondition]
+    Condition: install_lambda_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/lambda_app.template.yaml"
+      Parameters:
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        LambdaDeploymentType: !If [install_lambda_s3source, "App-S3Source", "Only-App"]
+        AWSRegion: !Ref AWSRegion
+        LambdaCollectorName: !Ref LambdaCollectorName
+        LambdaMetricsSourceCategoryName: !If [install_lambda_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref LambdaMetricsSourceCategoryName]
+        LambdaLogSourceCategoryName: !If [install_lambda_s3source, "AWS/Observability/lambda/logs", !Ref LambdaLogSourceCategoryName]
+        LambdaDataEventsSourceCategoryName: !If [install_lambda_s3source, "AWS/Observability/lambda/dataevents", !Ref LambdaDataEventsSourceCategoryName]
+        SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+
+  sumoApiGatewayMetricsAppStackWaitHandle:
+    Condition: install_lambda_app
+    DependsOn: sumoLambdaMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoApiGatewayMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_lambda_app, !Ref sumoApiGatewayMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "15"
+      Count: 0
+
+  sumoApiGatewayMetricsAppStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [CreateCommonResources, sumoApiGatewayMetricsAppStackWaitCondition]
+    Condition: install_api_gateway_app
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/api_gateway_app.template.yaml"
+      Parameters:
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        APIGatewayDeploymentType: !If [install_api_s3source, "App-S3Source", "Only-App"]
+        AWSRegion: !Ref AWSRegion
+        ApiGatewayCollectorName: !Ref ApiGatewayCollectorName
+        ApiGatewayMetricsSourceCategoryName: !If [install_api_sumoresources, !GetAtt CreateCommonResources.Outputs.SourceCategoryCloudWatchMetrics, !Ref ApiGatewayMetricsSourceCategoryName]
+        ApiGatewayLogSourceCategoryName: !If [install_api_s3source, "AWS/Observability/apigateway/logs", !Ref ApiGatewayLogSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
