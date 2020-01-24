@@ -15,32 +15,27 @@ do
     then
         export CreateCloudTrailBucket="Yes"
         export CreateCloudTrailLogSource="Yes"
-        export CreateCloudWatchLogSource="Yes"
         export CreateCloudWatchMetricsSource="Yes"
     elif [[ "${InstallType}" == "onlyapp" ]]
     then
         export CreateCloudTrailBucket="No"
         export CreateCloudTrailLogSource="No"
-        export CreateCloudWatchLogSource="No"
         export CreateCloudWatchMetricsSource="No"
     elif [[ "${InstallType}" == "appcloudtrail" ]]
     then
         export CreateCloudTrailBucket="No"
         export CloudTrailLogsBucketName="lambda-all-randmomstring"
         export CreateCloudTrailLogSource="Yes"
-        export CreateCloudWatchLogSource="No"
         export CreateCloudWatchMetricsSource="No"
     elif [[ "${InstallType}" == "appcloudtrails3bucket" ]]
     then
         export CreateCloudTrailBucket="Yes"
         export CreateCloudTrailLogSource="Yes"
-        export CreateCloudWatchLogSource="No"
         export CreateCloudWatchMetricsSource="No"
     elif [[ "${InstallType}" == "appcloudwatchmetrics" ]]
     then
         export CreateCloudTrailBucket="No"
         export CreateCloudTrailLogSource="No"
-        export CreateCloudWatchLogSource="No"
         export CreateCloudWatchMetricsSource="Yes"
     else
         echo "No Choice"
@@ -61,10 +56,6 @@ do
     export CloudTrailLogsSourceName="AWS-CloudTrail-${AppName}-${InstallType}-Source"
     export CloudTrailLogsSourceCategoryName="AWS/CloudTrail/${AppName}/${InstallType}/Logs"
 
-    # Export CloudWatch Logs Details
-    export CloudWatchLogsSourceName="AWS-CloudWatch-Logs-${AppName}-${InstallType}-Source"
-    export CloudWatchLogsSourceCategoryName="AWS/CloudWatch/${AppName}/${InstallType}/Logs"
-
     # Export CloudWatch Metrics Details
     export AWSRegion="Current Region"
     export CloudWatchMetricsSourceName="AWS-CloudWatch-Metrics-${AppName}-${InstallType}-Source"
@@ -78,10 +69,8 @@ do
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     CollectorName="${CollectorName}" CloudTrailLogsBucketName="${CloudTrailLogsBucketName}" CloudTrailBucketPathExpression="${CloudTrailBucketPathExpression}" \
     CloudTrailLogsSourceName="${CloudTrailLogsSourceName}" CloudTrailLogsSourceCategoryName="${CloudTrailLogsSourceCategoryName}" \
-    CloudWatchLogsSourceName="${CloudWatchLogsSourceName}" CloudWatchLogsSourceCategoryName="${CloudWatchLogsSourceCategoryName}" \
     AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
-    CreateCloudTrailBucket="${CreateCloudTrailBucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchLogSource="${CreateCloudWatchLogSource}" \
-    CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}"
+    CreateCloudTrailBucket="${CreateCloudTrailBucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}"
 
 done
 
