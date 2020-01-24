@@ -5,72 +5,71 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:
-          default: "Sumo Logic Deployment Configuration (Required)"
+          default: "Sumo Logic Access Configuration (Required)"
         Parameters:
           - SumoDeployment
           - SumoAccessID
           - SumoAccessKey
-          - RemoveSumoResourcesOnDeleteStack
           - SumoOrganizationId
-          - EC2MetricsDeploymentType
-          - AWSRegion
+          - RemoveSumoResourcesOnDeleteStack
 
       - Label:
-          default: "AWS EC2 Metrics App Configuration"
+          default: "App Details - Collector Configuration"
         Parameters:
-          - Ec2AppSourceCategoryName
-          - Ec2CollectorName
-          - Ec2SourceName
+          - CollectorName
+
+      - Label:
+          default: "App Details - EC2 Instances Source Category"
+        Parameters:
+          - MetricsSourceCategoryName
+
+      - Label:
+          default: "App Details - MetaData Source Configuration"
+        Parameters:
+          - CreateMetaDataSource
+          - AWSRegion
+          - MetaDataSourceName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
-
-      - Label:
-          default: "Sumo Logic Quick Start configuration"
-        Parameters:
           - QSS3BucketName
           - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
-        default: "Sumo Logic Deployment Name."
+        default: "Sumo Logic Deployment Name"
       SumoAccessID:
-        default: "Sumo Logic Access ID."
+        default: "Sumo Logic Access ID"
       SumoAccessKey:
-        default: "Sumo Logic Access Key."
-      RemoveSumoResourcesOnDeleteStack:
-        default: "Delete Sumo Logic Resources when stack is deleted."
+        default: "Sumo Logic Access Key"
       SumoOrganizationId:
-        default: "Sumo Logic Organization Id."
-      EC2MetricsDeploymentType:
-        default: "Do you need to install Resources for AWS EC2 Metrics App?"
-      Ec2AppSourceCategoryName:
-        default: "EC2 App Metric Data Source Category Name."
-      Ec2CollectorName:
-        default: "EC2 App Collector Name."
-      Ec2SourceName:
-        default: "EC2 App MetaData Source Name."
-      ParentStackName:
-        default: "If Any, Name of parent Stack."
+        default: "Sumo Logic Organization Id"
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Delete Sumo Logic Resources when stack is deleted"
+
+      CollectorName:
+        default: "Collector Name"
+
+      MetricsSourceCategoryName:
+        default: "Sumo Logic EC2 Instances Metrics Source Category Name"
+
+      CreateMetaDataSource:
+        default: "Create Sumo Logic MetaData Source"
       AWSRegion:
-        default: "AWS Region for the resources that need to be tagged."
+        default: "AWS Region"
+      MetaDataSourceName:
+        default: "Sumo Logic Metadata Source Name"
+
+      ParentStackName:
+        default: "If Any, Name of parent Stack"
       QSS3BucketName:
-        default: "Quick Start S3 bucket name."
+        default: "S3 bucket name for code and templates"
       QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
+        default: "S3 key prefix for code and templates"
 
 Parameters:
-  SumoOrganizationId:
-    Description: The Account Overview page displays information about your Sumo Logic organization.
-    Type: String
-  SumoAccessID:
-    Type: String
-    Description: The Sumo Logic Access ID.
-  SumoAccessKey:
-    Type: String
-    Description: The Sumo Logic Access Key.
   SumoDeployment:
     Type: String
     AllowedValues:
@@ -82,6 +81,18 @@ Parameters:
       - us2
       - us1
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+    AllowedPattern: ".+"
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+    AllowedPattern: ".+"
+  SumoOrganizationId:
+    Type: String
+    Description: The Account Overview page displays information about your Sumo Logic organization.
+    AllowedPattern: ".+"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -89,32 +100,24 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
-  EC2MetricsDeploymentType:
-    Type: String
-    AllowedValues:
-      - "Only-App"
-      - "App-MetadataSource"
-    Default: "App-MetadataSource"
-    Description: "Only-App: Choose to install app.
-                  App-MetadataSource: Choose to install app and install Meta Data Source."
 
-  Ec2AppSourceCategoryName:
+  CollectorName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/ec2/metrics
-  Ec2CollectorName:
-    Type: String
-    Description: EC2 App Collector Name.
+    Description: Change the collector name to be created else default name will be used.
     Default: AWS-EC2-Collector
-  Ec2SourceName:
-    Type: String
-    Description: EC2 App MetaData Source Name.
-    Default: AWS-EC2-MetaData-Source
 
-  ParentStackName:
+  MetricsSourceCategoryName:
     Type: String
-    Default: "ParentStackName"
-    Description: Parent Stack Name. Do Not Edit the value.
+    Description: "Existing - Provide an existing Source Category from Sumo Logic which collects EC2 metrics."
+    AllowedPattern: ".+"
+
+  CreateMetaDataSource:
+    Type: String
+    Description: "Choose Yes to create Sumo Logic MetaData Source."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
   AWSRegion:
     Type: String
     Default: 'Current Region'
@@ -122,6 +125,15 @@ Parameters:
     AllowedValues:
       - 'Current Region'
       - 'All Regions'
+  MetaDataSourceName:
+    Type: String
+    Description: Change the MetaData Source name to be created else default name will be used.
+    Default: AWS-EC2-CloudWatch-Metrics-Source
+
+  ParentStackName:
+    Type: String
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
     ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
@@ -139,11 +151,11 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Equals [ !Ref EC2MetricsDeploymentType, "App-MetadataSource" ]
-  install_source: !Equals [ !Ref EC2MetricsDeploymentType, "App-MetadataSource" ]
+
+  install_metadata_source: !Equals [!Ref CreateMetaDataSource, 'Yes']
 
 Resources:
-  SumoLambdaRole:
+  SumoLogicHelperRole:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
@@ -164,9 +176,9 @@ Resources:
                 Action: '*'
                 Resource: '*'
 
-  SumoLogicAWSObservabilityHelper:
+  SumoLogicHelperFunction:
     Type: 'AWS::Serverless::Function'
-    DependsOn: SumoLambdaRole
+    DependsOn: SumoLogicHelperRole
     Condition: do_not_use_parent_stack
     Properties:
       Handler: main.handler
@@ -178,7 +190,7 @@ Resources:
       Timeout: 900
       Role:
         Fn::GetAtt:
-          - SumoLambdaRole
+          - SumoLogicHelperRole
           - Arn
 
   SumoRole:
@@ -203,6 +215,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
                   - tag:GetResources
                   - cloudwatch:ListMetrics
                   - cloudwatch:GetMetricStatistics
@@ -211,31 +227,31 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
-    Condition: install_collector
+    Condition: install_metadata_source
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      CollectorName: !Ref Ec2CollectorName
+      CollectorName: !Ref CollectorName
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
   SumoMetaDataSource:
-    Condition: install_source
+    Condition: install_metadata_source
     Type: Custom::AWSSource
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
@@ -243,10 +259,9 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsMetadata
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
-      SourceName: !Ref Ec2SourceName
-      SourceCategory: !Ref Ec2AppSourceCategoryName
+      SourceName: !Ref MetaDataSourceName
       CollectorId: !If
-        - install_collector
+        - install_metadata_source
         - !GetAtt
           - SumoHostedCollector
           - COLLECTOR_ID
@@ -263,21 +278,21 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
 
-  sumoEC2MetricsApp:
+  sumoApp:
     Type: Custom::App
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart EC2 Metrics App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
-        paramId123: !Sub "_sourceCategory=${Ec2AppSourceCategoryName}"
+        paramId123: !Sub "_sourceCategory=${MetricsSourceCategoryName}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
