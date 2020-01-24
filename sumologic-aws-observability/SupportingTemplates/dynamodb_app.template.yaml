@@ -5,90 +5,89 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:
-          default: "Sumo Logic Deployment Configuration (Required)"
+          default: "Sumo Logic Access Configuration (Required)"
         Parameters:
           - SumoDeployment
           - SumoAccessID
           - SumoAccessKey
-          - RemoveSumoResourcesOnDeleteStack
           - SumoOrganizationId
-          - DynamoDBDeploymentType
+          - RemoveSumoResourcesOnDeleteStack
+
+      - Label:
+          default: "App Details - Collector Configuration"
+        Parameters:
+          - CollectorName
+
+      - Label:
+          default: "App Details - CloudTrail Log Source Configuration"
+        Parameters:
+          - CreateCloudTrailBucket
+          - CloudTrailLogsBucketName
+          - CreateCloudTrailLogSource
+          - CloudTrailBucketPathExpression
+          - CloudTrailLogsSourceName
+          - CloudTrailLogsSourceCategoryName
+
+      - Label:
+          default: "App Details - CloudWatch Metrics Source Configuration"
+        Parameters:
+          - CreateCloudWatchMetricsSource
           - AWSRegion
-
-      - Label:
-          default: "AWS DynamoDB App Configuration"
-        Parameters:
-          - DynamoDbMetricsSourceCategoryName
-          - DynamoDbLogsSourceCategoryName
-          - DynamoDbCollectorName
-          - DynamoDbMetricsSourceName
-          - DynamoDbCloudTrailLogsSourceName
-          - DynamoDbCloudTrailBucketPathExpression
-
-      - Label:
-          default: "AWS Resources Configuration"
-        Parameters:
-          - DynamoDbCloudTrailBucketName
+          - CloudWatchMetricsSourceName
+          - CloudWatchMetricsSourceCategoryName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
-
-      - Label:
-          default: "Sumo Logic Quick Start configuration"
-        Parameters:
           - QSS3BucketName
           - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
-        default: "Sumo Logic Deployment Name."
+        default: "Sumo Logic Deployment Name"
       SumoAccessID:
-        default: "Sumo Logic Access ID."
+        default: "Sumo Logic Access ID"
       SumoAccessKey:
-        default: "Sumo Logic Access Key."
+        default: "Sumo Logic Access Key"
       SumoOrganizationId:
-        default: "Sumo Logic Organization Id."
+        default: "Sumo Logic Organization Id"
       RemoveSumoResourcesOnDeleteStack:
-        default: "Delete Sumo Logic Resources when stack is deleted."
-      DynamoDBDeploymentType:
-        default: "Do you need to install Resources for AWS Dynamo DB App?"
+        default: "Delete Sumo Logic Resources when stack is deleted"
 
-      DynamoDbMetricsSourceCategoryName:
-        default: "Dynamo DB App Metric Data Source Category Name."
-      DynamoDbLogsSourceCategoryName:
-        default: "Dynamo DB App Logs Data Source Category Name."
-      DynamoDbCollectorName:
-        default: "Dynamo DB App Collector Name."
-      DynamoDbMetricsSourceName:
-        default: "Dynamo DB App CloudWatch Metrics Source Name."
-      DynamoDbCloudTrailBucketPathExpression:
-        default: "Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log"
-      DynamoDbCloudTrailBucketName:
-        default: "Dynamo DB App CloudTrail Logs target bucket name."
-      DynamoDbCloudTrailLogsSourceName:
-        default: "Dynamo DB App CloudTrail Logs Source Name."
+      CollectorName:
+        default: "Collector Name"
+
+      CreateCloudTrailBucket:
+        default: "Create AWS S3 Bucket"
+      CloudTrailLogsBucketName:
+        default: "AWS S3 Bucket Name"
+      CreateCloudTrailLogSource:
+        default: "Create Sumo Logic CloudTrail Logs Source"
+      CloudTrailBucketPathExpression:
+        default: "Path Expression for the logs"
+      CloudTrailLogsSourceName:
+        default: "Sumo Logic CloudTrail Logs Source Name"
+      CloudTrailLogsSourceCategoryName:
+        default: "Sumo Logic CloudTrail Logs Source Category Name"
+
+      CreateCloudWatchMetricsSource:
+        default: "Create Sumo Logic CloudWatch Metrics Source"
+      AWSRegion:
+        default: "AWS Region"
+      CloudWatchMetricsSourceName:
+        default: "Sumo Logic CloudWatch Metrics Source Name"
+      CloudWatchMetricsSourceCategoryName:
+        default: "Sumo Logic CloudWatch Metrics Source Category Name"
 
       ParentStackName:
-        default: "If Any, Name of parent Stack."
-      AWSRegion:
-        default: "AWS Region for the resources that need to be tagged."
+        default: "If Any, Name of parent Stack"
       QSS3BucketName:
-        default: "Quick Start S3 bucket name."
+        default: "S3 bucket name for code and templates"
       QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
+        default: "S3 key prefix for code and templates"
 
 Parameters:
-  SumoOrganizationId:
-    Description: The Account Overview page displays information about your Sumo Logic organization.
-    Type: String
-  SumoAccessID:
-    Type: String
-    Description: The Sumo Logic Access ID.
-  SumoAccessKey:
-    Type: String
-    Description: The Sumo Logic Access Key.
   SumoDeployment:
     Type: String
     AllowedValues:
@@ -100,6 +99,18 @@ Parameters:
       - us2
       - us1
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+    AllowedPattern: ".+"
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+    AllowedPattern: ".+"
+  SumoOrganizationId:
+    Type: String
+    Description: The Account Overview page displays information about your Sumo Logic organization.
+    AllowedPattern: ".+"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -107,52 +118,53 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
-  DynamoDBDeploymentType:
-    Type: String
-    AllowedValues:
-      - "Only-App"
-      - "App-CloudTrail"
-      - "App-CloudWatchMetrics"
-      - "App-CloudTrail-CloudWatchMetrics"
-    Default: "App-CloudTrail-CloudWatchMetrics"
-    Description: "Only-App - Choose to install only app.
-                  App-CloudTrail - Choose to install app and AWS S3 bucket with CloudTrail source.
-                  App-CloudWatchMetrics - Choose to install app and Cloud Watch Metrics Source.
-                  App-S3Source-CloudWatchMetrics - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with CloudTrail source."
 
-  DynamoDbMetricsSourceCategoryName:
+  CollectorName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/dynamodb/metrics
-  DynamoDbLogsSourceCategoryName:
+    Description: Change the collector name to be created else default name will be used.
+    Default: AWS-DynamoDb-Collector
+
+  CreateCloudTrailBucket:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/dynamodb/logs
-  DynamoDbCollectorName:
+    Description: "Yes - Create a new CloudTrail bucket in AWS S3.\n
+                  No - Use an existing CloudTrail bucket from AWS S3 which has CloudTrail Logs."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  CloudTrailLogsBucketName:
     Type: String
-    Description: Dynamo DB App Collector Name.
-    Default: AWS-Dynamo-DB-Collector
-  DynamoDbMetricsSourceName:
+    Description: "Existing Bucket Name - Provide value if the Flag is set to Yes.\n
+                  New Bucket Name - Provide a unique Bucket Name if the flag is set to No."
+    AllowedPattern: ".+"
+  CreateCloudTrailLogSource:
     Type: String
-    Description: Dynamo DB Gateway App CloudWatch Metrics Source Name.
-    Default: AWS-Dynamo-CloudWatch-Source
-  DynamoDbCloudTrailBucketPathExpression:
+    Description: "Choose Yes to create Sumo Logic Cloud Trail Log Source with provided bucket Name."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  CloudTrailBucketPathExpression:
     Type: String
     Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
     Default: "*"
-  DynamoDbCloudTrailLogsSourceName:
+  CloudTrailLogsSourceName:
     Type: String
-    Description: Dynamo DB App CloudTrail Logs Source Name.
-    Default: AWS-Dynamo-CloudTrail-Log-Source
-  DynamoDbCloudTrailBucketName:
+    Description: Change the CloudTrail Source name to be created else default name will be used.
+    Default: AWS-DynamoDb-CloudTrail-Log-Source
+  CloudTrailLogsSourceCategoryName:
     Type: String
-    Description: Dynamo DB App CloudTrail Logs target bucket name..
-    AllowedPattern: ".+"
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if CloudTrail Source is not created.\n
+                  New - Default will be used if CloudTrail Source is Created"
+    Default: AWS/DynamoDb/CloudTrail/Logs
 
-  ParentStackName:
+  CreateCloudWatchMetricsSource:
     Type: String
-    Default: "ParentStackName"
-    Description: Parent Stack Name. Do Not Edit the value.
+    Description: "Choose Yes to create Sumo Logic Cloud Watch Metrics Source."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
   AWSRegion:
     Type: String
     Default: 'Current Region'
@@ -160,6 +172,20 @@ Parameters:
     AllowedValues:
       - 'Current Region'
       - 'All Regions'
+  CloudWatchMetricsSourceName:
+    Type: String
+    Description: Change the CloudWatch Metrics Source name to be created else default name will be used.
+    Default: AWS-DynamoDb-CloudWatch-Metrics-Source
+  CloudWatchMetricsSourceCategoryName:
+    Type: String
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if CloudWatch Metrics Source is not created.\n
+                  New - Default will be used if CloudWatch Metrics Source is Created"
+    Default: AWS/DynamoDb/CloudWatch/Metrics
+
+  ParentStackName:
+    Type: String
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
     ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
@@ -177,16 +203,16 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Not [!Equals [ !Ref DynamoDBDeploymentType, "Only-App" ]]
-  install_cloud_watch_source: !Or
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudWatchMetrics" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchMetrics" ]
-  install_cloudtrail_source: !Or
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail" ]
-    - !Equals [ !Ref DynamoDBDeploymentType, "App-CloudTrail-CloudWatchMetrics" ]
+
+  create_target_s3_bucket: !Equals [!Ref CreateCloudTrailBucket, 'Yes']
+  install_cloudtrail_logs_source: !Equals [!Ref CreateCloudTrailLogSource, 'Yes']
+  install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
+  install_collector: !Or
+    - !Condition install_cloudtrail_logs_source
+    - !Condition install_cloud_watch_metric_source
 
 Resources:
-  SumoLambdaRole:
+  SumoLogicHelperRole:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
@@ -207,9 +233,9 @@ Resources:
                 Action: '*'
                 Resource: '*'
 
-  SumoLogicAWSObservabilityHelper:
+  SumoLogicHelperFunction:
     Type: 'AWS::Serverless::Function'
-    DependsOn: SumoLambdaRole
+    DependsOn: SumoLogicHelperRole
     Condition: do_not_use_parent_stack
     Properties:
       Handler: main.handler
@@ -221,7 +247,7 @@ Resources:
       Timeout: 900
       Role:
         Fn::GetAtt:
-          - SumoLambdaRole
+          - SumoLogicHelperRole
           - Arn
 
   SumoRole:
@@ -263,37 +289,37 @@ Resources:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      CollectorName: !Ref DynamoDbCollectorName
+      CollectorName: !Ref CollectorName
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
-  SumoCloudwatchSource:
-    Condition: install_cloud_watch_source
+  SumoCloudwatchMetricsSource:
+    Condition: install_cloud_watch_metric_source
     Type: Custom::AWSSource
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       Namespaces:
         - 'AWS/DynamoDB'
-      SourceName: !Ref DynamoDbMetricsSourceName
-      SourceCategory: !Ref DynamoDbMetricsSourceCategoryName
+      SourceName: !Ref CloudWatchMetricsSourceName
+      SourceCategory: !Ref CloudWatchMetricsSourceCategoryName
       CollectorId: !If
         - install_collector
         - !GetAtt
@@ -312,31 +338,31 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
 
-  sumoDynamoDbApp:
+  sumoApp:
     Type: Custom::App
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart DynamoDb App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
-        metricsrc: !Sub "_sourceCategory=${DynamoDbMetricsSourceCategoryName}"
-        cloudtrail: !Sub "_sourceCategory=${DynamoDbLogsSourceCategoryName}"
+        metricsrc: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"
+        cloudtrail: !Sub "_sourceCategory=${CloudTrailLogsSourceCategoryName}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
   SumoCloudTrailExportPolicy:
-    Condition: install_cloudtrail_source
+    Condition: create_target_s3_bucket
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref DynamoDbCloudTrailBucketName
+      Bucket: !Ref CloudTrailLogsBucketName
       PolicyDocument:
         Statement:
           - Sid: AWSCloudTrailAclCheck
@@ -345,14 +371,14 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:GetBucketAcl
             Resource:
-              - !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}"
+              - !Sub "arn:aws:s3:::${CloudTrailLogsBucketName}"
           - Sid: AWSCloudTrailWrite
             Effect: Allow
             Principal:
               Service: cloudtrail.amazonaws.com
             Action: s3:PutObject
             Resource:
-              - !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}/*"
+              - !Sub "arn:aws:s3:::${CloudTrailLogsBucketName}/*"
             Condition:
               StringEquals:
                 s3:x-amz-acl: bucket-owner-full-control
@@ -362,12 +388,12 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:ListBucket
             Resource:
-              - !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}"
+              - !Sub "arn:aws:s3:::${CloudTrailLogsBucketName}"
     DependsOn:
       - TargetS3Bucket
 
   SumoCloudTrail:
-    Condition: install_cloudtrail_source
+    Condition: create_target_s3_bucket
     Type: Custom::AWSTrail
     DependsOn:
       - SumoCloudTrailExportPolicy
@@ -375,35 +401,35 @@ Resources:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       IsLogging: true
       IsMultiRegionTrail: false
-      S3BucketName: !Ref DynamoDbCloudTrailBucketName
+      S3BucketName: !Ref CloudTrailLogsBucketName
       TrailName: !Sub "SumoCloudTrail-${AWS::StackName}"
 
   TargetS3Bucket:
-    Condition: install_cloudtrail_source
+    Condition: create_target_s3_bucket
     Type: AWS::S3::Bucket
     DependsOn:
       - SumoSNSpolicy
     Properties:
-      BucketName: !Ref DynamoDbCloudTrailBucketName
+      BucketName: !Ref CloudTrailLogsBucketName
       NotificationConfiguration:
         TopicConfigurations:
           - Event: s3:ObjectCreated:Put
             Topic: !Ref SumoSNSTopic
 
   SumoSNSTopic:
-    Condition: install_cloudtrail_source
+    Condition: install_cloudtrail_logs_source
     Type: "AWS::SNS::Topic"
     Properties:
       TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
 
   SumoSNSSubscription:
-    Condition: install_cloudtrail_source
+    Condition: install_cloudtrail_logs_source
     Type: "AWS::SNS::Subscription"
     Properties:
       TopicArn:
@@ -421,7 +447,7 @@ Resources:
           backoffFunction: exponential
 
   SumoSNSpolicy:
-    Condition: install_cloudtrail_source
+    Condition: install_cloudtrail_logs_source
     Type: "AWS::SNS::TopicPolicy"
     Properties:
       PolicyDocument:
@@ -433,7 +459,7 @@ Resources:
               StringEquals:
                 aws:SourceAccount: !Ref "AWS::AccountId"
               ArnLike:
-                aws:SourceArn: !Sub "arn:aws:s3:::${DynamoDbCloudTrailBucketName}"
+                aws:SourceArn: !Sub "arn:aws:s3:::${CloudTrailLogsBucketName}"
             Effect: Allow
             Principal:
               AWS: "*"
@@ -443,22 +469,22 @@ Resources:
         - Ref: SumoSNSTopic
 
   SumoCloudTrailSource:
-    Condition: install_cloudtrail_source
+    Condition: install_cloudtrail_logs_source
     Type: Custom::AWSSource
     Properties:
       SourceType: AwsCloudTrailBucket
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      SourceName: !Ref DynamoDbCloudTrailLogsSourceName
-      TargetBucketName: !Ref DynamoDbCloudTrailBucketName
+      SourceName: !Ref CloudTrailLogsSourceName
+      TargetBucketName: !Ref CloudTrailLogsBucketName
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      SourceCategory: !Ref DynamoDbLogsSourceCategoryName
+      SourceCategory: !Ref CloudTrailLogsSourceCategoryName
       CollectorId: !If
         - install_collector
         - !GetAtt
@@ -469,7 +495,7 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
-      PathExpression: !Ref DynamoDbCloudTrailBucketPathExpression
+      PathExpression: !Ref CloudTrailBucketPathExpression
       RoleArn: !If
         - do_not_use_parent_stack
         - !GetAtt
@@ -477,5 +503,3 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
-    DependsOn:
-      - SumoLogicAWSObservabilityHelper
