@@ -5,73 +5,66 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:
-          default: "Sumo Logic Deployment Configuration (Required)"
+          default: "Sumo Logic Access Configuration (Required)"
         Parameters:
           - SumoDeployment
           - SumoAccessID
           - SumoAccessKey
-          - RemoveSumoResourcesOnDeleteStack
           - SumoOrganizationId
-          - RDSDeploymentType
-          - AWSRegion
+          - RemoveSumoResourcesOnDeleteStack
 
       - Label:
-          default: "AWS RDS App Configuration"
+          default: "App Details - Collector Configuration"
         Parameters:
-          - RdsAppSourceCategoryName
-          - RdsCollectorName
-          - RdsSourceName
+          - CollectorName
+
+      - Label:
+          default: "App Details - CloudWatch Metrics Source Configuration"
+        Parameters:
+          - CreateCloudWatchMetricsSource
+          - AWSRegion
+          - CloudWatchMetricsSourceName
+          - CloudWatchMetricsSourceCategoryName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
-
-      - Label:
-          default: "Sumo Logic Quick Start configuration"
-        Parameters:
           - QSS3BucketName
           - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
-        default: "Sumo Logic Deployment Name."
+        default: "Sumo Logic Deployment Name"
       SumoAccessID:
-        default: "Sumo Logic Access ID."
+        default: "Sumo Logic Access ID"
       SumoAccessKey:
-        default: "Sumo Logic Access Key."
+        default: "Sumo Logic Access Key"
       SumoOrganizationId:
-        default: "Sumo Logic Organization Id."
+        default: "Sumo Logic Organization Id"
       RemoveSumoResourcesOnDeleteStack:
-        default: "Delete Sumo Logic Resources when stack is deleted."
-      RDSDeploymentType:
-        default: "Do you need to install Resources for AWS RDS App?"
+        default: "Delete Sumo Logic Resources when stack is deleted"
 
-      RdsAppSourceCategoryName:
-        default: "RDS App Metric Data Source Category Name."
-      RdsCollectorName:
-        default: "RDS App Collector Name."
-      RdsSourceName:
-        default: "RDS App CloudWatch Metrics Source Name."
-      ParentStackName:
-        default: "If Any, Name of parent Stack."
+      CollectorName:
+        default: "Collector Name"
+
+      CreateCloudWatchMetricsSource:
+        default: "Create Sumo Logic CloudWatch Metrics Source"
       AWSRegion:
-        default: "AWS Region for the resources that need to be tagged."
+        default: "AWS Region"
+      CloudWatchMetricsSourceName:
+        default: "Sumo Logic CloudWatch Metrics Source Name"
+      CloudWatchMetricsSourceCategoryName:
+        default: "Sumo Logic CloudWatch Metrics Source Category Name"
+
+      ParentStackName:
+        default: "If Any, Name of parent Stack"
       QSS3BucketName:
-        default: "Quick Start S3 bucket name."
+        default: "S3 bucket name for code and templates"
       QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
+        default: "S3 key prefix for code and templates"
 
 Parameters:
-  SumoOrganizationId:
-    Description: The Account Overview page displays information about your Sumo Logic organization.
-    Type: String
-  SumoAccessID:
-    Type: String
-    Description: The Sumo Logic Access ID.
-  SumoAccessKey:
-    Type: String
-    Description: The Sumo Logic Access Key.
   SumoDeployment:
     Type: String
     AllowedValues:
@@ -83,6 +76,18 @@ Parameters:
       - us2
       - us1
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+    AllowedPattern: ".+"
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+    AllowedPattern: ".+"
+  SumoOrganizationId:
+    Type: String
+    Description: The Account Overview page displays information about your Sumo Logic organization.
+    AllowedPattern: ".+"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -90,32 +95,19 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
-  RDSDeploymentType:
+
+  CollectorName:
     Type: String
+    Description: Change the collector name to be created else default name will be used.
+    Default: AWS-Rds-Collector
+
+  CreateCloudWatchMetricsSource:
+    Type: String
+    Description: "Choose Yes to create Sumo Logic Cloud Watch Metrics Source."
+    Default: 'Yes'
     AllowedValues:
-      - "Only-App"
-      - "App-CloudWatchMetrics"
-    Default: "App-CloudWatchMetrics"
-    Description: "Only-App - Choose to install only app.
-                  App-CloudWatchMetrics - Choose to install app and Cloud Watch Metrics Source."
-
-  RdsAppSourceCategoryName:
-    Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/rds/metrics
-  RdsCollectorName:
-    Type: String
-    Description: RDS App Collector Name.
-    Default: AWS-RDS-Collector
-  RdsSourceName:
-    Type: String
-    Description: RDS App CloudWatch Metrics Source Name.
-    Default: AWS-RDS-CloudWatch-Source
-
-  ParentStackName:
-    Type: String
-    Default: "ParentStackName"
-    Description: Parent Stack Name. Do Not Edit the value.
+      - 'Yes'
+      - 'No'
   AWSRegion:
     Type: String
     Default: 'Current Region'
@@ -123,6 +115,20 @@ Parameters:
     AllowedValues:
       - 'Current Region'
       - 'All Regions'
+  CloudWatchMetricsSourceName:
+    Type: String
+    Description: Change the CloudWatch Metrics Source name to be created else default name will be used.
+    Default: AWS-Rds-CloudWatch-Metrics-Source
+  CloudWatchMetricsSourceCategoryName:
+    Type: String
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if CloudWatch Metrics Source is not created.\n
+                  New - Default will be used if CloudWatch Metrics Source is Created"
+    Default: AWS/Rds/CloudWatch/Metrics
+
+  ParentStackName:
+    Type: String
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
     ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
@@ -140,11 +146,11 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Equals [ !Ref RDSDeploymentType, "App-CloudWatchMetrics" ]
-  install_cloud_watch_source: !Equals [ !Ref RDSDeploymentType, "App-CloudWatchMetrics" ]
+
+  install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
 
 Resources:
-  SumoLambdaRole:
+  SumoLogicHelperRole:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
@@ -165,9 +171,9 @@ Resources:
                 Action: '*'
                 Resource: '*'
 
-  SumoLogicAWSObservabilityHelper:
+  SumoLogicHelperFunction:
     Type: 'AWS::Serverless::Function'
-    DependsOn: SumoLambdaRole
+    DependsOn: SumoLogicHelperRole
     Condition: do_not_use_parent_stack
     Properties:
       Handler: main.handler
@@ -179,7 +185,7 @@ Resources:
       Timeout: 900
       Role:
         Fn::GetAtt:
-          - SumoLambdaRole
+          - SumoLogicHelperRole
           - Arn
 
   SumoRole:
@@ -204,6 +210,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
                   - tag:GetResources
                   - cloudwatch:ListMetrics
                   - cloudwatch:GetMetricStatistics
@@ -212,44 +222,44 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
-    Condition: install_collector
+    Condition: install_cloud_watch_metric_source
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      CollectorName: !Ref RdsCollectorName
+      CollectorName: !Ref CollectorName
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
-  SumoCloudwatchSource:
-    Condition: install_cloud_watch_source
+  SumoCloudwatchMetricsSource:
+    Condition: install_cloud_watch_metric_source
     Type: Custom::AWSSource
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       Namespaces:
         - 'AWS/RDS'
-      SourceName: !Ref RdsSourceName
-      SourceCategory: !Ref RdsAppSourceCategoryName
+      SourceName: !Ref CloudWatchMetricsSourceName
+      SourceCategory: !Ref CloudWatchMetricsSourceCategoryName
       CollectorId: !If
-        - install_collector
+        - install_cloud_watch_metric_source
         - !GetAtt
           - SumoHostedCollector
           - COLLECTOR_ID
@@ -266,21 +276,21 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
 
-  sumoRdsApp:
+  sumoApp:
     Type: Custom::App
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart Rds App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
-        paramId123: !Sub "_sourceCategory=${RdsAppSourceCategoryName}"
+        paramId123: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
