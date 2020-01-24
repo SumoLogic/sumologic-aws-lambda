@@ -5,89 +5,89 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:
-          default: "Sumo Logic Deployment Configuration (Required)"
+          default: "Sumo Logic Access Configuration (Required)"
         Parameters:
           - SumoDeployment
           - SumoAccessID
           - SumoAccessKey
-          - RemoveSumoResourcesOnDeleteStack
           - SumoOrganizationId
-          - ALBDeploymentType
+          - RemoveSumoResourcesOnDeleteStack
+
+      - Label:
+          default: "App Details - Collector Configuration"
+        Parameters:
+          - CollectorName
+
+      - Label:
+          default: "App Details - S3 Source Log Source Configuration"
+        Parameters:
+          - CreateS3Bucket
+          - S3LogsBucketName
+          - CreateS3LogSource
+          - S3BucketPathExpression
+          - S3LogsSourceName
+          - S3LogsSourceCategoryName
+
+      - Label:
+          default: "App Details - CloudWatch Metrics Source Configuration"
+        Parameters:
+          - CreateCloudWatchMetricsSource
           - AWSRegion
-
-      - Label:
-          default: "AWS ALB App Configuration"
-        Parameters:
-          - AlbMetricsSourceCategoryName
-          - AlbLogsSourceCategoryName
-          - AlbCollectorName
-          - AlbMetricsSourceName
-          - AlbLogsSourceName
-          - AlbS3PathExpression
-
-      - Label:
-          default: "AWS Resources Configuration"
-        Parameters:
-          - ALbS3BucketName
+          - CloudWatchMetricsSourceName
+          - CloudWatchMetricsSourceCategoryName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
-
-      - Label:
-          default: "Sumo Logic Quick Start configuration"
-        Parameters:
           - QSS3BucketName
           - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
-        default: "Sumo Logic Deployment Name."
+        default: "Sumo Logic Deployment Name"
       SumoAccessID:
-        default: "Sumo Logic Access ID."
+        default: "Sumo Logic Access ID"
       SumoAccessKey:
-        default: "Sumo Logic Access Key."
-      RemoveSumoResourcesOnDeleteStack:
-        default: "Delete Sumo Logic Resources when stack is deleted."
+        default: "Sumo Logic Access Key"
       SumoOrganizationId:
-        default: "Sumo Logic Organization Id."
-      ALBDeploymentType:
-        default: "Do you need to install Resources for AWS ALB App?"
+        default: "Sumo Logic Organization Id"
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Delete Sumo Logic Resources when stack is deleted"
 
-      AlbMetricsSourceCategoryName:
-        default: "ALB App Metric Data Source Category Name."
-      AlbLogsSourceCategoryName:
-        default: "ALB App Logs Data Source Category Name."
-      AlbCollectorName:
-        default: "ALB App Collector Name."
-      AlbMetricsSourceName:
-        default: "ALB App CloudWatch Metrics Source Name."
-      AlbS3PathExpression:
-        default: "Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log"
-      ALbS3BucketName:
-        default: "ALB Logs target bucket name.."
-      AlbLogsSourceName:
-        default: "ALB App S3 Logs Source Name."
-      ParentStackName:
-        default: "If Any, Name of parent Stack."
+      CollectorName:
+        default: "Collector Name"
+
+      CreateS3Bucket:
+        default: "Create AWS S3 Bucket"
+      S3LogsBucketName:
+        default: "AWS S3 Bucket Name"
+      CreateS3LogSource:
+        default: "Create Sumo Logic S3 Logs Source"
+      S3BucketPathExpression:
+        default: "Path Expression for the logs"
+      S3LogsSourceName:
+        default: "Sumo Logic S3 Logs Source Name"
+      S3LogsSourceCategoryName:
+        default: "Sumo Logic S3 Logs Source Category Name"
+
+      CreateCloudWatchMetricsSource:
+        default: "Create Sumo Logic CloudWatch Metrics Source"
       AWSRegion:
-        default: "AWS Region for the resources that need to be tagged."
+        default: "AWS Region"
+      CloudWatchMetricsSourceName:
+        default: "Sumo Logic CloudWatch Metrics Source Name"
+      CloudWatchMetricsSourceCategoryName:
+        default: "Sumo Logic CloudWatch Metrics Source Category Name"
+
+      ParentStackName:
+        default: "If Any, Name of parent Stack"
       QSS3BucketName:
-        default: "Quick Start S3 bucket name."
+        default: "S3 bucket name for code and templates"
       QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
+        default: "S3 key prefix for code and templates"
 
 Parameters:
-  SumoOrganizationId:
-    Description: The Account Overview page displays information about your Sumo Logic organization.
-    Type: String
-  SumoAccessID:
-    Type: String
-    Description: The Sumo Logic Access ID.
-  SumoAccessKey:
-    Type: String
-    Description: The Sumo Logic Access Key.
   SumoDeployment:
     Type: String
     AllowedValues:
@@ -99,6 +99,18 @@ Parameters:
       - us2
       - us1
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
+  SumoAccessID:
+    Type: String
+    Description: The Sumo Logic Access ID.
+    AllowedPattern: ".+"
+  SumoAccessKey:
+    Type: String
+    Description: The Sumo Logic Access Key.
+    AllowedPattern: ".+"
+  SumoOrganizationId:
+    Type: String
+    Description: The Account Overview page displays information about your Sumo Logic organization.
+    AllowedPattern: ".+"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -106,51 +118,53 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
-  ALBDeploymentType:
-    Type: String
-    AllowedValues:
-      - "Only-App"
-      - "App-S3Source"
-      - "App-CloudWatchMetrics"
-      - "App-S3Source-CloudWatchMetrics"
-    Default: "App-S3Source-CloudWatchMetrics"
-    Description: "Only-App - Choose to install only app.
-                  App-S3Source - Choose to install app and AWS S3 bucket with S3 source.
-                  App-CloudWatchMetrics - Choose to install app and Cloud Watch Metrics Source.
-                  App-S3Source-CloudWatchMetrics - Choose to install app, Cloud Watch Metrics Source and AWS S3 buckets with S3 source."
 
-  AlbMetricsSourceCategoryName:
+  CollectorName:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/alb/metrics
-  AlbLogsSourceCategoryName:
+    Description: Change the collector name to be created else default name will be used.
+    Default: AWS-Alb-Collector
+
+  CreateS3Bucket:
     Type: String
-    Description: Category metadata to use later for querying, e.g. prod/web/apache/access . This data is queried using the '_sourceCategory' key name.
-    Default: AWS/alb/logs
-  AlbCollectorName:
+    Description: "Yes - Create a new S3 bucket in AWS S3.\n
+                  No - Use an existing S3 bucket from AWS S3 which has ALB Logs."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  S3LogsBucketName:
     Type: String
-    Description: ALB App Collector Name.
-    Default: AWS-ALB-Collector
-  AlbMetricsSourceName:
+    Description: "Existing Bucket Name - Provide value if the Flag is set to Yes.\n
+                  New Bucket Name - Provide a unique Bucket Name if the flag is set to No."
+    AllowedPattern: ".+"
+  CreateS3LogSource:
     Type: String
-    Description: ALB App CloudWatch Metrics Source Name.
-    Default: AWS-ALB-CloudWatch-Source
-  AlbS3PathExpression:
+    Description: "Choose Yes to create Sumo Logic S3 Log Source with provided bucket Name."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  S3BucketPathExpression:
     Type: String
     Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
     Default: "*"
-  AlbLogsSourceName:
+  S3LogsSourceName:
     Type: String
-    Description: ALB App S3 Logs Source Name.
-    Default: AWS-ALB-S3-Source
-  ALbS3BucketName:
+    Description: Change the S3 Source name to be created else default name will be used.
+    Default: AWS-Alb-S3-Log-Source
+  S3LogsSourceCategoryName:
     Type: String
-    Description: logs target bucket name.
-    AllowedPattern: ".+"
-  ParentStackName:
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if S3 Source is not created.\n
+                  New - Default will be used if S3 Source is Created"
+    Default: AWS/Alb/S3/Logs
+
+  CreateCloudWatchMetricsSource:
     Type: String
-    Default: "ParentStackName"
-    Description: Parent Stack Name. Do Not Edit the value.
+    Description: "Choose Yes to create Sumo Logic Cloud Watch Metrics Source."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
   AWSRegion:
     Type: String
     Default: 'Current Region'
@@ -158,6 +172,20 @@ Parameters:
     AllowedValues:
       - 'Current Region'
       - 'All Regions'
+  CloudWatchMetricsSourceName:
+    Type: String
+    Description: Change the CloudWatch Metrics Source name to be created else default name will be used.
+    Default: AWS-Alb-CloudWatch-Metrics-Source
+  CloudWatchMetricsSourceCategoryName:
+    Type: String
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if CloudWatch Metrics Source is not created.\n
+                  New - Default will be used if CloudWatch Metrics Source is Created"
+    Default: AWS/Alb/CloudWatch/Metrics
+
+  ParentStackName:
+    Type: String
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
   QSS3BucketName:
     AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
     ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
@@ -175,16 +203,16 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
-  install_collector: !Not [!Equals [ !Ref ALBDeploymentType, "Only-App" ]]
-  install_cloud_watch_source: !Or
-    - !Equals [ !Ref ALBDeploymentType, "App-CloudWatchMetrics" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchMetrics" ]
-  install_s3source_source: !Or
-    - !Equals [ !Ref ALBDeploymentType, "App-S3Source" ]
-    - !Equals [ !Ref ALBDeploymentType, "App-S3Source-CloudWatchMetrics" ]
+
+  create_target_s3_bucket: !Equals [!Ref CreateS3Bucket, 'Yes']
+  install_s3_logs_source: !Equals [!Ref CreateS3LogSource, 'Yes']
+  install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
+  install_collector: !Or
+    - !Condition install_s3_logs_source
+    - !Condition install_cloud_watch_metric_source
 
 Resources:
-  SumoLambdaRole:
+  SumoLogicHelperRole:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
@@ -205,9 +233,9 @@ Resources:
                 Action: '*'
                 Resource: '*'
 
-  SumoLogicAWSObservabilityHelper:
+  SumoLogicHelperFunction:
     Type: 'AWS::Serverless::Function'
-    DependsOn: SumoLambdaRole
+    DependsOn: SumoLogicHelperRole
     Condition: do_not_use_parent_stack
     Properties:
       Handler: main.handler
@@ -219,7 +247,7 @@ Resources:
       Timeout: 900
       Role:
         Fn::GetAtt:
-          - SumoLambdaRole
+          - SumoLogicHelperRole
           - Arn
 
   SumoRole:
@@ -261,39 +289,39 @@ Resources:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      CollectorName: !Ref AlbCollectorName
+      CollectorName: !Ref CollectorName
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
-  SumoCloudwatchSource:
-    Condition: install_cloud_watch_source
+  SumoCloudwatchMetricsSource:
+    Condition: install_cloud_watch_metric_source
     Type: Custom::AWSSource
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       Namespaces:
         - 'AWS/ApplicationELB'
-      SourceName: !Ref AlbMetricsSourceName
-      SourceCategory: !Ref AlbMetricsSourceCategoryName
+      SourceName: !Ref CloudWatchMetricsSourceName
+      SourceCategory: !Ref CloudWatchMetricsSourceCategoryName
       CollectorId: !If
-        - install_collector
+        - install_cloud_watch_metric_source
         - !GetAtt
           - SumoHostedCollector
           - COLLECTOR_ID
@@ -310,34 +338,46 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
 
-  sumoAlbApp:
+  sumoApp:
     Type: Custom::App
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       AppName: "Amazon QuickStart Alb App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
-        metricsrc: !Sub "_sourceCategory=${AlbMetricsSourceCategoryName}"
-        logsrc: !Sub "_sourceCategory=${AlbLogsSourceCategoryName}"
+        metricsrc: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"
+        logsrc: !Sub "_sourceCategory=${S3LogsSourceCategoryName}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
+  TargetS3Bucket:
+    Condition: create_target_s3_bucket
+    Type: AWS::S3::Bucket
+    DependsOn:
+      - SumoSNSpolicy
+    Properties:
+      BucketName: !Ref S3LogsBucketName
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Event: s3:ObjectCreated:Put
+            Topic: !Ref SumoSNSTopic
+
   SumoSNSTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: install_s3source_source
+    Condition: install_s3_logs_source
+    Type: "AWS::SNS::Topic"
     Properties:
       TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
 
   SumoSNSSubscription:
-    Condition: install_s3source_source
+    Condition: install_s3_logs_source
     Type: "AWS::SNS::Subscription"
     Properties:
       TopicArn:
@@ -355,7 +395,7 @@ Resources:
           backoffFunction: exponential
 
   SumoSNSpolicy:
-    Condition: install_s3source_source
+    Condition: install_s3_logs_source
     Type: "AWS::SNS::TopicPolicy"
     Properties:
       PolicyDocument:
@@ -367,7 +407,7 @@ Resources:
               StringEquals:
                 aws:SourceAccount: !Ref "AWS::AccountId"
               ArnLike:
-                aws:SourceArn: !Sub "arn:aws:s3:::${ALbS3BucketName}"
+                aws:SourceArn: !Sub "arn:aws:s3:::${S3LogsBucketName}"
             Effect: Allow
             Principal:
               AWS: "*"
@@ -376,34 +416,22 @@ Resources:
       Topics:
         - Ref: SumoSNSTopic
 
-  TargetS3Bucket:
-    Type: AWS::S3::Bucket
-    Condition: install_s3source_source
-    DependsOn:
-      - SumoSNSpolicy
-    Properties:
-      BucketName: !Ref ALbS3BucketName
-      NotificationConfiguration:
-        TopicConfigurations:
-          - Event: s3:ObjectCreated:Put
-            Topic: !Ref SumoSNSTopic
-
   SumoS3Source:
-    Condition: install_s3source_source
+    Condition: install_s3_logs_source
     Type: Custom::AWSSource
     Properties:
       SourceType: AwsS3Bucket
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicAWSObservabilityHelper
+          - SumoLogicHelperFunction
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
       Region: !Ref "AWS::Region"
-      SourceName: !Ref AlbLogsSourceName
+      SourceName: !Ref S3LogsSourceName
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      SourceCategory: !Ref AlbLogsSourceCategoryName
+      SourceCategory: !Ref S3LogsSourceCategoryName
       CollectorId: !If
         - install_collector
         - !GetAtt
@@ -414,8 +442,8 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
-      TargetBucketName: !Ref ALbS3BucketName
-      PathExpression: !Ref AlbS3PathExpression
+      TargetBucketName: !Ref S3LogsBucketName
+      PathExpression: !Ref S3BucketPathExpression
       RoleArn: !If
         - do_not_use_parent_stack
         - !GetAtt
