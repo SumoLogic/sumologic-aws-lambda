@@ -128,7 +128,7 @@ Parameters:
   MetaDataSourceName:
     Type: String
     Description: Change the MetaData Source name to be created else default name will be used.
-    Default: AWS-EC2-CloudWatch-Metrics-Source
+    Default: AWS-EC2-MetaData-Source
 
   ParentStackName:
     Type: String
