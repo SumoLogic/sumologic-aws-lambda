@@ -134,8 +134,8 @@ Parameters:
       - 'No'
   S3LogsBucketName:
     Type: String
-    Description: "Existing Bucket Name - Provide value if the Flag is set to Yes.\n
-                  New Bucket Name - Provide a unique Bucket Name if the flag is set to No."
+    Description: "Existing Bucket Name - Provide value if the Flag is set to No.\n
+                  New Bucket Name - Provide a unique Bucket Name if the flag is set to Yes."
     AllowedPattern: ".+"
   CreateS3LogSource:
     Type: String
