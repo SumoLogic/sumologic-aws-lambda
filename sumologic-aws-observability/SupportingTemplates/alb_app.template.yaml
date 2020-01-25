@@ -200,6 +200,35 @@ Parameters:
     Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
     Type: "String"
 
+Mappings:
+  Region2ELBAccountId:
+    us-east-1:
+      AccountId: '127311923021'
+    us-west-1:
+      AccountId: 027434742980
+    us-west-2:
+      AccountId: '797873946194'
+    eu-west-1:
+      AccountId: '156460612806'
+    ap-northeast-1:
+      AccountId: '582318560864'
+    ap-northeast-2:
+      AccountId: '600734575887'
+    ap-southeast-1:
+      AccountId: '114774131450'
+    ap-southeast-2:
+      AccountId: '783225319266'
+    ap-south-1:
+      AccountId: '718504428378'
+    us-east-2:
+      AccountId: 033677994240
+    sa-east-1:
+      AccountId: '507241528517'
+    cn-north-1:
+      AccountId: '638102146993'
+    eu-central-1:
+      AccountId: 054676820928
+
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
   region_value: !Equals [!Ref AWSRegion, 'All Regions']
@@ -295,7 +324,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: !If [do_not_use_parent_stack, !Ref RemoveSumoResourcesOnDeleteStack, false]
       CollectorName: !Ref CollectorName
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
@@ -370,6 +399,27 @@ Resources:
           - Event: s3:ObjectCreated:Put
             Topic: !Ref SumoSNSTopic
 
+  SumoS3BucketPolicy:
+    Condition: install_s3_logs_source
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3LogsBucketName
+      PolicyDocument:
+        Statement:
+          - Sid: AWSAlbLogsPutObjects
+            Effect: Allow
+            Principal:
+              AWS: !Join
+              - ""
+              - - "arn:aws:iam::"
+                - !FindInMap [Region2ELBAccountId, !Ref 'AWS::Region', AccountId]
+                - ":root"
+            Action: s3:PutObject
+            Resource:
+              - !Sub "arn:aws:s3:::${S3LogsBucketName}/*"
+    DependsOn:
+      - TargetS3Bucket
+
   SumoSNSTopic:
     Condition: install_s3_logs_source
     Type: "AWS::SNS::Topic"
@@ -432,13 +482,7 @@ Resources:
       SourceName: !Ref S3LogsSourceName
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceCategory: !Ref S3LogsSourceCategoryName
-      CollectorId: !If
-        - install_collector
-        - !GetAtt
-          - SumoHostedCollector
-          - COLLECTOR_ID
-        - !ImportValue
-          'Fn::Sub': '${ParentStackName}-CollectorID'
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
