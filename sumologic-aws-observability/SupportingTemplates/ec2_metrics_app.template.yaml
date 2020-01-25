@@ -238,7 +238,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: !If [do_not_use_parent_stack, !Ref RemoveSumoResourcesOnDeleteStack, false]
       CollectorName: !Ref CollectorName
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
@@ -260,13 +260,7 @@ Resources:
       SourceType: AwsMetadata
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       SourceName: !Ref MetaDataSourceName
-      CollectorId: !If
-        - install_metadata_source
-        - !GetAtt
-          - SumoHostedCollector
-          - COLLECTOR_ID
-        - !ImportValue
-          'Fn::Sub': '${ParentStackName}-CollectorID'
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
