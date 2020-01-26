@@ -5,12 +5,17 @@ export AWS_PROFILE="personal"
 # App to test
 export AppTemplateName="sumologic_observability.master"
 export AppName="master"
+
 # export InstallTypes=("nothing" "explorer")
 # export InstallTypes=("ec2app" "ec2withMeta")
 # export InstallTypes=("alldynamo" "dynamoapp" "dynamoallwithexistingbucket" "albapp")
 # export InstallTypes=("allalb")
-export InstallTypes=("alballwithexistingbucket")
+# export InstallTypes=("alballwithexistingbucket")
 # export InstallTypes=("rdsapp" "rdscloudwatch" "allapi" "apiapp" "apiallwithexistingbucket")
+# export InstallTypes=("lambdall" "lambdaapp" "lambdappwithexistingbucket")
+# export InstallTypes=("lambdacloud")
+
+export InstallTypes=("allinstalls")
 
 for InstallType in "${InstallTypes[@]}"
 do
@@ -56,17 +61,17 @@ do
     # Lambda App Configuration
     export InstallLambdaApp="No"
     export CreateLambdaCloudTrailBucket="No"
-    export LambdaCloudTrailLogsBucketName
+    export LambdaCloudTrailLogsBucketName="lambda-all-randmomstring"
     export CreateLambdaCloudTrailLogSource="No"
-    export LambdaCloudTrailCollectorName
-    export LambdaCloudTrailLogsSourceName
-    export LambdaCloudTrailLogsSourceCategoryName
+    export LambdaCloudTrailCollectorName="lambda-my-collector"
+    export LambdaCloudTrailLogsSourceName="lambda-my-source"
+    export LambdaCloudTrailLogsSourceCategoryName="lambda/Existing/Logs"
     export CreateLambdaCloudWatchMetricsSource="No"
-    export LambdaCloudWatchLogsCollectorName
-    export LambdaCloudWatchLogsSourceName
-    export LambdaCloudWatchLogsSourceCategoryName
+    export LambdaCloudWatchLogsCollectorName="lambda-my-collector-1"
+    export LambdaCloudWatchLogsSourceName="lambda-my-source-1"
+    export LambdaCloudWatchLogsSourceCategoryName="lambda/Existing/watch/Logs"
     export CreateLambdaCloudWatchLogsSource="No"
-    export LambdaCloudWatchMetricsSourceCategoryName
+    export LambdaCloudWatchMetricsSourceCategoryName="lambda/Existing/metrics"
 
     # API Gateway App Configuration
     export InstallAPIGatewayApp="No"
@@ -144,6 +149,54 @@ do
         export CreateApiGatewayCloudTrailBucket="No"
         export CreateApiGatewayCloudTrailLogSource="Yes"
         export CreateApiGatewayCloudWatchMetricsSource="No"
+    elif [[ "${InstallType}" == "lambdaapp" ]]
+    then
+        export InstallLambdaApp="Yes"
+    elif [[ "${InstallType}" == "lambdall" ]]
+    then
+        export InstallLambdaApp="Yes"
+        export CreateLambdaCloudTrailBucket="Yes"
+        export CreateLambdaCloudTrailLogSource="Yes"
+        export CreateLambdaCloudWatchMetricsSource="Yes"
+        export CreateLambdaCloudWatchLogsSource="Yes"
+    elif [[ "${InstallType}" == "lambdappwithexistingbucket" ]]
+    then
+        export InstallLambdaApp="Yes"
+        export CreateLambdaCloudTrailBucket="No"
+        export CreateLambdaCloudTrailLogSource="Yes"
+        export CreateLambdaCloudWatchMetricsSource="No"
+        export CreateLambdaCloudWatchLogsSource="No"
+    elif [[ "${InstallType}" == "lambdappwithexistingbucket" ]]
+    then
+        export InstallLambdaApp="Yes"
+        export CreateLambdaCloudTrailBucket="No"
+        export CreateLambdaCloudTrailLogSource="No"
+        export CreateLambdaCloudWatchMetricsSource="Yes"
+        export CreateLambdaCloudWatchLogsSource="Yes"
+    elif [[ "${InstallType}" == "allinstalls" ]]
+    then
+        export CreateExplorerView="Yes"
+        export InstallEC2App="Yes"
+        export CreateMetaDataSource="Yes"
+        export InstallALBApp="Yes"
+        export CreateS3Bucket="Yes"
+        export CreateS3LogSource="Yes"
+        export CreateAlbCloudWatchMetricsSource="Yes"
+        export InstallDynamoDBApp="Yes"
+        export CreateDynamoDBCloudTrailBucket="Yes"
+        export CreateDynamoDBCloudTrailLogSource="Yes"
+        export CreateDynamoDBCloudWatchMetricsSource="Yes"
+        export InstallRDSApp="Yes"
+        export CreateRdsCloudWatchMetricsSource="Yes"
+        export InstallAPIGatewayApp="Yes"
+        export CreateApiGatewayCloudTrailBucket="Yes"
+        export CreateApiGatewayCloudTrailLogSource="Yes"
+        export CreateApiGatewayCloudWatchMetricsSource="Yes"
+        export InstallLambdaApp="Yes"
+        export CreateLambdaCloudTrailBucket="Yes"
+        export CreateLambdaCloudTrailLogSource="Yes"
+        export CreateLambdaCloudWatchMetricsSource="Yes"
+        export CreateLambdaCloudWatchLogsSource="Yes"
     else
         echo "No Choice"
     fi
@@ -179,7 +232,11 @@ do
     DynamoDBCloudWatchMetricsSourceCategoryName="${DynamoDBCloudWatchMetricsSourceCategoryName}" RdsCloudWatchMetricsSourceCategoryName="${RdsCloudWatchMetricsSourceCategoryName}" \
     ApiGatewayCloudTrailLogsBucketName="${ApiGatewayCloudTrailLogsBucketName}" ApiGatewayCloudTrailCollectorName="${ApiGatewayCloudTrailCollectorName}" \
     ApiGatewayCloudTrailLogsSourceName="${ApiGatewayCloudTrailLogsSourceName}" ApiGatewayCloudTrailLogsSourceCategoryName="${ApiGatewayCloudTrailLogsSourceCategoryName}" \
-    ApiGatewayCloudWatchMetricsSourceCategoryName="${ApiGatewayCloudWatchMetricsSourceCategoryName}"
+    ApiGatewayCloudWatchMetricsSourceCategoryName="${ApiGatewayCloudWatchMetricsSourceCategoryName}" LambdaCloudTrailLogsBucketName="${LambdaCloudTrailLogsBucketName}" \
+    LambdaCloudTrailCollectorName="${LambdaCloudTrailCollectorName}" LambdaCloudTrailLogsSourceName="${LambdaCloudTrailLogsSourceName}" \
+    LambdaCloudTrailLogsSourceCategoryName="${LambdaCloudTrailLogsSourceCategoryName}" LambdaCloudWatchLogsCollectorName="${LambdaCloudWatchLogsCollectorName}" \
+    LambdaCloudWatchLogsSourceName="${LambdaCloudWatchLogsSourceName}" LambdaCloudWatchLogsSourceCategoryName="${LambdaCloudWatchLogsSourceCategoryName}" \
+    LambdaCloudWatchMetricsSourceCategoryName="${LambdaCloudWatchMetricsSourceCategoryName}"
 
 done
 
