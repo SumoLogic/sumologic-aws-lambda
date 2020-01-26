@@ -400,7 +400,7 @@ Resources:
             Topic: !Ref SumoSNSTopic
 
   SumoS3BucketPolicy:
-    Condition: install_s3_logs_source
+    Condition: create_target_s3_bucket
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref S3LogsBucketName
@@ -477,7 +477,7 @@ Resources:
           - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       SourceName: !Ref S3LogsSourceName
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack

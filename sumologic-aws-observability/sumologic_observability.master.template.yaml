@@ -621,7 +621,6 @@ Conditions:
 
   # Conditions for Common
   create_target_s3_bucket: !Or
-    - !Condition create_alb_bucket
     - !Condition create_dynamodb_bucket
     - !Condition create_lambda_bucket
     - !Condition create_api_bucket
@@ -686,7 +685,7 @@ Resources:
         CloudTrailLogsSourceName: "sumologic-aws-observability-cloudtrail-logs"
         CloudTrailLogsSourceCategoryName: "aws/observability/cloudtrail/logs"
         CloudTrailBucketPathExpression: !Sub "AWSLogs/${AWS::AccountId}/CloudTrail/*"
-        CreateCloudWatchLogSource: !If [install_cloudtrail_logs_source, 'Yes', 'No']
+        CreateCloudWatchLogSource: !If [install_cloud_watch_logs_source, 'Yes', 'No']
         CloudWatchLogsSourceName: "sumologic-aws-observability-cloudwatch-logs"
         CloudWatchLogsSourceCategoryName: "aws/observability/cloudwatch/logs"
         CreateCloudWatchMetricsSource: !If [install_cloud_watch_metric_source, 'Yes', 'No']
@@ -739,7 +738,7 @@ Resources:
     Condition: create_explorer_view
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
+      ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicHelperFunctionARN
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       ExplorerName: !Ref ExplorerName
       MetadataKeys:
@@ -797,10 +796,10 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         CollectorName: "sumoLogic-aws-observability-collector"
-        CreateS3Bucket: "No"
-        S3LogsBucketName: !If [create_alb_bucket, "sumologic-aws-observability-common-logs", !Ref S3LogsBucketName]
+        CreateS3Bucket: !If [create_alb_bucket, "Yes", "No"]
+        S3LogsBucketName: !If [create_alb_bucket, "sumologic-aws-observability-alb-logs", !Ref S3LogsBucketName]
         CreateS3LogSource: !Ref CreateS3LogSource
-        S3BucketPathExpression: !If [create_alb_bucket, !Sub "AWSLogs/${AWS::AccountId}/elasticloadbalancing/${AWS::Region}", "*"]
+        S3BucketPathExpression: "*"
         S3LogsSourceName: !If [install_alb_s3_log_source, "sumologic-aws-observability-alb-s3-logs", !Ref AlbS3LogsSourceName]
         S3LogsSourceCategoryName: !If [install_alb_s3_log_source, "aws/observability/alb/logs", !Ref AlbS3LogsSourceCategoryName]
         CreateCloudWatchMetricsSource: "No"
