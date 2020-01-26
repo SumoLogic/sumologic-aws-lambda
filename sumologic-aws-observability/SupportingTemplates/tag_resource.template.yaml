@@ -218,7 +218,7 @@ Resources:
           - SumoLogicAWSObservabilityHelper
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: ec2
@@ -239,7 +239,7 @@ Resources:
           - SumoLogicAWSObservabilityHelper
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: elbv2
@@ -259,7 +259,7 @@ Resources:
           - SumoLogicAWSObservabilityHelper
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: apigateway
@@ -279,7 +279,7 @@ Resources:
           - SumoLogicAWSObservabilityHelper
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: lambda
@@ -299,7 +299,7 @@ Resources:
           - SumoLogicAWSObservabilityHelper
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       AWSResource: rds

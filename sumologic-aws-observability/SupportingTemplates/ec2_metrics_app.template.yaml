@@ -254,7 +254,7 @@ Resources:
           - SumoLogicHelperFunction
           - Arn
         - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicLambdaHelperARN'
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsMetadata
