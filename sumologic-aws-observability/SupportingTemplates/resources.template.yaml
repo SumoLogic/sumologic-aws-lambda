@@ -17,6 +17,7 @@ Metadata:
       - Label:
           default: "Common Collector Details"
         Parameters:
+          - CreateCollector
           - CollectorName
 
       - Label:
@@ -68,6 +69,8 @@ Metadata:
       AWSRegion:
         default: "AWS Region"
 
+      CreateCollector:
+        default: "Create Sumo Logic Collector"
       CollectorName:
         default: "Collector Name"
 
@@ -147,6 +150,13 @@ Parameters:
       - 'Current Region'
       - 'All Regions'
 
+  CreateCollector:
+    Type: String
+    Description: "Yes - Create a new collector in Sumo Logic."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
   CollectorName:
     Type: String
     Description: Change the collector name to be created else default name will be used.
@@ -245,10 +255,7 @@ Conditions:
   install_cloudtrail_logs_source: !Equals [!Ref CreateCloudTrailLogSource, 'Yes']
   install_cloud_watch_logs_source: !Equals [!Ref CreateCloudWatchLogSource, 'Yes']
   install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
-  install_collector: !Or
-    - !Condition install_cloudtrail_logs_source
-    - !Condition install_cloud_watch_logs_source
-    - !Condition install_cloud_watch_metric_source
+  install_collector: !Equals [!Ref CreateCollector, 'Yes']
 
 Mappings:
   Region2ELBAccountId:
