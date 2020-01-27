@@ -963,6 +963,56 @@ class SumoLogicAWSExplorer(SumoResource):
         }
 
 
+class SumoLogicMetricRules(SumoResource):
+    def create(self, metric_rule_name, match_expression, variables, *args, **kwargs):
+
+        variables_to_extract = []
+        if variables:
+            for k, v in variables.items():
+                variables_to_extract.append({"name": k, "tagSequence": v})
+
+        content = {
+            "name": metric_rule_name,
+            "matchExpression": match_expression,
+            "variablesToExtract": variables_to_extract
+        }
+
+        response = self.sumologic_cli.create_metric_rule(content)
+        if "errors" in response:
+            print("METRIC RULES -  creation failed with Name %s" % metric_rule_name)
+            response.raise_for_status()
+        else:
+            job_name = response.json()["name"]
+            print("METRIC RULES -  creation successful with Name %s" % job_name)
+            return {"METRIC_RULES": response.json()["name"]}, job_name
+
+    def update(self, *args, **kwargs):
+        return {"METRIC_RULES": "Successful"}, "metric"
+
+    def delete(self, metric_rule_name, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
+            print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (
+                metric_rule_name, response.text))
+        else:
+            print("METRIC RULES - Skipping the Metric Rule deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        if event.get('PhysicalResourceId'):
+            _, explorer_id = event['PhysicalResourceId'].split("/")
+
+        variables = {}
+        if "ExtractVariables" in props:
+            variables = props.get("ExtractVariables")
+
+        return {
+            "metric_rule_name": props.get("MetricRuleName"),
+            "match_expression": props.get("MatchExpression"),
+            "variables": variables
+        }
+
+
 if __name__ == '__main__':
     params = {
 

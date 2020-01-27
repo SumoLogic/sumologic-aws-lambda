@@ -224,3 +224,9 @@ class SumoLogic(object):
 
     def delete_explorer_view(self, explorer_id):
         return self.delete('/topologies/%s' % explorer_id, version='v1alpha')
+
+    def create_metric_rule(self, content):
+        return self.post('/metricsRules', params=content)
+
+    def delete_metric_rule(self, metric_rule_name):
+        return self.delete('/metricsRules/%s' % metric_rule_name)
