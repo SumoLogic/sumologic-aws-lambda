@@ -738,7 +738,7 @@ Resources:
     Condition: create_explorer_view
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicHelperFunctionARN
+      ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       ExplorerName: !Ref ExplorerName
       MetadataKeys:
