@@ -428,9 +428,9 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       MetricRuleName: "DynamoTableMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${DynamoDBSourceCategory} Namespace=AWS/DynamoDB tablename=*"
+      MatchExpression: !Sub "_sourceCategory=${DynamoDBSourceCategory} Namespace=AWS/DynamoDB TableName=*"
       ExtractVariables:
-        entity: "$tablename._1"
+        entity: "$TableName._1"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
