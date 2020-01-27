@@ -20,7 +20,7 @@ export InstallTypes=("tagmetricrulesandApps")
 for InstallType in "${InstallTypes[@]}"
 do
 
-    export AccountAlias="test-master-${InstallType}"
+    export AccountAlias="testmaster${InstallType}"
 
     # Export Explorer Option
     export ExplorerName="AWS Explorer Test View"
