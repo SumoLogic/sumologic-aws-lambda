@@ -237,6 +237,7 @@ Parameters:
       - jp
       - us2
       - us1
+      - nite
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
     AllowedPattern: ".+"
   SumoAccessID:
@@ -941,5 +942,33 @@ Resources:
         AWSRegion: !Ref AWSRegion
         CloudWatchMetricsSourceCategoryName: !If [install_api_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref ApiGatewayCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
+        QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+
+  CreateMetricRules:
+    Type: AWS::CloudFormation::Stack
+    Condition: common_resources_creation
+    DependsOn: CommonResourceStackWaitCondition
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}-${AWS::Region}.s3.amazonaws.com/${QSS3KeyPrefix}SupportingTemplates/metric_rules.template.yaml"
+      Parameters:
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
+        SumoDeployment: !Ref SumoDeployment
+        SumoAccessID: !Ref SumoAccessID
+        SumoAccessKey: !Ref SumoAccessKey
+        RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+        AccountAlias: !Ref AccountAlias
+        AddMetricRuleForALB: !If [install_alb_app, 'Yes', 'No']
+        AddMetricRuleForAPIGateway: !If [install_api_gateway_app, 'Yes', 'No']
+        AddMetricRuleForRDS: !If [install_rds_app, 'Yes', 'No']
+        AddMetricRuleForEC2Metrics: !If [install_ec2_metrics_app, 'Yes', 'No']
+        AddMetricRuleForLambda: !If [install_lambda_app, 'Yes', 'No']
+        AddMetricRuleForDynamoDB: !If [install_dynamo_db_app, 'Yes', 'No']
+        EC2SourceCategory: !Ref Ec2AppSourceCategoryName
+        RDSSourceCategory: !If [install_rds_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref RdsCloudWatchMetricsSourceCategoryName]
+        APISourceCategory: !If [install_api_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref ApiGatewayCloudWatchMetricsSourceCategoryName]
+        ALBSourceCategory: !If [install_alb_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref AlbCloudWatchMetricsSourceCategoryName]
+        DynamoDBSourceCategory: !If [install_dynamoDB_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref DynamoDBCloudWatchMetricsSourceCategoryName]
+        LambdaSourceCategory: !If [install_lambda_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref LambdaCloudWatchMetricsSourceCategoryName]
         QSS3BucketName: !Sub "${QSS3BucketName}-${AWS::Region}"
         QSS3KeyPrefix: !Ref QSS3KeyPrefix

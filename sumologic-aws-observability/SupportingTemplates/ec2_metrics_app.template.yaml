@@ -80,6 +80,7 @@ Parameters:
       - jp
       - us2
       - us1
+      - nite
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
   SumoAccessID:
     Type: String

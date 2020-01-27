@@ -19,23 +19,28 @@ Metadata:
 
       - Label:
           default: "Select the AWS Resources you want to tag:"
-          Parameters:
-            - AddMetricRuleForALB
-            - AddMetricRuleForAPIGateway
-            - AddMetricRuleForRDS
-            - AddMetricRuleForEC2Metrics
-            - AddMetricRuleForLambda
-            - AddMetricRuleForDynamoDB
+        Parameters:
+          - AddMetricRuleForALB
+          - AddMetricRuleForAPIGateway
+          - AddMetricRuleForRDS
+          - AddMetricRuleForEC2Metrics
+          - AddMetricRuleForLambda
+          - AddMetricRuleForDynamoDB
 
       - Label:
           default: "Source Categories :"
-          Parameters:
-            - EC2SourceCategory
+        Parameters:
+          - EC2SourceCategory
+          - RDSSourceCategory
+          - APISourceCategory
+          - ALBSourceCategory
+          - DynamoDBSourceCategory
+          - LambdaSourceCategory
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
-          Parameters:
-            - ParentStackName
+        Parameters:
+          - ParentStackName
 
       - Label:
           default: "Sumo Logic Quick Start configuration"
@@ -71,6 +76,16 @@ Metadata:
 
       EC2SourceCategory:
         default: "Source Category for EC2 Metrics"
+      RDSSourceCategory:
+        default: "Source Category for RDS Metrics"
+      APISourceCategory:
+        default: "Source Category for API Gateway Metrics"
+      ALBSourceCategory:
+        default: "Source Category for ALB Metrics"
+      DynamoDBSourceCategory:
+        default: "Source Category for Dynamo DB Metrics"
+      LambdaSourceCategory:
+        default: "Source Category for Lambda Metrics"
 
       ParentStackName:
         default: "If Any, Name of parent Stack."
@@ -157,6 +172,26 @@ Parameters:
     Type: String
     Default: ""
     Description: "Source category for EC2 Metrics"
+  RDSSourceCategory:
+    Type: String
+    Default: ""
+    Description: "Source category for RDS Metrics"
+  APISourceCategory:
+    Type: String
+    Default: ""
+    Description: "Source category for API Gateway Metrics"
+  ALBSourceCategory:
+    Type: String
+    Default: ""
+    Description: "Source category for ALB Metrics"
+  DynamoDBSourceCategory:
+    Type: String
+    Default: ""
+    Description: "Source category for Dynamo DB Metrics"
+  LambdaSourceCategory:
+    Type: String
+    Default: ""
+    Description: "Source category for Lambda Metrics"
 
   ParentStackName:
     Type: String

@@ -14,8 +14,8 @@ export AppName="master"
 # export InstallTypes=("rdsapp" "rdscloudwatch" "allapi" "apiapp" "apiallwithexistingbucket")
 # export InstallTypes=("lambdall" "lambdaapp" "lambdappwithexistingbucket")
 # export InstallTypes=("lambdacloud")
-
-export InstallTypes=("allinstalls")
+# export InstallTypes=("allinstalls")
+export InstallTypes=("tagmetricrulesandApps")
 
 for InstallType in "${InstallTypes[@]}"
 do
@@ -197,6 +197,14 @@ do
         export CreateLambdaCloudTrailLogSource="Yes"
         export CreateLambdaCloudWatchMetricsSource="Yes"
         export CreateLambdaCloudWatchLogsSource="Yes"
+    elif [[ "${InstallType}" == "tagmetricrulesandApps" ]]
+    then
+        export InstallEC2App="Yes"
+        export InstallALBApp="Yes"
+        export InstallDynamoDBApp="Yes"
+        export InstallRDSApp="Yes"
+        export InstallAPIGatewayApp="Yes"
+        export InstallLambdaApp="Yes"
     else
         echo "No Choice"
     fi
@@ -205,7 +213,7 @@ do
     export SumoAccessID=""
     export SumoAccessKey=""
     export SumoOrganizationId=""
-    export SumoDeployment="us1"
+    export SumoDeployment="nite"
     export RemoveSumoResourcesOnDeleteStack=true
     export AWSRegion="Current Region"
 
