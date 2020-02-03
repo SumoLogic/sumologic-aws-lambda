@@ -999,8 +999,6 @@ class SumoLogicMetricRules(SumoResource):
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
-        if event.get('PhysicalResourceId'):
-            _, explorer_id = event['PhysicalResourceId'].split("/")
 
         variables = {}
         if "ExtractVariables" in props:
