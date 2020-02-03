@@ -518,9 +518,10 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
       TargetBucketName: !Ref S3LogsBucketName
       PathExpression: !Ref S3BucketPathExpression
-      fields:
+      Fields:
         account: !Ref AccountAlias
         namespace: "AWS/ApplicationELB"
+        region: !Ref "AWS::Region"
       RoleArn: !If
         - do_not_use_parent_stack
         - !GetAtt

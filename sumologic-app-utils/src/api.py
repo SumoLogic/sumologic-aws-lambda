@@ -377,6 +377,10 @@ class BaseSource(SumoResource):
             if filters:
                 source_json['filters'] = filters
 
+        # Fields condition
+        if 'Fields' in props:
+            source_json['fields'] = props.get("Fields")
+
         # multi line processing
         if 'multilineProcessingEnabled' in props:
             source_json['multilineProcessingEnabled'] = props['multilineProcessingEnabled']
@@ -455,7 +459,7 @@ class AWSSource(BaseSource):
             endpoint = data["url"]
             print("created source %s" % source_id)
         except Exception as e:
-            # Todo 100 sources in a collector is good
+            # Todo 100 sources in a collector is good. Same error code for duplicates in case of Collector and source.
             if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
@@ -491,7 +495,7 @@ class AWSSource(BaseSource):
 class HTTPSource(SumoResource):
     # Todo refactor this to use basesource class
 
-    def create(self, collector_id, source_name, source_category,
+    def create(self, collector_id, source_name, source_category, fields,
                date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
 
         endpoint = source_id = None
@@ -503,6 +507,11 @@ class HTTPSource(SumoResource):
         }
         if date_format:
             params["defaultDateFormats"] = [{"format": date_format, "locator": date_locator}]
+
+        # Fields condition
+        if fields:
+            params['fields'] = fields
+
         try:
             resp = self.sumologic_cli.create_source(collector_id, {"source": params})
             data = resp.json()['source']
@@ -545,13 +554,19 @@ class HTTPSource(SumoResource):
         source_id = None
         if event.get('PhysicalResourceId'):
             _, source_id = event['PhysicalResourceId'].split("/")
+
+        fields = {}
+        if 'Fields' in props:
+            fields = props.get("Fields")
+
         return {
             "collector_id": props.get("CollectorId"),
             "source_name": props.get("SourceName"),
             "source_category": props.get("SourceCategory"),
             "date_format": props.get("DateFormat"),
             "date_locator": props.get("DateLocatorRegex"),
-            "source_id": source_id
+            "source_id": source_id,
+            "fields": fields
         }
 
 
@@ -1008,6 +1023,69 @@ class SumoLogicMetricRules(SumoResource):
             "metric_rule_name": props.get("MetricRuleName"),
             "match_expression": props.get("MatchExpression"),
             "variables": variables
+        }
+
+
+class SumoLogicUpdateFields(SumoResource):
+
+    def create(self, collector_id, source_name, fields, *args, **kwargs):
+        sources = self.sumologic_cli.sources(collector_id, limit=300)
+        source_id = None
+        for source in sources:
+            if source["name"] == source_name:
+                source_id = source["id"]
+
+        sv, etag = self.sumologic_cli.source(collector_id, source_id)
+
+        existing_fields = sv['source']['fields']
+
+        new_fields = existing_fields.copy()
+        new_fields.update(fields)
+
+        sv['source']['fields'] = new_fields
+
+        resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+
+        data = resp.json()['source']
+        print("updated Fields in Source %s" % data["id"])
+
+        return {"existing_fields": existing_fields}, source_id
+
+    def update(self, *args, **kwargs):
+        return {"UPDATE_FIELDS": "Successful"}, "fields"
+
+    def delete(self, collector_id, source_id, fields, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            sv, etag = self.sumologic_cli.source(collector_id, source_id)
+            existing_fields = sv['source']['fields']
+
+            for k in fields:
+                existing_fields.pop(k, None)
+
+            sv['source']['fields'] = existing_fields
+            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+
+            data = resp.json()['source']
+            print("reverted Fields in Source %s" % data["id"])
+        else:
+            print("UPDATE FIELDS - Skipping the Metric Rule deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        source_id = None
+        if event.get('PhysicalResourceId'):
+            _, source_id = event['PhysicalResourceId'].split("/")
+
+        fields = {}
+        if "Fields" in props:
+            fields = props.get("Fields")
+
+        return {
+            "collector_id": props.get("CollectorId"),
+            "source_name": props.get("SourceName"),
+            "fields": fields,
+            "source_id": source_id
         }
 
 
