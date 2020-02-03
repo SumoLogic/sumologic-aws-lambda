@@ -10,6 +10,7 @@ export InstallTypes=("cloudtrails3bucket" "cloudtrail" "cloudwatchlogs" "cloudwa
 for InstallType in "${InstallTypes[@]}"
 do
     export BucketName="${AppName}-${InstallType}-qwerty"
+    export AccountAlias="testresources${InstallType}"
 
     if [[ "${InstallType}" == "all" ]]
     then
@@ -81,7 +82,7 @@ do
     CloudWatchLogsSourceName="${CloudWatchLogsSourceName}" CloudWatchLogsSourceCategoryName="${CloudWatchLogsSourceCategoryName}" \
     AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
     CreateS3Bucket="${CreateS3Bucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchLogSource="${CreateCloudWatchLogSource}" \
-    CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}"
+    CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
 
 done
 

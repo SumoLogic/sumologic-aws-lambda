@@ -10,6 +10,7 @@ export InstallTypes=("all" "onlyapp" "apps3source" "apps3sources3bucket" "appclo
 for InstallType in "${InstallTypes[@]}"
 do
     export S3LogsBucketName="${AppName}-${InstallType}-qwerty"
+    export AccountAlias="testalb${InstallType}"
 
     if [[ "${InstallType}" == "all" ]]
     then
@@ -70,7 +71,7 @@ do
     CollectorName="${CollectorName}" S3LogsBucketName="${S3LogsBucketName}" S3BucketPathExpression="${S3BucketPathExpression}" \
     S3LogsSourceName="${S3LogsSourceName}" S3LogsSourceCategoryName="${S3LogsSourceCategoryName}" \
     AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
-    CreateS3Bucket="${CreateS3Bucket}" CreateS3LogSource="${CreateS3LogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}"
+    CreateS3Bucket="${CreateS3Bucket}" CreateS3LogSource="${CreateS3LogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
 
 done
 

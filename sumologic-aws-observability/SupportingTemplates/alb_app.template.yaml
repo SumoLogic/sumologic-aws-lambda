@@ -14,6 +14,11 @@ Metadata:
           - RemoveSumoResourcesOnDeleteStack
 
       - Label:
+          default: "AWS Resources Tag Configuration (Required)"
+        Parameters:
+          - AccountAlias
+
+      - Label:
           default: "App Details - Collector Configuration"
         Parameters:
           - CollectorName
@@ -54,6 +59,9 @@ Metadata:
         default: "Sumo Logic Organization Id"
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted"
+
+      AccountAlias:
+        default: "Alias for AWS Account Identification"
 
       CollectorName:
         default: "Collector Name"
@@ -119,6 +127,11 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
+
+  AccountAlias:
+    Type: String
+    Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
+    AllowedPattern: "[a-zA-Z0-9]+"
 
   CollectorName:
     Type: String
@@ -505,6 +518,9 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
       TargetBucketName: !Ref S3LogsBucketName
       PathExpression: !Ref S3BucketPathExpression
+      fields:
+        account: !Ref AccountAlias
+        namespace: "AWS/ApplicationELB"
       RoleArn: !If
         - do_not_use_parent_stack
         - !GetAtt

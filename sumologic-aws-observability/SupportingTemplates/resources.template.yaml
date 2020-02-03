@@ -15,6 +15,11 @@ Metadata:
           - AWSRegion
 
       - Label:
+          default: "AWS Resources Tag Configuration (Required)"
+        Parameters:
+          - AccountAlias
+
+      - Label:
           default: "Common Collector Details"
         Parameters:
           - CreateCollector
@@ -68,6 +73,9 @@ Metadata:
         default: "Delete Sumo Logic Resources when stack is deleted"
       AWSRegion:
         default: "AWS Region"
+
+      AccountAlias:
+        default: "Alias for AWS Account Identification"
 
       CreateCollector:
         default: "Create Sumo Logic Collector"
@@ -150,6 +158,11 @@ Parameters:
     AllowedValues:
       - 'Current Region'
       - 'All Regions'
+
+  AccountAlias:
+    Type: String
+    Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
+    AllowedPattern: "[a-zA-Z0-9]+"
 
   CreateCollector:
     Type: String
@@ -448,6 +461,8 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
       PathExpression: !Ref CloudTrailBucketPathExpression
       RoleArn: !GetAtt SumoSourceRole.Arn
+      fields:
+        account: !Ref AccountAlias
 
   SumoCloudTrailSNSSubscription:
     Condition: install_cloudtrail_logs_source
@@ -559,6 +574,8 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
       DateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
       DateLocatorRegex: '.*"updatedAt":"(.*)".*'
+      fields:
+        account: !Ref AccountAlias
 
 Outputs:
   StackName:
