@@ -9,6 +9,8 @@ export InstallTypes=("all" "onlyapp")
 
 for InstallType in "${InstallTypes[@]}"
 do
+    export AccountAlias="testrds${InstallType}"
+
     if [[ "${InstallType}" == "all" ]]
     then
         export CreateCloudWatchMetricsSource="Yes"
@@ -30,7 +32,6 @@ do
     export CollectorName="AWS-Sourabh-Collector${AppName}-${InstallType}"
 
     # Export CloudWatch Metrics Details
-    export AWSRegion="Current Region"
     export CloudWatchMetricsSourceName="AWS-CloudWatch-Metrics-${AppName}-${InstallType}-Source"
     export CloudWatchMetricsSourceCategoryName="AWS/CloudWatch/${AppName}/${InstallType}/Metrics"
 
@@ -40,7 +41,7 @@ do
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
-    CollectorName="${CollectorName}" AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" \
+    CollectorName="${CollectorName}" AccountAlias="${AccountAlias}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" \
     CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
     CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}"
 
