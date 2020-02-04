@@ -14,9 +14,21 @@ Metadata:
           - RemoveSumoResourcesOnDeleteStack
 
       - Label:
+          default: "Sumo Logic AWS Explorer Configuration (Required)"
+        Parameters:
+          - AccountAlias
+
+      - Label:
           default: "App Details - Collector Configuration"
         Parameters:
           - CollectorName
+
+      - Label:
+          default: "App Details - CloudWatch Metrics Source Configuration"
+        Parameters:
+          - CreateCloudWatchMetricsSource
+          - CloudWatchMetricsSourceName
+          - CloudWatchMetricsSourceCategoryName
 
       - Label:
           default: "App Details - CloudTrail Log Source Configuration"
@@ -29,19 +41,9 @@ Metadata:
           - CloudTrailLogsSourceCategoryName
 
       - Label:
-          default: "App Details - CloudWatch Metrics Source Configuration"
-        Parameters:
-          - CreateCloudWatchMetricsSource
-          - AWSRegion
-          - CloudWatchMetricsSourceName
-          - CloudWatchMetricsSourceCategoryName
-
-      - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
-          - QSS3BucketName
-          - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
@@ -54,6 +56,9 @@ Metadata:
         default: "Sumo Logic Organization Id"
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted"
+
+      AccountAlias:
+        default: "Alias for AWS Account Identification"
 
       CollectorName:
         default: "Collector Name"
@@ -73,8 +78,6 @@ Metadata:
 
       CreateCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
-      AWSRegion:
-        default: "AWS Region"
       CloudWatchMetricsSourceName:
         default: "Sumo Logic CloudWatch Metrics Source Name"
       CloudWatchMetricsSourceCategoryName:
@@ -82,10 +85,6 @@ Metadata:
 
       ParentStackName:
         default: "If Any, Name of parent Stack"
-      QSS3BucketName:
-        default: "S3 bucket name for code and templates"
-      QSS3KeyPrefix:
-        default: "S3 key prefix for code and templates"
 
 Parameters:
   SumoDeployment:
@@ -119,6 +118,11 @@ Parameters:
     Default: true
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
+
+  AccountAlias:
+    Type: String
+    Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
+    AllowedPattern: "[a-zA-Z0-9]+"
 
   CollectorName:
     Type: String
@@ -166,13 +170,6 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  AWSRegion:
-    Type: String
-    Default: 'Current Region'
-    Description: AWS Region for the resources that need to be tagged.
-    AllowedValues:
-      - 'Current Region'
-      - 'All Regions'
   CloudWatchMetricsSourceName:
     Type: String
     Description: Change the CloudWatch Metrics Source name to be created else default name will be used.
@@ -187,23 +184,9 @@ Parameters:
     Type: String
     Default: "ParentStackName"
     Description: Parent Stack Name. Do Not Edit the value.
-  QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Default: "sumologicawsobservabilityhelper"
-    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Type: "String"
-
-  QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Default: "sumologic-aws-observability/"
-    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Type: "String"
 
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
-  region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
   create_target_s3_bucket: !Equals [!Ref CreateCloudTrailBucket, 'Yes']
   install_cloudtrail_logs_source: !Equals [!Ref CreateCloudTrailLogSource, 'Yes']
@@ -242,8 +225,8 @@ Resources:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:
@@ -260,7 +243,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: arn:aws:iam::926226587429:root
+              AWS: arn:aws:iam::246946804217:root
             Action: sts:AssumeRole
             Condition:
               StringEquals:
@@ -282,6 +265,66 @@ Resources:
                   - cloudwatch:GetMetricStatistics
                 Resource:
                   "*"
+
+  CreateSumoLogicAWSExplorerView:
+    Type: Custom::SumoLogicAWSExplorer
+    Condition: do_not_use_parent_stack
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      ExplorerName: "AWS DynamoDB Observability"
+      MetadataKeys:
+        - "account"
+        - "region"
+        - "namespace"
+        - "entity"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  DynamoMetricRule:
+    Type: Custom::SumoLogicMetricRules
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      MetricRuleName: "DynamoTableMetricsEntityRule"
+      MatchExpression: !Sub "Namespace=AWS/DynamoDB TableName=*"
+      ExtractVariables:
+        entity: "$TableName._1"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  DynamoAccountMetricRule:
+    Type: Custom::SumoLogicMetricRules
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      MetricRuleName: !Sub "${AccountAlias}DynamoMetricsEntityRule"
+      MatchExpression: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName} Namespace=AWS/DynamoDB"
+      ExtractVariables:
+        account: !Sub "${AccountAlias}"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
 
   SumoHostedCollector:
     Type: Custom::Collector
@@ -316,7 +359,6 @@ Resources:
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       Namespaces:
         - 'AWS/DynamoDB'
       SourceName: !Ref CloudWatchMetricsSourceName
@@ -497,6 +539,8 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
       PathExpression: !Ref CloudTrailBucketPathExpression
+      Fields:
+        account: !Ref AccountAlias
       RoleArn: !If
         - do_not_use_parent_stack
         - !GetAtt

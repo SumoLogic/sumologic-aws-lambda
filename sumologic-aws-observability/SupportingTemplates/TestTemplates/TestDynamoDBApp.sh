@@ -10,6 +10,7 @@ export InstallTypes=("all" "onlyapp" "appcloudtrail" "appcloudtrails3bucket" "ap
 for InstallType in "${InstallTypes[@]}"
 do
     export CloudTrailLogsBucketName="${AppName}-${InstallType}-qwerty"
+    export AccountAlias="testdynamo${InstallType}"
 
     if [[ "${InstallType}" == "all" ]]
     then
@@ -57,7 +58,6 @@ do
     export CloudTrailLogsSourceCategoryName="AWS/CloudTrail/${AppName}/${InstallType}/Logs"
 
     # Export CloudWatch Metrics Details
-    export AWSRegion="Current Region"
     export CloudWatchMetricsSourceName="AWS-CloudWatch-Metrics-${AppName}-${InstallType}-Source"
     export CloudWatchMetricsSourceCategoryName="AWS/CloudWatch/${AppName}/${InstallType}/Metrics"
 
@@ -69,8 +69,9 @@ do
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     CollectorName="${CollectorName}" CloudTrailLogsBucketName="${CloudTrailLogsBucketName}" CloudTrailBucketPathExpression="${CloudTrailBucketPathExpression}" \
     CloudTrailLogsSourceName="${CloudTrailLogsSourceName}" CloudTrailLogsSourceCategoryName="${CloudTrailLogsSourceCategoryName}" \
-    AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
-    CreateCloudTrailBucket="${CreateCloudTrailBucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}"
+    CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
+    CreateCloudTrailBucket="${CreateCloudTrailBucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" \
+    AccountAlias="${AccountAlias}"
 
 done
 
