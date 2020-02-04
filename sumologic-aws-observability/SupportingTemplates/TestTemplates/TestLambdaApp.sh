@@ -10,6 +10,7 @@ export InstallTypes=("all" "onlyapp" "appcloudtrail" "appcloudtrails3bucket" "ap
 for InstallType in "${InstallTypes[@]}"
 do
     export CloudTrailLogsBucketName="${AppName}-${InstallType}-qwerty"
+    export AccountAlias="testlambda${InstallType}"
 
     if [[ "${InstallType}" == "all" ]]
     then
@@ -72,7 +73,6 @@ do
     export CloudWatchLogsSourceCategoryName="AWS/CloudWatch/${AppName}/${InstallType}/Logs"
 
     # Export CloudWatch Metrics Details
-    export AWSRegion="Current Region"
     export CloudWatchMetricsSourceName="AWS-CloudWatch-Metrics-${AppName}-${InstallType}-Source"
     export CloudWatchMetricsSourceCategoryName="AWS/CloudWatch/${AppName}/${InstallType}/Metrics"
 
@@ -85,7 +85,7 @@ do
     CollectorName="${CollectorName}" CloudTrailLogsBucketName="${CloudTrailLogsBucketName}" CloudTrailBucketPathExpression="${CloudTrailBucketPathExpression}" \
     CloudTrailLogsSourceName="${CloudTrailLogsSourceName}" CloudTrailLogsSourceCategoryName="${CloudTrailLogsSourceCategoryName}" \
     CloudWatchLogsSourceName="${CloudWatchLogsSourceName}" CloudWatchLogsSourceCategoryName="${CloudWatchLogsSourceCategoryName}" \
-    AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
+    AccountAlias="${AccountAlias}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
     CreateCloudTrailBucket="${CreateCloudTrailBucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchLogSource="${CreateCloudWatchLogSource}" \
     CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}"
 
