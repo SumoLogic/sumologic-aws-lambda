@@ -31,22 +31,12 @@ Metadata:
           default: "Source Categories :"
         Parameters:
           - EC2SourceCategory
-          - RDSSourceCategory
-          - APISourceCategory
-          - ALBSourceCategory
           - DynamoDBSourceCategory
-          - LambdaSourceCategory
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
-
-      - Label:
-          default: "Sumo Logic Quick Start configuration"
-        Parameters:
-          - QSS3BucketName
-          - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
@@ -76,23 +66,11 @@ Metadata:
 
       EC2SourceCategory:
         default: "Source Category for EC2 Metrics"
-      RDSSourceCategory:
-        default: "Source Category for RDS Metrics"
-      APISourceCategory:
-        default: "Source Category for API Gateway Metrics"
-      ALBSourceCategory:
-        default: "Source Category for ALB Metrics"
       DynamoDBSourceCategory:
         default: "Source Category for Dynamo DB Metrics"
-      LambdaSourceCategory:
-        default: "Source Category for Lambda Metrics"
 
       ParentStackName:
         default: "If Any, Name of parent Stack."
-      QSS3BucketName:
-        default: "Quick Start S3 bucket name."
-      QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
 
 Parameters:
   SumoAccessID:
@@ -172,44 +150,15 @@ Parameters:
     Type: String
     Default: ""
     Description: "Source category for EC2 Metrics"
-  RDSSourceCategory:
-    Type: String
-    Default: ""
-    Description: "Source category for RDS Metrics"
-  APISourceCategory:
-    Type: String
-    Default: ""
-    Description: "Source category for API Gateway Metrics"
-  ALBSourceCategory:
-    Type: String
-    Default: ""
-    Description: "Source category for ALB Metrics"
   DynamoDBSourceCategory:
     Type: String
     Default: ""
     Description: "Source category for Dynamo DB Metrics"
-  LambdaSourceCategory:
-    Type: String
-    Default: ""
-    Description: "Source category for Lambda Metrics"
 
   ParentStackName:
     Type: String
     Default: "ParentStackName"
     Description: Parent Stack Name. Do Not Edit the value.
-  QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Default: "sumologicawsobservabilityhelper"
-    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Type: "String"
-
-  QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Default: "sumologic-aws-observability/"
-    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Type: "String"
 
 Conditions:
   add_alb_rule: !Equals [!Ref AddMetricRuleForALB, 'Yes']
@@ -254,8 +203,8 @@ Resources:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:
@@ -275,7 +224,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: "EC2MetricsEntityRule"
+      MetricRuleName: !Sub "${AccountAlias}EC2MetricsEntityRule"
       MatchExpression: !Sub "_sourceCategory=${EC2SourceCategory} InstanceId=*"
       ExtractVariables:
         entity: "$InstanceId._1"
@@ -309,7 +258,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       MetricRuleName: "RDSMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${RDSSourceCategory} Namespace=AWS/RDS cluster=*"
+      MatchExpression: !Sub "Namespace=AWS/RDS cluster=*"
       ExtractVariables:
         entity: "$cluster._1"
       SumoAccessID: !Ref SumoAccessID
@@ -342,7 +291,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       MetricRuleName: "ALBMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${ALBSourceCategory} Namespace=AWS/ApplicationELB LoadBalancer=*"
+      MatchExpression: !Sub "Namespace=AWS/ApplicationELB LoadBalancer=*"
       ExtractVariables:
         entity: "$LoadBalancer._1"
       SumoAccessID: !Ref SumoAccessID
@@ -362,7 +311,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       MetricRuleName: "LambdaMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${LambdaSourceCategory} Namespace=AWS/Lambda FunctionName=*"
+      MatchExpression: !Sub "Namespace=AWS/Lambda FunctionName=*"
       ExtractVariables:
         entity: "$FunctionName._1"
       SumoAccessID: !Ref SumoAccessID
@@ -395,7 +344,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       MetricRuleName: "ApiGatewayMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${APISourceCategory} Namespace=AWS/ApiGateway ApiName=*"
+      MatchExpression: !Sub "Namespace=AWS/ApiGateway ApiName=*"
       ExtractVariables:
         entity: "$ApiName._1"
       SumoAccessID: !Ref SumoAccessID
@@ -428,7 +377,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       MetricRuleName: "DynamoTableMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${DynamoDBSourceCategory} Namespace=AWS/DynamoDB TableName=*"
+      MatchExpression: !Sub "Namespace=AWS/DynamoDB TableName=*"
       ExtractVariables:
         entity: "$TableName._1"
       SumoAccessID: !Ref SumoAccessID
@@ -460,7 +409,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: "DynamoAccountMetricsEntityRule"
+      MetricRuleName: !Sub "${AccountAlias}DynamoMetricsEntityRule"
       MatchExpression: !Sub "_sourceCategory=${DynamoDBSourceCategory} Namespace=AWS/DynamoDB"
       ExtractVariables:
         account: !Sub "${AccountAlias}"
