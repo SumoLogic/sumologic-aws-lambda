@@ -56,7 +56,6 @@ do
     export RemoveSumoResourcesOnDeleteStack=true
 
     # Export Tags Details
-    export AWSRegion="Current Region"
     export AccountAlias="testing-tags"
 
     export template_file="${AppTemplateName}.template.yaml"
@@ -65,7 +64,7 @@ do
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
-    AddTagsForALBResources="${AddTagsForALBResources}" AWSRegion="${AWSRegion}" AddTagsForAPIGatewayResources="${AddTagsForAPIGatewayResources}" \
+    AddTagsForALBResources="${AddTagsForALBResources}" AddTagsForAPIGatewayResources="${AddTagsForAPIGatewayResources}" \
     AddTagsForRDSResources="${AddTagsForRDSResources}" AddTagsForEC2MetricsResources="${AddTagsForEC2MetricsResources}" \
     AddTagsForLambdaResources="${AddTagsForLambdaResources}" AccountAlias="${AccountAlias}"
 

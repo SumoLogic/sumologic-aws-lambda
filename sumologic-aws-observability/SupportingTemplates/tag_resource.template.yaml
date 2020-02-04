@@ -15,7 +15,6 @@ Metadata:
       - Label:
           default: "AWS Resources Tag Configuration"
         Parameters:
-          - AWSRegion
           - AccountAlias
 
       - Label:
@@ -32,12 +31,6 @@ Metadata:
           Parameters:
             - ParentStackName
 
-      - Label:
-          default: "Sumo Logic Quick Start configuration"
-        Parameters:
-          - QSS3BucketName
-          - QSS3KeyPrefix
-
     ParameterLabels:
       SumoDeployment:
         default: "Sumo Logic Deployment Name."
@@ -47,8 +40,6 @@ Metadata:
         default: "Sumo Logic Access Key."
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted."
-      AWSRegion:
-        default: "AWS Region for the resources that need to be tagged."
       AccountAlias:
         default: "Value for Account Tag."
       AddTagsForALBResources:
@@ -63,10 +54,6 @@ Metadata:
         default: "Do you need to add Tags for AWS Lambda Resources?"
       ParentStackName:
         default: "If Any, Name of parent Stack."
-      QSS3BucketName:
-        default: "Quick Start S3 bucket name."
-      QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
 
 Parameters:
   SumoAccessID:
@@ -98,13 +85,6 @@ Parameters:
   AccountAlias:
     Type: String
     Description: Provide the Value for Account Tag.
-  AWSRegion:
-    Type: String
-    Default: 'Current Region'
-    Description: AWS Region for the resources that need to be tagged.
-    AllowedValues:
-      - 'Current Region'
-      - 'All Regions'
 
   AddTagsForALBResources:
     Type: String
@@ -146,19 +126,6 @@ Parameters:
     Type: String
     Default: "ParentStackName"
     Description: Parent Stack Name. Do Not Edit the value.
-  QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Default: "sumologicawsobservabilityhelper"
-    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Type: "String"
-
-  QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Default: "sumologic-aws-observability/"
-    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Type: "String"
 
 Conditions:
   add_alb_tags: !Equals [!Ref AddTagsForALBResources, 'Yes']
@@ -167,7 +134,6 @@ Conditions:
   add_ec2_metrics_tags: !Equals [!Ref AddTagsForEC2MetricsResources, 'Yes']
   add_lambda_tags: !Equals [!Ref AddTagsForLambdaResources, 'Yes']
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
-  region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
 Resources:
 
@@ -200,8 +166,8 @@ Resources:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:
@@ -221,7 +187,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+      Region: !Ref "AWS::Region"
       AWSResource: ec2
       Tags:
         account: !Ref AccountAlias
@@ -242,7 +208,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+      Region: !Ref "AWS::Region"
       AWSResource: elbv2
       Tags:
         account: !Ref AccountAlias
@@ -262,7 +228,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+      Region: !Ref "AWS::Region"
       AWSResource: apigateway
       Tags:
         account: !Ref AccountAlias
@@ -282,7 +248,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+      Region: !Ref "AWS::Region"
       AWSResource: lambda
       Tags:
         account: !Ref AccountAlias
@@ -302,7 +268,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
+      Region: !Ref "AWS::Region"
       AWSResource: rds
       Tags:
         account: !Ref AccountAlias
