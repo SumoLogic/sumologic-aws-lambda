@@ -12,7 +12,6 @@ Metadata:
           - SumoAccessKey
           - SumoOrganizationId
           - RemoveSumoResourcesOnDeleteStack
-          - AWSRegion
 
       - Label:
           default: "AWS Resources Tag Configuration (Required)"
@@ -54,12 +53,6 @@ Metadata:
           - CloudWatchMetricsSourceCategoryName
           - Namespaces
 
-      - Label:
-          default: "Local Parameters. Do Not Edit the values."
-        Parameters:
-          - QSS3BucketName
-          - QSS3KeyPrefix
-
     ParameterLabels:
       SumoDeployment:
         default: "Sumo Logic Deployment Name"
@@ -71,8 +64,6 @@ Metadata:
         default: "Sumo Logic Organization Id"
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted"
-      AWSRegion:
-        default: "AWS Region"
 
       AccountAlias:
         default: "Alias for AWS Account Identification"
@@ -112,11 +103,6 @@ Metadata:
       Namespaces:
         default: "Namespaces for which Metrics need to be collected"
 
-      QSS3BucketName:
-        default: "Quick Start S3 bucket name."
-      QSS3KeyPrefix:
-        default: "Quick Start S3 key prefix."
-
 Parameters:
   SumoDeployment:
     Type: String
@@ -151,13 +137,6 @@ Parameters:
     Description: "To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
-  AWSRegion:
-    Type: String
-    Default: 'Current Region'
-    Description: "Region to Tag all AWS Resources, fetch CloudWatch metrics and metadata tags for EC2."
-    AllowedValues:
-      - 'Current Region'
-      - 'All Regions'
 
   AccountAlias:
     Type: String
@@ -249,22 +228,7 @@ Parameters:
     Description: Provide Comma delimited list of the namespaces to collect.
     Type: CommaDelimitedList
 
-  QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Default: "sumologicawsobservabilityhelper"
-    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Type: "String"
-  QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Default: "sumologic-aws-observability/"
-    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Type: "String"
-
 Conditions:
-  region_value: !Equals [!Ref AWSRegion, 'All Regions']
-
   create_target_s3_bucket: !Equals [!Ref CreateS3Bucket, 'Yes']
   install_cloudtrail_logs_source: !Equals [!Ref CreateCloudTrailLogSource, 'Yes']
   install_cloud_watch_logs_source: !Equals [!Ref CreateCloudWatchLogSource, 'Yes']
@@ -329,8 +293,8 @@ Resources:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !Sub "${QSS3BucketName}-${AWS::Region}"
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:
@@ -392,7 +356,6 @@ Resources:
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       Namespaces: !Ref Namespaces
       SourceName: !Ref CloudWatchMetricsSourceName
       SourceCategory: !Ref CloudWatchMetricsSourceCategoryName
@@ -543,8 +506,8 @@ Resources:
     Condition: install_cloud_watch_logs_source
     Properties:
       CodeUri:
-        Bucket: !Sub "${QSS3BucketName}-${AWS::Region}"
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicCloudWatchEvents.zip"
+        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicCloudWatchEvents.zip"
       Environment:
         Variables:
           SUMO_ENDPOINT: !GetAtt SumoHTTPSource.SUMO_ENDPOINT

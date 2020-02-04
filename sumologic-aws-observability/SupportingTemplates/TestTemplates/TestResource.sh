@@ -53,7 +53,6 @@ do
     export SumoOrganizationId=""
     export SumoDeployment="us1"
     export RemoveSumoResourcesOnDeleteStack=true
-    export AWSRegion="Current Region"
 
     # Export Collector Name
     export CollectorName="AWS-Sourabh-Collector-${AppName}-${InstallType}"
@@ -80,7 +79,7 @@ do
     CollectorName="${CollectorName}" BucketName="${BucketName}" CloudTrailBucketPathExpression="${CloudTrailBucketPathExpression}" \
     CloudTrailLogsSourceName="${CloudTrailLogsSourceName}" CloudTrailLogsSourceCategoryName="${CloudTrailLogsSourceCategoryName}" \
     CloudWatchLogsSourceName="${CloudWatchLogsSourceName}" CloudWatchLogsSourceCategoryName="${CloudWatchLogsSourceCategoryName}" \
-    AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
+    CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
     CreateS3Bucket="${CreateS3Bucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchLogSource="${CreateCloudWatchLogSource}" \
     CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
 
