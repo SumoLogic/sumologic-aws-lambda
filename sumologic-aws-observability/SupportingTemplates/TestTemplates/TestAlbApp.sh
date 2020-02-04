@@ -58,7 +58,6 @@ do
     export S3LogsSourceCategoryName="AWS/S3/${AppName}/${InstallType}/Logs"
 
     # Export CloudWatch Metrics Details
-    export AWSRegion="Current Region"
     export CloudWatchMetricsSourceName="AWS-CloudWatch-Metrics-${AppName}-${InstallType}-Source"
     export CloudWatchMetricsSourceCategoryName="AWS/CloudWatch/${AppName}/${InstallType}/Metrics"
 
@@ -70,7 +69,7 @@ do
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     CollectorName="${CollectorName}" S3LogsBucketName="${S3LogsBucketName}" S3BucketPathExpression="${S3BucketPathExpression}" \
     S3LogsSourceName="${S3LogsSourceName}" S3LogsSourceCategoryName="${S3LogsSourceCategoryName}" \
-    AWSRegion="${AWSRegion}" CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
+    CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
     CreateS3Bucket="${CreateS3Bucket}" CreateS3LogSource="${CreateS3LogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
 
 done

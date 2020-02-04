@@ -419,8 +419,8 @@ class AWSSource(BaseSource):
         source_type = props.get("SourceType")
 
         regions = []
-        if "AWSRegion" in props:
-            regions = self._get_regions(props.get("AWSRegion"))
+        if "Region" in props:
+            regions = [props.get("Region")]
 
         if source_type == "AwsMetadata":
             return {
@@ -439,14 +439,6 @@ class AWSSource(BaseSource):
                 "bucketName": props.get("TargetBucketName"),
                 "pathExpression": props.get("PathExpression")
             }
-
-    def _get_regions(self, region_value):
-        if region_value == "all":
-            aws_client = boto3.client('ec2')
-            regions = [region['RegionName'] for region in aws_client.describe_regions()['Regions']]
-        else:
-            regions = [region_value]
-        return regions
 
     def create(self, collector_id, source_name, props, *args, **kwargs):
 
@@ -740,14 +732,6 @@ class App(SumoResource):
 
 class TagAWSResources(SumoResource):
 
-    def _get_regions(self, resource_type, region_value):
-        if region_value == "all":
-            aws_client = boto3.client(resource_type)
-            regions = [region['RegionName'] for region in aws_client.describe_regions()['Regions']]
-        else:
-            regions = [region_value]
-        return regions
-
     def _tag_resources_in_group(self, region, resource_arn_list, tags, delete_flag):
         client = boto3.client('resourcegroupstaggingapi', region_name=region)
         if not delete_flag:
@@ -897,7 +881,7 @@ class TagAWSResources(SumoResource):
 
     def create(self, region_value, aws_resource, tags, *args, **kwargs):
         print("TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags %s." % tags)
-        regions = self._get_regions('ec2', region_value)
+        regions = [region_value]
         for region in regions:
             self._tag_aws_resources(region, aws_resource, tags)
         print("TAG AWS RESOURCES - Completed the AWS resources Tag addition.")
@@ -913,7 +897,7 @@ class TagAWSResources(SumoResource):
             tags_list = list(tags.keys())
         print("TAG AWS RESOURCES - Starting the AWS resources Tag deletion with Tags %s." % tags_list)
         if remove_on_delete_stack:
-            regions = self._get_regions('ec2', region_value)
+            regions = [region_value]
             for region in regions:
                 self._tag_aws_resources(region, aws_resource, tags_list, True)
             print("TAG AWS RESOURCES - Completed the AWS resources Tag deletion.")
@@ -926,7 +910,7 @@ class TagAWSResources(SumoResource):
         if "Tags" in props:
             tags = props.get("Tags")
         return {
-            "region_value": props.get("AWSRegion"),
+            "region_value": props.get("Region"),
             "aws_resource": props.get("AWSResource"),
             "tags": tags
         }
@@ -939,20 +923,26 @@ class SumoLogicAWSExplorer(SumoResource):
             "baseFilter": [],
             "hierarchy": hierarchy
         }
-        response = self.sumologic_cli.create_explorer_view(content)
-        if "errors" in response:
-            print("AWS EXPLORER -  creation failed with Name %s" % explorer_name)
-            response.raise_for_status()
-        else:
+        try:
+            response = self.sumologic_cli.create_explorer_view(content)
             job_id = response.json()["id"]
             print("AWS EXPLORER -  creation successful with ID %s" % job_id)
             return {"EXPLORER_NAME": response.json()["name"]}, job_id
+        except Exception as e:
+            if hasattr(e, 'response') and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'topology:duplicate':
+                        print("AWS EXPLORER -  Duplicate Exists for Name %s" % explorer_name)
+                        return {"EXPLORER_NAME": explorer_name}, "Duplicate"
+            else:
+                raise
 
     def update(self, *args, **kwargs):
         return {"EXPLORER_UPDATE": "Successful"}, "Tag"
 
     def delete(self, explorer_id, explorer_name, hierarchy, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack:
+        if remove_on_delete_stack and explorer_id != "Duplicate":
             response = self.sumologic_cli.delete_explorer_view(explorer_id)
             print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
                 explorer_name, response.text))
@@ -991,29 +981,38 @@ class SumoLogicMetricRules(SumoResource):
             "matchExpression": match_expression,
             "variablesToExtract": variables_to_extract
         }
-
-        response = self.sumologic_cli.create_metric_rule(content)
-        if "errors" in response:
-            print("METRIC RULES -  creation failed with Name %s" % metric_rule_name)
-            response.raise_for_status()
-        else:
+        try:
+            response = self.sumologic_cli.create_metric_rule(content)
             job_name = response.json()["name"]
             print("METRIC RULES -  creation successful with Name %s" % job_name)
             return {"METRIC_RULES": response.json()["name"]}, job_name
+        except Exception as e:
+            if hasattr(e, 'response') and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'metrics:rule_name_already_exists':
+                        print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
+                        return {"METRIC_RULES": metric_rule_name}, "Duplicate"
+            else:
+                raise
 
     def update(self, *args, **kwargs):
         return {"METRIC_RULES": "Successful"}, "metric"
 
-    def delete(self, metric_rule_name, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack:
-            response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
+    def delete(self, job_name, metric_rule_name, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack and job_name != "Duplicate":
+            response = self.sumologic_cli.delete_metric_rule(job_name)
             print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (
-                metric_rule_name, response.text))
+                job_name, response.text))
         else:
             print("METRIC RULES - Skipping the Metric Rule deletion")
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
+
+        job_name = None
+        if event.get('PhysicalResourceId'):
+            _, job_name = event['PhysicalResourceId'].split("/")
 
         variables = {}
         if "ExtractVariables" in props:
@@ -1022,7 +1021,8 @@ class SumoLogicMetricRules(SumoResource):
         return {
             "metric_rule_name": props.get("MetricRuleName"),
             "match_expression": props.get("MatchExpression"),
-            "variables": variables
+            "variables": variables,
+            "job_name": job_name
         }
 
 

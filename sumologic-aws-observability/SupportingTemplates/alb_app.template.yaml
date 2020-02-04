@@ -14,7 +14,7 @@ Metadata:
           - RemoveSumoResourcesOnDeleteStack
 
       - Label:
-          default: "AWS Resources Tag Configuration (Required)"
+          default: "Sumo Logic AWS Explorer Configuration (Required)"
         Parameters:
           - AccountAlias
 
@@ -22,6 +22,13 @@ Metadata:
           default: "App Details - Collector Configuration"
         Parameters:
           - CollectorName
+
+      - Label:
+          default: "App Details - CloudWatch Metrics Source Configuration"
+        Parameters:
+          - CreateCloudWatchMetricsSource
+          - CloudWatchMetricsSourceName
+          - CloudWatchMetricsSourceCategoryName
 
       - Label:
           default: "App Details - S3 Source Log Source Configuration"
@@ -34,19 +41,9 @@ Metadata:
           - S3LogsSourceCategoryName
 
       - Label:
-          default: "App Details - CloudWatch Metrics Source Configuration"
-        Parameters:
-          - CreateCloudWatchMetricsSource
-          - AWSRegion
-          - CloudWatchMetricsSourceName
-          - CloudWatchMetricsSourceCategoryName
-
-      - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
-          - QSS3BucketName
-          - QSS3KeyPrefix
 
     ParameterLabels:
       SumoDeployment:
@@ -81,8 +78,6 @@ Metadata:
 
       CreateCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
-      AWSRegion:
-        default: "AWS Region"
       CloudWatchMetricsSourceName:
         default: "Sumo Logic CloudWatch Metrics Source Name"
       CloudWatchMetricsSourceCategoryName:
@@ -90,10 +85,6 @@ Metadata:
 
       ParentStackName:
         default: "If Any, Name of parent Stack"
-      QSS3BucketName:
-        default: "S3 bucket name for code and templates"
-      QSS3KeyPrefix:
-        default: "S3 key prefix for code and templates"
 
 Parameters:
   SumoDeployment:
@@ -179,13 +170,6 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  AWSRegion:
-    Type: String
-    Default: 'Current Region'
-    Description: AWS Region for the resources that need to be tagged.
-    AllowedValues:
-      - 'Current Region'
-      - 'All Regions'
   CloudWatchMetricsSourceName:
     Type: String
     Description: Change the CloudWatch Metrics Source name to be created else default name will be used.
@@ -200,19 +184,6 @@ Parameters:
     Type: String
     Default: "ParentStackName"
     Description: Parent Stack Name. Do Not Edit the value.
-  QSS3BucketName:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    ConstraintDescription: "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Default: "sumologicawsobservabilityhelper"
-    Description: "S3 bucket name for the Quick Start assets. This string can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)."
-    Type: "String"
-
-  QSS3KeyPrefix:
-    AllowedPattern: "^[0-9a-zA-Z-/]*$"
-    ConstraintDescription: "Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Default: "sumologic-aws-observability/"
-    Description: "S3 key prefix for the Quick Start assets. Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/)."
-    Type: "String"
 
 Mappings:
   Region2ELBAccountId:
@@ -245,7 +216,6 @@ Mappings:
 
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
-  region_value: !Equals [!Ref AWSRegion, 'All Regions']
 
   create_target_s3_bucket: !Equals [!Ref CreateS3Bucket, 'Yes']
   install_s3_logs_source: !Equals [!Ref CreateS3LogSource, 'Yes']
@@ -284,8 +254,8 @@ Resources:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !If [do_not_use_parent_stack, !Sub "${QSS3BucketName}-${AWS::Region}", !Ref QSS3BucketName]
-        Key: !Sub "${QSS3KeyPrefix}SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:
@@ -325,6 +295,66 @@ Resources:
                 Resource:
                   "*"
 
+  TagAWSResources:
+    Type: Custom::TagAWSResources
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      Region: !Ref "AWS::Region"
+      AWSResource: elbv2
+      Tags:
+        account: !Ref AccountAlias
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  CreateSumoLogicAWSExplorerView:
+    Type: Custom::SumoLogicAWSExplorer
+    Condition: do_not_use_parent_stack
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      ExplorerName: "AWS ALB Observability"
+      MetadataKeys:
+        - "account"
+        - "region"
+        - "namespace"
+        - "entity"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  ALBMetricRule:
+    Type: Custom::SumoLogicMetricRules
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      MetricRuleName: "ALBMetricsEntityRule"
+      MatchExpression: !Sub "Namespace=AWS/ApplicationELB LoadBalancer=*"
+      ExtractVariables:
+        entity: "$LoadBalancer._1"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
   SumoHostedCollector:
     Type: Custom::Collector
     Condition: install_collector
@@ -358,7 +388,6 @@ Resources:
       Region: !Ref "AWS::Region"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
-      AWSRegion: !If [region_value, "all", !Ref "AWS::Region"]
       Namespaces:
         - 'AWS/ApplicationELB'
       SourceName: !Ref CloudWatchMetricsSourceName
