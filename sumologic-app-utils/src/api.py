@@ -990,7 +990,8 @@ class SumoLogicMetricRules(SumoResource):
             if hasattr(e, 'response') and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
-                    if error.get('code') == 'metrics:rule_name_already_exists':
+                    if error.get('code') == 'metrics:rule_name_already_exists' \
+                            or error.get('code') == 'metrics:rule_already_exists':
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
                         return {"METRIC_RULES": metric_rule_name}, "Duplicate"
             else:

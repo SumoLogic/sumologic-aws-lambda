@@ -9,6 +9,8 @@ export InstallTypes=("all" "onlyapp")
 
 for InstallType in "${InstallTypes[@]}"
 do
+    export AccountAlias="testec2${InstallType}"
+
     if [[ "${InstallType}" == "all" ]]
     then
         export CreateMetaDataSource="Yes"
@@ -30,7 +32,6 @@ do
     export CollectorName="AWS-Sourabh-Collector${AppName}-${InstallType}"
 
     # Export MetaData Source Details
-    export AWSRegion="Current Region"
     export MetaDataSourceName="AWS-MetaData-${AppName}-${InstallType}-Source"
     export MetricsSourceCategoryName="hostmetrics"
 
@@ -40,7 +41,7 @@ do
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
-    CollectorName="${CollectorName}" AWSRegion="${AWSRegion}" MetaDataSourceName="${MetaDataSourceName}" \
+    CollectorName="${CollectorName}" AccountAlias="${AccountAlias}" MetaDataSourceName="${MetaDataSourceName}" \
     MetricsSourceCategoryName="${MetricsSourceCategoryName}" \
     CreateMetaDataSource="${CreateMetaDataSource}"
 
