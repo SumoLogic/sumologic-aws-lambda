@@ -14,17 +14,13 @@ export AppName="master"
 # export InstallTypes=("rdsapp" "rdscloudwatch" "allapi" "apiapp" "apiallwithexistingbucket")
 # export InstallTypes=("lambdall" "lambdaapp" "lambdappwithexistingbucket")
 # export InstallTypes=("lambdacloud")
-# export InstallTypes=("allinstalls")
-export InstallTypes=("tagmetricrulesandApps")
+export InstallTypes=("allinstalls")
+# export InstallTypes=("tagmetricrulesandApps")
 
 for InstallType in "${InstallTypes[@]}"
 do
 
     export AccountAlias="testmaster${InstallType}"
-
-    # Export Explorer Option
-    export ExplorerName="AWS Explorer Test View"
-    export CreateExplorerView="No"
 
     # EC2 App Configuration
     export InstallEC2App="No"
@@ -87,9 +83,6 @@ do
     if [[ "${InstallType}" == "nothing" ]]
     then
         echo "nothing"
-    elif [[ "${InstallType}" == "explorer" ]]
-    then
-        export CreateExplorerView="Yes"
     elif [[ "${InstallType}" == "ec2app" ]]
     then
         export InstallEC2App="Yes"
@@ -175,7 +168,6 @@ do
         export CreateLambdaCloudWatchLogsSource="Yes"
     elif [[ "${InstallType}" == "allinstalls" ]]
     then
-        export CreateExplorerView="Yes"
         export InstallEC2App="Yes"
         export CreateMetaDataSource="Yes"
         export InstallALBApp="Yes"
@@ -215,7 +207,6 @@ do
     export SumoOrganizationId=""
     export SumoDeployment="nite"
     export RemoveSumoResourcesOnDeleteStack=true
-    export AWSRegion="Current Region"
 
     export template_file="${AppTemplateName}.template.yaml"
 
@@ -223,9 +214,9 @@ do
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
-    AWSRegion="${AWSRegion}" InstallEC2App="${InstallEC2App}" InstallALBApp="${InstallALBApp}" InstallDynamoDBApp="${InstallDynamoDBApp}" \
+    InstallEC2App="${InstallEC2App}" InstallALBApp="${InstallALBApp}" InstallDynamoDBApp="${InstallDynamoDBApp}" \
     InstallRDSApp="${InstallRDSApp}" InstallLambdaApp="${InstallLambdaApp}" InstallAPIGatewayApp="${InstallAPIGatewayApp}" \
-    CreateExplorerView="${CreateExplorerView}" ExplorerName="${ExplorerName}" AccountAlias="${AccountAlias}" \
+    AccountAlias="${AccountAlias}" \
     CreateMetaDataSource="${CreateMetaDataSource}" CreateS3Bucket="${CreateS3Bucket}" CreateS3LogSource="${CreateS3LogSource}" \
     CreateAlbCloudWatchMetricsSource="${CreateAlbCloudWatchMetricsSource}" CreateDynamoDBCloudTrailBucket="${CreateDynamoDBCloudTrailBucket}" \
     CreateDynamoDBCloudTrailLogSource="${CreateDynamoDBCloudTrailLogSource}" CreateDynamoDBCloudWatchMetricsSource="${CreateDynamoDBCloudWatchMetricsSource}" \

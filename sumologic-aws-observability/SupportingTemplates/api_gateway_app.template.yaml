@@ -297,7 +297,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      ExplorerName: "AWS API Gateway Observability"
+      ExplorerName: "AWS Observability"
       MetadataKeys:
         - "account"
         - "region"

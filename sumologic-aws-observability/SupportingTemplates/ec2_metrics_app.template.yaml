@@ -241,7 +241,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      ExplorerName: "AWS EC2 Observability"
+      ExplorerName: "AWS Observability"
       MetadataKeys:
         - "account"
         - "region"

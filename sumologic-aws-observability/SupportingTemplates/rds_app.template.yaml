@@ -235,7 +235,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      ExplorerName: "AWS RDS Observability"
+      ExplorerName: "AWS Observability"
       MetadataKeys:
         - "account"
         - "region"
