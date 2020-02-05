@@ -745,13 +745,13 @@ class TagAWSResources(SumoResource):
             data = iterable[idx:min(idx + size, length)]
             yield data
 
-    def _tag_aws_resources(self, region, aws_resource, tags, delete_flag=False):
+    def _tag_aws_resources(self, region, aws_resource, tags, account_id, delete_flag=False):
         client = boto3.client(aws_resource, region_name=region)
         next_token = None
         while next_token != 'END':
 
             values, next_token = self._call_aws_resource_for_tagging(region, aws_resource, client, next_token,
-                                                                     tags, delete_flag)
+                                                                     tags, delete_flag, account_id)
 
             if values:
                 print("TAG AWS RESOURCES - %s Resources are %s for region %s" % (aws_resource, values, region))
@@ -762,7 +762,7 @@ class TagAWSResources(SumoResource):
             if not next_token:
                 next_token = 'END'
 
-    def _call_aws_resource_for_tagging(self, region, aws_resource, client, next_token, tags, delete_flag):
+    def _call_aws_resource_for_tagging(self, region, aws_resource, client, next_token, tags, delete_flag, account_id):
         if aws_resource == 'ec2':
             return self._tag_ec2_resources(region, client, next_token)
         if aws_resource == 'elbv2':
@@ -773,6 +773,8 @@ class TagAWSResources(SumoResource):
             return self._tag_lambda_resources(client, next_token)
         if aws_resource == 'rds':
             return self._tag_rds_clusters_resources(region, client, next_token, tags, delete_flag)
+        if aws_resource == 'dynamodb':
+            return self._tag_dynamodb_resources(region, client, next_token, account_id)
 
     def _tag_ec2_resources(self, region, client, next_token):
         instances = []
@@ -787,6 +789,18 @@ class TagAWSResources(SumoResource):
                 instances.append("arn:aws:ec2:" + region + ":" + account_id + ":instance/" + ec2_instance['InstanceId'])
 
         return instances, response["NextToken"] if "NextToken" in response else None
+
+    def _tag_dynamodb_resources(self, region, client, next_token, account_id):
+        tables = []
+        if next_token:
+            response = client.list_tables(Limit=100, ExclusiveStartTableName=next_token)
+        else:
+            response = client.list_tables(Limit=100)
+
+        for table_name in response['TableNames']:
+            tables.append("arn:aws:dynamodb:" + region + ":" + account_id + ":table/" + table_name)
+
+        return tables, response["LastEvaluatedTableName"] if "LastEvaluatedTableName" in response else None
 
     def _tag_alb_resources(self, client, next_token):
         albs = []
@@ -879,11 +893,11 @@ class TagAWSResources(SumoResource):
 
         print("TAG AWS RESOURCES - RDS Resources are %s for region %s" % (values, region))
 
-    def create(self, region_value, aws_resource, tags, *args, **kwargs):
+    def create(self, region_value, aws_resource, tags, account_id, *args, **kwargs):
         print("TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags %s." % tags)
         regions = [region_value]
         for region in regions:
-            self._tag_aws_resources(region, aws_resource, tags)
+            self._tag_aws_resources(region, aws_resource, tags, account_id)
         print("TAG AWS RESOURCES - Completed the AWS resources Tag addition.")
 
         return {"TAG_CREATION": "Successful"}, "Tag"
@@ -891,7 +905,7 @@ class TagAWSResources(SumoResource):
     def update(self, *args, **kwargs):
         return {"TAG_UPDATE": "Successful"}, "Tag"
 
-    def delete(self, region_value, aws_resource, tags, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, region_value, aws_resource, tags, account_id, remove_on_delete_stack, *args, **kwargs):
         tags_list = []
         if tags:
             tags_list = list(tags.keys())
@@ -899,7 +913,7 @@ class TagAWSResources(SumoResource):
         if remove_on_delete_stack:
             regions = [region_value]
             for region in regions:
-                self._tag_aws_resources(region, aws_resource, tags_list, True)
+                self._tag_aws_resources(region, aws_resource, tags_list, account_id, True)
             print("TAG AWS RESOURCES - Completed the AWS resources Tag deletion.")
         else:
             print("TAG AWS RESOURCES - Skipping AWS resources tags deletion.")
@@ -912,7 +926,8 @@ class TagAWSResources(SumoResource):
         return {
             "region_value": props.get("Region"),
             "aws_resource": props.get("AWSResource"),
-            "tags": tags
+            "tags": tags,
+            "account_id": props.get("AccountID")
         }
 
 
