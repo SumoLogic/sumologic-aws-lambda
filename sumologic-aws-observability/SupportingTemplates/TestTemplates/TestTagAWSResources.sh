@@ -9,6 +9,8 @@ export InstallTypes=("all" "rds" "alb" "apigateway" "ec2" "lambda")
 
 for InstallType in "${InstallTypes[@]}"
 do
+    export AddTagsForDynamoDBResources="No"
+
     if [[ "${InstallType}" == "rds" ]]
     then
         export AddTagsForALBResources="No"
@@ -44,6 +46,14 @@ do
         export AddTagsForRDSResources="No"
         export AddTagsForEC2MetricsResources="No"
         export AddTagsForLambdaResources="Yes"
+    elif [[ "${InstallType}" == "dynamodb" ]]
+    then
+        export AddTagsForALBResources="No"
+        export AddTagsForAPIGatewayResources="No"
+        export AddTagsForRDSResources="No"
+        export AddTagsForEC2MetricsResources="No"
+        export AddTagsForLambdaResources="No"
+        export AddTagsForDynamoDBResources="Yes"
     elif [[ "${InstallType}" == "all" ]]
     then
         export AddTagsForALBResources="Yes"
@@ -51,6 +61,7 @@ do
         export AddTagsForRDSResources="Yes"
         export AddTagsForEC2MetricsResources="Yes"
         export AddTagsForLambdaResources="Yes"
+        export AddTagsForDynamoDBResources="Yes"
     else
         echo "No Choice"
     fi
@@ -73,7 +84,7 @@ do
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     AddTagsForALBResources="${AddTagsForALBResources}" AddTagsForAPIGatewayResources="${AddTagsForAPIGatewayResources}" \
     AddTagsForRDSResources="${AddTagsForRDSResources}" AddTagsForEC2MetricsResources="${AddTagsForEC2MetricsResources}" \
-    AddTagsForLambdaResources="${AddTagsForLambdaResources}" AccountAlias="${AccountAlias}"
+    AddTagsForLambdaResources="${AddTagsForLambdaResources}" AccountAlias="${AccountAlias}" AddTagsForDynamoDBResources="${AddTagsForDynamoDBResources}"
 
 done
 

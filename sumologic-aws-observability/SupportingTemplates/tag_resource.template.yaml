@@ -25,6 +25,7 @@ Metadata:
             - AddTagsForRDSResources
             - AddTagsForEC2MetricsResources
             - AddTagsForLambdaResources
+            - AddTagsForDynamoDBResources
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
@@ -52,6 +53,8 @@ Metadata:
         default: "Do you need to add Tags for AWS EC2 Metrics Resources?"
       AddTagsForLambdaResources:
         default: "Do you need to add Tags for AWS Lambda Resources?"
+      AddTagsForDynamoDBResources:
+        default: "Do you need to add Tags for AWS Dynamo DB Resources?"
       ParentStackName:
         default: "If Any, Name of parent Stack."
 
@@ -121,6 +124,13 @@ Parameters:
       - 'No'
     Default: 'Yes'
     Description: "Choose if you need to add tags for your AWS Resources."
+  AddTagsForDynamoDBResources:
+    Type: String
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
 
   ParentStackName:
     Type: String
@@ -133,6 +143,7 @@ Conditions:
   add_rds_tags: !Equals [!Ref AddTagsForRDSResources, 'Yes']
   add_ec2_metrics_tags: !Equals [!Ref AddTagsForEC2MetricsResources, 'Yes']
   add_lambda_tags: !Equals [!Ref AddTagsForLambdaResources, 'Yes']
+  add_dynamodb_tags: !Equals [!Ref AddTagsForDynamoDBResources, 'Yes']
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
 
 Resources:
@@ -166,6 +177,8 @@ Resources:
                   - elasticloadbalancing:*
                   - lambda:List*
                   - lambda:*Tag*
+                  - dynamodb:List*
+                  - dynamodb:*Tag*
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -288,3 +301,24 @@ Resources:
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
+
+  TagDynamoDBResources:
+    Type: Custom::TagAWSResources
+    Condition: add_dynamodb_tags
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicAWSObservabilityHelper
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      Region: !Ref "AWS::Region"
+      AWSResource: dynamodb
+      Tags:
+        account: !Ref AccountAlias
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      AccountID: !Ref "AWS::AccountId"
