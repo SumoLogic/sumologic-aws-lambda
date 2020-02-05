@@ -152,7 +152,14 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action: '*'
+                Action:
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - rds:Describe*
+                  - rds:*Tag*
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource: '*'
 
   SumoLogicHelperFunction:

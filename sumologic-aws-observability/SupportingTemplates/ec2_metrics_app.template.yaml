@@ -157,7 +157,14 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action: '*'
+                Action:
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - ec2:Describe*
+                  - ec2:*Tag*
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource: '*'
 
   SumoLogicHelperFunction:

@@ -243,7 +243,13 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action: '*'
+                Action:
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - elasticloadbalancing:*
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource: '*'
 
   SumoLogicHelperFunction:
