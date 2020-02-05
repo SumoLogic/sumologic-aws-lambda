@@ -227,8 +227,8 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: !Sub "${AccountAlias}EC2MetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${EC2SourceCategory} InstanceId=*"
+      MetricRuleName: "EC2MetricsEntityRule"
+      MatchExpression: !Sub "namespace=hostmetrics InstanceId=*"
       ExtractVariables:
         entity: "$InstanceId._1"
       SumoAccessID: !Ref SumoAccessID
@@ -383,39 +383,6 @@ Resources:
       MatchExpression: !Sub "Namespace=AWS/DynamoDB TableName=*"
       ExtractVariables:
         entity: "$TableName._1"
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
-
-  DynamoStackWaitHandle:
-    Condition: add_dynamo_rule
-    DependsOn: DynamoMetricRule
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  DynamoStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [add_dynamo_rule, !Ref DynamoStackWaitHandle, !Ref WaitHandle]
-      Timeout: "5"
-      Count: 0
-
-  DynamoAccountMetricRule:
-    Type: Custom::SumoLogicMetricRules
-    Condition: add_dynamo_rule
-    DependsOn: DynamoStackWaitCondition
-    Properties:
-      ServiceToken: !If
-        - do_not_use_parent_stack
-        - !GetAtt
-          - SumoLogicAWSObservabilityHelper
-          - Arn
-        - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: !Sub "${AccountAlias}DynamoMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${DynamoDBSourceCategory} Namespace=AWS/DynamoDB"
-      ExtractVariables:
-        account: !Sub "${AccountAlias}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment

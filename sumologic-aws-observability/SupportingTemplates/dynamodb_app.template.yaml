@@ -307,25 +307,6 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
-  DynamoAccountMetricRule:
-    Type: Custom::SumoLogicMetricRules
-    Properties:
-      ServiceToken: !If
-        - do_not_use_parent_stack
-        - !GetAtt
-          - SumoLogicHelperFunction
-          - Arn
-        - !ImportValue
-          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: !Sub "${AccountAlias}DynamoMetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName} Namespace=AWS/DynamoDB"
-      ExtractVariables:
-        account: !Sub "${AccountAlias}"
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
-
   SumoHostedCollector:
     Type: Custom::Collector
     Condition: install_collector

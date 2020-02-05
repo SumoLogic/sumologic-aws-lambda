@@ -269,8 +269,8 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: !Sub "${AccountAlias}EC2MetricsEntityRule"
-      MatchExpression: !Sub "_sourceCategory=${MetricsSourceCategoryName} InstanceId=*"
+      MetricRuleName: "EC2MetricsEntityRule"
+      MatchExpression: !Sub "namespace=hostmetrics InstanceId=*"
       ExtractVariables:
         entity: "$InstanceId._1"
       SumoAccessID: !Ref SumoAccessID
