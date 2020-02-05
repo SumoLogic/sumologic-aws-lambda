@@ -448,24 +448,13 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
 
   CloudWatchEventFunction:
+    Type: AWS::CloudFormation::Stack
     Condition: install_cloud_watch_logs_source
     Properties:
-      CodeUri:
-        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
-        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicCloudWatchEvents.zip"
-      Environment:
-        Variables:
-          SUMO_ENDPOINT: !GetAtt SumoHTTPSource.SUMO_ENDPOINT
-      Events:
-        CloudWatchEventTrigger:
-          Properties:
-            Pattern:
-              source:
-                - aws.guardduty
-          Type: CloudWatchEvent
-      Handler: cloudwatchevents.handler
-      Runtime: nodejs10.x
-    Type: AWS::Serverless::Function
+      TemplateURL: !Sub "https://s3.amazonaws.com/appdev-cloudformation-templates/DLQLambdaCloudFormation.json"
+      Parameters:
+        SumoEndPointURL: !GetAtt SumoHTTPSource.SUMO_ENDPOINT
+        IncludeLogGroupInfo: true
 
   SumoHTTPSource:
     Condition: install_cloud_watch_logs_source
