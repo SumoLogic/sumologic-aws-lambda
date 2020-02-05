@@ -214,7 +214,18 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action: '*'
+                Action:
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - dynamodb:List*
+                  - dynamodb:*Tag*
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - cloudtrail:CreateTrail
+                  - cloudtrail:DeleteTrail
+                  - cloudtrail:UpdateTrail
+                  - cloudtrail:StartLogging
                 Resource: '*'
 
   SumoLogicHelperFunction:
@@ -265,6 +276,26 @@ Resources:
                   - cloudwatch:GetMetricStatistics
                 Resource:
                   "*"
+
+  TagAWSResources:
+    Type: Custom::TagAWSResources
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      Region: !Ref "AWS::Region"
+      AWSResource: dynamodb
+      Tags:
+        account: !Ref AccountAlias
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      AccountID: !Ref "AWS::AccountId"
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
