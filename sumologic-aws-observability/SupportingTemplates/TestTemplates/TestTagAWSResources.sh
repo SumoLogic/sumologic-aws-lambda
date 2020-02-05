@@ -5,7 +5,7 @@ export AWS_PROFILE="personal"
 # App to test
 export AppTemplateName="tag_resource"
 export AppName="tagresources"
-export InstallTypes=("rds" "alb" "apigateway" "ec2" "lambda")
+export InstallTypes=("all" "rds" "alb" "apigateway" "ec2" "lambda")
 
 for InstallType in "${InstallTypes[@]}"
 do
@@ -43,6 +43,13 @@ do
         export AddTagsForAPIGatewayResources="No"
         export AddTagsForRDSResources="No"
         export AddTagsForEC2MetricsResources="No"
+        export AddTagsForLambdaResources="Yes"
+    elif [[ "${InstallType}" == "all" ]]
+    then
+        export AddTagsForALBResources="Yes"
+        export AddTagsForAPIGatewayResources="Yes"
+        export AddTagsForRDSResources="Yes"
+        export AddTagsForEC2MetricsResources="Yes"
         export AddTagsForLambdaResources="Yes"
     else
         echo "No Choice"
