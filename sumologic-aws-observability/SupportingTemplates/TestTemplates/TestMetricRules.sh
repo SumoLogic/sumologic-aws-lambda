@@ -5,7 +5,7 @@ export AWS_PROFILE="personal"
 # App to test
 export AppTemplateName="metric_rules"
 export AppName="metricrules"
-export InstallTypes=("ec2")
+export InstallTypes=("all")
 
 for InstallType in "${InstallTypes[@]}"
 do
@@ -19,7 +19,14 @@ do
     if [[ "${InstallType}" == "ec2" ]]
     then
         export AddMetricRuleForEC2Metrics="Yes"
-        export EC2SourceCategory="HostMetrics"
+    elif [[ "${InstallType}" == "all" ]]
+    then
+        export AddMetricRuleForALB="Yes"
+        export AddMetricRuleForAPIGateway="Yes"
+        export AddMetricRuleForRDS="Yes"
+        export AddMetricRuleForEC2Metrics="Yes"
+        export AddMetricRuleForLambda="Yes"
+        export AddMetricRuleForDynamoDB="Yes"
     else
         echo "No Choice"
     fi
@@ -42,8 +49,7 @@ do
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     AddMetricRuleForALB="${AddMetricRuleForALB}" AddMetricRuleForAPIGateway="${AddMetricRuleForAPIGateway}" \
     AddMetricRuleForRDS="${AddMetricRuleForRDS}" AddMetricRuleForEC2Metrics="${AddMetricRuleForEC2Metrics}" \
-    AddMetricRuleForLambda="${AddMetricRuleForLambda}" AddMetricRuleForDynamoDB="${AddMetricRuleForDynamoDB}" AccountAlias="${AccountAlias}" \
-    EC2SourceCategory="${EC2SourceCategory}"
+    AddMetricRuleForLambda="${AddMetricRuleForLambda}" AddMetricRuleForDynamoDB="${AddMetricRuleForDynamoDB}" AccountAlias="${AccountAlias}"
 
 done
 
