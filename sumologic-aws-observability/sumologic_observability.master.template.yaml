@@ -321,7 +321,7 @@ Parameters:
     Default: ""
   CreateS3LogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic S3 Log Source which collect ALB logs from an existing bucket or a new bucket. Default Name - aws-observability-alb-Region-AccountId.
+    Description: "Yes -> To create Sumo Logic S3 Log Source which collect ALB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-alb-Region-AccountId.
                   No -> If you already have an S3 source collecting ALB logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
@@ -341,7 +341,7 @@ Parameters:
     Default: ""
   CreateAlbCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - aws-observability-cloudwatch-metrics-Region.
+    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
                   No -> If you already have an CloudWatch Metrics Source collecting ALB metrics."
     Default: 'Yes'
     AllowedValues:
@@ -374,7 +374,7 @@ Parameters:
     Default: ""
   CreateDynamoDBCloudTrailLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect DynamoDB logs from an existing bucket or a new bucket. Default Name - aws-observability-cloudtrail-Region.
+    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect DynamoDB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
                   No -> If you already have an CloudTrail Log source collecting DynamoDB logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
@@ -394,7 +394,7 @@ Parameters:
     Default: ""
   CreateDynamoDBCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - aws-observability-cloudwatch-metrics-Region.
+    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
                   No -> If you already have an CloudWatch Metrics Source collecting DynamoDB metrics."
     Default: 'Yes'
     AllowedValues:
@@ -415,7 +415,7 @@ Parameters:
       - 'No'
   CreateRdsCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - aws-observability-cloudwatch-metrics-Region.
+    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
                   No -> If you already have an CloudWatch Metrics Source collecting RDS metrics."
     Default: 'Yes'
     AllowedValues:
@@ -448,7 +448,7 @@ Parameters:
     Default: ""
   CreateLambdaCloudTrailLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect DynamoDB logs from an existing bucket or a new bucket. Default Name - aws-observability-cloudtrail-Region.
+    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect DynamoDB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
                  No -> If you already have an CloudTrail Log source collecting DynamoDB logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
@@ -468,7 +468,7 @@ Parameters:
     Default: ""
   CreateLambdaCloudWatchLogsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Log Source which collect Lambda logs from AWS. Default Name - aws-observability-cloudwatch-logs-Region.
+    Description: "Yes -> To create Sumo Logic CloudWatch Log Source which collect Lambda logs from AWS. Default Name - AccountAlias-aws-observability-cloudwatch-logs-Region.
                   No -> If you already have an CloudWatch Log source collecting Lambda logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
@@ -488,7 +488,7 @@ Parameters:
     Default: ""
   CreateLambdaCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - aws-observability-cloudwatch-metrics-Region.
+    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
                  No -> If you already have an CloudWatch Metrics Source collecting Lambda metrics."
     Default: 'Yes'
     AllowedValues:
@@ -521,7 +521,7 @@ Parameters:
     Default: ""
   CreateApiGatewayCloudTrailLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect API Gateway logs from an existing bucket or a new bucket. Default Name - aws-observability-cloudtrail-Region.
+    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect API Gateway logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
                  No -> If you already have an CloudTrail Log source collecting API Gateway logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
@@ -541,7 +541,7 @@ Parameters:
     Default: ""
   CreateApiGatewayCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - aws-observability-cloudwatch-metrics-Region.
+    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
                  No -> If you already have an CloudWatch Metrics Source collecting API Gateway metrics."
     Default: 'Yes'
     AllowedValues:
@@ -658,18 +658,18 @@ Resources:
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         CreateCollector: !If [install_collector, 'Yes', 'No']
-        CollectorName: !Sub "aws-observability-${AWS::Region}"
+        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
         CreateS3Bucket: !If [create_target_s3_bucket, 'Yes', 'No']
         BucketName: !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}"
         CreateCloudTrailLogSource: !If [install_cloudtrail_logs_source, 'Yes', 'No']
-        CloudTrailLogsSourceName: !Sub "aws-observability-cloudtrail-${AWS::Region}"
+        CloudTrailLogsSourceName: !Sub "${AccountAlias}-aws-observability-cloudtrail-${AWS::Region}"
         CloudTrailLogsSourceCategoryName: "aws/observability/cloudtrail/logs"
         CloudTrailBucketPathExpression: !Sub "AWSLogs/${AWS::AccountId}/CloudTrail/*"
         CreateCloudWatchLogSource: !If [install_cloud_watch_logs_source, 'Yes', 'No']
-        CloudWatchLogsSourceName: !Sub "aws-observability-cloudwatch-logs-${AWS::Region}"
+        CloudWatchLogsSourceName: !Sub "${AccountAlias}-aws-observability-cloudwatch-logs-${AWS::Region}"
         CloudWatchLogsSourceCategoryName: "aws/observability/cloudwatch/logs"
         CreateCloudWatchMetricsSource: !If [install_cloud_watch_metric_source, 'Yes', 'No']
-        CloudWatchMetricsSourceName: !Sub "aws-observability-cloudwatch-metrics-${AWS::Region}"
+        CloudWatchMetricsSourceName: !Sub "${AccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
         CloudWatchMetricsSourceCategoryName: "aws/observability/cloudwatch/metrics"
         Namespaces: !Join
           - ","
@@ -720,10 +720,10 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "aws-observability-${AWS::Region}"
+        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
         MetricsSourceCategoryName: !Ref Ec2AppSourceCategoryName
         CreateMetaDataSource: !Ref CreateMetaDataSource
-        MetaDataSourceName: !Sub "aws-observability-ec2-metaData-${AWS::Region}"
+        MetaDataSourceName: !Sub "${AccountAlias}-aws-observability-ec2-metaData-${AWS::Region}"
         SumoOrganizationId: !Ref SumoOrganizationId
 
   sumoAlbMetricsAppStackWaitHandle:
@@ -751,12 +751,12 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "aws-observability-${AWS::Region}"
+        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
         CreateS3Bucket: !If [create_alb_bucket, "Yes", "No"]
         S3LogsBucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
         CreateS3LogSource: !Ref CreateS3LogSource
         S3BucketPathExpression: "*"
-        S3LogsSourceName: !If [install_alb_s3_log_source, !Sub "aws-observability-alb-s3-${AWS::Region}", !Ref AlbS3LogsSourceName]
+        S3LogsSourceName: !If [install_alb_s3_log_source, !Sub "${AccountAlias}-aws-observability-alb-s3-${AWS::Region}", !Ref AlbS3LogsSourceName]
         S3LogsSourceCategoryName: !If [install_alb_s3_log_source, "aws/observability/alb/logs", !Ref AlbS3LogsSourceCategoryName]
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_alb_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref AlbCloudWatchMetricsSourceCategoryName]
@@ -787,12 +787,12 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "aws-observability-${AWS::Region}"
+        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
         CreateCloudTrailBucket: "No"
         CloudTrailLogsBucketName: !If [create_dynamodb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref DynamoDBCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_dynamo_cloudtrail_log_source, "Yes", "No"]
         CloudTrailBucketPathExpression: "*"
-        CloudTrailLogsSourceName: !If [install_uncommon_dynamo_cloudtrail_log_source, !Sub "aws-observability-dynamodb-cloudtrail-${AWS::Region}", !Sub "aws-observability-cloudtrail-${AWS::Region}"]
+        CloudTrailLogsSourceName: !If [install_uncommon_dynamo_cloudtrail_log_source, !Sub "${AccountAlias}-aws-observability-dynamodb-cloudtrail-${AWS::Region}", !Sub "${AccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
         CloudTrailLogsSourceCategoryName: !If [install_uncommon_dynamo_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !If [install_common_dynamo_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref DynamoDBCloudTrailLogsSourceCategoryName]]
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_dynamoDB_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref DynamoDBCloudWatchMetricsSourceCategoryName]
@@ -840,12 +840,12 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "aws-observability-${AWS::Region}"
+        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
         CreateCloudTrailBucket: "No"
         CloudTrailLogsBucketName: !If [create_lambda_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref LambdaCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_lambda_cloudtrail_log_source, "Yes", "No"]
         CloudTrailBucketPathExpression: "*"
-        CloudTrailLogsSourceName: !If [install_uncommon_lambda_cloudtrail_log_source, !Sub "aws-observability-lambda-cloudtrail-${AWS::Region}", !Sub "aws-observability-cloudtrail-${AWS::Region}"]
+        CloudTrailLogsSourceName: !If [install_uncommon_lambda_cloudtrail_log_source, !Sub "${AccountAlias}-aws-observability-lambda-cloudtrail-${AWS::Region}", !Sub "${AccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
         CloudTrailLogsSourceCategoryName: !If [install_uncommon_lambda_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !If [install_common_lambda_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref LambdaCloudTrailLogsSourceCategoryName]]
         CreateCloudWatchLogSource: "No"
         CloudWatchLogsSourceCategoryName: !If [install_lambda_cloudwatch_logs_source, "aws/observability/cloudwatch/logs", !Ref LambdaCloudWatchLogsSourceCategoryName]
@@ -878,12 +878,12 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "aws-observability-${AWS::Region}"
+        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
         CreateCloudTrailBucket: "No"
         CloudTrailLogsBucketName: !If [create_api_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref ApiGatewayCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_api_cloudtrail_log_source, "Yes", "No"]
         CloudTrailBucketPathExpression: "*"
-        CloudTrailLogsSourceName: !If [install_uncommon_api_cloudtrail_log_source, !Sub "aws-observability-api-cloudtrail-${AWS::Region}", !Sub "aws-observability-cloudtrail-${AWS::Region}"]
+        CloudTrailLogsSourceName: !If [install_uncommon_api_cloudtrail_log_source, !Sub "${AccountAlias}-aws-observability-api-cloudtrail-${AWS::Region}", !Sub "${AccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
         CloudTrailLogsSourceCategoryName: !If [install_uncommon_api_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !If [install_common_api_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref ApiGatewayCloudTrailLogsSourceCategoryName]]
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_api_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref ApiGatewayCloudWatchMetricsSourceCategoryName]
