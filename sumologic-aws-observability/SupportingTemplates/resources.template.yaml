@@ -284,6 +284,18 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - rds:Describe*
+                  - rds:*Tag*
+                  - apigateway:*
+                  - ec2:Describe*
+                  - ec2:*Tag*
+                  - elasticloadbalancing:*
+                  - lambda:List*
+                  - lambda:*Tag*
+                  - dynamodb:List*
+                  - dynamodb:*Tag*
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
