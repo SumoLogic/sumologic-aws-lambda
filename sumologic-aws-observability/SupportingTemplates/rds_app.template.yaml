@@ -284,7 +284,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       FieldExtractionRuleName: "AwsObservabilityRDSFieldExtractionRule"
       FieldExtractionRuleScope: !Sub "_sourceCategory=*cloudtrail* \"eventSource\":\"rds.amazonaws.com\""
-      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"rds.amazonaws.com\" | \"AWS/RDS\" as Namespace"
+      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"rds.amazonaws.com\" | \"aws/rds\" as Namespace"
       FieldExtractionRuleParseEnabled: true
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey

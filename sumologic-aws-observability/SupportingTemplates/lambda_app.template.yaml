@@ -383,7 +383,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       FieldExtractionRuleName: "AwsObservabilityLambdaFieldExtractionRule"
       FieldExtractionRuleScope: !Sub "_sourceCategory=*cloudtrail* \"eventSource\":\"lambda.amazonaws.com\""
-      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"lambda.amazonaws.com\" | \"AWS/Lambda\" as Namespace"
+      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"lambda.amazonaws.com\" | \"aws/lambda\" as Namespace"
       FieldExtractionRuleParseEnabled: true
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey

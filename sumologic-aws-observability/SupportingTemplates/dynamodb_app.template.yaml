@@ -351,7 +351,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       FieldExtractionRuleName: "AwsObservabilityDynamoDBFieldExtractionRule"
       FieldExtractionRuleScope: !Sub "_sourceCategory=*cloudtrail* \"eventSource\":\"dynamodb.amazonaws.com\""
-      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"dynamodb.amazonaws.com\" | \"AWS/DynamoDB\" as Namespace"
+      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"dynamodb.amazonaws.com\" | \"aws/dynamodb\" as Namespace"
       FieldExtractionRuleParseEnabled: true
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
