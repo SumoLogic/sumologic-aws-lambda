@@ -263,10 +263,29 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: "RDSMetricsEntityRule"
+      MetricRuleName: "AwsObservabilityRDSMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/RDS cluster=*"
       ExtractVariables:
         entity: "$cluster._1"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  RDSFieldExtractionRule:
+    Type: Custom::SumoLogicFieldExtractionRule
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      FieldExtractionRuleName: "AwsObservabilityRDSFieldExtractionRule"
+      FieldExtractionRuleScope: !Sub "_sourceCategory=*cloudtrail* \"eventSource\":\"rds.amazonaws.com\""
+      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"rds.amazonaws.com\" | \"AWS/RDS\" as Namespace"
+      FieldExtractionRuleParseEnabled: true
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
