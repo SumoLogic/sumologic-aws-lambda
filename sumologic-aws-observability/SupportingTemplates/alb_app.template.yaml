@@ -353,7 +353,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: "ALBMetricsEntityRule"
+      MetricRuleName: "AwsObservabilityALBMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/ApplicationELB LoadBalancer=*"
       ExtractVariables:
         entity: "$LoadBalancer._1"

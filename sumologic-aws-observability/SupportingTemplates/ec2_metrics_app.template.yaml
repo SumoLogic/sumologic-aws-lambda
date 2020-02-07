@@ -269,7 +269,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: "EC2MetricsEntityRule"
+      MetricRuleName: "AwsObservabilityEC2MetricsEntityRule"
       MatchExpression: !Sub "Namespace=hostmetrics InstanceId=*"
       ExtractVariables:
         entity: "$InstanceId._1"
