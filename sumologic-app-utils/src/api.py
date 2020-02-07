@@ -1105,6 +1105,56 @@ class SumoLogicUpdateFields(SumoResource):
         }
 
 
+class SumoLogicFieldExtractionRule(SumoResource):
+    def create(self, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
+        content = {
+            "name": fer_name,
+            "scope": fer_scope,
+            "parseExpression": fer_expression,
+            "enabled": fer_enabled
+        }
+        try:
+            response = self.sumologic_cli.create_field_extraction_rule(content)
+            job_id = response.json()["id"]
+            print("FER RULES -  creation successful with ID %s" % job_id)
+            return {"FER_RULES": response.json()["name"]}, job_id
+        except Exception as e:
+            if hasattr(e, 'response') and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'fer:invalid_extraction_rule':
+                        print("FER RULES -  Duplicate Exists for Name %s" % fer_name)
+                        return {"FER_RULES": fer_name}, "Duplicate"
+            else:
+                raise
+
+    def update(self, *args, **kwargs):
+        return {"FER_RULES": "Successful"}, "fer"
+
+    def delete(self, fer_id, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack and fer_id != "Duplicate":
+            response = self.sumologic_cli.delete_field_extraction_rule(fer_id)
+            print("FER RULES - Completed the Metric Rule deletion for ID %s, response - %s" % (
+                fer_id, response.text))
+        else:
+            print("FER RULES - Skipping the Metric Rule deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        fer_id = None
+        if event.get('PhysicalResourceId'):
+            _, fer_id = event['PhysicalResourceId'].split("/")
+
+        return {
+            "fer_name": props.get("FieldExtractionRuleName"),
+            "fer_scope": props.get("FieldExtractionRuleScope"),
+            "fer_expression": props.get("FieldExtractionRuleParseExpression"),
+            "fer_enabled": props.get("FieldExtractionRuleParseEnabled"),
+            "fer_id": fer_id
+        }
+
+
 if __name__ == '__main__':
     params = {
 

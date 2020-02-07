@@ -230,3 +230,9 @@ class SumoLogic(object):
 
     def delete_metric_rule(self, metric_rule_name):
         return self.delete('/metricsRules/%s' % metric_rule_name)
+
+    def create_field_extraction_rule(self, content):
+        return self.post('/extractionRules', params=content)
+
+    def delete_field_extraction_rule(self, fer_name):
+        return self.delete('/extractionRules/%s' % fer_name)
