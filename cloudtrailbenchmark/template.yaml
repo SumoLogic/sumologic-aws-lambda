@@ -49,7 +49,7 @@ Metadata:
     Name: sumologic-aws-cloudtrail-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.7
+    SemanticVersion: 1.0.9
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 
 
@@ -313,7 +313,9 @@ Resources:
       AppId: "570bdc0d-f824-4fcb-96b2-3230d4497180"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
-        logsrc: !Sub "_sourceCategory=${SourceCategoryName}"
+        cloudtraillogsource: !Sub "_sourceCategory=${SourceCategoryName}"
+        indexname: "%rnd%"
+        incrementalindex: "%rnd%"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment

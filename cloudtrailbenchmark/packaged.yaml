@@ -43,9 +43,9 @@ Metadata:
     - benchmark
     - cloudtrail
     Name: sumologic-aws-cloudtrail-benchmark
-    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.7/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.7/8a901bb4fbbe82f128fc502dd3077508
-    SemanticVersion: 1.0.7
+    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.9/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.9/8a901bb4fbbe82f128fc502dd3077508
+    SemanticVersion: 1.0.9
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 Parameters:
   CollectorName:
@@ -350,8 +350,10 @@ Resources:
       RemoveOnDeleteStack:
         Ref: RemoveSumoResourcesOnDeleteStack
       AppSources:
-        logsrc:
+        cloudtraillogsource:
           Fn::Sub: _sourceCategory=${SourceCategoryName}
+        indexname: '%rnd%'
+        incrementalindex: '%rnd%'
       SumoAccessID:
         Ref: SumoAccessID
       SumoAccessKey:
