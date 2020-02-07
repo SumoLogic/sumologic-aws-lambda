@@ -362,7 +362,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: "LambdaMetricsEntityRule"
+      MetricRuleName: "AwsObservabilityLambdaMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/Lambda FunctionName=*"
       ExtractVariables:
         entity: "$FunctionName._1"
@@ -370,6 +370,24 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
+  LambdaFieldExtractionRule:
+    Type: Custom::SumoLogicFieldExtractionRule
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      FieldExtractionRuleName: "AwsObservabilityLambdaFieldExtractionRule"
+      FieldExtractionRuleScope: !Sub "_sourceCategory=*cloudtrail* \"eventSource\":\"lambda.amazonaws.com\""
+      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"lambda.amazonaws.com\" | \"AWS/Lambda\" as Namespace"
+      FieldExtractionRuleParseEnabled: true
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
 
   SumoHostedCollector:
     Type: Custom::Collector
