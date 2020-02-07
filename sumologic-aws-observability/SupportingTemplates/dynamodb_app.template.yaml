@@ -330,10 +330,29 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      MetricRuleName: "DynamoTableMetricsEntityRule"
+      MetricRuleName: "AwsObservabilityDynamoDBMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/DynamoDB TableName=*"
       ExtractVariables:
         entity: "$TableName._1"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  DynamoFieldExtractionRule:
+    Type: Custom::SumoLogicFieldExtractionRule
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      FieldExtractionRuleName: "AwsObservabilityDynamoDBFieldExtractionRule"
+      FieldExtractionRuleScope: !Sub "_sourceCategory=*cloudtrail* \"eventSource\":\"dynamodb.amazonaws.com\""
+      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"dynamodb.amazonaws.com\" | \"AWS/DynamoDB\" as Namespace"
+      FieldExtractionRuleParseEnabled: true
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
