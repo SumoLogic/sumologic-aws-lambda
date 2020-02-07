@@ -146,7 +146,7 @@ class SumoResource(object):
     def api_endpoint(self):
         if self.deployment == "us1":
             return "https://api.sumologic.com/api"
-        elif self.deployment in ["ca", "au", "de", "eu", "jp", "us2"]:
+        elif self.deployment in ["ca", "au", "de", "eu", "jp", "us2", "fed", "in"]:
             return "https://api.%s.sumologic.com/api" % self.deployment
         else:
             return 'https://%s-api.sumologic.net/api' % self.deployment
