@@ -236,3 +236,11 @@ class SumoLogic(object):
 
     def delete_field_extraction_rule(self, fer_name):
         return self.delete('/extractionRules/%s' % fer_name)
+
+    def get_all_field_extraction_rules(self, limit=None, token=None,):
+        params = {'limit': limit, 'token': token}
+        r = self.get('/extractionRules', params)
+        return json.loads(r.text)
+
+    def update_field_extraction_rules(self, fer_id, fer_details):
+        return self.put('/extractionRules/%s' % fer_id, fer_details)

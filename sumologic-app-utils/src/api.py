@@ -902,7 +902,9 @@ class TagAWSResources(SumoResource):
 
         return {"TAG_CREATION": "Successful"}, "Tag"
 
-    def update(self, *args, **kwargs):
+    def update(self, region_value, aws_resource, tags, account_id, *args, **kwargs):
+        self.create(region_value, aws_resource, tags, account_id, *args, **kwargs)
+        print("updated tags for aws resource %s " % aws_resource)
         return {"TAG_UPDATE": "Successful"}, "Tag"
 
     def delete(self, region_value, aws_resource, tags, account_id, remove_on_delete_stack, *args, **kwargs):
@@ -953,8 +955,11 @@ class SumoLogicAWSExplorer(SumoResource):
             else:
                 raise
 
-    def update(self, *args, **kwargs):
-        return {"EXPLORER_UPDATE": "Successful"}, "Tag"
+    # Explorer view can be updated and deleted from the main stack where it was created.
+    def update(self, explorer_id, explorer_name, hierarchy, *args, **kwargs):
+        self.delete(explorer_id, explorer_name, hierarchy, True, *args, **kwargs)
+        data, explorer_id = self.create(explorer_name, hierarchy, *args, **kwargs)
+        return data, explorer_id
 
     def delete(self, explorer_id, explorer_name, hierarchy, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack and explorer_id != "Duplicate":
@@ -1012,8 +1017,11 @@ class SumoLogicMetricRules(SumoResource):
             else:
                 raise
 
-    def update(self, *args, **kwargs):
-        return {"METRIC_RULES": "Successful"}, "metric"
+    # Metric rules can be updated and deleted from the main stack where it was created.
+    def update(self, job_name, metric_rule_name, match_expression, variables, *args, **kwargs):
+        self.delete(job_name, metric_rule_name, True, *args, **kwargs)
+        data, job_name = self.create(metric_rule_name, match_expression, variables, *args, **kwargs)
+        return data, job_name
 
     def delete(self, job_name, metric_rule_name, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack and job_name != "Duplicate":
@@ -1067,8 +1075,9 @@ class SumoLogicUpdateFields(SumoResource):
 
         return {"existing_fields": existing_fields}, source_id
 
-    def update(self, *args, **kwargs):
-        return {"UPDATE_FIELDS": "Successful"}, "fields"
+    def update(self, collector_id, source_name, fields, *args, **kwargs):
+        data, source_id = self.create(collector_id, source_name, fields, *args, **kwargs)
+        return data, source_id
 
     def delete(self, collector_id, source_id, fields, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -1106,6 +1115,23 @@ class SumoLogicUpdateFields(SumoResource):
 
 
 class SumoLogicFieldExtractionRule(SumoResource):
+    def _get_fer_by_name(self, fer_name):
+        token = ""
+        page_limit = 100
+        response = self.sumologic_cli.get_all_field_extraction_rules(limit=page_limit, token=token)
+        while response:
+            print("calling FER API with token "+ token)
+            for fer in response['data']:
+                if fer["name"] == fer_name:
+                    return fer
+            token = response['next']
+            if token:
+                response = self.sumologic_cli.get_all_field_extraction_rules(limit=page_limit, token=token)
+            else:
+                response = None
+
+        raise Exception("FER with name %s not found" % fer_name)
+
     def create(self, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
         content = {
             "name": fer_name,
@@ -1124,12 +1150,20 @@ class SumoLogicFieldExtractionRule(SumoResource):
                 for error in errors:
                     if error.get('code') == 'fer:invalid_extraction_rule':
                         print("FER RULES -  Duplicate Exists for Name %s" % fer_name)
+                        # check if there is difference in scope, if yes then merge the scopes.
+                        fer_details = self._get_fer_by_name(fer_name)
+                        if "scope" in fer_details and fer_scope not in fer_details["scope"]:
+                            fer_details["scope"] = fer_details["scope"] + " or " + fer_scope
+                            self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
                         return {"FER_RULES": fer_name}, "Duplicate"
             else:
                 raise
 
-    def update(self, *args, **kwargs):
-        return {"FER_RULES": "Successful"}, "fer"
+    # Field Extraction Rule can be updated and deleted from the main stack where it was created.
+    def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
+        self.delete(fer_id, True, *args, **kwargs)
+        data, fer_id = self.create(fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs)
+        return data, fer_id
 
     def delete(self, fer_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack and fer_id != "Duplicate":
