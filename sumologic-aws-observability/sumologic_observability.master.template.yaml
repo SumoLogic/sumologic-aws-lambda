@@ -902,18 +902,18 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         AccountAlias: !Ref AccountAlias
-        CreateS3LogSource: !Ref CreateS3LogSource
+        CreateS3LogSource: !If [install_alb_app, !Ref CreateS3LogSource, "Yes"]
         AlbS3LogsCollectorName: !Ref AlbS3LogsCollectorName
         AlbS3LogsSourceName: !Ref AlbS3LogsSourceName
-        CreateDynamoDBCloudTrailLogSource: !Ref CreateDynamoDBCloudTrailLogSource
+        CreateDynamoDBCloudTrailLogSource: !If [install_dynamo_db_app, !Ref CreateDynamoDBCloudTrailLogSource, "Yes"]
         DynamoDBCloudTrailCollectorName: !Ref DynamoDBCloudTrailCollectorName
         DynamoDBCloudTrailLogsSourceName: !Ref DynamoDBCloudTrailLogsSourceName
-        CreateApiGatewayCloudTrailLogSource: !Ref CreateApiGatewayCloudTrailLogSource
+        CreateApiGatewayCloudTrailLogSource: !If [install_api_gateway_app, !Ref CreateApiGatewayCloudTrailLogSource, "Yes"]
         ApiGatewayCloudTrailCollectorName: !Ref ApiGatewayCloudTrailCollectorName
         ApiGatewayCloudTrailLogsSourceName: !Ref ApiGatewayCloudTrailLogsSourceName
-        CreateLambdaCloudTrailLogSource: !Ref CreateLambdaCloudTrailLogSource
+        CreateLambdaCloudTrailLogSource: !If [install_lambda_app, !Ref CreateLambdaCloudTrailLogSource, "Yes"]
         LambdaCloudTrailCollectorName: !Ref LambdaCloudTrailCollectorName
         LambdaCloudTrailLogsSourceName: !Ref LambdaCloudTrailLogsSourceName
-        CreateLambdaCloudWatchLogsSource: !Ref CreateLambdaCloudWatchLogsSource
+        CreateLambdaCloudWatchLogsSource: !If [install_lambda_app, !Ref CreateLambdaCloudWatchLogsSource, "Yes"]
         LambdaCloudWatchLogsCollectorName: !Ref LambdaCloudWatchLogsCollectorName
         LambdaCloudWatchLogsSourceName: !Ref LambdaCloudWatchLogsSourceName
