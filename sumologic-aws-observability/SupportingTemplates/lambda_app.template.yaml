@@ -381,9 +381,9 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      FieldExtractionRuleName: "AwsObservabilityLambdaFieldExtractionRule"
-      FieldExtractionRuleScope: !Sub "_sourceCategory=*cloudtrail* \"eventSource\":\"lambda.amazonaws.com\""
-      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource = \"lambda.amazonaws.com\" | \"aws/lambda\" as Namespace"
+      FieldExtractionRuleName: "AwsObservabilityFieldExtractionRule"
+      FieldExtractionRuleScope: !Sub "(_sourceCategory=${CloudTrailLogsSourceCategoryName} \"eventSource\":\"lambda.amazonaws.com\")"
+      FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource in (\"rds.amazonaws.com\", \"apigateway.amazonaws.com\", \"lambda.amazonaws.com\", \"dynamodb.amazonaws.com\") | if (eventSource matches \"rds.amazonaws.com\", \"aws/rds\", if (eventSource matches \"apigateway.amazonaws.com\",  \"aws/apigateway\", if (eventSource matches \"lambda.amazonaws.com\",  \"aws/lambda\", if (eventSource matches \"dynamodb.amazonaws.com\",  \"aws/dynamodb\", \"\")))) as Namespace"
       FieldExtractionRuleParseEnabled: true
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
