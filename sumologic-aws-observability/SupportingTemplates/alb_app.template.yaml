@@ -555,7 +555,7 @@ Resources:
       PathExpression: !Ref S3BucketPathExpression
       Fields:
         account: !Ref AccountAlias
-        namespace: "AWS/ApplicationELB"
+        namespace: "aws/applicationelb"
         region: !Ref "AWS::Region"
       RoleArn: !If
         - do_not_use_parent_stack

@@ -503,6 +503,8 @@ Resources:
       DateLocatorRegex: '.*"updatedAt":"(.*)".*'
       Fields:
         account: !Ref AccountAlias
+        namespace: "aws/lambda"
+        region: !Ref "AWS::Region"
 
   SumoCloudTrailExportPolicy:
     Condition: create_target_s3_bucket

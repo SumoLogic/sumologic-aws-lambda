@@ -547,6 +547,8 @@ Resources:
       DateLocatorRegex: '.*"updatedAt":"(.*)".*'
       Fields:
         account: !Ref AccountAlias
+        namespace: "aws/lambda"
+        region: !Ref "AWS::Region"
 
 Outputs:
   StackName:
