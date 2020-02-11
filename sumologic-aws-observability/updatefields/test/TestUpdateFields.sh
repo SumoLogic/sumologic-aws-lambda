@@ -56,7 +56,7 @@ do
 
     export template_file="${AppTemplateName}.template.yaml"
 
-    aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ././../${template_file} \
+    aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ././../sam/${template_file} \
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     AlbS3LogsCollectorName="${AlbS3LogsCollectorName}" CreateS3LogSource="${CreateS3LogSource}" AlbS3LogsSourceName="${AlbS3LogsSourceName}" \
