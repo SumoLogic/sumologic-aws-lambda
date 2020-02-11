@@ -955,7 +955,7 @@ class SumoLogicAWSExplorer(SumoResource):
             else:
                 raise
 
-    # Explorer view can be updated and deleted from the main stack where it was created.
+    # No Update API. So, Explorer view can be updated and deleted from the main stack where it was created.
     def update(self, explorer_id, explorer_name, hierarchy, *args, **kwargs):
         self.delete(explorer_id, explorer_name, hierarchy, True, *args, **kwargs)
         data, explorer_id = self.create(explorer_name, hierarchy, *args, **kwargs)
@@ -1017,7 +1017,7 @@ class SumoLogicMetricRules(SumoResource):
             else:
                 raise
 
-    # Metric rules can be updated and deleted from the main stack where it was created.
+    # No Update API. So, Metric rules can be updated and deleted from the main stack where it was created.
     def update(self, job_name, metric_rule_name, match_expression, variables, *args, **kwargs):
         self.delete(job_name, metric_rule_name, True, *args, **kwargs)
         data, job_name = self.create(metric_rule_name, match_expression, variables, *args, **kwargs)
@@ -1075,6 +1075,7 @@ class SumoLogicUpdateFields(SumoResource):
 
         return {"existing_fields": existing_fields}, source_id
 
+    # Update the new fields to source.
     def update(self, collector_id, source_name, fields, *args, **kwargs):
         data, source_id = self.create(collector_id, source_name, fields, *args, **kwargs)
         return data, source_id
@@ -1161,7 +1162,6 @@ class SumoLogicFieldExtractionRule(SumoResource):
 
     # Field Extraction Rule can be updated and deleted from the main stack where it was created.
     def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
-        self.delete(fer_id, True, *args, **kwargs)
         data, fer_id = self.create(fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs)
         return data, fer_id
 
