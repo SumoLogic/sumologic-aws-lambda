@@ -129,7 +129,7 @@ Parameters:
 
   InstallApp:
     Type: String
-    Description: Install Sumo Logic App. Select Yes for differnt source category.
+    Description: Install Sumo Logic App. Select Yes for different source category.
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
