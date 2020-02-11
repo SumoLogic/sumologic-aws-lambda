@@ -236,7 +236,12 @@ class Collector(SumoResource):
         '''
         this should not have any sources?
         '''
-        if remove_on_delete_stack:
+        cv, etag = self.sumologic_cli.collector(collector_id)
+        sources = 0
+        if "links" in cv['collector']:
+            sources = len(cv['collector']['links'])
+
+        if remove_on_delete_stack and sources <= 0:
             response = self.sumologic_cli.delete_collector({"collector": {"id": collector_id}})
             print("deleted collector %s : %s" % (collector_id, response.text))
         else:
