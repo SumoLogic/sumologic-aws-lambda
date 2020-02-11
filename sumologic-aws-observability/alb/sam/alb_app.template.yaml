@@ -197,32 +197,50 @@ Parameters:
 
 Mappings:
   Region2ELBAccountId:
-    us-east-1:
-      AccountId: '127311923021'
-    us-west-1:
-      AccountId: 027434742980
-    us-west-2:
-      AccountId: '797873946194'
-    eu-west-1:
-      AccountId: '156460612806'
+    ap-east-1:
+      AccountId: "754344448648"
     ap-northeast-1:
-      AccountId: '582318560864'
+      AccountId: "582318560864"
     ap-northeast-2:
-      AccountId: '600734575887'
-    ap-southeast-1:
-      AccountId: '114774131450'
-    ap-southeast-2:
-      AccountId: '783225319266'
+      AccountId: "600734575887"
+    ap-northeast-3:
+      AccountId: "383597477331"
     ap-south-1:
-      AccountId: '718504428378'
-    us-east-2:
-      AccountId: 033677994240
-    sa-east-1:
-      AccountId: '507241528517'
+      AccountId: "718504428378"
+    ap-southeast-1:
+      AccountId: "114774131450"
+    ap-southeast-2:
+      AccountId: "783225319266"
+    ca-central-1:
+      AccountId: "985666609251"
     cn-north-1:
-      AccountId: '638102146993'
+      AccountId: "638102146993"
+    cn-northwest-1:
+      AccountId: "037604701340"
     eu-central-1:
-      AccountId: 054676820928
+      AccountId: "054676820928"
+    eu-north-1:
+      AccountId: "897822967062"
+    eu-west-1:
+      AccountId: "156460612806"
+    eu-west-2:
+      AccountId: "652711504416"
+    eu-west-3:
+      AccountId: "009996457667"
+    sa-east-1:
+      AccountId: "507241528517"
+    us-east-1:
+      AccountId: "127311923021"
+    us-east-2:
+      AccountId: "033677994240"
+    us-gov-east-1:
+      AccountId: "190560391635"
+    us-gov-west-1:
+      AccountId: "048591011584"
+    us-west-1:
+      AccountId: "027434742980"
+    us-west-2:
+      AccountId: "797873946194"
 
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
