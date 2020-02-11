@@ -268,7 +268,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
     Description: "To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
@@ -618,12 +618,37 @@ Conditions:
     - !Condition install_cloud_watch_logs_source
     - !Condition install_cloud_watch_metric_source
 
-  install_ec2_metrics_app: !Equals [ !Ref InstallEC2App, 'Yes' ]
-  install_alb_app: !Equals [ !Ref InstallALBApp, 'Yes' ]
-  install_dynamo_db_app: !Equals [ !Ref InstallDynamoDBApp, 'Yes' ]
-  install_rds_app: !Equals [ !Ref InstallRDSApp, 'Yes' ]
-  install_lambda_app: !Equals [ !Ref InstallLambdaApp, 'Yes' ]
-  install_api_gateway_app: !Equals [ !Ref InstallAPIGatewayApp, 'Yes' ]
+  # Conditions for calling child stack of each app. If any resource create condition is true.
+  install_ec2_metrics_app: !Or
+    - !Equals [ !Ref InstallEC2App, 'Yes' ]
+    - !Condition install_ec2_metadata_source
+  install_alb_app: !Or
+    - !Equals [ !Ref InstallALBApp, 'Yes' ]
+    - !Condition create_alb_bucket
+    - !Condition install_alb_s3_log_source
+    - !Condition install_alb_cloudwatch_metrics_source
+  install_dynamo_db_app: !Or
+    - !Equals [ !Ref InstallDynamoDBApp, 'Yes' ]
+    - !Condition create_dynamodb_bucket
+    - !Condition install_uncommon_dynamo_cloudtrail_log_source
+    - !Condition install_common_dynamo_cloudtrail_log_source
+    - !Condition install_dynamoDB_cloudwatch_metrics_source
+  install_rds_app: !Or
+    - !Equals [ !Ref InstallRDSApp, 'Yes' ]
+    - !Condition install_rds_cloudwatch_metrics_source
+  install_lambda_app: !Or
+    - !Equals [ !Ref InstallLambdaApp, 'Yes' ]
+    - !Condition create_lambda_bucket
+    - !Condition install_uncommon_lambda_cloudtrail_log_source
+    - !Condition install_common_lambda_cloudtrail_log_source
+    - !Condition install_lambda_cloudwatch_metrics_source
+    - !Condition install_lambda_cloudwatch_logs_source
+  install_api_gateway_app: !Or
+    - !Equals [ !Ref InstallAPIGatewayApp, 'Yes' ]
+    - !Condition create_api_bucket
+    - !Condition install_uncommon_api_cloudtrail_log_source
+    - !Condition install_common_api_cloudtrail_log_source
+    - !Condition install_api_cloudwatch_metrics_source
 
   common_resources_creation: !Or
     - !Condition install_ec2_metrics_app
@@ -658,7 +683,7 @@ Resources:
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         CreateCollector: !If [install_collector, 'Yes', 'No']
-        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
+        CollectorName: !Sub "aws-observability-collector"
         CreateS3Bucket: !If [create_target_s3_bucket, 'Yes', 'No']
         BucketName: !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}"
         CreateCloudTrailLogSource: !If [install_cloudtrail_logs_source, 'Yes', 'No']
@@ -696,7 +721,7 @@ Resources:
     DependsOn: CommonResourceStackWaitCondition
     Properties:
       ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       ExplorerName: "AWS Observability"
       MetadataKeys:
         - "account"
@@ -720,11 +745,12 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
+        CollectorName: !Sub "aws-observability-collector"
         MetricsSourceCategoryName: !Ref Ec2AppSourceCategoryName
         CreateMetaDataSource: !Ref CreateMetaDataSource
         MetaDataSourceName: !Sub "${AccountAlias}-aws-observability-ec2-metaData-${AWS::Region}"
         SumoOrganizationId: !Ref SumoOrganizationId
+        InstallApp: !Ref InstallEC2App
 
   sumoAlbMetricsAppStackWaitHandle:
     Condition: install_ec2_metrics_app
@@ -751,7 +777,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
+        CollectorName: !Sub "aws-observability-collector"
         CreateS3Bucket: !If [create_alb_bucket, "Yes", "No"]
         S3LogsBucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
         CreateS3LogSource: !Ref CreateS3LogSource
@@ -761,6 +787,7 @@ Resources:
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_alb_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref AlbCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
+        InstallApp: !Ref InstallALBApp
 
   sumoDynamoDBMetricsAppStackWaitHandle:
     Condition: install_alb_app
@@ -787,7 +814,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
+        CollectorName: !Sub "aws-observability-collector"
         CreateCloudTrailBucket: "No"
         CloudTrailLogsBucketName: !If [create_dynamodb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref DynamoDBCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_dynamo_cloudtrail_log_source, "Yes", "No"]
@@ -797,6 +824,7 @@ Resources:
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_dynamoDB_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref DynamoDBCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
+        InstallApp: !Ref InstallDynamoDBApp
 
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
@@ -814,6 +842,7 @@ Resources:
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_rds_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref RdsCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
+        InstallApp: !Ref InstallRDSApp
 
   sumoLambdaMetricsAppStackWaitHandle:
     Condition: install_rds_app
@@ -840,7 +869,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
+        CollectorName: !Sub "aws-observability-collector"
         CreateCloudTrailBucket: "No"
         CloudTrailLogsBucketName: !If [create_lambda_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref LambdaCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_lambda_cloudtrail_log_source, "Yes", "No"]
@@ -852,6 +881,7 @@ Resources:
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_lambda_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref LambdaCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
+        InstallApp: !Ref InstallLambdaApp
 
   sumoApiGatewayMetricsAppStackWaitHandle:
     Condition: install_lambda_app
@@ -878,7 +908,7 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-        CollectorName: !Sub "${AccountAlias}-aws-observability-${AWS::Region}"
+        CollectorName: !Sub "aws-observability-collector"
         CreateCloudTrailBucket: "No"
         CloudTrailLogsBucketName: !If [create_api_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref ApiGatewayCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_api_cloudtrail_log_source, "Yes", "No"]
@@ -888,6 +918,7 @@ Resources:
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_api_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref ApiGatewayCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
+        InstallApp: !Ref InstallAPIGatewayApp
 
   AddFieldsToLogSources:
     Type: AWS::CloudFormation::Stack
