@@ -445,8 +445,7 @@ Resources:
   SumoCloudTrailSource:
     Condition: install_cloudtrail_logs_source
     Type: Custom::AWSSource
-    DependsOn:
-      - SumoLogicLambdaHelper
+    DependsOn: SumoHostedCollector
     Properties:
       SourceType: AwsCloudTrailBucket
       ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
@@ -550,6 +549,7 @@ Resources:
 
   SumoHTTPSource:
     Condition: install_cloud_watch_logs_source
+    DependsOn: SumoHostedCollector
     Type: Custom::HTTPSource
     Properties:
       ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
