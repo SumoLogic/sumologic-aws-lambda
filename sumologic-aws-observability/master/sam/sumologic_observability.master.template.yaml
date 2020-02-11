@@ -674,7 +674,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Condition: common_resources_creation
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/resources.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/common/sam/resources.template.yaml"
       Parameters:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -737,7 +737,7 @@ Resources:
     Condition: install_ec2_metrics_app
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/ec2_metrics_app.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/ec2metrics/sam/ec2_metrics_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -769,7 +769,7 @@ Resources:
     DependsOn: sumoAlbMetricsAppStackWaitCondition
     Condition: install_alb_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/alb_app.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/alb/sam/alb_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -806,7 +806,7 @@ Resources:
     DependsOn: sumoDynamoDBMetricsAppStackWaitCondition
     Condition: install_dynamo_db_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/dynamodb_app.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/dynamodb/sam/dynamodb_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -831,7 +831,7 @@ Resources:
     Condition: install_rds_app
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/rds_app.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/rds/sam/rds_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -861,7 +861,7 @@ Resources:
     DependsOn: sumoLambdaMetricsAppStackWaitCondition
     Condition: install_lambda_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/lambda_app.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/lambda/sam/lambda_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -900,7 +900,7 @@ Resources:
     DependsOn: sumoApiGatewayMetricsAppStackWaitCondition
     Condition: install_api_gateway_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/api_gateway_app.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/apigateway/sam/api_gateway_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -925,7 +925,7 @@ Resources:
     Condition: add_fields_to_log_sources
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/SupportingTemplates/update_fields.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/updatefields/sam/update_fields.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
