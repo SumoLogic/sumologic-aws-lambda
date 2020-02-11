@@ -21,6 +21,7 @@ Metadata:
       - Label:
           default: "App Details - Collector Configuration"
         Parameters:
+          - InstallApp
           - CollectorName
 
       - Label:
@@ -60,6 +61,8 @@ Metadata:
       AccountAlias:
         default: "Alias for AWS Account Identification"
 
+      InstallApp:
+        default: "Install Sumo Logic App"
       CollectorName:
         default: "Collector Name"
 
@@ -115,7 +118,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
 
@@ -124,6 +127,13 @@ Parameters:
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
     AllowedPattern: "[a-zA-Z0-9]+"
 
+  InstallApp:
+    Type: String
+    Description: Install Sumo Logic App. Select Yes for differnt source category.
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
   CollectorName:
     Type: String
     Description: Change the collector name to be created else default name will be used.
@@ -217,6 +227,7 @@ Mappings:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
 
+  install_app: !Equals [!Ref InstallApp, 'Yes']
   create_target_s3_bucket: !Equals [!Ref CreateS3Bucket, 'Yes']
   install_s3_logs_source: !Equals [!Ref CreateS3LogSource, 'Yes']
   install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
@@ -331,7 +342,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       ExplorerName: "AWS Observability"
       MetadataKeys:
         - "account"
@@ -352,7 +363,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityALBMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/ApplicationELB LoadBalancer=*"
       ExtractVariables:
@@ -417,6 +428,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoSourceRoleARN'
 
   sumoApp:
+    Condition: install_app
     Type: Custom::App
     Properties:
       ServiceToken: !If

@@ -11,6 +11,7 @@ for InstallType in "${InstallTypes[@]}"
 do
     export S3LogsBucketName="${AppName}-${InstallType}-qwerty"
     export AccountAlias="testalb${InstallType}"
+    export InstallApp="Yes"
 
     if [[ "${InstallType}" == "all" ]]
     then
@@ -38,6 +39,12 @@ do
         export CreateS3Bucket="No"
         export CreateS3LogSource="No"
         export CreateCloudWatchMetricsSource="Yes"
+    elif [[ "${InstallType}" == "noapp" ]]
+    then
+        export CreateS3Bucket="Yes"
+        export CreateS3LogSource="Yes"
+        export CreateCloudWatchMetricsSource="Yes"
+        export InstallApp="No"
     else
         echo "No Choice"
     fi
@@ -68,7 +75,7 @@ do
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     CollectorName="${CollectorName}" S3LogsBucketName="${S3LogsBucketName}" S3BucketPathExpression="${S3BucketPathExpression}" \
-    S3LogsSourceName="${S3LogsSourceName}" S3LogsSourceCategoryName="${S3LogsSourceCategoryName}" \
+    S3LogsSourceName="${S3LogsSourceName}" S3LogsSourceCategoryName="${S3LogsSourceCategoryName}" InstallApp="${InstallApp}"\
     CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
     CreateS3Bucket="${CreateS3Bucket}" CreateS3LogSource="${CreateS3LogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
 
