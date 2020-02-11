@@ -206,7 +206,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityEC2MetricsEntityRule"
       MatchExpression: !Sub "Namespace=hostmetrics InstanceId=*"
       ExtractVariables:
@@ -239,7 +239,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityRDSMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/RDS cluster=*"
       ExtractVariables:
@@ -272,7 +272,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityALBMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/ApplicationELB LoadBalancer=*"
       ExtractVariables:
@@ -292,7 +292,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityLambdaMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/Lambda FunctionName=*"
       ExtractVariables:
@@ -325,7 +325,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityApiGatewayMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/ApiGateway ApiName=*"
       ExtractVariables:
@@ -358,7 +358,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityDynamoDBMetricsEntityRule"
       MatchExpression: !Sub "Namespace=AWS/DynamoDB TableName=*"
       ExtractVariables:

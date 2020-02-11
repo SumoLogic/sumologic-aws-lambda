@@ -21,6 +21,7 @@ Metadata:
       - Label:
           default: "App Details - Collector Configuration"
         Parameters:
+          - InstallApp
           - CollectorName
 
       - Label:
@@ -54,6 +55,8 @@ Metadata:
       AccountAlias:
         default: "Alias for AWS Account Identification"
 
+      InstallApp:
+        default: "Install Sumo Logic App"
       CollectorName:
         default: "Collector Name"
 
@@ -97,7 +100,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
     Description: To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
     Type: String
 
@@ -106,6 +109,13 @@ Parameters:
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
     AllowedPattern: "[a-zA-Z0-9]+"
 
+  InstallApp:
+    Type: String
+    Description: Install Sumo Logic App. Select Yes for different source category.
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
   CollectorName:
     Type: String
     Description: Change the collector name to be created else default name will be used.
@@ -136,6 +146,7 @@ Parameters:
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
 
+  install_app: !Equals [!Ref InstallApp, 'Yes']
   install_metadata_source: !Equals [!Ref CreateMetaDataSource, 'Yes']
 
 Resources:
@@ -247,7 +258,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       ExplorerName: "AWS Observability"
       MetadataKeys:
         - "account"
@@ -268,7 +279,7 @@ Resources:
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityEC2MetricsEntityRule"
       MatchExpression: !Sub "Namespace=hostmetrics InstanceId=*"
       ExtractVariables:
@@ -325,6 +336,7 @@ Resources:
 
   sumoApp:
     Type: Custom::App
+    Condition: install_app
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
