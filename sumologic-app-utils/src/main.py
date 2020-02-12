@@ -1,5 +1,8 @@
 from crhelper import CfnResource
-from api import ResourceFactory, SumoResource
+from sumoresource import SumoResource
+from awsresource import AWSResource
+
+from resourcefactory import ResourceFactory
 
 helper = CfnResource(json_logging=False, log_level='DEBUG')
 
