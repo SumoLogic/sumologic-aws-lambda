@@ -67,10 +67,6 @@ do
     fi
 
     # Export Sumo Properties
-    export SumoAccessID=""
-    export SumoAccessKey=""
-    export SumoOrganizationId=""
-    export SumoDeployment="us1"
     export RemoveSumoResourcesOnDeleteStack=true
 
     # Export Tags Details
@@ -80,8 +76,7 @@ do
 
     aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ././../sam/${template_file} \
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
-    --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
-    SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
+    --parameter-overrides RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     AddTagsForALBResources="${AddTagsForALBResources}" AddTagsForAPIGatewayResources="${AddTagsForAPIGatewayResources}" \
     AddTagsForRDSResources="${AddTagsForRDSResources}" AddTagsForEC2MetricsResources="${AddTagsForEC2MetricsResources}" \
     AddTagsForLambdaResources="${AddTagsForLambdaResources}" AccountAlias="${AccountAlias}" AddTagsForDynamoDBResources="${AddTagsForDynamoDBResources}"

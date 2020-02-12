@@ -7,9 +7,6 @@ Metadata:
       - Label:
           default: "Sumo Logic Deployment Configuration (Required)"
         Parameters:
-          - SumoDeployment
-          - SumoAccessID
-          - SumoAccessKey
           - RemoveSumoResourcesOnDeleteStack
 
       - Label:
@@ -33,12 +30,6 @@ Metadata:
             - ParentStackName
 
     ParameterLabels:
-      SumoDeployment:
-        default: "Sumo Logic Deployment Name."
-      SumoAccessID:
-        default: "Sumo Logic Access ID."
-      SumoAccessKey:
-        default: "Sumo Logic Access Key."
       RemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted."
       AccountAlias:
@@ -59,24 +50,6 @@ Metadata:
         default: "If Any, Name of parent Stack."
 
 Parameters:
-  SumoAccessID:
-    Type: String
-    Description: The Sumo Logic Access ID.
-  SumoAccessKey:
-    Type: String
-    Description: The Sumo Logic Access Key.
-  SumoDeployment:
-    Type: String
-    AllowedValues:
-      - au
-      - ca
-      - de
-      - eu
-      - jp
-      - us2
-      - us1
-      - nite
-    Description: "Enter au, ca, de, eu, jp, us2, or us1."
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -218,9 +191,6 @@ Resources:
       Tags:
         account: !Ref AccountAlias
         namespace: "hostmetrics"
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
 
   TagAlbResources:
     Type: Custom::TagAWSResources
@@ -238,9 +208,6 @@ Resources:
       AWSResource: elbv2
       Tags:
         account: !Ref AccountAlias
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
 
   TagApiGatewayResources:
     Type: Custom::TagAWSResources
@@ -258,9 +225,6 @@ Resources:
       AWSResource: apigateway
       Tags:
         account: !Ref AccountAlias
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
 
   TagLambdaResources:
     Type: Custom::TagAWSResources
@@ -278,9 +242,6 @@ Resources:
       AWSResource: lambda
       Tags:
         account: !Ref AccountAlias
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
 
   TagRdsResources:
     Type: Custom::TagAWSResources
@@ -298,9 +259,6 @@ Resources:
       AWSResource: rds
       Tags:
         account: !Ref AccountAlias
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
 
   TagDynamoDBResources:
     Type: Custom::TagAWSResources
@@ -318,7 +276,4 @@ Resources:
       AWSResource: dynamodb
       Tags:
         account: !Ref AccountAlias
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
       AccountID: !Ref "AWS::AccountId"
