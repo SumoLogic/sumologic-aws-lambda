@@ -1,0 +1,305 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Lambda Function for automatic automatic tagging of provided AWS resources like EC2, RDS, API Gateway, DynamoDB, Lambda and Application load balancer."
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 128
+
+Parameters:
+  AccountAlias:
+    Type: String
+    Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
+    AllowedPattern: "[a-zA-Z0-9]+"
+
+Resources:
+
+  SumoLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - rds:Describe*
+                  - rds:*Tag*
+                  - apigateway:*
+                  - ec2:Describe*
+                  - ec2:*Tag*
+                  - elasticloadbalancing:*
+                  - lambda:List*
+                  - lambda:*Tag*
+                  - dynamodb:List*
+                  - dynamodb:*Tag*
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  AwsTagResourcesLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        S3Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+      Handler: "awsresource.resource_tagging"
+      Runtime: python3.7
+      Role: !GetAtt SumoLambdaRole.Arn
+      Description: "Lambda Function for automatic automatic tagging of provided AWS resources like EC2, RDS, API Gateway, DynamoDB, Lambda and Application load balancer."
+      MemorySize: 128
+      Timeout: 600
+      Environment:
+        Variables:
+          AccountAlias: !Ref AccountAlias
+
+  RdsDbInstanceEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt RdsDbInstanceEventsRuleTrigger.Arn
+
+  RdsDbInstanceEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.rds
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - rds.amazonaws.com
+          eventName:
+            - CreateDBInstance
+      Name: "AwsObservabilityCreateDBInstanceRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  RdsDbClusterEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt RdsDbClusterEventsRuleTrigger.Arn
+
+  RdsDbClusterEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.rds
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - rds.amazonaws.com
+          eventName:
+            - CreateDBCluster
+      Name: !Sub "AwsObservabilityCreateDBClusterRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  CreateInstanceEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CreateInstanceEventsRuleTrigger.Arn
+
+  CreateInstanceEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.ec2
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - ec2.amazonaws.com
+          eventName:
+            - RunInstances
+      Name: !Sub "AwsObservabilityCreateInstanceRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  CreateTableEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CreateTableEventsRuleTrigger.Arn
+
+  CreateTableEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.dynamodb
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - dynamodb.amazonaws.com
+          eventName:
+            - CreateTable
+      Name: !Sub "AwsObservabilityCreateTableRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  CreateLoadBalancerEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CreateLoadBalancerEventsRuleTrigger.Arn
+
+  CreateLoadBalancerEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.elasticloadbalancing
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - elasticloadbalancing.amazonaws.com
+          eventName:
+            - CreateLoadBalancer
+      Name: !Sub "AwsObservabilityCreateLoadBalancerRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  CreateFunction20150331EventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CreateFunction20150331EventsRuleTrigger.Arn
+
+  CreateFunction20150331EventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.lambda
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - lambda.amazonaws.com
+          eventName:
+            - CreateFunction20150331
+      Name: !Sub "AwsObservabilityCreateFunction20150331Rule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  CreateStageEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CreateStageEventsRuleTrigger.Arn
+
+  CreateStageEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.apigateway
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - apigateway.amazonaws.com
+          eventName:
+            - CreateStage
+      Name: !Sub "AwsObservabilityCreateStageRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  CreateRestApiEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CreateRestApiEventsRuleTrigger.Arn
+
+  CreateRestApiEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.apigateway
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - apigateway.amazonaws.com
+          eventName:
+            - CreateRestApi
+      Name: !Sub "AwsObservabilityCreateRestApiRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+Outputs:
+
+  AwsTagResourcesLambda:
+    Description: "AwsTagResourcesLambda Function ARN"
+    Value: !GetAtt AwsTagResourcesLambda.Arn

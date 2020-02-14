@@ -1,11 +1,12 @@
 import os
 from abc import abstractmethod
 
-import six
 import boto3
+import six
+from botocore.config import Config
 from botocore.exceptions import ClientError
-
 from resourcefactory import AutoRegisterResource
+from retrying import retry
 
 
 @six.add_metaclass(AutoRegisterResource)
@@ -301,8 +302,128 @@ class TagAWSResources(AWSResource):
         }
 
 
+def resource_tagging(event, context):
+    print("AWS RESOURCE TAGGING :- Starting resource tagging")
+
+    account_alias = os.environ.get("AccountAlias")
+
+    tags = {'account': account_alias}
+
+    event_name, resource_arn_list, aws_resource, region = _get_resources_for_tagging(event, tags)
+
+    if resource_arn_list:
+        _tag_all_resources(tags, event_name, resource_arn_list, aws_resource, region)
+    print("AWS RESOURCE TAGGING :- Completed resource tagging")
+
+
+def _get_resources_for_tagging(event, tags):
+    resource_arn_list = []
+    event_name = None
+    aws_resource = None
+    region = None
+
+    if "detail" in event:
+        detail = event.get("detail")
+        region = detail.get("awsRegion")
+        event_name = detail.get("eventName")
+
+        if event_name == "CreateTable" and "resources" in detail:
+            aws_resource = "dynamodb"
+            for item in detail.get("resources"):
+                if "ARN" in item:
+                    resource_arn_list.append(item.get("ARN"))
+        elif event_name == "CreateFunction20150331" and "responseElements" in detail:
+            aws_resource = "lambda"
+            response_elements = detail.get("responseElements")
+            if response_elements and "functionArn" in response_elements:
+                resource_arn_list.append(response_elements.get("functionArn"))
+        elif event_name == "CreateLoadBalancer" and "responseElements" in detail:
+            aws_resource = "elbv2"
+            response_elements = detail.get("responseElements")
+            if response_elements and "loadBalancers" in response_elements:
+                for item in response_elements.get("loadBalancers"):
+                    if "loadBalancerArn" in item:
+                        resource_arn_list.append(item.get("loadBalancerArn"))
+        elif event_name == "CreateStage" and "responseElements" in detail:
+            aws_resource = "apigateway"
+            response_elements = detail.get("responseElements")
+            if response_elements and "self" in response_elements:
+                resource_arn_list.append("arn:aws:apigateway:" + region + "::/restapis/"
+                                         + response_elements.get("self").get("restApiId") + "/stages/"
+                                         + response_elements.get("self").get("stageName"))
+        elif event_name == "CreateRestApi" and "responseElements" in detail:
+            aws_resource = "apigateway"
+            response_elements = detail.get("responseElements")
+            if response_elements and "self" in response_elements:
+                resource_arn_list.append("arn:aws:apigateway:" + region + "::/restapis/"
+                                         + response_elements.get("self").get("restApiId"))
+        elif event_name == "CreateDBCluster" and "requestParameters" in detail:
+            aws_resource = "rds"
+            response_elements = detail.get("responseElements")
+            if response_elements and "dBClusterIdentifier" in response_elements and "dBClusterArn" in response_elements:
+                tags["cluster"] = response_elements.get("dBClusterIdentifier")
+                resource_arn_list.append(response_elements.get("dBClusterArn"))
+        elif event_name == "CreateDBInstance":
+            aws_resource = "rds"
+            response_elements = detail.get("responseElements")
+            if response_elements and "dBClusterIdentifier" in response_elements and "dBInstanceArn" in response_elements:
+                tags["cluster"] = response_elements.get("dBClusterIdentifier")
+                resource_arn_list.append(response_elements.get("dBInstanceArn"))
+        elif event_name == "RunInstances":
+            aws_resource = "ec2"
+            tags["namespace"] = "hostmetrics"
+            response_elements = detail.get("responseElements")
+            if response_elements and "instancesSet" in response_elements and "items" in response_elements.get(
+                    "instancesSet"):
+                for item in response_elements.get("instancesSet").get("items"):
+                    if "instanceId" in item:
+                        resource_arn_list.append(item.get("instanceId"))
+        else:
+            print("No tagging, as unexpected event received as %s." % event_name)
+
+    return event_name, resource_arn_list, aws_resource, region
+
+
+def retry_if_error(exception):
+    """Return True if we should retry (in this case when it's an IOError), False otherwise"""
+    return isinstance(exception, ClientError)
+
+
+@retry(retry_on_exception=retry_if_error, stop_max_attempt_number=10, wait_exponential_multiplier=2000,
+       wait_exponential_max=10000)
+def _tag_all_resources(tags, event_name, resource_arn_list, aws_resource, region):
+    boto3_config = Config(retries=dict(max_attempts=2))
+
+    client = boto3.client(aws_resource, region_name=region, config=boto3_config)
+
+    tags_key_value = []
+    for k, v in tags.items():
+        tags_key_value.append({'Key': k, 'Value': v})
+
+    print("tagging resources for event name %s with resource type %s" % (event_name, aws_resource))
+
+    for aws_arn in resource_arn_list:
+        if event_name == "CreateTable":
+            client.tag_resource(ResourceArn=aws_arn, Tags=tags_key_value)
+        elif event_name == "CreateFunction20150331":
+            client.tag_resource(Resource=aws_arn, Tags=tags)
+        elif event_name == "CreateLoadBalancer":
+            client.tag_resource(ResourceArns=[aws_arn], Tags=tags_key_value)
+        elif event_name == "CreateStage":
+            client.tag_resource(resourceArn=aws_arn, tags=tags)
+        elif event_name == "CreateRestApi":
+            client.tag_resource(resourceArn=aws_arn, tags=tags)
+        elif event_name == "CreateDBCluster":
+            client.add_tags_to_resource(ResourceName=aws_arn, Tags=tags_key_value)
+        elif event_name == "CreateDBInstance":
+            client.add_tags_to_resource(ResourceName=aws_arn, Tags=tags_key_value)
+        elif event_name == "RunInstances":
+            client.create_tags(Resources=[aws_arn], Tags=tags_key_value)
+
+
 if __name__ == '__main__':
-    tag = TagAWSResources()
+    params = {}
+    tag = TagAWSResources(params)
 
     tag.create("us-east-1", "ec2", {'account': 'heelo1', 'Name space': "adsas"}, "")
 
