@@ -243,9 +243,7 @@ Resources:
       Tags:
         account: !Ref AccountAlias
         namespace: "hostmetrics"
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
+      AccountID: !Ref "AWS::AccountId"
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer

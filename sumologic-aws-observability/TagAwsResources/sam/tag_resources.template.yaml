@@ -65,6 +65,7 @@ Resources:
       Environment:
         Variables:
           AccountAlias: !Ref AccountAlias
+          AccountID: !Ref "AWS::AccountId"
 
   RdsDbInstanceEventsInvokePermission:
     Type: AWS::Lambda::Permission

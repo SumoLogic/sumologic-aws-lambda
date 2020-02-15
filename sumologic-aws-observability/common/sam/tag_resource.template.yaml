@@ -188,6 +188,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       Region: !Ref "AWS::Region"
       AWSResource: ec2
+      AccountID: !Ref "AWS::AccountId"
       Tags:
         account: !Ref AccountAlias
         namespace: "hostmetrics"
@@ -206,6 +207,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       Region: !Ref "AWS::Region"
       AWSResource: elbv2
+      AccountID: !Ref "AWS::AccountId"
       Tags:
         account: !Ref AccountAlias
 
@@ -223,6 +225,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       Region: !Ref "AWS::Region"
       AWSResource: apigateway
+      AccountID: !Ref "AWS::AccountId"
       Tags:
         account: !Ref AccountAlias
 
@@ -240,6 +243,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       Region: !Ref "AWS::Region"
       AWSResource: lambda
+      AccountID: !Ref "AWS::AccountId"
       Tags:
         account: !Ref AccountAlias
 
@@ -257,6 +261,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       Region: !Ref "AWS::Region"
       AWSResource: rds
+      AccountID: !Ref "AWS::AccountId"
       Tags:
         account: !Ref AccountAlias
 

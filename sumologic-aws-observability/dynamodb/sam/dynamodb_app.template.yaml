@@ -303,9 +303,6 @@ Resources:
       AWSResource: dynamodb
       Tags:
         account: !Ref AccountAlias
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
       AccountID: !Ref "AWS::AccountId"
 
   CreateSumoLogicAWSExplorerView:

@@ -302,9 +302,7 @@ Resources:
       AWSResource: apigateway
       Tags:
         account: !Ref AccountAlias
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
+      AccountID: !Ref "AWS::AccountId"
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
