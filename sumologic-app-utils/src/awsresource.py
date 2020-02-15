@@ -198,7 +198,9 @@ class TagAWSResourcesProvider(object):
         "CreateRestApi": "awsresource.TagApiGatewayResources",
         "CreateDeployment": "awsresource.TagApiGatewayResources",
         "dynamodb": "awsresource.TagDynamoDbResources",
-        "CreateTable": "awsresource.TagDynamoDbResources"
+        "CreateTable": "awsresource.TagDynamoDbResources",
+        "lambda": "awsresource.TagLambdaResources",
+        "CreateFunction20150331": "awsresource.TagLambdaResources"
     }
 
     @classmethod
@@ -237,7 +239,8 @@ class TagAWSResourcesAbstract(object):
         "CreateStage": "apigateway",
         "CreateRestApi": "apigateway",
         "CreateDeployment": "apigateway",
-        "CreateTable": "dynamodb"
+        "CreateTable": "dynamodb",
+        "CreateFunction20150331": "lambda"
     }
 
     def setup(self, aws_resource, region_value, account_id):
@@ -482,6 +485,57 @@ class TagDynamoDbResources(TagAWSResourcesAbstract):
 
         for arn in arns:
             self.client.tag_resource(ResourceArn=arn, Tags=tags_key_value)
+
+
+class TagLambdaResources(TagAWSResourcesAbstract):
+
+    def fetch_resources(self):
+        lambdas = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response = self.client.list_functions(MaxItems=1000, Marker=next_token)
+            else:
+                response = self.client.list_functions(MaxItems=1000)
+
+            if "Functions" in response:
+                lambdas.extend(response["Functions"])
+
+            next_token = response["NextMarker"] if "NextMarker" in response else None
+
+            if not next_token:
+                next_token = 'END'
+
+        return lambdas
+
+    def filter_resources(self, filters, resources):
+        return resources
+
+    def get_arn_list(self, resources, *args, **kwargs):
+        arns = []
+        if resources:
+            for resource in resources:
+                arns.append(resource["FunctionArn"])
+
+        return arns
+
+    def process_tags(self, tags):
+        return tags
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = []
+
+        if "responseElements" in event_detail:
+            response_elements = event_detail.get("responseElements")
+            if response_elements and "functionArn" in response_elements:
+                arns.append(response_elements.get("functionArn"))
+        return arns
+
+    @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
+           wait_exponential_multiplier=2000, wait_exponential_max=10000)
+    def tag_resources_cloud_trail_event(self, arns, tags):
+        for arn in arns:
+            self.client.tag_resource(Resource=arn, Tags=tags)
 
 
 if __name__ == '__main__':
