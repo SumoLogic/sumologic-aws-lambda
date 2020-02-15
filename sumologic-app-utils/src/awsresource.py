@@ -196,7 +196,9 @@ class TagAWSResourcesProvider(object):
         "apigateway": "awsresource.TagApiGatewayResources",
         "CreateStage": "awsresource.TagApiGatewayResources",
         "CreateRestApi": "awsresource.TagApiGatewayResources",
-        "CreateDeployment": "awsresource.TagApiGatewayResources"
+        "CreateDeployment": "awsresource.TagApiGatewayResources",
+        "dynamodb": "awsresource.TagDynamoDbResources",
+        "CreateTable": "awsresource.TagDynamoDbResources"
     }
 
     @classmethod
@@ -234,7 +236,8 @@ class TagAWSResourcesAbstract(object):
         "RunInstances": "ec2",
         "CreateStage": "apigateway",
         "CreateRestApi": "apigateway",
-        "CreateDeployment": "apigateway"
+        "CreateDeployment": "apigateway",
+        "CreateTable": "dynamodb"
     }
 
     def setup(self, aws_resource, region_value, account_id):
@@ -424,6 +427,61 @@ class TagApiGatewayResources(TagAWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, arns, tags):
         for arn in arns:
             self.client.tag_resource(resourceArn=arn, tags=tags)
+
+
+class TagDynamoDbResources(TagAWSResourcesAbstract):
+
+    def fetch_resources(self):
+        tables = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response = self.client.list_tables(Limit=100, ExclusiveStartTableName=next_token)
+            else:
+                response = self.client.list_tables(Limit=100)
+
+            if "TableNames" in response:
+                tables.extend(response["TableNames"])
+
+            next_token = response["LastEvaluatedTableName"] if "LastEvaluatedTableName" in response else None
+
+            if not next_token:
+                next_token = 'END'
+
+        return tables
+
+    def filter_resources(self, filters, resources):
+        return resources
+
+    def get_arn_list(self, resources, *args, **kwargs):
+        arns = []
+        if resources:
+            for resource in resources:
+                arns.append("arn:aws:dynamodb:" + self.region_value + ":" + self.account_id + ":table/" + resource)
+
+        return arns
+
+    def process_tags(self, tags):
+        return tags
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = []
+
+        if "resources" in event_detail:
+            for item in event_detail.get("resources"):
+                if "ARN" in item:
+                    arns.append(item.get("ARN"))
+        return arns
+
+    @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
+           wait_exponential_multiplier=2000, wait_exponential_max=10000)
+    def tag_resources_cloud_trail_event(self, arns, tags):
+        tags_key_value = []
+        for k, v in tags.items():
+            tags_key_value.append({'Key': k, 'Value': v})
+
+        for arn in arns:
+            self.client.tag_resource(ResourceArn=arn, Tags=tags_key_value)
 
 
 if __name__ == '__main__':
