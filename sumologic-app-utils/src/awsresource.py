@@ -1,9 +1,9 @@
+import importlib
 import os
 from abc import abstractmethod
 
 import boto3
 import six
-from botocore.config import Config
 from botocore.exceptions import ClientError
 from resourcefactory import AutoRegisterResource
 from retrying import retry
@@ -100,172 +100,29 @@ class TagAWSResources(AWSResource):
     def __init__(self, props, *args, **kwargs):
         print('Tagging aws resource %s' % props.get("AWSResource"))
 
-    def _tag_resources_in_group(self, region, resource_arn_list, tags, delete_flag):
-        client = boto3.client('resourcegroupstaggingapi', region_name=region)
-        if not delete_flag:
-            client.tag_resources(ResourceARNList=resource_arn_list, Tags=tags)
+    def _tag_aws_resources(self, region_value, aws_resource, tags, account_id, delete_flag):
+        # Get the class instance based on AWS Resource
+        tag_resource = TagAWSResourcesProvider.get_provider(aws_resource)
+        tag_resource.setup(aws_resource, region_value, account_id)
+
+        # Fetch and Filter the Resources.
+        resources = tag_resource.fetch_resources()
+        filtered_resources = tag_resource.filter_resources([], resources)
+
+        # Get the ARNs for all resources
+        arns = tag_resource.get_arn_list(filtered_resources)
+
+        # Tag or un-tag the resources.
+        if delete_flag:
+            tag_resource.delete_tags(arns, tags)
         else:
-            client.untag_resources(ResourceARNList=resource_arn_list, TagKeys=tags)
-
-    def batch_size_chunk(self, iterable, size=1):
-        length = len(iterable)
-        for idx in range(0, length, size):
-            data = iterable[idx:min(idx + size, length)]
-            yield data
-
-    def _tag_aws_resources(self, region, aws_resource, tags, account_id, delete_flag=False):
-        client = boto3.client(aws_resource, region_name=region)
-        next_token = None
-        while next_token != 'END':
-
-            values, next_token = self._call_aws_resource_for_tagging(region, aws_resource, client, next_token,
-                                                                     tags, delete_flag, account_id)
-
-            if values:
-                print("TAG AWS RESOURCES - %s Resources are %s for region %s" % (aws_resource, values, region))
-                chunk_records = self.batch_size_chunk(values, 20)
-                for record in chunk_records:
-                    self._tag_resources_in_group(region, record, tags, delete_flag)
-
-            if not next_token:
-                next_token = 'END'
-
-    def _call_aws_resource_for_tagging(self, region, aws_resource, client, next_token, tags, delete_flag, account_id):
-        if aws_resource == 'ec2':
-            return self._tag_ec2_resources(region, client, next_token)
-        if aws_resource == 'elbv2':
-            return self._tag_alb_resources(client, next_token)
-        if aws_resource == 'apigateway':
-            return self._tag_api_gateway_resources(region, client, next_token)
-        if aws_resource == 'lambda':
-            return self._tag_lambda_resources(client, next_token)
-        if aws_resource == 'rds':
-            return self._tag_rds_clusters_resources(region, client, next_token, tags, delete_flag)
-        if aws_resource == 'dynamodb':
-            return self._tag_dynamodb_resources(region, client, next_token, account_id)
-
-    def _tag_ec2_resources(self, region, client, next_token):
-        instances = []
-        if next_token:
-            response = client.describe_instances(MaxResults=1000, NextToken=next_token)
-        else:
-            response = client.describe_instances(MaxResults=1000)
-
-        for reservation in response['Reservations']:
-            account_id = reservation['OwnerId']
-            for ec2_instance in reservation['Instances']:
-                instances.append("arn:aws:ec2:" + region + ":" + account_id + ":instance/" + ec2_instance['InstanceId'])
-
-        return instances, response["NextToken"] if "NextToken" in response else None
-
-    def _tag_dynamodb_resources(self, region, client, next_token, account_id):
-        tables = []
-        if next_token:
-            response = client.list_tables(Limit=100, ExclusiveStartTableName=next_token)
-        else:
-            response = client.list_tables(Limit=100)
-
-        for table_name in response['TableNames']:
-            tables.append("arn:aws:dynamodb:" + region + ":" + account_id + ":table/" + table_name)
-
-        return tables, response["LastEvaluatedTableName"] if "LastEvaluatedTableName" in response else None
-
-    def _tag_alb_resources(self, client, next_token):
-        albs = []
-
-        if next_token:
-            response = client.describe_load_balancers(PageSize=400, Marker=next_token)
-        else:
-            response = client.describe_load_balancers(PageSize=400)
-
-        for loadBalancer in response['LoadBalancers']:
-            albs.append(loadBalancer['LoadBalancerArn'])
-
-        return albs, response["NextMarker"] if "NextMarker" in response else None
-
-    def _tag_api_gateway_resources(self, region, client, next_token):
-        api_gateways = []
-        if next_token:
-            response = client.get_rest_apis(limit=500, position=next_token)
-        else:
-            response = client.get_rest_apis(limit=500)
-
-        for api in response["items"]:
-            id = api["id"]
-            api_arn = "arn:aws:apigateway:" + region + "::/restapis/" + id
-            api_gateways.append(api_arn)
-
-            stages = client.get_stages(restApiId=id)
-            for stage in stages["item"]:
-                stage_arn = "arn:aws:apigateway:" + region + "::/restapis/" + id + "/stages/" + stage["stageName"]
-                api_gateways.append(stage_arn)
-
-        return api_gateways, response["position"] if "position" in response else None
-
-    def _tag_lambda_resources(self, client, next_token):
-        lambdas = []
-        if next_token:
-            response = client.list_functions(MaxItems=1000, Marker=next_token)
-        else:
-            response = client.list_functions(MaxItems=1000)
-
-        for function_name in response["Functions"]:
-            function_arn = function_name['FunctionArn']
-            lambdas.append(function_arn)
-
-        return lambdas, response["NextMarker"] if "NextMarker" in response else None
-
-    def _tag_rds_clusters_resources(self, region, client, next_token, tags, delete_flag):
-        if next_token:
-            response = client.describe_db_clusters(MaxRecords=100, Marker=next_token)
-        else:
-            response = client.describe_db_clusters(MaxRecords=100)
-
-        self._tag_rds_resources(region, client, response, "DBClusters", 'DBClusterArn', tags, delete_flag)
-
-        for function_name in response["DBClusters"]:
-            cluster_name = function_name['DBClusterIdentifier']
-            next_token = None
-            filters = [{'Name': 'db-cluster-id', 'Values': [cluster_name]}]
-            while next_token != 'END':
-                values, next_token = self._tag_rds_instances_resources(region, client, next_token, tags
-                                                                       , filters, delete_flag)
-
-                if not next_token:
-                    next_token = 'END'
-
-        return None, response["Marker"] if "Marker" in response else None
-
-    def _tag_rds_instances_resources(self, region, client, next_token, tags, filters, delete_flag):
-        if next_token:
-            response = client.describe_db_instances(MaxRecords=100, Marker=next_token, Filters=filters)
-        else:
-            response = client.describe_db_instances(MaxRecords=100, Filters=filters)
-
-        self._tag_rds_resources(region, client, response, "DBInstances", 'DBInstanceArn', tags, delete_flag)
-
-        return None, response["Marker"] if "Marker" in response else None
-
-    def _tag_rds_resources(self, region, aws_api, response, root_element, arn_name, tags, delete_flag):
-        values = []
-        for function_name in response[root_element]:
-            function_arn = function_name[arn_name]
-            cluster_name = function_name['DBClusterIdentifier']
-            values.append(function_arn)
-            if not delete_flag:
-                aws_api.add_tags_to_resource(ResourceName=function_arn,
-                                             Tags=[{'Key': 'account', 'Value': tags.get("account")},
-                                                   {'Key': 'cluster', 'Value': cluster_name}])
-            else:
-                aws_api.remove_tags_from_resource(ResourceName=function_arn, TagKeys=['account', 'cluster'])
-
-        print("TAG AWS RESOURCES - RDS Resources are %s for region %s" % (values, region))
+            tag_resource.add_tags(arns, tags)
 
     def create(self, region_value, aws_resource, tags, account_id, *args, **kwargs):
         print("TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags %s." % tags)
         regions = [region_value]
         for region in regions:
-            self._tag_aws_resources(region, aws_resource, tags, account_id)
+            self._tag_aws_resources(region, aws_resource, tags, account_id, False)
         print("TAG AWS RESOURCES - Completed the AWS resources Tag addition.")
 
         return {"TAG_CREATION": "Successful"}, "Tag"
@@ -283,7 +140,7 @@ class TagAWSResources(AWSResource):
         if remove_on_delete_stack:
             regions = [region_value]
             for region in regions:
-                self._tag_aws_resources(region, aws_resource, tags_list, account_id, True)
+                self._tag_aws_resources(region, aws_resource, tags, account_id, True)
             print("TAG AWS RESOURCES - Completed the AWS resources Tag deletion.")
         else:
             print("TAG AWS RESOURCES - Skipping AWS resources tags deletion.")
@@ -305,120 +162,181 @@ class TagAWSResources(AWSResource):
 def resource_tagging(event, context):
     print("AWS RESOURCE TAGGING :- Starting resource tagging")
 
+    # Get Account Id and Alias from env.
     account_alias = os.environ.get("AccountAlias")
+    account_id = os.environ.get("AccountID")
 
     tags = {'account': account_alias}
 
-    event_name, resource_arn_list, aws_resource, region = _get_resources_for_tagging(event, tags)
+    if "detail" in event:
+        event_detail = event.get("detail")
+        event_name = event_detail.get("eventName")
+        region_value = event_detail.get("awsRegion")
 
-    if resource_arn_list:
-        _tag_all_resources(tags, event_name, resource_arn_list, aws_resource, region)
+        # Get the class instance based on Cloudtrail Event Name
+        tag_resource = TagAWSResourcesProvider.get_provider(event_name)
+        tag_resource.setup(event_name, region_value, account_id)
+
+        # Get the arns from the event.
+        resources = tag_resource.get_arn_list_cloud_trail_event(event_detail)
+
+        # Process the existing tags to add some more tags if necessary
+        tags = tag_resource.process_tags(tags)
+
+        # Tag the resources
+        tag_resource.tag_resources_cloud_trail_event(resources, tags)
+
     print("AWS RESOURCE TAGGING :- Completed resource tagging")
 
 
-def _get_resources_for_tagging(event, tags):
-    resource_arn_list = []
-    event_name = None
-    aws_resource = None
-    region = None
+class TagAWSResourcesProvider(object):
+    provider_map = {
+        "ec2": "awsresource.TagEC2Resources",
+        "RunInstances": "awsresource.TagEC2Resources"
+    }
 
-    if "detail" in event:
-        detail = event.get("detail")
-        region = detail.get("awsRegion")
-        event_name = detail.get("eventName")
+    @classmethod
+    def load_class(cls, full_class_string, invoking_module_name):
+        """
+            dynamically load a class from a string
+        """
+        try:
+            module_path, class_name = cls._split_module_class_name(full_class_string, invoking_module_name)
+            module = importlib.import_module(module_path)
+            return getattr(module, class_name)
+        except Exception as e:
+            raise
 
-        if event_name == "CreateTable" and "resources" in detail:
-            aws_resource = "dynamodb"
-            for item in detail.get("resources"):
-                if "ARN" in item:
-                    resource_arn_list.append(item.get("ARN"))
-        elif event_name == "CreateFunction20150331" and "responseElements" in detail:
-            aws_resource = "lambda"
-            response_elements = detail.get("responseElements")
-            if response_elements and "functionArn" in response_elements:
-                resource_arn_list.append(response_elements.get("functionArn"))
-        elif event_name == "CreateLoadBalancer" and "responseElements" in detail:
-            aws_resource = "elbv2"
-            response_elements = detail.get("responseElements")
-            if response_elements and "loadBalancers" in response_elements:
-                for item in response_elements.get("loadBalancers"):
-                    if "loadBalancerArn" in item:
-                        resource_arn_list.append(item.get("loadBalancerArn"))
-        elif event_name == "CreateStage" and "responseElements" in detail:
-            aws_resource = "apigateway"
-            response_elements = detail.get("responseElements")
-            if response_elements and "self" in response_elements:
-                resource_arn_list.append("arn:aws:apigateway:" + region + "::/restapis/"
-                                         + response_elements.get("self").get("restApiId") + "/stages/"
-                                         + response_elements.get("self").get("stageName"))
-        elif event_name == "CreateRestApi" and "responseElements" in detail:
-            aws_resource = "apigateway"
-            response_elements = detail.get("responseElements")
-            if response_elements and "self" in response_elements:
-                resource_arn_list.append("arn:aws:apigateway:" + region + "::/restapis/"
-                                         + response_elements.get("self").get("restApiId"))
-        elif event_name == "CreateDBCluster" and "requestParameters" in detail:
-            aws_resource = "rds"
-            response_elements = detail.get("responseElements")
-            if response_elements and "dBClusterIdentifier" in response_elements and "dBClusterArn" in response_elements:
-                tags["cluster"] = response_elements.get("dBClusterIdentifier")
-                resource_arn_list.append(response_elements.get("dBClusterArn"))
-        elif event_name == "CreateDBInstance":
-            aws_resource = "rds"
-            response_elements = detail.get("responseElements")
-            if response_elements and "dBClusterIdentifier" in response_elements and "dBInstanceArn" in response_elements:
-                tags["cluster"] = response_elements.get("dBClusterIdentifier")
-                resource_arn_list.append(response_elements.get("dBInstanceArn"))
-        elif event_name == "RunInstances":
-            aws_resource = "ec2"
-            tags["namespace"] = "hostmetrics"
-            response_elements = detail.get("responseElements")
-            if response_elements and "instancesSet" in response_elements and "items" in response_elements.get(
-                    "instancesSet"):
-                for item in response_elements.get("instancesSet").get("items"):
-                    if "instanceId" in item:
-                        resource_arn_list.append(item.get("instanceId"))
+    @classmethod
+    def _split_module_class_name(cls, full_class_string, invoking_module_name):
+        file_name, class_name = full_class_string.rsplit(".", 1)
+        parent_module = invoking_module_name.rsplit(".", 1)[0] + "." if "." in invoking_module_name else ""
+        full_module_path = f"{parent_module}{file_name}"
+        return full_module_path, class_name
+
+    @classmethod
+    def get_provider(cls, provider_name, *args, **kwargs):
+        if provider_name in cls.provider_map:
+            module_class = cls.load_class(cls.provider_map[provider_name], __name__)
+            module_instance = module_class(*args, **kwargs)
+            return module_instance
         else:
-            print("No tagging, as unexpected event received as %s." % event_name)
-
-    return event_name, resource_arn_list, aws_resource, region
+            raise Exception("%s provider not found" % provider_name)
 
 
-def retry_if_error(exception):
-    """Return True if we should retry (in this case when it's an IOError), False otherwise"""
-    return isinstance(exception, ClientError)
+@six.add_metaclass(AutoRegisterResource)
+class TagAWSResourcesAbstract(object):
+    event_resource_map = {
+        "RunInstances": "ec2"
+    }
+
+    def setup(self, aws_resource, region_value, account_id):
+        self.tagging_client = boto3.client('resourcegroupstaggingapi', region_name=region_value)
+        self.client = boto3.client(self.event_resource_map[aws_resource] if aws_resource in self.event_resource_map
+                                   else aws_resource, region_name=region_value)
+        self.region_value = region_value
+        self.account_id = account_id
+
+    @abstractmethod
+    def fetch_resources(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def filter_resources(self, filters, resources):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_arn_list(self, resources):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def process_tags(self, tags):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def tag_resources_cloud_trail_event(self, arns, tags):
+        raise NotImplementedError()
+
+    def add_tags(self, arns, tags):
+        if arns:
+            chunk_records = self._batch_size_chunk(arns, 20)
+            for record in chunk_records:
+                self.tagging_client.tag_resources(ResourceARNList=record, Tags=tags)
+
+    def delete_tags(self, arns, tags):
+        if arns:
+            chunk_records = self._batch_size_chunk(arns, 20)
+            for record in chunk_records:
+                self.tagging_client.untag_resources(ResourceARNList=record, TagKeys=list(tags.keys()))
+
+    def _batch_size_chunk(self, iterable, size=1):
+        length = len(iterable)
+        for idx in range(0, length, size):
+            data = iterable[idx:min(idx + size, length)]
+            yield data
 
 
-@retry(retry_on_exception=retry_if_error, stop_max_attempt_number=10, wait_exponential_multiplier=2000,
-       wait_exponential_max=10000)
-def _tag_all_resources(tags, event_name, resource_arn_list, aws_resource, region):
-    boto3_config = Config(retries=dict(max_attempts=2))
+class TagEC2Resources(TagAWSResourcesAbstract):
 
-    client = boto3.client(aws_resource, region_name=region, config=boto3_config)
+    def fetch_resources(self):
+        instances = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response = self.client.describe_instances(MaxResults=1000, NextToken=next_token)
+            else:
+                response = self.client.describe_instances(MaxResults=1000)
 
-    tags_key_value = []
-    for k, v in tags.items():
-        tags_key_value.append({'Key': k, 'Value': v})
+            for reservation in response['Reservations']:
+                if "Instances" in reservation:
+                    instances.extend(reservation['Instances'])
 
-    print("tagging resources for event name %s with resource type %s" % (event_name, aws_resource))
+            next_token = response["NextToken"] if "NextToken" in response else None
 
-    for aws_arn in resource_arn_list:
-        if event_name == "CreateTable":
-            client.tag_resource(ResourceArn=aws_arn, Tags=tags_key_value)
-        elif event_name == "CreateFunction20150331":
-            client.tag_resource(Resource=aws_arn, Tags=tags)
-        elif event_name == "CreateLoadBalancer":
-            client.tag_resource(ResourceArns=[aws_arn], Tags=tags_key_value)
-        elif event_name == "CreateStage":
-            client.tag_resource(resourceArn=aws_arn, tags=tags)
-        elif event_name == "CreateRestApi":
-            client.tag_resource(resourceArn=aws_arn, tags=tags)
-        elif event_name == "CreateDBCluster":
-            client.add_tags_to_resource(ResourceName=aws_arn, Tags=tags_key_value)
-        elif event_name == "CreateDBInstance":
-            client.add_tags_to_resource(ResourceName=aws_arn, Tags=tags_key_value)
-        elif event_name == "RunInstances":
-            client.create_tags(Resources=[aws_arn], Tags=tags_key_value)
+            if not next_token:
+                next_token = 'END'
+
+        return instances
+
+    def filter_resources(self, filters, resources):
+        return resources
+
+    def get_arn_list(self, resources, *args, **kwargs):
+        arns = []
+        if resources:
+            for resource in resources:
+                arns.append(
+                    "arn:aws:ec2:" + self.region_value + ":" + self.account_id + ":instance/" + resource['InstanceId'])
+
+        return arns
+
+    def process_tags(self, tags):
+        tags["namespace"] = "hostmetrics"
+        return tags
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = []
+        response_elements = event_detail.get("responseElements")
+        if response_elements and "instancesSet" in response_elements and "items" in response_elements.get(
+                "instancesSet"):
+            for item in response_elements.get("instancesSet").get("items"):
+                if "instanceId" in item:
+                    arns.append(item.get("instanceId"))
+
+        return arns
+
+    @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
+           wait_exponential_multiplier=2000, wait_exponential_max=10000)
+    def tag_resources_cloud_trail_event(self, arns, tags):
+        tags_key_value = []
+        for k, v in tags.items():
+            tags_key_value.append({'Key': k, 'Value': v})
+
+        self.client.create_tags(Resources=arns, Tags=tags_key_value)
 
 
 if __name__ == '__main__':
