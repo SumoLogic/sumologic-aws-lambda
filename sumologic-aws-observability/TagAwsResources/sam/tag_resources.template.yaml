@@ -13,6 +13,57 @@ Parameters:
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
     AllowedPattern: "[a-zA-Z0-9]+"
 
+  AddTagsForALBResources:
+    Type: String
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
+  AddTagsForAPIGatewayResources:
+    Type: String
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
+  AddTagsForRDSResources:
+    Type: String
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
+  AddTagsForEC2MetricsResources:
+    Type: String
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
+  AddTagsForLambdaResources:
+    Type: String
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
+  AddTagsForDynamoDBResources:
+    Type: String
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Description: "Choose if you need to add tags for your AWS Resources."
+
+Conditions:
+  add_alb_tags: !Equals [!Ref AddTagsForALBResources, 'Yes']
+  add_api_gateway_tags: !Equals [!Ref AddTagsForAPIGatewayResources, 'Yes']
+  add_rds_tags: !Equals [!Ref AddTagsForRDSResources, 'Yes']
+  add_ec2_metrics_tags: !Equals [!Ref AddTagsForEC2MetricsResources, 'Yes']
+  add_lambda_tags: !Equals [!Ref AddTagsForLambdaResources, 'Yes']
+  add_dynamodb_tags: !Equals [!Ref AddTagsForDynamoDBResources, 'Yes']
+
 Resources:
 
   SumoLambdaRole:
@@ -69,6 +120,7 @@ Resources:
 
   RdsDbInstanceEventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_rds_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -78,6 +130,7 @@ Resources:
   RdsDbInstanceEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     DependsOn: AwsTagResourcesLambda
+    Condition: add_rds_tags
     Properties:
       Description: Auto-tag resources with Lambda from events
       EventPattern:
@@ -98,6 +151,7 @@ Resources:
 
   RdsDbClusterEventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_rds_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -107,6 +161,7 @@ Resources:
   RdsDbClusterEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     DependsOn: AwsTagResourcesLambda
+    Condition: add_rds_tags
     Properties:
       Description: Auto-tag resources with Lambda from events
       EventPattern:
@@ -127,6 +182,7 @@ Resources:
 
   CreateInstanceEventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_ec2_metrics_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -136,6 +192,7 @@ Resources:
   CreateInstanceEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     DependsOn: AwsTagResourcesLambda
+    Condition: add_ec2_metrics_tags
     Properties:
       Description: Auto-tag resources with Lambda from events
       EventPattern:
@@ -156,6 +213,7 @@ Resources:
 
   CreateTableEventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_dynamodb_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -164,6 +222,7 @@ Resources:
 
   CreateTableEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
+    Condition: add_dynamodb_tags
     DependsOn: AwsTagResourcesLambda
     Properties:
       Description: Auto-tag resources with Lambda from events
@@ -185,6 +244,7 @@ Resources:
 
   CreateLoadBalancerEventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_alb_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -194,6 +254,7 @@ Resources:
   CreateLoadBalancerEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     DependsOn: AwsTagResourcesLambda
+    Condition: add_alb_tags
     Properties:
       Description: Auto-tag resources with Lambda from events
       EventPattern:
@@ -214,6 +275,7 @@ Resources:
 
   CreateFunction20150331EventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_lambda_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -223,6 +285,7 @@ Resources:
   CreateFunction20150331EventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     DependsOn: AwsTagResourcesLambda
+    Condition: add_lambda_tags
     Properties:
       Description: Auto-tag resources with Lambda from events
       EventPattern:
@@ -243,6 +306,7 @@ Resources:
 
   CreateStageEventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_api_gateway_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -252,6 +316,7 @@ Resources:
   CreateStageEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     DependsOn: AwsTagResourcesLambda
+    Condition: add_api_gateway_tags
     Properties:
       Description: Auto-tag resources with Lambda from events
       EventPattern:
@@ -272,6 +337,7 @@ Resources:
 
   CreateRestApiEventsInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: add_api_gateway_tags
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AwsTagResourcesLambda
@@ -281,6 +347,7 @@ Resources:
   CreateRestApiEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     DependsOn: AwsTagResourcesLambda
+    Condition: add_api_gateway_tags
     Properties:
       Description: Auto-tag resources with Lambda from events
       EventPattern:
@@ -294,6 +361,37 @@ Resources:
           eventName:
             - CreateRestApi
       Name: !Sub "AwsObservabilityCreateRestApiRule"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+          Id: Main
+
+  CreateDeploymentEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Condition: add_api_gateway_tags
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AwsTagResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CreateDeploymentEventsRuleTrigger.Arn
+
+  CreateDeploymentEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    DependsOn: AwsTagResourcesLambda
+    Condition: add_api_gateway_tags
+    Properties:
+      Description: Auto-tag resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.apigateway
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - apigateway.amazonaws.com
+          eventName:
+            - CreateDeployment
+      Name: !Sub "AwsObservabilityCreateDeploymentRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn

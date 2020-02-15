@@ -192,7 +192,11 @@ def resource_tagging(event, context):
 class TagAWSResourcesProvider(object):
     provider_map = {
         "ec2": "awsresource.TagEC2Resources",
-        "RunInstances": "awsresource.TagEC2Resources"
+        "RunInstances": "awsresource.TagEC2Resources",
+        "apigateway": "awsresource.TagApiGatewayResources",
+        "CreateStage": "awsresource.TagApiGatewayResources",
+        "CreateRestApi": "awsresource.TagApiGatewayResources",
+        "CreateDeployment": "awsresource.TagApiGatewayResources"
     }
 
     @classmethod
@@ -227,7 +231,10 @@ class TagAWSResourcesProvider(object):
 @six.add_metaclass(AutoRegisterResource)
 class TagAWSResourcesAbstract(object):
     event_resource_map = {
-        "RunInstances": "ec2"
+        "RunInstances": "ec2",
+        "CreateStage": "apigateway",
+        "CreateRestApi": "apigateway",
+        "CreateDeployment": "apigateway"
     }
 
     def setup(self, aws_resource, region_value, account_id):
@@ -337,6 +344,86 @@ class TagEC2Resources(TagAWSResourcesAbstract):
             tags_key_value.append({'Key': k, 'Value': v})
 
         self.client.create_tags(Resources=arns, Tags=tags_key_value)
+
+
+class TagApiGatewayResources(TagAWSResourcesAbstract):
+
+    def fetch_resources(self):
+        api_gateways = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response = self.client.get_rest_apis(limit=500, position=next_token)
+            else:
+                response = self.client.get_rest_apis(limit=500)
+
+            if "items" in response:
+                api_gateways.extend(response["items"])
+                for api in response["items"]:
+                    id = api["id"]
+
+                    stages = self.client.get_stages(restApiId=id)
+                    for stage in stages["item"]:
+                        stage["restApiId"] = id
+                        api_gateways.append(stage)
+
+            next_token = response["position"] if "position" in response else None
+
+            if not next_token:
+                next_token = 'END'
+
+        return api_gateways
+
+    def filter_resources(self, filters, resources):
+        return resources
+
+    def get_arn_list(self, resources, *args, **kwargs):
+        arns = []
+        if resources:
+            for resource in resources:
+                if "stageName" in resource:
+                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/" + resource["restApiId"]
+                                + "/stages/" + resource["stageName"])
+                else:
+                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/" + resource["id"])
+
+        return arns
+
+    def process_tags(self, tags):
+        return tags
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = []
+        event_name = event_detail.get("eventName")
+
+        if "responseElements" in event_detail:
+            response_elements = event_detail.get("responseElements")
+            if response_elements and "self" in response_elements:
+                details = response_elements.get("self")
+                if event_name == "CreateStage":
+                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
+                                + details.get("restApiId") + "/stages/"
+                                + details.get("stageName"))
+                elif event_name == "CreateRestApi":
+                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
+                                + details.get("restApiId"))
+
+        if "requestParameters" in event_detail:
+            request_parameters = event_detail.get("requestParameters")
+            if request_parameters and "restApiId" in request_parameters \
+                    and "createDeploymentInput" in request_parameters:
+                details = request_parameters.get("createDeploymentInput")
+                if event_name == "CreateDeployment":
+                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
+                                + request_parameters.get("restApiId") + "/stages/"
+                                + details.get("stageName"))
+        return arns
+
+    @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
+           wait_exponential_multiplier=2000, wait_exponential_max=10000)
+    def tag_resources_cloud_trail_event(self, arns, tags):
+        for arn in arns:
+            self.client.tag_resource(resourceArn=arn, tags=tags)
 
 
 if __name__ == '__main__':
