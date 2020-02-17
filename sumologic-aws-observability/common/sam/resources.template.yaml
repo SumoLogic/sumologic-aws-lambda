@@ -588,4 +588,7 @@ Outputs:
     Value: !GetAtt SumoHostedCollector.COLLECTOR_ID
     Export:
       Name: !Sub "${AWS::StackName}-CollectorID"
-
+  CloudWatchLambdaARN:
+    Description: "Cloud Watch Lambda ARN"
+    Condition: install_cloud_watch_logs_source
+    Value: !GetAtt CloudWatchEventFunction.Outputs.SumoCWLogsLambdaArn
