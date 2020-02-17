@@ -208,7 +208,7 @@ Resources:
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: false
       MetricRuleName: "AwsObservabilityEC2MetricsEntityRule"
-      MatchExpression: !Sub "Namespace=hostmetrics InstanceId=*"
+      MatchExpression: !Sub "Namespace=AWS/EC2 InstanceId=*"
       ExtractVariables:
         entity: "$InstanceId._1"
       SumoAccessID: !Ref SumoAccessID

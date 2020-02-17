@@ -191,7 +191,7 @@ Resources:
       AccountID: !Ref "AWS::AccountId"
       Tags:
         account: !Ref AccountAlias
-        namespace: "hostmetrics"
+        namespace: "AWS/EC2"
 
   TagAlbResources:
     Type: Custom::TagAWSResources
