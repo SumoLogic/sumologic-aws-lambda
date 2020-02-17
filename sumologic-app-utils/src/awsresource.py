@@ -203,7 +203,9 @@ class TagAWSResourcesProvider(object):
         "CreateFunction20150331": "awsresource.TagLambdaResources",
         "rds": "awsresource.TagRDSResources",
         "CreateDBCluster": "awsresource.TagRDSResources",
-        "CreateDBInstance": "awsresource.TagRDSResources"
+        "CreateDBInstance": "awsresource.TagRDSResources",
+        "elbv2": "awsresource.TagAlbResources",
+        "CreateLoadBalancer": "awsresource.TagAlbResources"
     }
 
     @classmethod
@@ -245,7 +247,8 @@ class TagAWSResourcesAbstract(object):
         "CreateTable": "dynamodb",
         "CreateFunction20150331": "lambda",
         "CreateDBCluster": "rds",
-        "CreateDBInstance": "rds"
+        "CreateDBInstance": "rds",
+        "CreateLoadBalancer": "elbv2"
     }
 
     def setup(self, aws_resource, region_value, account_id):
@@ -651,10 +654,63 @@ class TagRDSResources(TagAWSResourcesAbstract):
             self.client.add_tags_to_resource(ResourceName=arn, Tags=tags)
 
 
+class TagAlbResources(TagAWSResourcesAbstract):
+
+    def fetch_resources(self):
+        resources = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response = self.client.describe_load_balancers(PageSize=400, Marker=next_token)
+            else:
+                response = self.client.describe_load_balancers(PageSize=400)
+
+            if "LoadBalancers" in response:
+                resources.extend(response['LoadBalancers'])
+
+            next_token = response["NextMarker"] if "NextMarker" in response else None
+
+            if not next_token:
+                next_token = 'END'
+
+        return resources
+
+    def filter_resources(self, filters, resources):
+        return resources
+
+    def get_arn_list(self, resources):
+        arns = []
+        if resources:
+            for resource in resources:
+                arns.append(resource['LoadBalancerArn'])
+        return arns
+
+    def process_tags(self, tags):
+        tags_key_value = []
+        for k, v in tags.items():
+            tags_key_value.append({'Key': k, 'Value': v})
+
+        return tags_key_value
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = []
+        response_elements = event_detail.get("responseElements")
+        if response_elements and "loadBalancers" in response_elements:
+            for item in response_elements.get("loadBalancers"):
+                if "loadBalancerArn" in item:
+                    arns.append(item.get("loadBalancerArn"))
+        return arns
+
+    @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
+           wait_exponential_multiplier=2000, wait_exponential_max=10000)
+    def tag_resources_cloud_trail_event(self, arns, tags):
+        self.client.add_tags(ResourceArns=arns, Tags=tags)
+
+
 if __name__ == '__main__':
     params = {}
     tag = TagAWSResources(params)
 
-    tag.create("us-east-1", "rds", {'account': 'heelo1', 'Namespace': "adsas"}, "")
+    tag.create("us-east-1", "elbv2", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "956882708938")
 
-    tag.delete("us-east-1", "rds", {'account': 'heelo1', 'Namespace': "adsas"}, "", True)
+    tag.delete("us-east-1", "elbv2", {'account': 'heelo1', 'Namespace': "adsas"}, "956882708938", True)
