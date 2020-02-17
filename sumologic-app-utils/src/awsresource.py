@@ -200,7 +200,10 @@ class TagAWSResourcesProvider(object):
         "dynamodb": "awsresource.TagDynamoDbResources",
         "CreateTable": "awsresource.TagDynamoDbResources",
         "lambda": "awsresource.TagLambdaResources",
-        "CreateFunction20150331": "awsresource.TagLambdaResources"
+        "CreateFunction20150331": "awsresource.TagLambdaResources",
+        "rds": "awsresource.TagRDSResources",
+        "CreateDBCluster": "awsresource.TagRDSResources",
+        "CreateDBInstance": "awsresource.TagRDSResources"
     }
 
     @classmethod
@@ -240,7 +243,9 @@ class TagAWSResourcesAbstract(object):
         "CreateRestApi": "apigateway",
         "CreateDeployment": "apigateway",
         "CreateTable": "dynamodb",
-        "CreateFunction20150331": "lambda"
+        "CreateFunction20150331": "lambda",
+        "CreateDBCluster": "rds",
+        "CreateDBInstance": "rds"
     }
 
     def setup(self, aws_resource, region_value, account_id):
@@ -255,23 +260,23 @@ class TagAWSResourcesAbstract(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def filter_resources(self, filters, resources):
+    def filter_resources(self, *args):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_arn_list(self, resources):
+    def get_arn_list(self, *args):
         raise NotImplementedError()
 
     @abstractmethod
-    def process_tags(self, tags):
+    def process_tags(self, *args):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_arn_list_cloud_trail_event(self, event_detail):
+    def get_arn_list_cloud_trail_event(self, *args):
         raise NotImplementedError()
 
     @abstractmethod
-    def tag_resources_cloud_trail_event(self, arns, tags):
+    def tag_resources_cloud_trail_event(self, *args):
         raise NotImplementedError()
 
     def add_tags(self, arns, tags):
@@ -318,7 +323,7 @@ class TagEC2Resources(TagAWSResourcesAbstract):
     def filter_resources(self, filters, resources):
         return resources
 
-    def get_arn_list(self, resources, *args, **kwargs):
+    def get_arn_list(self, resources):
         arns = []
         if resources:
             for resource in resources:
@@ -329,7 +334,12 @@ class TagEC2Resources(TagAWSResourcesAbstract):
 
     def process_tags(self, tags):
         tags["namespace"] = "hostmetrics"
-        return tags
+
+        tags_key_value = []
+        for k, v in tags.items():
+            tags_key_value.append({'Key': k, 'Value': v})
+
+        return tags_key_value
 
     def get_arn_list_cloud_trail_event(self, event_detail):
         arns = []
@@ -345,11 +355,7 @@ class TagEC2Resources(TagAWSResourcesAbstract):
     @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
            wait_exponential_multiplier=2000, wait_exponential_max=10000)
     def tag_resources_cloud_trail_event(self, arns, tags):
-        tags_key_value = []
-        for k, v in tags.items():
-            tags_key_value.append({'Key': k, 'Value': v})
-
-        self.client.create_tags(Resources=arns, Tags=tags_key_value)
+        self.client.create_tags(Resources=arns, Tags=tags)
 
 
 class TagApiGatewayResources(TagAWSResourcesAbstract):
@@ -383,7 +389,7 @@ class TagApiGatewayResources(TagAWSResourcesAbstract):
     def filter_resources(self, filters, resources):
         return resources
 
-    def get_arn_list(self, resources, *args, **kwargs):
+    def get_arn_list(self, resources):
         arns = []
         if resources:
             for resource in resources:
@@ -456,7 +462,7 @@ class TagDynamoDbResources(TagAWSResourcesAbstract):
     def filter_resources(self, filters, resources):
         return resources
 
-    def get_arn_list(self, resources, *args, **kwargs):
+    def get_arn_list(self, resources):
         arns = []
         if resources:
             for resource in resources:
@@ -465,7 +471,10 @@ class TagDynamoDbResources(TagAWSResourcesAbstract):
         return arns
 
     def process_tags(self, tags):
-        return tags
+        tags_key_value = []
+        for k, v in tags.items():
+            tags_key_value.append({'Key': k, 'Value': v})
+        return tags_key_value
 
     def get_arn_list_cloud_trail_event(self, event_detail):
         arns = []
@@ -479,12 +488,8 @@ class TagDynamoDbResources(TagAWSResourcesAbstract):
     @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
            wait_exponential_multiplier=2000, wait_exponential_max=10000)
     def tag_resources_cloud_trail_event(self, arns, tags):
-        tags_key_value = []
-        for k, v in tags.items():
-            tags_key_value.append({'Key': k, 'Value': v})
-
         for arn in arns:
-            self.client.tag_resource(ResourceArn=arn, Tags=tags_key_value)
+            self.client.tag_resource(ResourceArn=arn, Tags=tags)
 
 
 class TagLambdaResources(TagAWSResourcesAbstract):
@@ -511,7 +516,7 @@ class TagLambdaResources(TagAWSResourcesAbstract):
     def filter_resources(self, filters, resources):
         return resources
 
-    def get_arn_list(self, resources, *args, **kwargs):
+    def get_arn_list(self, resources):
         arns = []
         if resources:
             for resource in resources:
@@ -538,10 +543,118 @@ class TagLambdaResources(TagAWSResourcesAbstract):
             self.client.tag_resource(Resource=arn, Tags=tags)
 
 
+class TagRDSResources(TagAWSResourcesAbstract):
+
+    def fetch_resources(self):
+        resources = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response = self.client.describe_db_clusters(MaxRecords=100, Marker=next_token)
+            else:
+                response = self.client.describe_db_clusters(MaxRecords=100)
+
+            if "DBClusters" in response:
+                resources.extend(response["DBClusters"])
+                for function_name in response["DBClusters"]:
+                    cluster_name = function_name['DBClusterIdentifier']
+                    next_token = None
+                    filters = [{'Name': 'db-cluster-id', 'Values': [cluster_name]}]
+                    while next_token != 'END':
+                        if next_token:
+                            response_instances = self.client.describe_db_instances(MaxRecords=100, Marker=next_token,
+                                                                                   Filters=filters)
+                        else:
+                            response_instances = self.client.describe_db_instances(MaxRecords=100, Filters=filters)
+
+                        if "DBInstances" in response_instances:
+                            resources.extend(response_instances["DBInstances"])
+
+                        next_token = response_instances["Marker"] if "Marker" in response_instances else None
+
+                        if not next_token:
+                            next_token = 'END'
+
+            next_token = response["Marker"] if "Marker" in response else None
+
+            if not next_token:
+                next_token = 'END'
+
+        return resources
+
+    def filter_resources(self, filters, resources):
+        return resources
+
+    def get_arn_list(self, resources):
+        arns = {}
+        if resources:
+            for resource in resources:
+                tags_key_value = []
+                if "DBClusterIdentifier" in resource:
+                    tags_key_value.append({'Key': "cluster", 'Value': resource['DBClusterIdentifier']})
+
+                function_arn = None
+                if "DBInstanceArn" in resource:
+                    function_arn = resource["DBInstanceArn"]
+                if "DBClusterArn" in resource:
+                    function_arn = resource["DBClusterArn"]
+
+                if function_arn in arns:
+                    arns[function_arn].extend(tags_key_value)
+                else:
+                    arns[function_arn] = tags_key_value
+        return arns
+
+    def add_tags(self, arns, tags):
+        if arns:
+            for arn, tags_arn in arns.items():
+                tags_key_value = self.process_tags(tags)
+                tags_key_value.extend(tags_arn)
+                self.client.add_tags_to_resource(ResourceName=arn, Tags=tags_key_value)
+
+    def delete_tags(self, arns, tags):
+        if arns:
+            for arn, tags_arn in arns.items():
+                tags_key_value = self.process_tags(tags)
+                tags_key_value.extend(tags_arn)
+                tags_keys = [sub['Key'] for sub in tags_key_value]
+                self.client.remove_tags_from_resource(ResourceName=arn, TagKeys=tags_keys)
+
+    def process_tags(self, tags):
+        tags_key_value = []
+        for k, v in tags.items():
+            tags_key_value.append({'Key': k, 'Value': v})
+        return tags_key_value
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = {}
+        event_name = event_detail.get("eventName")
+        tags_key_value = []
+
+        if "responseElements" in event_detail:
+            response_elements = event_detail.get("responseElements")
+            if response_elements:
+                if "dBClusterIdentifier" in response_elements:
+                    tags_key_value.append({'Key': "cluster", 'Value': response_elements.get("dBClusterIdentifier")})
+
+                if "dBClusterArn" in response_elements and event_name == "CreateDBCluster":
+                    arns[response_elements.get("dBClusterArn")] = tags_key_value
+                if "dBInstanceArn" in response_elements and event_name == "CreateDBInstance":
+                    arns[response_elements.get("dBInstanceArn")] = tags_key_value
+        return arns
+
+    @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
+           wait_exponential_multiplier=2000, wait_exponential_max=10000)
+    def tag_resources_cloud_trail_event(self, arns, tags):
+        for arn, tags_arn in arns.items():
+            tags.extend(tags_arn)
+            self.client.add_tags_to_resource(ResourceName=arn, Tags=tags)
+
+
 if __name__ == '__main__':
     params = {}
     tag = TagAWSResources(params)
 
-    tag.create("us-east-1", "ec2", {'account': 'heelo1', 'Name space': "adsas"}, "")
+    tag.create("us-east-1", "rds", {'account': 'heelo1', 'Namespace': "adsas"}, "")
 
-    tag.delete("us-east-1", "ec2", {'account': 'heelo1', 'Namespace': "adsas"}, "", True)
+    tag.delete("us-east-1", "rds", {'account': 'heelo1', 'Namespace': "adsas"}, "", True)
