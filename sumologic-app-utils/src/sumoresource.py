@@ -535,9 +535,9 @@ class App(SumoResource):
         print("job status: %s" % response.text)
         return response
 
-    def _create_or_fetch_quickstart_apps_parent_folder(self):
+    def _create_or_fetch_quickstart_apps_parent_folder(self, folder_prefix):
         response = self.sumologic_cli.get_personal_folder()
-        folder_name = "SumoLogic Amazon QuickStart Apps " + str(datetime.now().strftime("%d-%m-%Y"))
+        folder_name = folder_prefix + str(datetime.now().strftime("%d-%m-%Y"))
         description = "This folder contains all the apps created as a part of SumoLogic Amazon QuickStart Apps."
         try:
             folder = self.sumologic_cli.create_folder(folder_name, description, response.json()['id'])
@@ -560,14 +560,18 @@ class App(SumoResource):
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
         content = self._get_app_content(appname, source_params)
-        response = self.sumologic_cli.get_personal_folder()
-        personal_folder_id = response.json()['id']
-        app_folder_id = self._get_app_folder(content, personal_folder_id)
-        response = self.sumologic_cli.import_content(personal_folder_id, content, is_overwrite="true")
+
+        if "AWS Observability" in appname:
+            folder_id = self._create_or_fetch_quickstart_apps_parent_folder("Sumo Logic AWS Observability Apps ")
+        else:
+            response = self.sumologic_cli.get_personal_folder()
+            folder_id = response.json()['id']
+        app_folder_id = self._get_app_folder(content, folder_id)
+        response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true")
         job_id = response.json()["id"]
         print("installed app %s: appFolderId: %s personalFolderId: %s jobId: %s" % (
-            appname, app_folder_id, personal_folder_id, job_id))
-        self._wait_for_folder_creation(personal_folder_id, job_id)
+            appname, app_folder_id, folder_id, job_id))
+        self._wait_for_folder_creation(folder_id, job_id)
         return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
 
     def create_by_install_api(self, appid, appname, source_params, *args, **kwargs):
@@ -575,7 +579,7 @@ class App(SumoResource):
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
         if "Amazon QuickStart" in appname:
-            folder_id = self._create_or_fetch_quickstart_apps_parent_folder()
+            folder_id = self._create_or_fetch_quickstart_apps_parent_folder("SumoLogic Amazon QuickStart Apps ")
         else:
             response = self.sumologic_cli.get_personal_folder()
             folder_id = response.json()['id']

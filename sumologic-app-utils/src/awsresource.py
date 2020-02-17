@@ -159,6 +159,58 @@ class TagAWSResources(AWSResource):
         }
 
 
+class EnableS3LogsResources(AWSResource):
+
+    def __init__(self, props, *args, **kwargs):
+        print('Enabling S3 for ALB aws resource %s' % props.get("AWSResource"))
+
+    def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, delete_flag):
+        # Get the class instance based on AWS Resource
+        tag_resource = TagAWSResourcesProvider.get_provider(aws_resource)
+        tag_resource.setup(aws_resource, region_value, None)
+
+        # Fetch and Filter the Resources.
+        resources = tag_resource.fetch_resources()
+        filtered_resources = tag_resource.filter_resources([], resources)
+
+        # Get the ARNs for all resources
+        arns = tag_resource.get_arn_list(filtered_resources)
+
+        # Enable and disable AWS ALB S3 the resources.
+        if delete_flag:
+            tag_resource.disable_s3_logs(arns, bucket_name)
+        else:
+            tag_resource.enable_s3_logs(arns, bucket_name)
+
+    def create(self, region_value, aws_resource, bucket_name, *args, **kwargs):
+        print("ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket %s." % bucket_name)
+        self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, False)
+        print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
+
+        return {"S3_ENABLE": "Successful"}, "S3"
+
+    def update(self, region_value, aws_resource, bucket_name, *args, **kwargs):
+        self.create(region_value, aws_resource, bucket_name, *args, **kwargs)
+        print("updated S3 bucket to %s " % bucket_name)
+        return {"S3_ENABLE": "Successful"}, "S3"
+
+    def delete(self, region_value, aws_resource, bucket_name, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, True)
+            print("ENABLE S3 LOGS - Completed the AWS resources S3 deletion to bucket.")
+        else:
+            print("ENABLE S3 LOGS - Skipping the AWS resources S3 deletion to bucket.")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        return {
+            "region_value": os.environ.get("AWS_REGION"),
+            "aws_resource": props.get("AWSResource"),
+            "bucket_name": props.get("BucketName"),
+            "remove_on_delete_stack": props.get("RemoveOnDeleteStack")
+        }
+
+
 def resource_tagging(event, context):
     print("AWS RESOURCE TAGGING :- Starting resource tagging")
 
@@ -736,7 +788,21 @@ class TagAlbResources(TagAWSResourcesAbstract):
                       {'Key': 'access_logs.s3.bucket', 'Value': s3_bucket}]
 
         for arn in arns:
-            self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
+            response = self.client.describe_load_balancer_attributes(LoadBalancerArn=arn)
+            if "Attributes" in response:
+                for attribute in response["Attributes"]:
+                    if attribute["Key"] == "access_logs.s3.enabled" and attribute["Value"] == "false":
+                        self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
+
+    def disable_s3_logs(self, arns, s3_bucket):
+        attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'false'}]
+
+        for arn in arns:
+            response = self.client.describe_load_balancer_attributes(LoadBalancerArn=arn)
+            if "Attributes" in response:
+                for attribute in response["Attributes"]:
+                    if attribute["Key"] == "access_logs.s3.bucket" and attribute["Value"] == s3_bucket:
+                        self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
 
 
 if __name__ == '__main__':

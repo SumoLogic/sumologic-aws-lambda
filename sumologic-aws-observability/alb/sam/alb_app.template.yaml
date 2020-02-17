@@ -347,6 +347,22 @@ Resources:
         account: !Ref AccountAlias
       AccountID: !Ref "AWS::AccountId"
 
+  EnableS3LogsResources:
+    Type: Custom::EnableS3LogsResources
+    Condition: install_s3_logs_source
+    DependsOn: SumoS3Source
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AWSResource: elbv2
+      BucketName: !Ref S3LogsBucketName
+
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
     Condition: do_not_use_parent_stack
@@ -455,7 +471,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      AppName: "Amazon QuickStart Alb App"
+      AppName: "AWS Observability Alb App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         metricsrc: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"
