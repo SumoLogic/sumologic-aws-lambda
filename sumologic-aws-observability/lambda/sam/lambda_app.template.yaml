@@ -465,7 +465,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      AppName: "Amazon QuickStart Lambda App"
+      AppName: "AWS Observability Lambda App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         metricssrc: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"

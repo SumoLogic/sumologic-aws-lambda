@@ -344,7 +344,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      AppName: "Amazon QuickStart EC2 Metrics App"
+      AppName: "AWS Observability EC2 Metrics App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         paramId123: !Sub "_sourceCategory=${MetricsSourceCategoryName}"

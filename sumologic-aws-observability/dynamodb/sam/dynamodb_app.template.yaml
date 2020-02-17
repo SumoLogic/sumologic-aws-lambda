@@ -432,7 +432,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      AppName: "Amazon QuickStart DynamoDb App"
+      AppName: "AWS Observability DynamoDb App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         metricsrc: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"

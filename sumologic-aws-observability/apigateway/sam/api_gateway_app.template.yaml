@@ -431,7 +431,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      AppName: "Amazon QuickStart Api Gateway App"
+      AppName: "AWS Observability Api Gateway App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         metricssrc: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"

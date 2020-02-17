@@ -347,7 +347,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      AppName: "Amazon QuickStart Rds App"
+      AppName: "AWS Observability Rds App"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         paramId123: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"
