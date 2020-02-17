@@ -125,6 +125,15 @@ Metadata:
           - ApiGatewayCloudTrailLogsSourceName
           - ApiGatewayCloudTrailLogsSourceCategoryName
 
+      - Label:
+          default: "9. Auto Enable Options"
+        Parameters:
+          - AutoEnableTaggingAWSResources
+          - AutoEnableS3LogsALBResources
+          - AutoSubscribeLogGroupsLambda
+          - LambdaLogGroupPattern
+          - LambdaSubscribeExistingLogGroups
+
     ParameterLabels:
       SumoDeployment:
         default: "Sumo Logic Deployment Name"
@@ -237,6 +246,17 @@ Metadata:
         default: "Create Sumo Logic CloudWatch Metrics Source"
       ApiGatewayCloudWatchMetricsSourceCategoryName:
         default: "Sumo Logic Lambda App CloudWatch Metrics Source Category Name"
+
+      AutoEnableTaggingAWSResources:
+        default: "Auto Enable Tagging of new AWS Resources"
+      AutoEnableS3LogsALBResources:
+        default: "Auto Enable S3 Logging for new ALB Resources"
+      AutoSubscribeLogGroupsLambda:
+        default: "Auto Subscribe new log groups to Lambda"
+      LambdaLogGroupPattern:
+        default: "Regex for lambda"
+      LambdaSubscribeExistingLogGroups:
+        default: "Auto Subscribe Existing log groups"
 
 Parameters:
   SumoDeployment:
@@ -552,6 +572,39 @@ Parameters:
     Description: "Required when Flag = No. Provide Lambda app existing source category name from Sumo Logic. Used for app installation."
     Default: ""
 
+  AutoEnableTaggingAWSResources:
+    Type: String
+    Description: "Yes -> To automatically tag newly created AWS resources."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  AutoEnableS3LogsALBResources:
+    Type: String
+    Description: "Yes -> To automatically enable S3 logging for newly created ALB resources."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  AutoSubscribeLogGroupsLambda:
+    Type: String
+    Description: "Yes -> To automatically Subscribe new log groups to lambda."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  LambdaLogGroupPattern:
+    Type: String
+    Default: Test
+    Description: Enter regex for matching logGroups
+  LambdaSubscribeExistingLogGroups:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Select true for subscribing existing logs
+
 Conditions:
   # Conditions for EC2
   install_ec2_metadata_source: !Equals [ !Ref CreateMetaDataSource, 'Yes' ]
@@ -617,6 +670,13 @@ Conditions:
     - !Condition install_cloudtrail_logs_source
     - !Condition install_cloud_watch_logs_source
     - !Condition install_cloud_watch_metric_source
+
+  # Condition for auto subscribe of tags, S3 logs and lambda log group
+  auto_tag_aws_resource: !Equals [ !Ref AutoEnableTaggingAWSResources, 'Yes' ]
+  auto_enable_s3_logs: !Equals [ !Ref AutoEnableS3LogsALBResources, 'Yes' ]
+  auto_subscribe_lambda_log_groups:
+    - !Condition install_cloud_watch_logs_source
+    - !Equals [ !Ref AutoSubscribeLogGroupsLambda, 'Yes' ]
 
   # Conditions for calling child stack of each app. If any resource create condition is true.
   install_ec2_metrics_app: !Or
@@ -948,3 +1008,53 @@ Resources:
         CreateLambdaCloudWatchLogsSource: !If [install_lambda_app, !Ref CreateLambdaCloudWatchLogsSource, "Yes"]
         LambdaCloudWatchLogsCollectorName: !Ref LambdaCloudWatchLogsCollectorName
         LambdaCloudWatchLogsSourceName: !Ref LambdaCloudWatchLogsSourceName
+
+  AutoEnableTaggingNewAWSResources:
+    Type: AWS::CloudFormation::Stack
+    Condition: auto_tag_aws_resource
+    DependsOn: CommonResourceStackWaitCondition
+    Properties:
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoTagAWSResources/sam/auto_tag_resources.template.yaml"
+      Parameters:
+        AccountAlias: !Ref AccountAlias
+        AddTagsForALBResources: !If [install_alb_app, 'Yes', 'No']
+        AddTagsForAPIGatewayResources: !If [install_api_gateway_app, 'Yes', 'No']
+        AddTagsForRDSResources: !If [install_rds_app, 'Yes', 'No']
+        AddTagsForEC2MetricsResources: !If [install_ec2_metrics_app, 'Yes', 'No']
+        AddTagsForLambdaResources: !If [install_lambda_app, 'Yes', 'No']
+        AddTagsForDynamoDBResources: !If [install_dynamo_db_app, 'Yes', 'No']
+
+  AutoEnableS3LogsAlbWaitHandle:
+    Condition: install_alb_app
+    DependsOn: sumoAlbMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  AutoEnableS3LogsAlbWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_alb_app, !Ref AutoEnableS3LogsAlbWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
+  AutoEnableS3LogsAlbAWSResources:
+    Type: AWS::CloudFormation::Stack
+    Condition: auto_enable_s3_logs
+    DependsOn: AutoEnableS3LogsAlbWaitCondition
+    Properties:
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoTagAWSResources/sam/auto_tag_resources.template.yaml"
+      Parameters:
+        BucketName: !Ref S3LogsBucketName
+        EnableS3LoggingALBResources: !Ref AutoEnableS3LogsALBResources
+
+  AutoSubscribeLambdaLogGroupsAWSResources:
+    Type: AWS::Serverless::Application
+    Condition: auto_subscribe_lambda_log_groups
+    DependsOn: CommonResourceStackWaitCondition
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-loggroup-connector
+        SemanticVersion: 1.0.1
+      Parameters:
+        LambdaARN: !GetAtt CreateCommonResources.Outputs.CloudWatchLambdaARN
+        LogGroupPattern: !Ref LambdaLogGroupPattern
+        UseExistingLogs: !Ref LambdaSubscribeExistingLogGroups
