@@ -189,6 +189,31 @@ def resource_tagging(event, context):
     print("AWS RESOURCE TAGGING :- Completed resource tagging")
 
 
+def enable_s3_logs_alb(event, context):
+    print("AWS S3 ENABLE ALB :- Starting s3 logs enable")
+
+    # Get Account Id and Alias from env.
+    bucket_name = os.environ.get("BucketName")
+    account_id = os.environ.get("AccountID")
+
+    if "detail" in event:
+        event_detail = event.get("detail")
+        event_name = event_detail.get("eventName")
+        region_value = event_detail.get("awsRegion")
+
+        # Get the class instance based on Cloudtrail Event Name
+        alb_resource = TagAWSResourcesProvider.get_provider(event_name)
+        alb_resource.setup(event_name, region_value, account_id)
+
+        # Get the arns from the event.
+        resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
+
+        # Enable S3 logging
+        alb_resource.enable_s3_logs(resources, bucket_name)
+
+    print("AWS S3 ENABLE ALB :- Completed s3 logs enable")
+
+
 class TagAWSResourcesProvider(object):
     provider_map = {
         "ec2": "awsresource.TagEC2Resources",
@@ -706,11 +731,18 @@ class TagAlbResources(TagAWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, arns, tags):
         self.client.add_tags(ResourceArns=arns, Tags=tags)
 
+    def enable_s3_logs(self, arns, s3_bucket):
+        attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'true'},
+                      {'Key': 'access_logs.s3.bucket', 'Value': s3_bucket}]
+
+        for arn in arns:
+            self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
+
 
 if __name__ == '__main__':
     params = {}
     tag = TagAWSResources(params)
 
-    tag.create("us-east-1", "elbv2", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "956882708938")
+    tag.create("us-east-1", "elbv2", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "")
 
-    tag.delete("us-east-1", "elbv2", {'account': 'heelo1', 'Namespace': "adsas"}, "956882708938", True)
+    tag.delete("us-east-1", "elbv2", {'account': 'heelo1', 'Namespace': "adsas"}, "", True)
