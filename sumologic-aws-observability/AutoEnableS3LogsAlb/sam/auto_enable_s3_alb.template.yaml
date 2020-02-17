@@ -52,7 +52,7 @@ Resources:
                   - logs:PutLogEvents
                 Resource: '*'
 
-  AwsTagResourcesLambda:
+  AwsAlbS3LogsResourcesLambda:
     Type: AWS::Lambda::Function
     Properties:
       Code:
@@ -74,13 +74,13 @@ Resources:
     Condition: enable_s3_logging
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref AwsTagResourcesLambda
+      FunctionName: !Ref AwsAlbS3LogsResourcesLambda
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt AutoEnableS3LogEventsRuleTrigger.Arn
 
   AutoEnableS3LogEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
+    DependsOn: AwsAlbS3LogsResourcesLambda
     Condition: enable_s3_logging
     Properties:
       Description: Auto-Enable S3 logs ALB resources with Lambda from events
@@ -97,11 +97,11 @@ Resources:
       Name: !Sub "AwsObservabilityAutoEnableS3LogsLoadBalancerRule"
       State: ENABLED
       Targets:
-        - Arn: !GetAtt AwsTagResourcesLambda.Arn
+        - Arn: !GetAtt AwsAlbS3LogsResourcesLambda.Arn
           Id: Main
 
 Outputs:
 
-  AwsTagResourcesLambda:
-    Description: "AwsTagResourcesLambda Function ARN"
-    Value: !GetAtt AwsTagResourcesLambda.Arn
+  AwsAlbS3LogsResourcesLambda:
+    Description: "AwsAlbS3LogsResourcesLambda Function ARN"
+    Value: !GetAtt AwsAlbS3LogsResourcesLambda.Arn

@@ -674,7 +674,7 @@ Conditions:
   # Condition for auto subscribe of tags, S3 logs and lambda log group
   auto_tag_aws_resource: !Equals [ !Ref AutoEnableTaggingAWSResources, 'Yes' ]
   auto_enable_s3_logs: !Equals [ !Ref AutoEnableS3LogsALBResources, 'Yes' ]
-  auto_subscribe_lambda_log_groups:
+  auto_subscribe_lambda_log_groups: !And
     - !Condition install_cloud_watch_logs_source
     - !Equals [ !Ref AutoSubscribeLogGroupsLambda, 'Yes' ]
 
@@ -1041,9 +1041,9 @@ Resources:
     Condition: auto_enable_s3_logs
     DependsOn: AutoEnableS3LogsAlbWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoTagAWSResources/sam/auto_tag_resources.template.yaml"
+      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoEnableS3LogsAlb/sam/auto_enable_s3_alb.template.yaml"
       Parameters:
-        BucketName: !Ref S3LogsBucketName
+        BucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
         EnableS3LoggingALBResources: !Ref AutoEnableS3LogsALBResources
 
   AutoSubscribeLambdaLogGroupsAWSResources:
