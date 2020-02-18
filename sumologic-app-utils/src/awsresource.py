@@ -102,8 +102,7 @@ class TagAWSResources(AWSResource):
 
     def _tag_aws_resources(self, region_value, aws_resource, tags, account_id, delete_flag):
         # Get the class instance based on AWS Resource
-        tag_resource = TagAWSResourcesProvider.get_provider(aws_resource)
-        tag_resource.setup(aws_resource, region_value, account_id)
+        tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, account_id)
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
@@ -166,8 +165,7 @@ class EnableS3LogsResources(AWSResource):
 
     def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, delete_flag):
         # Get the class instance based on AWS Resource
-        tag_resource = TagAWSResourcesProvider.get_provider(aws_resource)
-        tag_resource.setup(aws_resource, region_value, None)
+        tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, None)
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
@@ -226,8 +224,7 @@ def resource_tagging(event, context):
         region_value = event_detail.get("awsRegion")
 
         # Get the class instance based on Cloudtrail Event Name
-        tag_resource = TagAWSResourcesProvider.get_provider(event_name)
-        tag_resource.setup(event_name, region_value, account_id)
+        tag_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
 
         # Get the arns from the event.
         resources = tag_resource.get_arn_list_cloud_trail_event(event_detail)
@@ -241,7 +238,7 @@ def resource_tagging(event, context):
     print("AWS RESOURCE TAGGING :- Completed resource tagging")
 
 
-def enable_s3_logs_alb(event, context):
+def enable_s3_logs(event, context):
     print("AWS S3 ENABLE ALB :- Starting s3 logs enable")
 
     # Get Account Id and Alias from env.
@@ -254,8 +251,7 @@ def enable_s3_logs_alb(event, context):
         region_value = event_detail.get("awsRegion")
 
         # Get the class instance based on Cloudtrail Event Name
-        alb_resource = TagAWSResourcesProvider.get_provider(event_name)
-        alb_resource.setup(event_name, region_value, account_id)
+        alb_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
 
         # Get the arns from the event.
         resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
@@ -266,56 +262,8 @@ def enable_s3_logs_alb(event, context):
     print("AWS S3 ENABLE ALB :- Completed s3 logs enable")
 
 
-class TagAWSResourcesProvider(object):
-    provider_map = {
-        "ec2": "awsresource.TagEC2Resources",
-        "RunInstances": "awsresource.TagEC2Resources",
-        "apigateway": "awsresource.TagApiGatewayResources",
-        "CreateStage": "awsresource.TagApiGatewayResources",
-        "CreateRestApi": "awsresource.TagApiGatewayResources",
-        "CreateDeployment": "awsresource.TagApiGatewayResources",
-        "dynamodb": "awsresource.TagDynamoDbResources",
-        "CreateTable": "awsresource.TagDynamoDbResources",
-        "lambda": "awsresource.TagLambdaResources",
-        "CreateFunction20150331": "awsresource.TagLambdaResources",
-        "rds": "awsresource.TagRDSResources",
-        "CreateDBCluster": "awsresource.TagRDSResources",
-        "CreateDBInstance": "awsresource.TagRDSResources",
-        "elbv2": "awsresource.TagAlbResources",
-        "CreateLoadBalancer": "awsresource.TagAlbResources"
-    }
-
-    @classmethod
-    def load_class(cls, full_class_string, invoking_module_name):
-        """
-            dynamically load a class from a string
-        """
-        try:
-            module_path, class_name = cls._split_module_class_name(full_class_string, invoking_module_name)
-            module = importlib.import_module(module_path)
-            return getattr(module, class_name)
-        except Exception as e:
-            raise
-
-    @classmethod
-    def _split_module_class_name(cls, full_class_string, invoking_module_name):
-        file_name, class_name = full_class_string.rsplit(".", 1)
-        parent_module = invoking_module_name.rsplit(".", 1)[0] + "." if "." in invoking_module_name else ""
-        full_module_path = f"{parent_module}{file_name}"
-        return full_module_path, class_name
-
-    @classmethod
-    def get_provider(cls, provider_name, *args, **kwargs):
-        if provider_name in cls.provider_map:
-            module_class = cls.load_class(cls.provider_map[provider_name], __name__)
-            module_instance = module_class(*args, **kwargs)
-            return module_instance
-        else:
-            raise Exception("%s provider not found" % provider_name)
-
-
 @six.add_metaclass(AutoRegisterResource)
-class TagAWSResourcesAbstract(object):
+class AWSResourcesAbstract(object):
     event_resource_map = {
         "RunInstances": "ec2",
         "CreateStage": "apigateway",
@@ -328,7 +276,7 @@ class TagAWSResourcesAbstract(object):
         "CreateLoadBalancer": "elbv2"
     }
 
-    def setup(self, aws_resource, region_value, account_id):
+    def __init__(self, aws_resource, region_value, account_id):
         self.tagging_client = boto3.client('resourcegroupstaggingapi', region_name=region_value)
         self.client = boto3.client(self.event_resource_map[aws_resource] if aws_resource in self.event_resource_map
                                    else aws_resource, region_name=region_value)
@@ -378,7 +326,7 @@ class TagAWSResourcesAbstract(object):
             yield data
 
 
-class TagEC2Resources(TagAWSResourcesAbstract):
+class EC2Resources(AWSResourcesAbstract):
 
     def fetch_resources(self):
         instances = []
@@ -438,7 +386,7 @@ class TagEC2Resources(TagAWSResourcesAbstract):
         self.client.create_tags(Resources=arns, Tags=tags)
 
 
-class TagApiGatewayResources(TagAWSResourcesAbstract):
+class ApiGatewayResources(AWSResourcesAbstract):
 
     def fetch_resources(self):
         api_gateways = []
@@ -518,7 +466,7 @@ class TagApiGatewayResources(TagAWSResourcesAbstract):
             self.client.tag_resource(resourceArn=arn, tags=tags)
 
 
-class TagDynamoDbResources(TagAWSResourcesAbstract):
+class DynamoDbResources(AWSResourcesAbstract):
 
     def fetch_resources(self):
         tables = []
@@ -572,7 +520,7 @@ class TagDynamoDbResources(TagAWSResourcesAbstract):
             self.client.tag_resource(ResourceArn=arn, Tags=tags)
 
 
-class TagLambdaResources(TagAWSResourcesAbstract):
+class LambdaResources(AWSResourcesAbstract):
 
     def fetch_resources(self):
         lambdas = []
@@ -623,7 +571,7 @@ class TagLambdaResources(TagAWSResourcesAbstract):
             self.client.tag_resource(Resource=arn, Tags=tags)
 
 
-class TagRDSResources(TagAWSResourcesAbstract):
+class RDSResources(AWSResourcesAbstract):
 
     def fetch_resources(self):
         resources = []
@@ -731,7 +679,7 @@ class TagRDSResources(TagAWSResourcesAbstract):
             self.client.add_tags_to_resource(ResourceName=arn, Tags=tags)
 
 
-class TagAlbResources(TagAWSResourcesAbstract):
+class AlbResources(AWSResourcesAbstract):
 
     def fetch_resources(self):
         resources = []
@@ -803,6 +751,33 @@ class TagAlbResources(TagAWSResourcesAbstract):
                 for attribute in response["Attributes"]:
                     if attribute["Key"] == "access_logs.s3.bucket" and attribute["Value"] == s3_bucket:
                         self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
+
+
+class AWSResourcesProvider(object):
+    provider_map = {
+        "ec2": EC2Resources,
+        "RunInstances": EC2Resources,
+        "apigateway": ApiGatewayResources,
+        "CreateStage": ApiGatewayResources,
+        "CreateRestApi": ApiGatewayResources,
+        "CreateDeployment": ApiGatewayResources,
+        "dynamodb": DynamoDbResources,
+        "CreateTable": DynamoDbResources,
+        "lambda": LambdaResources,
+        "CreateFunction20150331": LambdaResources,
+        "rds": RDSResources,
+        "CreateDBCluster": RDSResources,
+        "CreateDBInstance": RDSResources,
+        "elbv2": AlbResources,
+        "CreateLoadBalancer": AlbResources
+    }
+
+    @classmethod
+    def get_provider(cls, provider_name, region_value, account_id, *args, **kwargs):
+        if provider_name in cls.provider_map:
+            return cls.provider_map[provider_name](provider_name, region_value, account_id)
+        else:
+            raise Exception("%s provider not found" % provider_name)
 
 
 if __name__ == '__main__':

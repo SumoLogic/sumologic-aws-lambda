@@ -652,8 +652,7 @@ class SumoLogicAWSExplorer(SumoResource):
                     if error.get('code') == 'topology:duplicate':
                         print("AWS EXPLORER -  Duplicate Exists for Name %s" % explorer_name)
                         return {"EXPLORER_NAME": explorer_name}, "Duplicate"
-            else:
-                raise
+            raise
 
     # No Update API. So, Explorer view can be updated and deleted from the main stack where it was created.
     def update(self, explorer_id, explorer_name, hierarchy, *args, **kwargs):
@@ -714,8 +713,7 @@ class SumoLogicMetricRules(SumoResource):
                             or error.get('code') == 'metrics:rule_already_exists':
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
                         return {"METRIC_RULES": metric_rule_name}, "Duplicate"
-            else:
-                raise
+            raise
 
     # No Update API. So, Metric rules can be updated and deleted from the main stack where it was created.
     def update(self, job_name, metric_rule_name, match_expression, variables, *args, **kwargs):
@@ -753,27 +751,29 @@ class SumoLogicMetricRules(SumoResource):
 class SumoLogicUpdateFields(SumoResource):
 
     def create(self, collector_id, source_name, fields, *args, **kwargs):
-        sources = self.sumologic_cli.sources(collector_id, limit=300)
-        source_id = None
-        for source in sources:
-            if source["name"] == source_name:
-                source_id = source["id"]
+        if collector_id:
+            sources = self.sumologic_cli.sources(collector_id, limit=300)
+            source_id = None
+            for source in sources:
+                if source["name"] == source_name:
+                    source_id = source["id"]
 
-        sv, etag = self.sumologic_cli.source(collector_id, source_id)
+            sv, etag = self.sumologic_cli.source(collector_id, source_id)
 
-        existing_fields = sv['source']['fields']
+            existing_fields = sv['source']['fields']
 
-        new_fields = existing_fields.copy()
-        new_fields.update(fields)
+            new_fields = existing_fields.copy()
+            new_fields.update(fields)
 
-        sv['source']['fields'] = new_fields
+            sv['source']['fields'] = new_fields
 
-        resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
 
-        data = resp.json()['source']
-        print("updated Fields in Source %s" % data["id"])
+            data = resp.json()['source']
+            print("updated Fields in Source %s" % data["id"])
 
-        return {"existing_fields": existing_fields}, source_id
+            return {"existing_fields": existing_fields}, source_id
+        return {"existing_fields": "Not updated"}, "No Id"
 
     # Update the new fields to source.
     def update(self, collector_id, source_name, fields, *args, **kwargs):
@@ -857,8 +857,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
                             fer_details["scope"] = fer_details["scope"] + " or " + fer_scope
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
                         return {"FER_RULES": fer_name}, "Duplicate"
-            else:
-                raise
+            raise
 
     # Field Extraction Rule can be updated and deleted from the main stack where it was created.
     def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
