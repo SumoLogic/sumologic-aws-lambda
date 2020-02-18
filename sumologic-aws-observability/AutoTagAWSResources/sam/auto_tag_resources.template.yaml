@@ -55,6 +55,10 @@ Parameters:
       - 'No'
     Default: 'Yes'
     Description: "Choose if you need to add tags for your AWS Resources."
+  FilterExpression:
+    Type: String
+    Default: ""
+    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
 
 Conditions:
   add_alb_tags: !Equals [!Ref AddTagsForALBResources, 'Yes']
@@ -117,6 +121,7 @@ Resources:
         Variables:
           AccountAlias: !Ref AccountAlias
           AccountID: !Ref "AWS::AccountId"
+          Filter: !Ref FilterExpression
 
   RdsDbInstanceEventsInvokePermission:
     Type: AWS::Lambda::Permission

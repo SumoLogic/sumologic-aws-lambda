@@ -25,6 +25,11 @@ Metadata:
             - AddTagsForDynamoDBResources
 
       - Label:
+          default: "Filter Regular Expression for tagging resources."
+          Parameters:
+            - FilterExpression
+
+      - Label:
           default: "Local Parameters. Do Not Edit the values."
           Parameters:
             - ParentStackName
@@ -46,6 +51,8 @@ Metadata:
         default: "Do you need to add Tags for AWS Lambda Resources?"
       AddTagsForDynamoDBResources:
         default: "Do you need to add Tags for AWS Dynamo DB Resources?"
+      FilterExpression:
+        default: "Filter Regular expression"
       ParentStackName:
         default: "If Any, Name of parent Stack."
 
@@ -104,6 +111,11 @@ Parameters:
       - 'No'
     Default: 'Yes'
     Description: "Choose if you need to add tags for your AWS Resources."
+
+  FilterExpression:
+    Type: String
+    Default: ""
+    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
 
   ParentStackName:
     Type: String
@@ -189,6 +201,7 @@ Resources:
       Region: !Ref "AWS::Region"
       AWSResource: ec2
       AccountID: !Ref "AWS::AccountId"
+      Filter: !Ref FilterExpression
       Tags:
         account: !Ref AccountAlias
         namespace: "AWS/EC2"
@@ -208,6 +221,7 @@ Resources:
       Region: !Ref "AWS::Region"
       AWSResource: elbv2
       AccountID: !Ref "AWS::AccountId"
+      Filter: !Ref FilterExpression
       Tags:
         account: !Ref AccountAlias
 
@@ -226,6 +240,7 @@ Resources:
       Region: !Ref "AWS::Region"
       AWSResource: apigateway
       AccountID: !Ref "AWS::AccountId"
+      Filter: !Ref FilterExpression
       Tags:
         account: !Ref AccountAlias
 
@@ -244,6 +259,7 @@ Resources:
       Region: !Ref "AWS::Region"
       AWSResource: lambda
       AccountID: !Ref "AWS::AccountId"
+      Filter: !Ref FilterExpression
       Tags:
         account: !Ref AccountAlias
 
@@ -262,6 +278,7 @@ Resources:
       Region: !Ref "AWS::Region"
       AWSResource: rds
       AccountID: !Ref "AWS::AccountId"
+      Filter: !Ref FilterExpression
       Tags:
         account: !Ref AccountAlias
 
@@ -279,6 +296,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       Region: !Ref "AWS::Region"
       AWSResource: dynamodb
+      Filter: !Ref FilterExpression
       Tags:
         account: !Ref AccountAlias
       AccountID: !Ref "AWS::AccountId"

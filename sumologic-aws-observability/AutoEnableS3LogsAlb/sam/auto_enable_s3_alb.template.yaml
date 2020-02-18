@@ -21,6 +21,11 @@ Parameters:
     Default: 'Yes'
     Description: "Choose if you need to Enable s3 logging for your AWS Resources."
 
+  FilterExpression:
+    Type: String
+    Default: ""
+    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
+
 Conditions:
   enable_s3_logging: !Equals [!Ref EnableS3LoggingALBResources, 'Yes']
 
@@ -68,6 +73,7 @@ Resources:
         Variables:
           BucketName: !Ref BucketName
           AccountID: !Ref "AWS::AccountId"
+          Filter: !Ref FilterExpression
 
   AutoEnableS3LogEventsInvokePermission:
     Type: AWS::Lambda::Permission

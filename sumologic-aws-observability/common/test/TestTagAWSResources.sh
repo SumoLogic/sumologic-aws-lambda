@@ -10,6 +10,7 @@ export InstallTypes=("all" "rds" "alb" "apigateway" "ec2" "lambda")
 for InstallType in "${InstallTypes[@]}"
 do
     export AddTagsForDynamoDBResources="No"
+    export FilterExpression="'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'master.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
 
     if [[ "${InstallType}" == "rds" ]]
     then
@@ -79,7 +80,8 @@ do
     --parameter-overrides RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     AddTagsForALBResources="${AddTagsForALBResources}" AddTagsForAPIGatewayResources="${AddTagsForAPIGatewayResources}" \
     AddTagsForRDSResources="${AddTagsForRDSResources}" AddTagsForEC2MetricsResources="${AddTagsForEC2MetricsResources}" \
-    AddTagsForLambdaResources="${AddTagsForLambdaResources}" AccountAlias="${AccountAlias}" AddTagsForDynamoDBResources="${AddTagsForDynamoDBResources}"
+    AddTagsForLambdaResources="${AddTagsForLambdaResources}" AccountAlias="${AccountAlias}" AddTagsForDynamoDBResources="${AddTagsForDynamoDBResources}" \
+    FilterExpression="${FilterExpression}"
 
 done
 
