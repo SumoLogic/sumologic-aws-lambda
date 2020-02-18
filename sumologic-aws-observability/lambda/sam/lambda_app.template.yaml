@@ -49,6 +49,11 @@ Metadata:
           - CloudWatchLogsSourceCategoryName
 
       - Label:
+          default: "Filter Regular Expression for tagging resources."
+          Parameters:
+            - FilterExpression
+
+      - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
@@ -99,6 +104,9 @@ Metadata:
         default: "Sumo Logic CloudWatch Metrics Source Name"
       CloudWatchMetricsSourceCategoryName:
         default: "Sumo Logic CloudWatch Metrics Source Category Name"
+
+      FilterExpression:
+        default: "Filter Regular expression"
 
       ParentStackName:
         default: "If Any, Name of parent Stack"
@@ -221,6 +229,11 @@ Parameters:
                   New - Default will be used if CloudWatch Metrics Source is Created"
     Default: AWS/lambda/CloudWatch/Metrics
 
+  FilterExpression:
+    Type: String
+    Default: ""
+    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
+
   ParentStackName:
     Type: String
     Default: "ParentStackName"
@@ -337,6 +350,7 @@ Resources:
       Tags:
         account: !Ref AccountAlias
       AccountID: !Ref "AWS::AccountId"
+      Filter: !Ref FilterExpression
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer

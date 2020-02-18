@@ -36,6 +36,11 @@ Metadata:
           - MetaDataSourceName
 
       - Label:
+          default: "Filter Regular Expression for tagging resources."
+          Parameters:
+            - FilterExpression
+
+      - Label:
           default: "Local Parameters. Do Not Edit the values."
         Parameters:
           - ParentStackName
@@ -67,6 +72,9 @@ Metadata:
         default: "Create Sumo Logic MetaData Source"
       MetaDataSourceName:
         default: "Sumo Logic Metadata Source Name"
+
+      FilterExpression:
+        default: "Filter Regular expression"
 
       ParentStackName:
         default: "If Any, Name of parent Stack"
@@ -137,6 +145,11 @@ Parameters:
     Type: String
     Description: Change the MetaData Source name to be created else default name will be used.
     Default: AWS-EC2-MetaData-Source
+
+  FilterExpression:
+    Type: String
+    Default: ""
+    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
 
   ParentStackName:
     Type: String
@@ -244,6 +257,7 @@ Resources:
         account: !Ref AccountAlias
         namespace: "AWS/EC2"
       AccountID: !Ref "AWS::AccountId"
+      Filter: !Ref FilterExpression
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
