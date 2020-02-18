@@ -1,5 +1,6 @@
 import importlib
 import os
+import re
 from abc import abstractmethod
 
 import boto3
@@ -100,38 +101,40 @@ class TagAWSResources(AWSResource):
     def __init__(self, props, *args, **kwargs):
         print('Tagging aws resource %s' % props.get("AWSResource"))
 
-    def _tag_aws_resources(self, region_value, aws_resource, tags, account_id, delete_flag):
+    def _tag_aws_resources(self, region_value, aws_resource, tags, account_id, delete_flag, filter_regex):
         # Get the class instance based on AWS Resource
         tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, account_id)
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
-        filtered_resources = tag_resource.filter_resources([], resources)
+        filtered_resources = tag_resource.filter_resources(filter_regex, resources)
 
-        # Get the ARNs for all resources
-        arns = tag_resource.get_arn_list(filtered_resources)
+        if filtered_resources:
+            # Get the ARNs for all resources
+            arns = tag_resource.get_arn_list(filtered_resources)
 
-        # Tag or un-tag the resources.
-        if delete_flag:
-            tag_resource.delete_tags(arns, tags)
-        else:
-            tag_resource.add_tags(arns, tags)
+            # Tag or un-tag the resources.
+            if delete_flag:
+                tag_resource.delete_tags(arns, tags)
+            else:
+                tag_resource.add_tags(arns, tags)
 
-    def create(self, region_value, aws_resource, tags, account_id, *args, **kwargs):
+    def create(self, region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs):
         print("TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags %s." % tags)
         regions = [region_value]
         for region in regions:
-            self._tag_aws_resources(region, aws_resource, tags, account_id, False)
+            self._tag_aws_resources(region, aws_resource, tags, account_id, False, filter_regex)
         print("TAG AWS RESOURCES - Completed the AWS resources Tag addition.")
 
         return {"TAG_CREATION": "Successful"}, "Tag"
 
-    def update(self, region_value, aws_resource, tags, account_id, *args, **kwargs):
-        self.create(region_value, aws_resource, tags, account_id, *args, **kwargs)
+    def update(self, region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs):
+        self.create(region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs)
         print("updated tags for aws resource %s " % aws_resource)
         return {"TAG_UPDATE": "Successful"}, "Tag"
 
-    def delete(self, region_value, aws_resource, tags, account_id, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, region_value, aws_resource, tags, account_id, filter_regex, remove_on_delete_stack, *args,
+               **kwargs):
         tags_list = []
         if tags:
             tags_list = list(tags.keys())
@@ -139,7 +142,7 @@ class TagAWSResources(AWSResource):
         if remove_on_delete_stack:
             regions = [region_value]
             for region in regions:
-                self._tag_aws_resources(region, aws_resource, tags, account_id, True)
+                self._tag_aws_resources(region, aws_resource, tags, account_id, True, filter_regex)
             print("TAG AWS RESOURCES - Completed the AWS resources Tag deletion.")
         else:
             print("TAG AWS RESOURCES - Skipping AWS resources tags deletion.")
@@ -154,6 +157,7 @@ class TagAWSResources(AWSResource):
             "aws_resource": props.get("AWSResource"),
             "tags": tags,
             "account_id": props.get("AccountID"),
+            "filter_regex": props.get("Filter"),
             "remove_on_delete_stack": props.get("RemoveOnDeleteStack")
         }
 
@@ -163,38 +167,39 @@ class EnableS3LogsResources(AWSResource):
     def __init__(self, props, *args, **kwargs):
         print('Enabling S3 for ALB aws resource %s' % props.get("AWSResource"))
 
-    def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, delete_flag):
+    def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, delete_flag, filter_regex):
         # Get the class instance based on AWS Resource
         tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, None)
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
-        filtered_resources = tag_resource.filter_resources([], resources)
+        filtered_resources = tag_resource.filter_resources(filter_regex, resources)
 
-        # Get the ARNs for all resources
-        arns = tag_resource.get_arn_list(filtered_resources)
+        if filtered_resources:
+            # Get the ARNs for all resources
+            arns = tag_resource.get_arn_list(filtered_resources)
 
-        # Enable and disable AWS ALB S3 the resources.
-        if delete_flag:
-            tag_resource.disable_s3_logs(arns, bucket_name)
-        else:
-            tag_resource.enable_s3_logs(arns, bucket_name)
+            # Enable and disable AWS ALB S3 the resources.
+            if delete_flag:
+                tag_resource.disable_s3_logs(arns, bucket_name)
+            else:
+                tag_resource.enable_s3_logs(arns, bucket_name)
 
-    def create(self, region_value, aws_resource, bucket_name, *args, **kwargs):
+    def create(self, region_value, aws_resource, bucket_name, filter_regex, *args, **kwargs):
         print("ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket %s." % bucket_name)
-        self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, False)
+        self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, False, filter_regex)
         print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
 
         return {"S3_ENABLE": "Successful"}, "S3"
 
-    def update(self, region_value, aws_resource, bucket_name, *args, **kwargs):
-        self.create(region_value, aws_resource, bucket_name, *args, **kwargs)
+    def update(self, region_value, aws_resource, bucket_name, filter_regex, *args, **kwargs):
+        self.create(region_value, aws_resource, bucket_name, filter_regex, *args, **kwargs)
         print("updated S3 bucket to %s " % bucket_name)
         return {"S3_ENABLE": "Successful"}, "S3"
 
-    def delete(self, region_value, aws_resource, bucket_name, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, region_value, aws_resource, bucket_name, filter_regex, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
-            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, True)
+            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, True, filter_regex)
             print("ENABLE S3 LOGS - Completed the AWS resources S3 deletion to bucket.")
         else:
             print("ENABLE S3 LOGS - Skipping the AWS resources S3 deletion to bucket.")
@@ -205,6 +210,7 @@ class EnableS3LogsResources(AWSResource):
             "region_value": os.environ.get("AWS_REGION"),
             "aws_resource": props.get("AWSResource"),
             "bucket_name": props.get("BucketName"),
+            "filter_regex": props.get("Filter"),
             "remove_on_delete_stack": props.get("RemoveOnDeleteStack")
         }
 
@@ -215,6 +221,7 @@ def resource_tagging(event, context):
     # Get Account Id and Alias from env.
     account_alias = os.environ.get("AccountAlias")
     account_id = os.environ.get("AccountID")
+    filter_regex = os.environ.get("Filter")
 
     tags = {'account': account_alias}
 
@@ -225,15 +232,17 @@ def resource_tagging(event, context):
 
         # Get the class instance based on Cloudtrail Event Name
         tag_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
+        event_detail = tag_resource.filter_resources(filter_regex, event_detail)
 
-        # Get the arns from the event.
-        resources = tag_resource.get_arn_list_cloud_trail_event(event_detail)
+        if event_detail:
+            # Get the arns from the event.
+            resources = tag_resource.get_arn_list_cloud_trail_event(event_detail)
 
-        # Process the existing tags to add some more tags if necessary
-        tags = tag_resource.process_tags(tags)
+            # Process the existing tags to add some more tags if necessary
+            tags = tag_resource.process_tags(tags)
 
-        # Tag the resources
-        tag_resource.tag_resources_cloud_trail_event(resources, tags)
+            # Tag the resources
+            tag_resource.tag_resources_cloud_trail_event(resources, tags)
 
     print("AWS RESOURCE TAGGING :- Completed resource tagging")
 
@@ -244,6 +253,7 @@ def enable_s3_logs(event, context):
     # Get Account Id and Alias from env.
     bucket_name = os.environ.get("BucketName")
     account_id = os.environ.get("AccountID")
+    filter_regex = os.environ.get("Filter")
 
     if "detail" in event:
         event_detail = event.get("detail")
@@ -252,12 +262,14 @@ def enable_s3_logs(event, context):
 
         # Get the class instance based on Cloudtrail Event Name
         alb_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
+        event_detail = alb_resource.filter_resources(filter_regex, event_detail)
 
-        # Get the arns from the event.
-        resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
+        if event_detail:
+            # Get the arns from the event.
+            resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
 
-        # Enable S3 logging
-        alb_resource.enable_s3_logs(resources, bucket_name)
+            # Enable S3 logging
+            alb_resource.enable_s3_logs(resources, bucket_name)
 
     print("AWS S3 ENABLE ALB :- Completed s3 logs enable")
 
@@ -287,9 +299,24 @@ class AWSResourcesAbstract(object):
     def fetch_resources(self):
         raise NotImplementedError()
 
-    @abstractmethod
-    def filter_resources(self, *args):
-        raise NotImplementedError()
+    def filter_resources(self, filter_regex, resources):
+        if filter_regex:
+            pattern = re.compile(filter_regex)
+            if isinstance(resources, list):
+                filtered_resources = []
+                for resource in resources:
+                    matcher = pattern.search(str(resource))
+                    if matcher:
+                        filtered_resources.append(resource)
+
+                return filtered_resources
+            else:
+                matcher = pattern.search(str(resources))
+                if matcher:
+                    return resources
+                else:
+                    return None
+        return resources
 
     @abstractmethod
     def get_arn_list(self, *args):
@@ -347,9 +374,6 @@ class EC2Resources(AWSResourcesAbstract):
                 next_token = 'END'
 
         return instances
-
-    def filter_resources(self, filters, resources):
-        return resources
 
     def get_arn_list(self, resources):
         arns = []
@@ -413,9 +437,6 @@ class ApiGatewayResources(AWSResourcesAbstract):
                 next_token = 'END'
 
         return api_gateways
-
-    def filter_resources(self, filters, resources):
-        return resources
 
     def get_arn_list(self, resources):
         arns = []
@@ -487,9 +508,6 @@ class DynamoDbResources(AWSResourcesAbstract):
 
         return tables
 
-    def filter_resources(self, filters, resources):
-        return resources
-
     def get_arn_list(self, resources):
         arns = []
         if resources:
@@ -540,9 +558,6 @@ class LambdaResources(AWSResourcesAbstract):
                 next_token = 'END'
 
         return lambdas
-
-    def filter_resources(self, filters, resources):
-        return resources
 
     def get_arn_list(self, resources):
         arns = []
@@ -608,9 +623,6 @@ class RDSResources(AWSResourcesAbstract):
             if not next_token:
                 next_token = 'END'
 
-        return resources
-
-    def filter_resources(self, filters, resources):
         return resources
 
     def get_arn_list(self, resources):
@@ -700,9 +712,6 @@ class AlbResources(AWSResourcesAbstract):
 
         return resources
 
-    def filter_resources(self, filters, resources):
-        return resources
-
     def get_arn_list(self, resources):
         arns = []
         if resources:
@@ -784,6 +793,8 @@ if __name__ == '__main__':
     params = {}
     tag = TagAWSResources(params)
 
-    tag.create("us-east-1", "elbv2", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "")
+    # tag.create("us-east-1", "lambda", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "",
+    #           "'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'")
 
-    tag.delete("us-east-1", "elbv2", {'account': 'heelo1', 'Namespace': "adsas"}, "", True)
+    tag.delete("us-east-1", "lambda", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "",
+               "'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'", True)
