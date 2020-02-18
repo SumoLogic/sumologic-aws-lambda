@@ -3,19 +3,19 @@
 export AWS_REGION="us-east-1"
 export AWS_PROFILE="personal"
 # App to test
-export AppTemplateName="tag_resources"
+export AppTemplateName="auto_tag_resources"
 export AppName="tag"
 export InstallTypes=("all")
 
 for InstallType in "${InstallTypes[@]}"
 do
     export AccountAlias="testrds${InstallType}"
-    export AddTagsForALBResources="Yes"
+    export AddTagsForALBResources="No"
     export AddTagsForAPIGatewayResources="No"
     export AddTagsForRDSResources="No"
     export AddTagsForEC2MetricsResources="No"
     export AddTagsForLambdaResources="No"
-    export AddTagsForDynamoDBResources="No"
+    export AddTagsForDynamoDBResources="Yes"
 
     export template_file="${AppTemplateName}.template.yaml"
 

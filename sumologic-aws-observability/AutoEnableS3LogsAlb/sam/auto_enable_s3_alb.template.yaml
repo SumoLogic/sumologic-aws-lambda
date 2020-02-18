@@ -58,7 +58,7 @@ Resources:
       Code:
         S3Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
         S3Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
-      Handler: "awsresource.enable_s3_logs_alb"
+      Handler: "awsresource.enable_s3_logs"
       Runtime: python3.7
       Role: !GetAtt SumoLambdaRole.Arn
       Description: "Lambda Function for auto enable s3 logs for Application load balancer."
