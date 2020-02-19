@@ -130,6 +130,7 @@ Metadata:
         Parameters:
           - AutoEnableTaggingAWSResources
           - AutoEnableS3LogsALBResources
+          - FilterExpression
           - AutoSubscribeLogGroupsLambda
           - LambdaLogGroupPattern
           - LambdaSubscribeExistingLogGroups
@@ -251,6 +252,8 @@ Metadata:
         default: "Auto Enable Tagging of new AWS Resources"
       AutoEnableS3LogsALBResources:
         default: "Auto Enable S3 Logging for new ALB Resources"
+      FilterExpression:
+        default: "Regular expression to Filter AWS Resources"
       AutoSubscribeLogGroupsLambda:
         default: "Auto Subscribe new log groups to Lambda"
       LambdaLogGroupPattern:
@@ -586,6 +589,10 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
+  FilterExpression:
+    Type: String
+    Default: ""
+    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
   AutoSubscribeLogGroupsLambda:
     Type: String
     Description: "Yes -> To automatically Subscribe new log groups to lambda."
@@ -811,6 +818,7 @@ Resources:
         MetaDataSourceName: !Sub "${AccountAlias}-aws-observability-ec2-metaData-${AWS::Region}"
         SumoOrganizationId: !Ref SumoOrganizationId
         InstallApp: !Ref InstallEC2App
+        FilterExpression: !Ref FilterExpression
 
   sumoAlbMetricsAppStackWaitHandle:
     Condition: install_ec2_metrics_app
@@ -848,6 +856,7 @@ Resources:
         CloudWatchMetricsSourceCategoryName: !If [install_alb_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref AlbCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         InstallApp: !Ref InstallALBApp
+        FilterExpression: !Ref FilterExpression
 
   sumoDynamoDBMetricsAppStackWaitHandle:
     Condition: install_alb_app
@@ -885,6 +894,7 @@ Resources:
         CloudWatchMetricsSourceCategoryName: !If [install_dynamoDB_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref DynamoDBCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         InstallApp: !Ref InstallDynamoDBApp
+        FilterExpression: !Ref FilterExpression
 
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
@@ -903,6 +913,7 @@ Resources:
         CloudWatchMetricsSourceCategoryName: !If [install_rds_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref RdsCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         InstallApp: !Ref InstallRDSApp
+        FilterExpression: !Ref FilterExpression
 
   sumoLambdaMetricsAppStackWaitHandle:
     Condition: install_rds_app
@@ -942,6 +953,7 @@ Resources:
         CloudWatchMetricsSourceCategoryName: !If [install_lambda_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref LambdaCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         InstallApp: !Ref InstallLambdaApp
+        FilterExpression: !Ref FilterExpression
 
   sumoApiGatewayMetricsAppStackWaitHandle:
     Condition: install_lambda_app
@@ -979,6 +991,7 @@ Resources:
         CloudWatchMetricsSourceCategoryName: !If [install_api_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref ApiGatewayCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
         InstallApp: !Ref InstallAPIGatewayApp
+        FilterExpression: !Ref FilterExpression
 
   AddFieldsToLogSources:
     Type: AWS::CloudFormation::Stack
@@ -1023,6 +1036,7 @@ Resources:
         AddTagsForEC2MetricsResources: !If [install_ec2_metrics_app, 'Yes', 'No']
         AddTagsForLambdaResources: !If [install_lambda_app, 'Yes', 'No']
         AddTagsForDynamoDBResources: !If [install_dynamo_db_app, 'Yes', 'No']
+        FilterExpression: !Ref FilterExpression
 
   AutoEnableS3LogsAlbWaitHandle:
     Condition: install_alb_app
@@ -1045,6 +1059,7 @@ Resources:
       Parameters:
         BucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
         EnableS3LoggingALBResources: !Ref AutoEnableS3LogsALBResources
+        FilterExpression: !Ref FilterExpression
 
   AutoSubscribeLambdaLogGroupsAWSResources:
     Type: AWS::Serverless::Application

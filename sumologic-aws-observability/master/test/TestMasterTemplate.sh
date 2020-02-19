@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export AWS_REGION="us-east-1"
+export AWS_REGION="us-west-1"
 export AWS_PROFILE="personal"
 # App to test
 export AppTemplateName="sumologic_observability.master"
@@ -21,6 +21,7 @@ for InstallType in "${InstallTypes[@]}"
 do
 
     export AccountAlias="testmaster${InstallType}"
+    export FilterExpression="'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'master.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
 
     # EC2 App Configuration
     export InstallEC2App="No"
@@ -210,7 +211,7 @@ do
 
     export template_file="${AppTemplateName}.template.yaml"
 
-    aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ././../sam/${template_file} \
+    aws cloudformation deploy --region $AWS_REGION --profile ${AWS_PROFILE} --template-file ././../sam/${template_file} \
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
@@ -235,7 +236,7 @@ do
     LambdaCloudTrailCollectorName="${LambdaCloudTrailCollectorName}" LambdaCloudTrailLogsSourceName="${LambdaCloudTrailLogsSourceName}" \
     LambdaCloudTrailLogsSourceCategoryName="${LambdaCloudTrailLogsSourceCategoryName}" LambdaCloudWatchLogsCollectorName="${LambdaCloudWatchLogsCollectorName}" \
     LambdaCloudWatchLogsSourceName="${LambdaCloudWatchLogsSourceName}" LambdaCloudWatchLogsSourceCategoryName="${LambdaCloudWatchLogsSourceCategoryName}" \
-    LambdaCloudWatchMetricsSourceCategoryName="${LambdaCloudWatchMetricsSourceCategoryName}"
+    LambdaCloudWatchMetricsSourceCategoryName="${LambdaCloudWatchMetricsSourceCategoryName}" FilterExpression="${FilterExpression}"
 
 done
 
