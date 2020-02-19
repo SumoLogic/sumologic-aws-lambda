@@ -9,7 +9,7 @@ else
     AWS_REGION="us-east-2"
 fi
 
-version="1.0.9"
+version="1.0.10"
 
 sam package --template-file template_v2.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_v2.yaml --s3-prefix "guarddutybenchmark/v$version"
 

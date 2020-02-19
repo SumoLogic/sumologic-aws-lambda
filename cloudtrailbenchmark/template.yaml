@@ -49,7 +49,7 @@ Metadata:
     Name: sumologic-aws-cloudtrail-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.9
+    SemanticVersion: 1.0.10
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 
 
@@ -77,8 +77,9 @@ Parameters:
       - jp
       - us2
       - us1
-      - nite
-    Description: "Enter au, ca, de, eu, jp, us2, or us1"
+      - in
+      - fed
+    Description: "Enter au, ca, de, eu, jp, us2, in, fed or us1"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
