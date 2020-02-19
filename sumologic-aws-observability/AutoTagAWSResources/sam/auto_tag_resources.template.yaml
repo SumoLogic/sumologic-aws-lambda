@@ -109,7 +109,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        S3Bucket: !Sub "appdevzipfiles-${AWS::Region}"
         S3Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       Handler: "awsresource.resource_tagging"
       Runtime: python3.7

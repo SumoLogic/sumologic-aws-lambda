@@ -186,7 +186,7 @@ Resources:
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
-        Bucket: !Sub "sumologicawsobservabilityhelper-${AWS::Region}"
+        Bucket: !Sub "appdevzipfiles-${AWS::Region}"
         Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900

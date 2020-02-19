@@ -741,7 +741,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Condition: common_resources_creation
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/common/sam/resources.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/common/sam/resources.template.yaml"
       Parameters:
         SumoAccessID: !Ref SumoAccessID
         SumoAccessKey: !Ref SumoAccessKey
@@ -804,7 +804,7 @@ Resources:
     Condition: install_ec2_metrics_app
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/ec2metrics/sam/ec2_metrics_app.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/ec2metrics/sam/ec2_metrics_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -837,7 +837,7 @@ Resources:
     DependsOn: sumoAlbMetricsAppStackWaitCondition
     Condition: install_alb_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/alb/sam/alb_app.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/alb/sam/alb_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -875,7 +875,7 @@ Resources:
     DependsOn: sumoDynamoDBMetricsAppStackWaitCondition
     Condition: install_dynamo_db_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/dynamodb/sam/dynamodb_app.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/dynamodb/sam/dynamodb_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -901,7 +901,7 @@ Resources:
     Condition: install_rds_app
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/rds/sam/rds_app.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/rds/sam/rds_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -932,7 +932,7 @@ Resources:
     DependsOn: sumoLambdaMetricsAppStackWaitCondition
     Condition: install_lambda_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/lambda/sam/lambda_app.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/lambda/sam/lambda_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -972,7 +972,7 @@ Resources:
     DependsOn: sumoApiGatewayMetricsAppStackWaitCondition
     Condition: install_api_gateway_app
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/apigateway/sam/api_gateway_app.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/apigateway/sam/api_gateway_app.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -998,7 +998,7 @@ Resources:
     Condition: add_fields_to_log_sources
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/updatefields/sam/update_fields.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/updatefields/sam/update_fields.template.yaml"
       Parameters:
         ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
         SumoDeployment: !Ref SumoDeployment
@@ -1027,7 +1027,7 @@ Resources:
     Condition: auto_tag_aws_resource
     DependsOn: CommonResourceStackWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoTagAWSResources/sam/auto_tag_resources.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoTagAWSResources/sam/auto_tag_resources.template.yaml"
       Parameters:
         AccountAlias: !Ref AccountAlias
         AddTagsForALBResources: !If [install_alb_app, 'Yes', 'No']
@@ -1055,7 +1055,7 @@ Resources:
     Condition: auto_enable_s3_logs
     DependsOn: AutoEnableS3LogsAlbWaitCondition
     Properties:
-      TemplateURL: !Sub "https://sumologicawsobservabilityhelper-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoEnableS3LogsAlb/sam/auto_enable_s3_alb.template.yaml"
+      TemplateURL: !Sub "https://appdevzipfiles-${AWS::Region}.s3.amazonaws.com/sumologic-aws-observability/AutoEnableS3LogsAlb/sam/auto_enable_s3_alb.template.yaml"
       Parameters:
         BucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
         EnableS3LoggingALBResources: !Ref AutoEnableS3LogsALBResources
