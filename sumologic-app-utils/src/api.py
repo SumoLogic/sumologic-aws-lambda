@@ -146,7 +146,7 @@ class SumoResource(object):
     def api_endpoint(self):
         if self.deployment == "us1":
             return "https://api.sumologic.com/api"
-        elif self.deployment in ["ca", "au", "de", "eu", "jp", "us2"]:
+        elif self.deployment in ["ca", "au", "de", "eu", "jp", "us2", "fed", "in"]:
             return "https://api.%s.sumologic.com/api" % self.deployment
         else:
             return 'https://%s-api.sumologic.net/api' % self.deployment
@@ -590,11 +590,11 @@ class App(SumoResource):
 
         print("job status: %s" % response.text)
 
-    def _wait_for_app_install(self, app_id, job_id):
-        print("waiting for app installation app_id %s job_id %s" % (app_id, job_id))
+    def _wait_for_app_install(self, job_id):
+        print("waiting for app installation job_id %s" % job_id)
         waiting = True
         while waiting:
-            response = self.sumologic_cli.check_app_install_status(app_id, job_id)
+            response = self.sumologic_cli.check_app_install_status(job_id)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(5)
         print("job status: %s" % response.text)
@@ -649,7 +649,7 @@ class App(SumoResource):
 
         response = self.sumologic_cli.install_app(appid, content)
         job_id = response.json()["id"]
-        response = self._wait_for_app_install(appid, job_id)
+        response = self._wait_for_app_install(job_id)
 
         json_resp = json.loads(response.content)
         if (json_resp['status'] == 'Success'):
@@ -696,52 +696,56 @@ class App(SumoResource):
 
 if __name__ == '__main__':
 
-    params = {
-
-        "access_id": "",
-        "access_key": "",
-        "deployment": "us1"
-
+    props = {
+        "SumoAccessID": "",
+        "SumoAccessKey": "",
+        "SumoDeployment": "us1",
     }
-    # app_prefix = "CloudTrail"
-    app_prefix = "GuardDuty"
+    app_prefix = "CloudTrail"
+    # app_prefix = "GuardDuty"
     collector_id = None
     collector_type = "Hosted"
     collector_name = "%sCollector" % app_prefix
     source_name = "%sEvents" % app_prefix
     source_category = "Labs/AWS/%s" % app_prefix
-    appname = "Amazon GuardDuty Benchmark"
-    # appname = "AWS CloudTrail"
+    # appname = "Global Intelligence for Amazon GuardDuty"
+    appname = "Global Intelligence for AWS CloudTrail"
+    appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
     # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
-    appid = None
+    # appid = None
+    # source_params = {
+    #     "logsrc": "_sourceCategory=%s" % source_category
+    # }
     source_params = {
-        "logsrc": "_sourceCategory=%s" % source_category
+        "cloudtraillogsource": "_sourceCategory=%s" % source_category,
+        "indexname": '%rnd%',
+        "incrementalindex": "%rnd%"
     }
-    col = Collector(**params)
-    src = HTTPSource(**params)
-    app = App(**params)
+    # col = Collector(**params)
+    # src = HTTPSource(**params)
+    app = App(props)
 
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
     # _, source_id = src.create(collector_id, source_name, source_category)
 
     _, app_folder_id = app.create(appname, source_params, appid)
-
+    app.delete(app_folder_id, True)
 
     # update
     # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
     # assert(collector_id == new_collector_id)
     # _, new_source_id = src.update(collector_id, source_id, "%sEventsNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, date_format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", date_locator='\"createTime\":(.*),')
     # assert(source_id == new_source_id)
-    new_source_params = {
-        "logsrc": "_sourceCategory=%s" % ("Labs/AWS/%sNew" % app_prefix)
-    }
+    # new_source_params = {
+    #     "logsrc": "_sourceCategory=%s" % ("Labs/AWS/%sNew" % app_prefix)
+    # }
 
-    _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params, appid)
-    assert(app_folder_id != new_app_folder_id)
+    # _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params, appid)
+    # assert(app_folder_id != new_app_folder_id)
 
     # delete
     # src.delete(collector_id, source_id, True)
     # col.delete(collector_id, True)
-    app.delete(new_app_folder_id, True)
+    # app.delete(new_app_folder_id, True)
 
