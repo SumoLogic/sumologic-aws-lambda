@@ -183,7 +183,7 @@ Resources:
             - rds.amazonaws.com
           eventName:
             - CreateDBInstance
-      Name: "AwsObservabilityCreateDBInstanceRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateDBInstanceRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -214,7 +214,7 @@ Resources:
             - rds.amazonaws.com
           eventName:
             - CreateDBCluster
-      Name: !Sub "AwsObservabilityCreateDBClusterRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateDBClusterRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -245,7 +245,7 @@ Resources:
             - ec2.amazonaws.com
           eventName:
             - RunInstances
-      Name: !Sub "AwsObservabilityCreateInstanceRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateInstanceRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -276,7 +276,7 @@ Resources:
             - dynamodb.amazonaws.com
           eventName:
             - CreateTable
-      Name: !Sub "AwsObservabilityCreateTableRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateTableRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -307,7 +307,7 @@ Resources:
             - elasticloadbalancing.amazonaws.com
           eventName:
             - CreateLoadBalancer
-      Name: !Sub "AwsObservabilityCreateLoadBalancerRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateLoadBalancerRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -338,7 +338,7 @@ Resources:
             - lambda.amazonaws.com
           eventName:
             - CreateFunction20150331
-      Name: !Sub "AwsObservabilityCreateFunction20150331Rule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateFunction20150331Rule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -369,7 +369,7 @@ Resources:
             - apigateway.amazonaws.com
           eventName:
             - CreateStage
-      Name: !Sub "AwsObservabilityCreateStageRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateStageRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -400,7 +400,7 @@ Resources:
             - apigateway.amazonaws.com
           eventName:
             - CreateRestApi
-      Name: !Sub "AwsObservabilityCreateRestApiRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateRestApiRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -431,7 +431,7 @@ Resources:
             - apigateway.amazonaws.com
           eventName:
             - CreateDeployment
-      Name: !Sub "AwsObservabilityCreateDeploymentRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityCreateDeploymentRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn

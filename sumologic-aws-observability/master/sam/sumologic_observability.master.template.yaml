@@ -1135,6 +1135,7 @@ Resources:
         BucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
         EnableS3LoggingALBResources: !Ref AutoEnableS3LogsALBResources
         FilterExpression: !Ref FilterExpression
+        AccountAlias: !Ref AccountAlias
 
   AutoSubscribeLambdaLogGroupsAWSResources:
     Type: AWS::Serverless::Application

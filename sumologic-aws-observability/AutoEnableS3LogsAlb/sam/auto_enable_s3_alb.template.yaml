@@ -43,6 +43,11 @@ Mappings:
       bucketname: appdevzipfiles-sa-east-1
 
 Parameters:
+  AccountAlias:
+    Type: String
+    Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
+    AllowedPattern: "[a-zA-Z0-9]+"
+
   BucketName:
     Type: String
     Description: "Provide an Existing bucket name which has ALB logs."
@@ -135,7 +140,7 @@ Resources:
             - elasticloadbalancing.amazonaws.com
           eventName:
             - CreateLoadBalancer
-      Name: !Sub "AwsObservabilityAutoEnableS3LogsLoadBalancerRule"
+      Name: !Sub "${AccountAlias}AwsObservabilityAutoEnableS3LogsLoadBalancerRule"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsAlbS3LogsResourcesLambda.Arn
