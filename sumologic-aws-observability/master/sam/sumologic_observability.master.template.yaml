@@ -774,7 +774,6 @@ Resources:
 
   CreateCommonResources:
     Type: AWS::CloudFormation::Stack
-    Condition: common_resources_creation
     Properties:
       TemplateURL: !Join
         - ""
@@ -824,7 +823,7 @@ Resources:
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
-    DependsOn: CommonResourceStackWaitCondition
+    DependsOn: CreateCommonResources
     Properties:
       ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
       RemoveOnDeleteStack: false
@@ -841,7 +840,7 @@ Resources:
   sumoEC2MetricsAppStack:
     Type: AWS::CloudFormation::Stack
     Condition: install_ec2_metrics_app
-    DependsOn: CommonResourceStackWaitCondition
+    DependsOn: CreateCommonResources
     Properties:
       TemplateURL: !Join
         - ""
@@ -950,7 +949,7 @@ Resources:
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
     Condition: install_rds_app
-    DependsOn: CommonResourceStackWaitCondition
+    DependsOn: CreateCommonResources
     Properties:
       TemplateURL: !Join
         - ""
@@ -1059,7 +1058,7 @@ Resources:
   AddFieldsToLogSources:
     Type: AWS::CloudFormation::Stack
     Condition: add_fields_to_log_sources
-    DependsOn: CommonResourceStackWaitCondition
+    DependsOn: CreateCommonResources
     Properties:
       TemplateURL: !Join
         - ""
@@ -1140,7 +1139,7 @@ Resources:
   AutoSubscribeLambdaLogGroupsAWSResources:
     Type: AWS::Serverless::Application
     Condition: auto_subscribe_lambda_log_groups
-    DependsOn: CommonResourceStackWaitCondition
+    DependsOn: CreateCommonResources
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-loggroup-connector
