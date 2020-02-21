@@ -140,7 +140,7 @@ Resources:
             - elasticloadbalancing.amazonaws.com
           eventName:
             - CreateLoadBalancer
-      Name: !Sub "${AccountAlias}AwsObservabilityAutoEnableS3LogsLoadBalancerRule"
+      Name: !Sub "${AccountAlias}AutoEnableS3Logs"
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsAlbS3LogsResourcesLambda.Arn
