@@ -114,6 +114,7 @@ Resources:
           BucketName: !Ref BucketName
           AccountID: !Ref "AWS::AccountId"
           Filter: !Ref FilterExpression
+          BucketPrefix: !Sub "elasticloadbalancing"
 
   AutoEnableS3LogEventsInvokePermission:
     Type: AWS::Lambda::Permission

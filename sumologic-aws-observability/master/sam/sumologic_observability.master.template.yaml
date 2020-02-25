@@ -799,7 +799,7 @@ Resources:
         CreateS3Bucket: !If [create_target_s3_bucket, 'Yes', 'No']
         BucketName: !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}"
         CreateS3LogSource: !If [install_common_alb_s3_log_source, 'Yes', 'No']
-        S3BucketPathExpression: !Sub "AWSLogs/${AWS::AccountId}/elasticloadbalancing/*"
+        S3BucketPathExpression: !Sub "elasticloadbalancing/AWSLogs/${AWS::AccountId}/*"
         S3LogsSourceName: !Sub "${AccountAlias}-aws-observability-alb-s3-${AWS::Region}"
         S3LogsSourceCategoryName: "aws/observability/alb/logs"
         CreateCloudTrailLogSource: !If [install_cloudtrail_logs_source, 'Yes', 'No']

@@ -167,7 +167,7 @@ class EnableS3LogsResources(AWSResource):
     def __init__(self, props, *args, **kwargs):
         print('Enabling S3 for ALB aws resource %s' % props.get("AWSResource"))
 
-    def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, delete_flag, filter_regex):
+    def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, bucket_prefix, delete_flag, filter_regex):
         # Get the class instance based on AWS Resource
         tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, None)
 
@@ -183,23 +183,23 @@ class EnableS3LogsResources(AWSResource):
             if delete_flag:
                 tag_resource.disable_s3_logs(arns, bucket_name)
             else:
-                tag_resource.enable_s3_logs(arns, bucket_name)
+                tag_resource.enable_s3_logs(arns, bucket_name, bucket_prefix)
 
-    def create(self, region_value, aws_resource, bucket_name, filter_regex, *args, **kwargs):
+    def create(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, *args, **kwargs):
         print("ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket %s." % bucket_name)
-        self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, False, filter_regex)
+        self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix, False, filter_regex)
         print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
 
         return {"S3_ENABLE": "Successful"}, "S3"
 
-    def update(self, region_value, aws_resource, bucket_name, filter_regex, *args, **kwargs):
-        self.create(region_value, aws_resource, bucket_name, filter_regex, *args, **kwargs)
+    def update(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, *args, **kwargs):
+        self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, *args, **kwargs)
         print("updated S3 bucket to %s " % bucket_name)
         return {"S3_ENABLE": "Successful"}, "S3"
 
-    def delete(self, region_value, aws_resource, bucket_name, filter_regex, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
-            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, True, filter_regex)
+            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix, True, filter_regex)
             print("ENABLE S3 LOGS - Completed the AWS resources S3 deletion to bucket.")
         else:
             print("ENABLE S3 LOGS - Skipping the AWS resources S3 deletion to bucket.")
@@ -210,6 +210,7 @@ class EnableS3LogsResources(AWSResource):
             "region_value": os.environ.get("AWS_REGION"),
             "aws_resource": props.get("AWSResource"),
             "bucket_name": props.get("BucketName"),
+            "bucket_prefix": props.get("BucketPrefix"),
             "filter_regex": props.get("Filter"),
             "remove_on_delete_stack": props.get("RemoveOnDeleteStack")
         }
@@ -252,6 +253,7 @@ def enable_s3_logs(event, context):
 
     # Get Account Id and Alias from env.
     bucket_name = os.environ.get("BucketName")
+    bucket_prefix = os.environ.get("BucketPrefix")
     account_id = os.environ.get("AccountID")
     filter_regex = os.environ.get("Filter")
 
@@ -269,7 +271,7 @@ def enable_s3_logs(event, context):
             resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
 
             # Enable S3 logging
-            alb_resource.enable_s3_logs(resources, bucket_name)
+            alb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix)
 
     print("AWS S3 ENABLE ALB :- Completed s3 logs enable")
 
@@ -740,9 +742,10 @@ class AlbResources(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, arns, tags):
         self.client.add_tags(ResourceArns=arns, Tags=tags)
 
-    def enable_s3_logs(self, arns, s3_bucket):
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'true'},
-                      {'Key': 'access_logs.s3.bucket', 'Value': s3_bucket}]
+                      {'Key': 'access_logs.s3.bucket', 'Value': s3_bucket},
+                      {'Key': 'access_logs.s3.prefix', 'Value': s3_prefix}]
 
         for arn in arns:
             response = self.client.describe_load_balancer_attributes(LoadBalancerArn=arn)

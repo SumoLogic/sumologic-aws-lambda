@@ -397,8 +397,6 @@ Resources:
 
   EnableS3LogsResources:
     Type: Custom::EnableS3LogsResources
-    Condition: install_s3_logs_source
-    DependsOn: SumoS3Source
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
@@ -410,6 +408,8 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AWSResource: elbv2
       BucketName: !Ref S3LogsBucketName
+      Filter: !Ref FilterExpression
+      BucketPrefix: !Sub "elasticloadbalancing"
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
