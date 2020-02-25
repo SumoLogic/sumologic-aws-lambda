@@ -31,6 +31,14 @@ Metadata:
           - BucketName
 
       - Label:
+          default: "ALB S3 Source Log Source Configuration"
+        Parameters:
+          - CreateS3LogSource
+          - S3BucketPathExpression
+          - S3LogsSourceName
+          - S3LogsSourceCategoryName
+
+      - Label:
           default: "Common CloudTrail Source Details"
         Parameters:
           - CreateCloudTrailLogSource
@@ -77,6 +85,15 @@ Metadata:
         default: "Create AWS S3 Bucket"
       BucketName:
         default: "AWS S3 Bucket Name"
+
+      CreateS3LogSource:
+        default: "Create Sumo Logic S3 Logs Source"
+      S3BucketPathExpression:
+        default: "Path Expression for the logs"
+      S3LogsSourceName:
+        default: "Sumo Logic S3 Logs Source Name"
+      S3LogsSourceCategoryName:
+        default: "Sumo Logic S3 Logs Source Category Name"
 
       CreateCloudTrailLogSource:
         default: "Create Sumo Logic CloudTrail Logs Source"
@@ -169,6 +186,27 @@ Parameters:
                   New Bucket Name - Provide a unique Bucket Name if the flag is set to No."
     AllowedPattern: ".+"
 
+  CreateS3LogSource:
+    Type: String
+    Description: "Choose Yes to create Sumo Logic S3 Log Source with provided bucket Name."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  S3BucketPathExpression:
+    Type: String
+    Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
+    Default: "*"
+  S3LogsSourceName:
+    Type: String
+    Description: Change the S3 Source name to be created else default name will be used.
+    Default: AWS-Alb-S3-Log-Source
+  S3LogsSourceCategoryName:
+    Type: String
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if S3 Source is not created.\n
+                  New - Default will be used if S3 Source is Created"
+    Default: AWS/Alb/S3/Logs
+
   CreateCloudTrailLogSource:
     Type: String
     Description: "Choose Yes to create Sumo Logic Cloud Trail Log Source with provided bucket Name."
@@ -233,7 +271,11 @@ Conditions:
   install_cloudtrail_logs_source: !Equals [!Ref CreateCloudTrailLogSource, 'Yes']
   install_cloud_watch_logs_source: !Equals [!Ref CreateCloudWatchLogSource, 'Yes']
   install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
+  install_s3_logs_source: !Equals [!Ref CreateS3LogSource, 'Yes']
   install_collector: !Equals [!Ref CreateCollector, 'Yes']
+  create_sns_subscription: !Or
+    - !Condition install_cloudtrail_logs_source
+    - !Condition install_s3_logs_source
 
 Mappings:
   RegionMap:
@@ -438,12 +480,12 @@ Resources:
 
   SumoSNSTopic:
     Type: 'AWS::SNS::Topic'
-    Condition: install_cloudtrail_logs_source
+    Condition: create_sns_subscription
     Properties:
       TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
 
   SumoSNSpolicy:
-    Condition: install_cloudtrail_logs_source
+    Condition: create_sns_subscription
     Type: "AWS::SNS::TopicPolicy"
     Properties:
       PolicyDocument:
@@ -515,7 +557,7 @@ Resources:
           numNoDelayRetries: 0
           backoffFunction: exponential
 
-  SumoCloudTrailExportPolicy:
+  SumoBucketPolicy:
     Condition: create_target_s3_bucket
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -560,11 +602,22 @@ Resources:
     DependsOn:
       - TargetS3Bucket
 
-  SumoCloudTrail:
+  CloudTrailWaitHandle:
     Condition: create_target_s3_bucket
+    DependsOn: SumoBucketPolicy
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  CloudTrailWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [create_target_s3_bucket, !Ref CloudTrailWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
+  SumoCloudTrail:
+    Condition: install_cloudtrail_logs_source
     Type: Custom::AWSTrail
-    DependsOn:
-      - SumoCloudTrailExportPolicy
+    DependsOn: CloudTrailWaitCondition
     Properties:
       ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
       IsLogging: true
@@ -601,6 +654,62 @@ Resources:
         account: !Ref AccountAlias
         namespace: "aws/lambda"
         region: !Ref "AWS::Region"
+
+  SumoS3SourceSNSSubscription:
+    Condition: install_s3_logs_source
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      TopicArn:
+        Ref: SumoSNSTopic
+      Endpoint: !GetAtt SumoS3Source.SUMO_ENDPOINT
+      Protocol: https
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          numRetries: 40
+          minDelayTarget: 10
+          maxDelayTarget: 300
+          numMinDelayRetries: 3
+          numMaxDelayRetries: 5
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+
+  WaitHandle:
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  TargetS3BucketWaitHandle:
+    Condition: create_target_s3_bucket
+    DependsOn: TargetS3Bucket
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  TargetS3BucketWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [create_target_s3_bucket, !Ref TargetS3BucketWaitHandle, !Ref WaitHandle]
+      Timeout: "1"
+      Count: 0
+
+  SumoS3Source:
+    Condition: install_s3_logs_source
+    DependsOn: TargetS3BucketWaitCondition
+    Type: Custom::AWSSource
+    Properties:
+      SourceType: AwsS3Bucket
+      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      Region: !Ref "AWS::Region"
+      SourceName: !Ref S3LogsSourceName
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceCategory: !Ref S3LogsSourceCategoryName
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      TargetBucketName: !Ref BucketName
+      PathExpression: !Ref S3BucketPathExpression
+      Fields:
+        account: !Ref AccountAlias
+        namespace: "aws/applicationelb"
+        region: !Ref "AWS::Region"
+      RoleArn: !GetAtt SumoSourceRole.Arn
 
 Outputs:
   StackName:

@@ -12,6 +12,12 @@ do
     export BucketName="${AppName}-${InstallType}-qwerty"
     export AccountAlias="testresources${InstallType}"
 
+    export CreateS3Bucket="No"
+    export CreateCloudTrailLogSource="No"
+    export CreateCloudWatchLogSource="No"
+    export CreateCloudWatchMetricsSource="No"
+    export CreateS3LogSource="No"
+
     if [[ "${InstallType}" == "all" ]]
     then
         export CreateS3Bucket="Yes"
@@ -43,6 +49,10 @@ do
         export CreateCloudTrailLogSource="No"
         export CreateCloudWatchLogSource="No"
         export CreateCloudWatchMetricsSource="Yes"
+    elif [[ "${InstallType}" == "s3source" ]]
+    then
+        export CreateS3Bucket="Yes"
+        export CreateS3LogSource="Yes"
     else
         echo "No Choice"
     fi
@@ -81,7 +91,7 @@ do
     CloudWatchLogsSourceName="${CloudWatchLogsSourceName}" CloudWatchLogsSourceCategoryName="${CloudWatchLogsSourceCategoryName}" \
     CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
     CreateS3Bucket="${CreateS3Bucket}" CreateCloudTrailLogSource="${CreateCloudTrailLogSource}" CreateCloudWatchLogSource="${CreateCloudWatchLogSource}" \
-    CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
+    CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}" CreateS3LogSource="${CreateS3LogSource}"
 
 done
 
