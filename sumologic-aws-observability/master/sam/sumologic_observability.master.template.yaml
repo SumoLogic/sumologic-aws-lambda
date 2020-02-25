@@ -618,7 +618,12 @@ Conditions:
 
   # Conditions for ALB
   create_alb_bucket: !Equals [ !Ref CreateS3Bucket, 'Yes' ]
-  install_alb_s3_log_source: !Equals [ !Ref CreateS3LogSource, 'Yes' ]
+  install_uncommon_alb_s3_log_source: !And
+    - !Not [!Condition create_alb_bucket]
+    - !Equals [ !Ref CreateS3LogSource, 'Yes' ]
+  install_common_alb_s3_log_source: !And
+    - !Condition create_alb_bucket
+    - !Equals [ !Ref CreateS3LogSource, 'Yes' ]
   install_alb_cloudwatch_metrics_source: !Equals [ !Ref CreateAlbCloudWatchMetricsSource, 'Yes' ]
 
   # Conditions for DynamoDB
@@ -660,6 +665,7 @@ Conditions:
     - !Condition create_dynamodb_bucket
     - !Condition create_lambda_bucket
     - !Condition create_api_bucket
+    - !Condition create_alb_bucket
   install_cloudtrail_logs_source: !Or
     - !Condition install_common_dynamo_cloudtrail_log_source
     - !Condition install_common_lambda_cloudtrail_log_source
@@ -673,7 +679,7 @@ Conditions:
     - !Condition install_api_cloudwatch_metrics_source
   install_collector: !Or
     - !Condition install_ec2_metadata_source
-    - !Condition install_alb_s3_log_source
+    - !Condition install_common_alb_s3_log_source
     - !Condition install_cloudtrail_logs_source
     - !Condition install_cloud_watch_logs_source
     - !Condition install_cloud_watch_metric_source
@@ -692,7 +698,8 @@ Conditions:
   install_alb_app: !Or
     - !Equals [ !Ref InstallALBApp, 'Yes' ]
     - !Condition create_alb_bucket
-    - !Condition install_alb_s3_log_source
+    - !Condition install_common_alb_s3_log_source
+    - !Condition install_uncommon_alb_s3_log_source
     - !Condition install_alb_cloudwatch_metrics_source
   install_dynamo_db_app: !Or
     - !Equals [ !Ref InstallDynamoDBApp, 'Yes' ]
@@ -791,6 +798,10 @@ Resources:
         CollectorName: !Sub "aws-observability-collector"
         CreateS3Bucket: !If [create_target_s3_bucket, 'Yes', 'No']
         BucketName: !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}"
+        CreateS3LogSource: !If [install_common_alb_s3_log_source, 'Yes', 'No']
+        S3BucketPathExpression: !Sub "AWSLogs/${AWS::AccountId}/elasticloadbalancing/*"
+        S3LogsSourceName: !Sub "${AccountAlias}-aws-observability-alb-s3-${AWS::Region}"
+        S3LogsSourceCategoryName: "aws/observability/alb/logs"
         CreateCloudTrailLogSource: !If [install_cloudtrail_logs_source, 'Yes', 'No']
         CloudTrailLogsSourceName: !Sub "${AccountAlias}-aws-observability-cloudtrail-${AWS::Region}"
         CloudTrailLogsSourceCategoryName: "aws/observability/cloudtrail/logs"
@@ -892,12 +903,12 @@ Resources:
         AccountAlias: !Ref AccountAlias
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         CollectorName: !Sub "aws-observability-collector"
-        CreateS3Bucket: !If [create_alb_bucket, "Yes", "No"]
-        S3LogsBucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
-        CreateS3LogSource: !Ref CreateS3LogSource
+        CreateS3Bucket: "No"
+        S3LogsBucketName: !If [create_alb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
+        CreateS3LogSource: !If [install_uncommon_alb_s3_log_source, "Yes", "No"]
         S3BucketPathExpression: "*"
-        S3LogsSourceName: !If [install_alb_s3_log_source, !Sub "${AccountAlias}-aws-observability-alb-s3-${AWS::Region}", !Ref AlbS3LogsSourceName]
-        S3LogsSourceCategoryName: !If [install_alb_s3_log_source, "aws/observability/alb/logs", !Ref AlbS3LogsSourceCategoryName]
+        S3LogsSourceName: !Sub "${AccountAlias}-aws-observability-alb-s3-${AWS::Region}"
+        S3LogsSourceCategoryName: !If [install_uncommon_alb_s3_log_source, "aws/observability/alb/logs", !Ref AlbS3LogsSourceCategoryName]
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_alb_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref AlbCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
@@ -1131,7 +1142,7 @@ Resources:
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
           - ".s3.amazonaws.com/sumologic-aws-observability/AutoEnableS3LogsAlb/sam/auto_enable_s3_alb.template.yaml"
       Parameters:
-        BucketName: !If [create_alb_bucket, !Sub "aws-observability-alb-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
+        BucketName: !If [create_alb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
         EnableS3LoggingALBResources: !Ref AutoEnableS3LogsALBResources
         FilterExpression: !Ref FilterExpression
         AccountAlias: !Ref AccountAlias
