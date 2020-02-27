@@ -959,10 +959,22 @@ Resources:
         InstallApp: !Ref InstallDynamoDBApp
         FilterExpression: !Ref FilterExpression
 
+  sumoRdsMetricsAppStackWaitHandle:
+    Condition: install_dynamo_db_app
+    DependsOn: sumoDynamoDBMetricsAppStack
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  sumoRdsMetricsAppStackWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [install_dynamo_db_app, !Ref sumoRdsMetricsAppStackWaitHandle, !Ref WaitHandle]
+      Timeout: "15"
+      Count: 0
+
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
     Condition: install_rds_app
-    DependsOn: CreateCommonResources
+    DependsOn: sumoRdsMetricsAppStackWaitCondition
     Properties:
       TemplateURL: !Join
         - ""
