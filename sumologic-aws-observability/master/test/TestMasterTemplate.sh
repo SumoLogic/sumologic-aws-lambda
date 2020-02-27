@@ -32,10 +32,10 @@ do
     export InstallALBApp="No"
     export CreateS3Bucket="No"
     export S3LogsBucketName="lambda-all-randmomstring"
-    export CreateS3LogSource="No"
+    export CreateELBLogSource="No"
     export AlbS3LogsCollectorName="alb-my-collector"
-    export AlbS3LogsSourceName="alb-my-source"
-    export AlbS3LogsSourceCategoryName="ALB/Existing/Logs"
+    export AlbELBLogsSourceName="alb-my-source"
+    export AlbELBLogsSourceCategoryName="ALB/Existing/Logs"
     export CreateAlbCloudWatchMetricsSource="No"
     export AlbCloudWatchMetricsSourceCategoryName="ALB/Existing/Metrics"
 
@@ -98,13 +98,13 @@ do
     then
         export InstallALBApp="Yes"
         export CreateS3Bucket="Yes"
-        export CreateS3LogSource="Yes"
+        export CreateELBLogSource="Yes"
         export CreateAlbCloudWatchMetricsSource="Yes"
     elif [[ "${InstallType}" == "alballwithexistingbucket" ]]
     then
         export InstallALBApp="Yes"
         export CreateS3Bucket="No"
-        export CreateS3LogSource="Yes"
+        export CreateELBLogSource="Yes"
         export CreateAlbCloudWatchMetricsSource="Yes"
     elif [[ "${InstallType}" == "dynamoapp" ]]
     then
@@ -173,7 +173,7 @@ do
         export CreateMetaDataSource="Yes"
         export InstallALBApp="Yes"
         export CreateS3Bucket="Yes"
-        export CreateS3LogSource="Yes"
+        export CreateELBLogSource="Yes"
         export CreateAlbCloudWatchMetricsSource="Yes"
         export InstallDynamoDBApp="Yes"
         export CreateDynamoDBCloudTrailBucket="Yes"
@@ -218,7 +218,7 @@ do
     InstallEC2App="${InstallEC2App}" InstallALBApp="${InstallALBApp}" InstallDynamoDBApp="${InstallDynamoDBApp}" \
     InstallRDSApp="${InstallRDSApp}" InstallLambdaApp="${InstallLambdaApp}" InstallAPIGatewayApp="${InstallAPIGatewayApp}" \
     AccountAlias="${AccountAlias}" \
-    CreateMetaDataSource="${CreateMetaDataSource}" CreateS3Bucket="${CreateS3Bucket}" CreateS3LogSource="${CreateS3LogSource}" \
+    CreateMetaDataSource="${CreateMetaDataSource}" CreateS3Bucket="${CreateS3Bucket}" CreateELBLogSource="${CreateELBLogSource}" \
     CreateAlbCloudWatchMetricsSource="${CreateAlbCloudWatchMetricsSource}" CreateDynamoDBCloudTrailBucket="${CreateDynamoDBCloudTrailBucket}" \
     CreateDynamoDBCloudTrailLogSource="${CreateDynamoDBCloudTrailLogSource}" CreateDynamoDBCloudWatchMetricsSource="${CreateDynamoDBCloudWatchMetricsSource}" \
     CreateRdsCloudWatchMetricsSource="${CreateRdsCloudWatchMetricsSource}" CreateLambdaCloudTrailBucket="${CreateLambdaCloudTrailBucket}" \
@@ -226,7 +226,7 @@ do
     CreateLambdaCloudWatchLogsSource="${CreateLambdaCloudWatchLogsSource}" CreateApiGatewayCloudTrailBucket="${CreateApiGatewayCloudTrailBucket}" \
     CreateApiGatewayCloudTrailLogSource="${CreateApiGatewayCloudTrailLogSource}" CreateApiGatewayCloudWatchMetricsSource="${CreateApiGatewayCloudWatchMetricsSource}" \
     Ec2AppSourceCategoryName="${Ec2AppSourceCategoryName}" S3LogsBucketName="${S3LogsBucketName}" AlbS3LogsCollectorName="${AlbS3LogsCollectorName}" \
-    AlbS3LogsSourceName="${AlbS3LogsSourceName}" AlbS3LogsSourceCategoryName="${AlbS3LogsSourceCategoryName}" AlbCloudWatchMetricsSourceCategoryName="${AlbCloudWatchMetricsSourceCategoryName}" \
+    AlbELBLogsSourceName="${AlbELBLogsSourceName}" AlbELBLogsSourceCategoryName="${AlbELBLogsSourceCategoryName}" AlbCloudWatchMetricsSourceCategoryName="${AlbCloudWatchMetricsSourceCategoryName}" \
     DynamoDBCloudTrailLogsBucketName="${DynamoDBCloudTrailLogsBucketName}" DynamoDBCloudTrailCollectorName="${DynamoDBCloudTrailCollectorName}" \
     DynamoDBCloudTrailLogsSourceName="${DynamoDBCloudTrailLogsSourceName}" DynamoDBCloudTrailLogsSourceCategoryName="${DynamoDBCloudTrailLogsSourceCategoryName}" \
     DynamoDBCloudWatchMetricsSourceCategoryName="${DynamoDBCloudWatchMetricsSourceCategoryName}" RdsCloudWatchMetricsSourceCategoryName="${RdsCloudWatchMetricsSourceCategoryName}" \

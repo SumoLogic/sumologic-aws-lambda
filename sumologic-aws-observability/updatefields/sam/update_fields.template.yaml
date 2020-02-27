@@ -20,9 +20,9 @@ Metadata:
       - Label:
           default: "AWS ALB App Configuration"
         Parameters:
-          - CreateS3LogSource
+          - CreateELBLogSource
           - AlbS3LogsCollectorName
-          - AlbS3LogsSourceName
+          - AlbELBLogsSourceName
 
       - Label:
           default: "AWS DynamoDB App Configuration"
@@ -66,12 +66,12 @@ Metadata:
       AccountAlias:
         default: "Alias for AWS Account Identification"
 
-      CreateS3LogSource:
-        default: "Create Sumo Logic S3 Logs Source"
+      CreateELBLogSource:
+        default: "Create Sumo Logic ELB Logs Source"
       AlbS3LogsCollectorName:
         default: "Sumo Logic ALB S3 Logs Collector Name"
-      AlbS3LogsSourceName:
-        default: "Sumo Logic ALB S3 Logs Source Name"
+      AlbELBLogsSourceName:
+        default: "Sumo Logic ALB ELB Logs Source Name"
 
       CreateDynamoDBCloudTrailLogSource:
         default: "Create Sumo Logic CloudTrail Logs Source"
@@ -114,7 +114,8 @@ Parameters:
       - jp
       - us2
       - us1
-      - nite
+      - in
+      - fed
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
   SumoAccessID:
     Type: String
@@ -138,10 +139,10 @@ Parameters:
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
     AllowedPattern: "[a-zA-Z0-9]+"
 
-  CreateS3LogSource:
+  CreateELBLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic S3 Log Source which collect ALB logs from an existing bucket or a new bucket. Default Name - sumologic-aws-observability-alb-s3-logs.
-                  No -> If you already have an S3 source collecting ALB logs into Sumo Logic."
+    Description: "Yes -> To create Sumo Logic ELB Log Source which collect ALB logs from an existing bucket or a new bucket. Default Name - sumologic-aws-observability-alb-s3-logs.
+                  No -> If you already have an ELB Source collecting ALB logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -150,7 +151,7 @@ Parameters:
     Type: String
     Description: "Required when Flag = No. Provide ALB app existing collector name from Sumo Logic."
     Default: ""
-  AlbS3LogsSourceName:
+  AlbELBLogsSourceName:
     Type: String
     Description: "Required when Flag = No. Provide ALB app existing source name from Sumo Logic. account, region and namespace Fields will be added."
     Default: ""
@@ -264,7 +265,7 @@ Mappings:
 
 Conditions:
   do_not_use_parent_stack: !Equals [ !Ref ParentStackName, "ParentStackName"]
-  update_alb_source: !Equals [ !Ref CreateS3LogSource, "No"]
+  update_alb_source: !Equals [ !Ref CreateELBLogSource, "No"]
   update_dynamodb_source: !Equals [ !Ref CreateDynamoDBCloudTrailLogSource, "No"]
   update_api_gateway_source: !Equals [ !Ref CreateApiGatewayCloudTrailLogSource, "No"]
   update_lambda_cloudtrail_source: !Equals [ !Ref CreateLambdaCloudTrailLogSource, "No"]
@@ -349,7 +350,7 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      SourceName: !Ref AlbS3LogsSourceName
+      SourceName: !Ref AlbELBLogsSourceName
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       CollectorId: !GetAtt SumoALBHostedCollector.COLLECTOR_ID
       SumoAccessID: !Ref SumoAccessID

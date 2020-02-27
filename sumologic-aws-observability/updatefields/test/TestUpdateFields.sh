@@ -9,7 +9,7 @@ export InstallTypes=("alb" "apigateway" "lambdacloudWatch")
 
 for InstallType in "${InstallTypes[@]}"
 do
-    export CreateS3LogSource="Yes"
+    export CreateELBLogSource="Yes"
     export CreateDynamoDBCloudTrailLogSource="Yes"
     export CreateApiGatewayCloudTrailLogSource="Yes"
     export CreateLambdaCloudTrailLogSource="Yes"
@@ -18,8 +18,8 @@ do
     if [[ "${InstallType}" == "alb" ]]
     then
         export AlbS3LogsCollectorName="AWS-Sourabh-Collectoralb-all"
-        export CreateS3LogSource="No"
-        export AlbS3LogsSourceName="AWS-S3-alb-all-Source"
+        export CreateELBLogSource="No"
+        export AlbELBLogsSourceName="AWS-S3-alb-all-Source"
         export AccountAlias="albupdateaccount"
     elif [[ "${InstallType}" == "dynamo" ]]
     then
@@ -59,7 +59,7 @@ do
     aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ././../sam/${template_file} \
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
-    AlbS3LogsCollectorName="${AlbS3LogsCollectorName}" CreateS3LogSource="${CreateS3LogSource}" AlbS3LogsSourceName="${AlbS3LogsSourceName}" \
+    AlbS3LogsCollectorName="${AlbS3LogsCollectorName}" CreateELBLogSource="${CreateELBLogSource}" AlbELBLogsSourceName="${AlbELBLogsSourceName}" \
     AccountAlias="${AccountAlias}" DynamoDBCloudTrailCollectorName="${DynamoDBCloudTrailCollectorName}" CreateDynamoDBCloudTrailLogSource="${CreateDynamoDBCloudTrailLogSource}" \
     DynamoDBCloudTrailLogsSourceName="${DynamoDBCloudTrailLogsSourceName}" ApiGatewayCloudTrailCollectorName="${ApiGatewayCloudTrailCollectorName}" \
     CreateApiGatewayCloudTrailLogSource="${CreateApiGatewayCloudTrailLogSource}" ApiGatewayCloudTrailLogsSourceName="${ApiGatewayCloudTrailLogsSourceName}" \

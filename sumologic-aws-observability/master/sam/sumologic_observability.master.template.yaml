@@ -41,14 +41,14 @@ Metadata:
           - CreateAlbCloudWatchMetricsSource
           - AlbCloudWatchMetricsSourceCategoryName
       - Label:
-          default: "4.2 Amazon S3 Source details"
+          default: "4.2 Amazon ELB Source details"
         Parameters:
           - CreateS3Bucket
           - S3LogsBucketName
-          - CreateS3LogSource
+          - CreateELBLogSource
           - AlbS3LogsCollectorName
-          - AlbS3LogsSourceName
-          - AlbS3LogsSourceCategoryName
+          - AlbELBLogsSourceName
+          - AlbELBLogsSourceCategoryName
 
       - Label:
           default: "5. AWS DynamoDB App Configuration"
@@ -163,14 +163,14 @@ Metadata:
         default: "Create AWS S3 Bucket for Logs"
       S3LogsBucketName:
         default: "AWS S3 Bucket Name"
-      CreateS3LogSource:
-        default: "Create Sumo Logic S3 Logs Source"
+      CreateELBLogSource:
+        default: "Create Sumo Logic ELB Logs Source"
       AlbS3LogsCollectorName:
         default: "Sumo Logic ALB S3 Logs Collector Name"
-      AlbS3LogsSourceName:
-        default: "Sumo Logic ALB S3 Logs Source Name"
-      AlbS3LogsSourceCategoryName:
-        default: "Sumo Logic ALB App S3 Logs Source Category Name"
+      AlbELBLogsSourceName:
+        default: "Sumo Logic ALB ELB Logs Source Name"
+      AlbELBLogsSourceCategoryName:
+        default: "Sumo Logic ALB App ELB Logs Source Category Name"
       CreateAlbCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
       AlbCloudWatchMetricsSourceCategoryName:
@@ -272,7 +272,8 @@ Parameters:
       - jp
       - us2
       - us1
-      - nite
+      - in
+      - fed
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
     AllowedPattern: ".+"
   SumoAccessID:
@@ -342,10 +343,10 @@ Parameters:
     Type: String
     Description: "Required when Flag = No. Provide an Existing bucket name which has ALB logs."
     Default: ""
-  CreateS3LogSource:
+  CreateELBLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic S3 Log Source which collect ALB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-alb-Region-AccountId.
-                  No -> If you already have an S3 source collecting ALB logs into Sumo Logic."
+    Description: "Yes -> To create Sumo Logic ELB Log Source which collect ALB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-alb-Region-AccountId.
+                  No -> If you already have an ELB Source collecting ALB logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -354,11 +355,11 @@ Parameters:
     Type: String
     Description: "Required when Flag = No. Provide ALB app existing collector name from Sumo Logic."
     Default: ""
-  AlbS3LogsSourceName:
+  AlbELBLogsSourceName:
     Type: String
     Description: "Required when Flag = No. Provide ALB app existing source name from Sumo Logic. account, region and namespace Fields will be added."
     Default: ""
-  AlbS3LogsSourceCategoryName:
+  AlbELBLogsSourceCategoryName:
     Type: String
     Description: "Required when Flag = No. Provide ALB app existing source category name from Sumo Logic. Used for app installation."
     Default: ""
@@ -620,10 +621,10 @@ Conditions:
   create_alb_bucket: !Equals [ !Ref CreateS3Bucket, 'Yes' ]
   install_uncommon_alb_s3_log_source: !And
     - !Not [!Condition create_alb_bucket]
-    - !Equals [ !Ref CreateS3LogSource, 'Yes' ]
+    - !Equals [ !Ref CreateELBLogSource, 'Yes' ]
   install_common_alb_s3_log_source: !And
     - !Condition create_alb_bucket
-    - !Equals [ !Ref CreateS3LogSource, 'Yes' ]
+    - !Equals [ !Ref CreateELBLogSource, 'Yes' ]
   install_alb_cloudwatch_metrics_source: !Equals [ !Ref CreateAlbCloudWatchMetricsSource, 'Yes' ]
 
   # Conditions for DynamoDB
@@ -733,7 +734,7 @@ Conditions:
     - !Condition install_api_gateway_app
 
   add_fields_to_log_sources: !Or
-    - !Equals [ !Ref CreateS3LogSource, "No"]
+    - !Equals [ !Ref CreateELBLogSource, "No"]
     - !Equals [ !Ref CreateDynamoDBCloudTrailLogSource, "No"]
     - !Equals [ !Ref CreateApiGatewayCloudTrailLogSource, "No"]
     - !Equals [ !Ref CreateLambdaCloudTrailLogSource, "No"]
@@ -798,10 +799,10 @@ Resources:
         CollectorName: !Sub "aws-observability-collector"
         CreateS3Bucket: !If [create_target_s3_bucket, 'Yes', 'No']
         BucketName: !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}"
-        CreateS3LogSource: !If [install_common_alb_s3_log_source, 'Yes', 'No']
+        CreateELBLogSource: !If [install_common_alb_s3_log_source, 'Yes', 'No']
         S3BucketPathExpression: !Sub "elasticloadbalancing/AWSLogs/${AWS::AccountId}/*"
-        S3LogsSourceName: !Sub "${AccountAlias}-aws-observability-alb-s3-${AWS::Region}"
-        S3LogsSourceCategoryName: "aws/observability/alb/logs"
+        ELBLogsSourceName: !Sub "${AccountAlias}-aws-observability-alb-${AWS::Region}"
+        ELBLogsSourceCategoryName: "aws/observability/alb/logs"
         CreateCloudTrailLogSource: !If [install_cloudtrail_logs_source, 'Yes', 'No']
         CloudTrailLogsSourceName: !Sub "${AccountAlias}-aws-observability-cloudtrail-${AWS::Region}"
         CloudTrailLogsSourceCategoryName: "aws/observability/cloudtrail/logs"
@@ -905,10 +906,10 @@ Resources:
         CollectorName: !Sub "aws-observability-collector"
         CreateS3Bucket: "No"
         S3LogsBucketName: !If [create_alb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref S3LogsBucketName]
-        CreateS3LogSource: !If [install_uncommon_alb_s3_log_source, "Yes", "No"]
+        CreateELBLogSource: !If [install_uncommon_alb_s3_log_source, "Yes", "No"]
         S3BucketPathExpression: "*"
-        S3LogsSourceName: !Sub "${AccountAlias}-aws-observability-alb-s3-${AWS::Region}"
-        S3LogsSourceCategoryName: !If [install_uncommon_alb_s3_log_source, "aws/observability/alb/logs", !Ref AlbS3LogsSourceCategoryName]
+        ELBLogsSourceName: !Sub "${AccountAlias}-aws-observability-alb-${AWS::Region}"
+        ELBLogsSourceCategoryName: !If [install_uncommon_alb_s3_log_source, "aws/observability/alb/logs", !Ref AlbELBLogsSourceCategoryName]
         CreateCloudWatchMetricsSource: "No"
         CloudWatchMetricsSourceCategoryName: !If [install_alb_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref AlbCloudWatchMetricsSourceCategoryName]
         SumoOrganizationId: !Ref SumoOrganizationId
@@ -1083,9 +1084,9 @@ Resources:
         SumoAccessKey: !Ref SumoAccessKey
         RemoveSumoResourcesOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
         AccountAlias: !Ref AccountAlias
-        CreateS3LogSource: !If [install_alb_app, !Ref CreateS3LogSource, "Yes"]
+        CreateELBLogSource: !If [install_alb_app, !Ref CreateELBLogSource, "Yes"]
         AlbS3LogsCollectorName: !Ref AlbS3LogsCollectorName
-        AlbS3LogsSourceName: !Ref AlbS3LogsSourceName
+        AlbELBLogsSourceName: !Ref AlbELBLogsSourceName
         CreateDynamoDBCloudTrailLogSource: !If [install_dynamo_db_app, !Ref CreateDynamoDBCloudTrailLogSource, "Yes"]
         DynamoDBCloudTrailCollectorName: !Ref DynamoDBCloudTrailCollectorName
         DynamoDBCloudTrailLogsSourceName: !Ref DynamoDBCloudTrailLogsSourceName

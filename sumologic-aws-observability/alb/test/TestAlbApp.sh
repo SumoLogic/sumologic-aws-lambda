@@ -16,33 +16,33 @@ do
     if [[ "${InstallType}" == "all" ]]
     then
         export CreateS3Bucket="Yes"
-        export CreateS3LogSource="Yes"
+        export CreateELBLogSource="Yes"
         export CreateCloudWatchMetricsSource="Yes"
     elif [[ "${InstallType}" == "onlyapp" ]]
     then
         export CreateS3Bucket="No"
-        export CreateS3LogSource="No"
+        export CreateELBLogSource="No"
         export CreateCloudWatchMetricsSource="No"
     elif [[ "${InstallType}" == "apps3source" ]]
     then
         export CreateS3Bucket="No"
         export S3LogsBucketName="lambda-all-randmomstring"
-        export CreateS3LogSource="Yes"
+        export CreateELBLogSource="Yes"
         export CreateCloudWatchMetricsSource="No"
     elif [[ "${InstallType}" == "apps3sources3bucket" ]]
     then
         export CreateS3Bucket="Yes"
-        export CreateS3LogSource="Yes"
+        export CreateELBLogSource="Yes"
         export CreateCloudWatchMetricsSource="No"
     elif [[ "${InstallType}" == "appcloudwatchmetrics" ]]
     then
         export CreateS3Bucket="No"
-        export CreateS3LogSource="No"
+        export CreateELBLogSource="No"
         export CreateCloudWatchMetricsSource="Yes"
     elif [[ "${InstallType}" == "noapp" ]]
     then
         export CreateS3Bucket="Yes"
-        export CreateS3LogSource="Yes"
+        export CreateELBLogSource="Yes"
         export CreateCloudWatchMetricsSource="Yes"
         export InstallApp="No"
     else
@@ -61,8 +61,8 @@ do
 
     # Export S3 Logs Details
     export S3BucketPathExpression="*"
-    export S3LogsSourceName="AWS-S3-${AppName}-${InstallType}-Source"
-    export S3LogsSourceCategoryName="AWS/S3/${AppName}/${InstallType}/Logs"
+    export ELBLogsSourceName="AWS-S3-${AppName}-${InstallType}-Source"
+    export ELBLogsSourceCategoryName="AWS/S3/${AppName}/${InstallType}/Logs"
 
     # Export CloudWatch Metrics Details
     export CloudWatchMetricsSourceName="AWS-CloudWatch-Metrics-${AppName}-${InstallType}-Source"
@@ -75,9 +75,9 @@ do
     --parameter-overrides SumoDeployment="${SumoDeployment}" SumoAccessID="${SumoAccessID}" SumoAccessKey="${SumoAccessKey}" \
     SumoOrganizationId="${SumoOrganizationId}" RemoveSumoResourcesOnDeleteStack="${RemoveSumoResourcesOnDeleteStack}" \
     CollectorName="${CollectorName}" S3LogsBucketName="${S3LogsBucketName}" S3BucketPathExpression="${S3BucketPathExpression}" \
-    S3LogsSourceName="${S3LogsSourceName}" S3LogsSourceCategoryName="${S3LogsSourceCategoryName}" InstallApp="${InstallApp}"\
+    ELBLogsSourceName="${ELBLogsSourceName}" ELBLogsSourceCategoryName="${ELBLogsSourceCategoryName}" InstallApp="${InstallApp}"\
     CloudWatchMetricsSourceName="${CloudWatchMetricsSourceName}" CloudWatchMetricsSourceCategoryName="${CloudWatchMetricsSourceCategoryName}" \
-    CreateS3Bucket="${CreateS3Bucket}" CreateS3LogSource="${CreateS3LogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
+    CreateS3Bucket="${CreateS3Bucket}" CreateELBLogSource="${CreateELBLogSource}" CreateCloudWatchMetricsSource="${CreateCloudWatchMetricsSource}" AccountAlias="${AccountAlias}"
 
 done
 

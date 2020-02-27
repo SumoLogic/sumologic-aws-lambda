@@ -32,14 +32,14 @@ Metadata:
           - CloudWatchMetricsSourceCategoryName
 
       - Label:
-          default: "App Details - S3 Source Log Source Configuration"
+          default: "App Details - ELB Source Log Source Configuration"
         Parameters:
           - CreateS3Bucket
           - S3LogsBucketName
-          - CreateS3LogSource
+          - CreateELBLogSource
           - S3BucketPathExpression
-          - S3LogsSourceName
-          - S3LogsSourceCategoryName
+          - ELBLogsSourceName
+          - ELBLogsSourceCategoryName
 
       - Label:
           default: "Filter Regular Expression for tagging resources."
@@ -75,14 +75,14 @@ Metadata:
         default: "Create AWS S3 Bucket"
       S3LogsBucketName:
         default: "AWS S3 Bucket Name"
-      CreateS3LogSource:
-        default: "Create Sumo Logic S3 Logs Source"
+      CreateELBLogSource:
+        default: "Create Sumo Logic ELB Logs Source"
       S3BucketPathExpression:
         default: "Path Expression for the logs"
-      S3LogsSourceName:
-        default: "Sumo Logic S3 Logs Source Name"
-      S3LogsSourceCategoryName:
-        default: "Sumo Logic S3 Logs Source Category Name"
+      ELBLogsSourceName:
+        default: "Sumo Logic ELB Logs Source Name"
+      ELBLogsSourceCategoryName:
+        default: "Sumo Logic ELB Logs Source Category Name"
 
       CreateCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
@@ -108,7 +108,8 @@ Parameters:
       - jp
       - us2
       - us1
-      - nite
+      - in
+      - fed
     Description: "Enter au, ca, de, eu, jp, us2, or us1."
   SumoAccessID:
     Type: String
@@ -160,9 +161,9 @@ Parameters:
     Description: "Existing Bucket Name - Provide value if the Flag is set to No.\n
                   New Bucket Name - Provide a unique Bucket Name if the flag is set to Yes."
     AllowedPattern: ".+"
-  CreateS3LogSource:
+  CreateELBLogSource:
     Type: String
-    Description: "Choose Yes to create Sumo Logic S3 Log Source with provided bucket Name."
+    Description: "Choose Yes to create Sumo Logic ELB Log Source with provided bucket Name."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -171,14 +172,14 @@ Parameters:
     Type: String
     Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
     Default: "*"
-  S3LogsSourceName:
+  ELBLogsSourceName:
     Type: String
-    Description: Change the S3 Source name to be created else default name will be used.
-    Default: AWS-Alb-S3-Log-Source
-  S3LogsSourceCategoryName:
+    Description: Change the ELB Source name to be created else default name will be used.
+    Default: AWS-Alb-Log-Source
+  ELBLogsSourceCategoryName:
     Type: String
-    Description: "Existing - Change to an existing Source Category from Sumo Logic if S3 Source is not created.\n
-                  New - Default will be used if S3 Source is Created"
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if ELB Source is not created.\n
+                  New - Default will be used if ELB Source is Created"
     Default: AWS/Alb/S3/Logs
 
   CreateCloudWatchMetricsSource:
@@ -294,10 +295,10 @@ Conditions:
 
   install_app: !Equals [!Ref InstallApp, 'Yes']
   create_target_s3_bucket: !Equals [!Ref CreateS3Bucket, 'Yes']
-  install_s3_logs_source: !Equals [!Ref CreateS3LogSource, 'Yes']
+  install_elb_logs_source: !Equals [!Ref CreateELBLogSource, 'Yes']
   install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
   install_collector: !Or
-    - !Condition install_s3_logs_source
+    - !Condition install_elb_logs_source
     - !Condition install_cloud_watch_metric_source
 
 Resources:
@@ -523,7 +524,7 @@ Resources:
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
         metricsrc: !Sub "_sourceCategory=${CloudWatchMetricsSourceCategoryName}"
-        logsrc: !Sub "_sourceCategory=${S3LogsSourceCategoryName}"
+        logsrc: !Sub "_sourceCategory=${ELBLogsSourceCategoryName}"
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
@@ -562,18 +563,18 @@ Resources:
       - TargetS3Bucket
 
   SumoSNSTopic:
-    Condition: install_s3_logs_source
+    Condition: install_elb_logs_source
     Type: "AWS::SNS::Topic"
     Properties:
       TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
 
   SumoSNSSubscription:
-    Condition: install_s3_logs_source
+    Condition: install_elb_logs_source
     Type: "AWS::SNS::Subscription"
     Properties:
       TopicArn:
         Ref: SumoSNSTopic
-      Endpoint: !GetAtt SumoS3Source.SUMO_ENDPOINT
+      Endpoint: !GetAtt SumoELBSource.SUMO_ENDPOINT
       Protocol: https
       DeliveryPolicy:
         healthyRetryPolicy:
@@ -586,7 +587,7 @@ Resources:
           backoffFunction: exponential
 
   SumoSNSpolicy:
-    Condition: install_s3_logs_source
+    Condition: install_elb_logs_source
     Type: "AWS::SNS::TopicPolicy"
     Properties:
       PolicyDocument:
@@ -622,12 +623,12 @@ Resources:
       Timeout: "1"
       Count: 0
 
-  SumoS3Source:
-    Condition: install_s3_logs_source
+  SumoELBSource:
+    Condition: install_elb_logs_source
     DependsOn: TargetS3BucketWaitCondition
     Type: Custom::AWSSource
     Properties:
-      SourceType: AwsS3Bucket
+      SourceType: AwsElbBucket
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
@@ -636,9 +637,9 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      SourceName: !Ref S3LogsSourceName
+      SourceName: !Ref ELBLogsSourceName
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      SourceCategory: !Ref S3LogsSourceCategoryName
+      SourceCategory: !Ref ELBLogsSourceCategoryName
       CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
       SumoAccessID: !Ref SumoAccessID
       SumoAccessKey: !Ref SumoAccessKey
