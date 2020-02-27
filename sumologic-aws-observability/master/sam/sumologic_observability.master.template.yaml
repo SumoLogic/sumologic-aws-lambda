@@ -293,7 +293,7 @@ Parameters:
       - true
       - false
     Default: false
-    Description: "To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
+    Description: "To delete collector, sources and app when stack is deleted, set this parameter to true. Default is false.
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
