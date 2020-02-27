@@ -740,6 +740,14 @@ Conditions:
     - !Equals [ !Ref CreateLambdaCloudTrailLogSource, "No"]
     - !Equals [ !Ref CreateLambdaCloudWatchLogsSource, "No"]
 
+  install_overview_dashboards: !Or
+    - !Equals [ !Ref InstallEC2App, 'Yes' ]
+    - !Equals [ !Ref InstallALBApp, 'Yes' ]
+    - !Equals [ !Ref InstallDynamoDBApp, 'Yes' ]
+    - !Equals [ !Ref InstallRDSApp, 'Yes' ]
+    - !Equals [ !Ref InstallLambdaApp, 'Yes' ]
+    - !Equals [ !Ref InstallAPIGatewayApp, 'Yes' ]
+
 Mappings:
   RegionMap:
     us-east-1:
@@ -852,6 +860,7 @@ Resources:
   sumoOverview:
     Type: Custom::App
     DependsOn: CreateCommonResources
+    Condition: install_overview_dashboards
     Properties:
       ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
       Region: !Ref "AWS::Region"
