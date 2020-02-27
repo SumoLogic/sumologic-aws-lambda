@@ -849,6 +849,23 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
+  sumoOverview:
+    Type: Custom::App
+    DependsOn: CreateCommonResources
+    Properties:
+      ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
+      Region: !Ref "AWS::Region"
+      AppName: "AWS Observability Overview App"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        lambdametricsrc: !If [install_lambda_cloudwatch_metrics_source, !Sub "_sourceCategory=aws/observability/cloudwatch/metrics", !Sub "_sourceCategory=${LambdaCloudWatchMetricsSourceCategoryName}"]
+        dynamodbmetricsrc: !If [install_dynamoDB_cloudwatch_metrics_source, !Sub "_sourceCategory=aws/observability/cloudwatch/metrics", !Sub "_sourceCategory=${DynamoDBCloudWatchMetricsSourceCategoryName}"]
+        ec2metricsrc: !Sub "_sourceCategory=${Ec2AppSourceCategoryName}"
+        rdsmetricsrc: !If [install_rds_cloudwatch_metrics_source, !Sub "_sourceCategory=aws/observability/cloudwatch/metrics", !Sub "_sourceCategory=${RdsCloudWatchMetricsSourceCategoryName}"]
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
   sumoEC2MetricsAppStack:
     Type: AWS::CloudFormation::Stack
     Condition: install_ec2_metrics_app
