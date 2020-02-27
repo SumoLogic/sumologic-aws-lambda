@@ -45,6 +45,7 @@ Metadata:
           default: "Filter Regular Expression for tagging resources."
           Parameters:
             - FilterExpression
+            - AutoEnableS3LogsALBResources
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
@@ -93,6 +94,8 @@ Metadata:
 
       FilterExpression:
         default: "Filter Regular expression"
+      AutoEnableS3LogsALBResources:
+        default: "Auto Enable S3 Logging for existing ALB Resources"
 
       ParentStackName:
         default: "If Any, Name of parent Stack"
@@ -203,6 +206,13 @@ Parameters:
     Type: String
     Default: ""
     Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
+  AutoEnableS3LogsALBResources:
+    Type: String
+    Description: "Yes -> To automatically enable S3 logging for existing created ALB resources."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
 
   ParentStackName:
     Type: String
@@ -297,6 +307,7 @@ Conditions:
   create_target_s3_bucket: !Equals [!Ref CreateS3Bucket, 'Yes']
   install_elb_logs_source: !Equals [!Ref CreateELBLogSource, 'Yes']
   install_cloud_watch_metric_source: !Equals [!Ref CreateCloudWatchMetricsSource, 'Yes']
+  auto_enable_s3_logs: !Equals [ !Ref AutoEnableS3LogsALBResources, 'Yes' ]
   install_collector: !Or
     - !Condition install_elb_logs_source
     - !Condition install_cloud_watch_metric_source
@@ -398,6 +409,7 @@ Resources:
 
   EnableS3LogsResources:
     Type: Custom::EnableS3LogsResources
+    Condition: auto_enable_s3_logs
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack

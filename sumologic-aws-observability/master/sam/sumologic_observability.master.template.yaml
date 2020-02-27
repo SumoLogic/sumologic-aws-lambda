@@ -251,7 +251,7 @@ Metadata:
       AutoEnableTaggingAWSResources:
         default: "Auto Enable Tagging of new AWS Resources"
       AutoEnableS3LogsALBResources:
-        default: "Auto Enable S3 Logging for new ALB Resources"
+        default: "Auto Enable S3 Logging for existing and new ALB Resources"
       FilterExpression:
         default: "Regular expression to Filter AWS Resources"
       AutoSubscribeLogGroupsLambda:
@@ -585,7 +585,7 @@ Parameters:
       - 'No'
   AutoEnableS3LogsALBResources:
     Type: String
-    Description: "Yes -> To automatically enable S3 logging for newly created ALB resources."
+    Description: "Yes -> To automatically enable S3 logging for existing and newly created ALB resources."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -915,6 +915,7 @@ Resources:
         SumoOrganizationId: !Ref SumoOrganizationId
         InstallApp: !Ref InstallALBApp
         FilterExpression: !Ref FilterExpression
+        AutoEnableS3LogsALBResources: !Ref AutoEnableS3LogsALBResources
 
   sumoDynamoDBMetricsAppStackWaitHandle:
     Condition: install_alb_app
