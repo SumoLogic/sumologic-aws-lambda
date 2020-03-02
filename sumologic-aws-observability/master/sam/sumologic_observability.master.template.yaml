@@ -320,8 +320,8 @@ Parameters:
       - 'No'
   Ec2AppSourceCategoryName:
     Type: String
-    Description: "Required Value. Provide any existing EC2 Instances Host Metrics source category name."
-    Default: ""
+    Description: "Provide any existing EC2 Instances Host Metrics source category name."
+    Default: "hostmetrics"
 
   InstallALBApp:
     Type: String
