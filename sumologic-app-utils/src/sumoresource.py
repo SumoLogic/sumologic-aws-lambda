@@ -383,14 +383,14 @@ class AWSSource(BaseSource):
 class HTTPSource(SumoResource):
     # Todo refactor this to use basesource class
 
-    def create(self, collector_id, source_name, source_category, fields,
+    def create(self, collector_id, source_name, source_category, fields, message_per_request,
                date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
 
         endpoint = source_id = None
         params = {
             "sourceType": "HTTP",
             "name": source_name,
-            "messagePerRequest": False,
+            "messagePerRequest": message_per_request,
             "category": source_category
         }
         if date_format:
@@ -453,6 +453,7 @@ class HTTPSource(SumoResource):
             "source_category": props.get("SourceCategory"),
             "date_format": props.get("DateFormat"),
             "date_locator": props.get("DateLocatorRegex"),
+            "message_per_request": props.get("MessagePerRequest") == 'true',
             "source_id": source_id,
             "fields": fields
         }
