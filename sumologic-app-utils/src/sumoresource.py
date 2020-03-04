@@ -391,7 +391,7 @@ class HTTPSource(SumoResource):
             "sourceType": "HTTP",
             "name": source_name,
             "messagePerRequest": message_per_request,
-            "multiLineProcessing": False if message_per_request else True,
+            "multilineProcessingEnabled": False if message_per_request else True,
             "category": source_category
         }
         if date_format:
