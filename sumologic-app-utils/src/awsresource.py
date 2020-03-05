@@ -197,7 +197,8 @@ class EnableS3LogsResources(AWSResource):
         print("updated S3 bucket to %s " % bucket_name)
         return {"S3_ENABLE": "Successful"}, "S3"
 
-    def delete(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, remove_on_delete_stack,
+               *args, **kwargs):
         if remove_on_delete_stack:
             self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix, True, filter_regex)
             print("ENABLE S3 LOGS - Completed the AWS resources S3 deletion to bucket.")
@@ -213,6 +214,70 @@ class EnableS3LogsResources(AWSResource):
             "bucket_prefix": props.get("BucketPrefix"),
             "filter_regex": props.get("Filter"),
             "remove_on_delete_stack": props.get("RemoveOnDeleteStack")
+        }
+
+
+class ConfigDeliveryChannel(AWSResource):
+
+    def __init__(self, *args, **kwargs):
+        self.config_client = boto3.client('config', region_name=os.environ.get("AWS_REGION"))
+
+    def create(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
+        print("DELIVERY CHANNEL - Starting the AWS config Delivery channel create with bucket %s." % bucket_name)
+
+        name = "default"
+        if not bucket_name:
+            channels = self.config_client.describe_delivery_channels()
+            if "DeliveryChannels" in channels:
+                for channel in channels["DeliveryChannels"]:
+                    bucket_name = channel["s3BucketName"]
+                    if not bucket_prefix:
+                        bucket_prefix = channel["s3KeyPrefix"] if "s3KeyPrefix" in channel else None
+                    name = channel["name"]
+                    break
+
+        delivery_channel = {"name": name, "s3BucketName": bucket_name}
+
+        if bucket_prefix:
+            delivery_channel["s3KeyPrefix"] = bucket_prefix
+        if sns_topic_arn:
+            delivery_channel["snsTopicARN"] = sns_topic_arn
+        if delivery_frequency:
+            delivery_channel["configSnapshotDeliveryProperties"] = {'deliveryFrequency': delivery_frequency}
+
+        self.config_client.put_delivery_channel(DeliveryChannel=delivery_channel)
+
+        print("DELIVERY CHANNEL - Completed the AWS config Delivery channel create.")
+
+        return {"DELIVERY_CHANNEL": "Successful"}, name
+
+    def update(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
+        print("updated delivery channel to %s " % bucket_name)
+        return self.create(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs)
+
+    def delete(self, delivery_channel_name, bucket_name, delivery_frequency, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            if not bucket_name:
+                self.create(delivery_frequency, None, None, None)
+            else:
+                self.config_client.delete_delivery_channel(DeliveryChannelName=delivery_channel_name)
+            print("DELIVERY CHANNEL - Completed the AWS Config delivery channel delete.")
+        else:
+            print("DELIVERY CHANNEL - Skipping the AWS Config delivery channel delete.")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        delivery_channel_name = None
+        if event.get('PhysicalResourceId'):
+            _, delivery_channel_name = event['PhysicalResourceId'].split("/")
+
+        return {
+            "delivery_frequency": props.get("DeliveryFrequency"),
+            "bucket_name": props.get("S3BucketName"),
+            "bucket_prefix": props.get("S3KeyPrefix"),
+            "sns_topic_arn": props.get("SnsTopicARN"),
+            "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
+            "delivery_channel_name": delivery_channel_name
         }
 
 
@@ -794,10 +859,5 @@ class AWSResourcesProvider(object):
 
 if __name__ == '__main__':
     params = {}
-    tag = TagAWSResources(params)
-
-    # tag.create("us-east-1", "lambda", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "",
-    #           "'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'")
-
-    tag.delete("us-east-1", "lambda", {'account': 'sdfsdfsd', 'Namespace': "adsas"}, "",
-               "'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'", True)
+    value = ConfigDeliveryChannel()
+    value.create("Six_Hours", "config-bucket-668508221233", "config", "")
