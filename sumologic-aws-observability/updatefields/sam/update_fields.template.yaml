@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
+Description: "Template to add fields for existing Sources in Sumo Logic for AWS Observability Solution."
 
 Metadata:
   'AWS::CloudFormation::Interface':
@@ -125,6 +126,7 @@ Parameters:
     Type: String
     Description: The Sumo Logic Access Key.
     AllowedPattern: ".+"
+    NoEcho: true
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true

@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
+Description: "Template to setup the AWS Observability Solution with all AWS, Lambda and Sumo Logic Resources installation."
 
 Metadata:
   'AWS::CloudFormation::Interface':
@@ -284,6 +285,7 @@ Parameters:
     Type: String
     Description: "The Sumo Logic Access Key. Used for Sumo Logic API calls."
     AllowedPattern: ".+"
+    NoEcho: true
   SumoOrganizationId:
     Description: "The Account Overview page displays information about your Sumo Logic organization. Used for IAM Role in Sumo Logic AWS Sources."
     Type: String

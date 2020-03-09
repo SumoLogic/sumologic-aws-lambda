@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
+Description: "Template to setup the ALB app with AWS and Sumo Logic resources for AWS Observability Solution."
 
 Metadata:
   'AWS::CloudFormation::Interface':
@@ -122,6 +123,7 @@ Parameters:
     Type: String
     Description: The Sumo Logic Access Key.
     AllowedPattern: ".+"
+    NoEcho: true
   SumoOrganizationId:
     Type: String
     Description: The Account Overview page displays information about your Sumo Logic organization.
