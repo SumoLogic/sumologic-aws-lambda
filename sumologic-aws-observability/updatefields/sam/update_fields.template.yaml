@@ -275,6 +275,9 @@ Conditions:
 
 Resources:
 
+  WaitHandle:
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
   SumoLogicHelperRole:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
@@ -363,9 +366,22 @@ Resources:
         namespace: "AWS/ApplicationELB"
         region: !Ref "AWS::Region"
 
+  DynamoDBWaitHandle:
+    Condition: update_alb_source
+    DependsOn: SumoALBSource
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  DynamoDBWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [update_alb_source, !Ref DynamoDBWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
   SumoDynamoDBHostedCollector:
     Type: Custom::Collector
     Condition: update_dynamodb_source
+    DependsOn: DynamoDBWaitCondition
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
@@ -404,8 +420,21 @@ Resources:
       Fields:
         account: !Ref AccountAlias
 
+  ApiGatewayWaitHandle:
+    Condition: update_dynamodb_source
+    DependsOn: SumoDynamoDBSource
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  ApiGatewayWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [update_dynamodb_source, !Ref ApiGatewayWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
   SumoApiGatewayHostedCollector:
     Type: Custom::Collector
+    DependsOn: ApiGatewayWaitCondition
     Condition: update_api_gateway_source
     Properties:
       ServiceToken: !If
@@ -445,8 +474,21 @@ Resources:
       Fields:
         account: !Ref AccountAlias
 
+  LambdaCloudTrailWaitHandle:
+    Condition: update_api_gateway_source
+    DependsOn: SumoApiGatewaySource
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  LambdaCloudTrailWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [update_api_gateway_source, !Ref LambdaCloudTrailWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
   SumoLambdaCloudTrailHostedCollector:
     Type: Custom::Collector
+    DependsOn: LambdaCloudTrailWaitCondition
     Condition: update_lambda_cloudtrail_source
     Properties:
       ServiceToken: !If
@@ -486,8 +528,21 @@ Resources:
       Fields:
         account: !Ref AccountAlias
 
+  LambdaCloudWatchWaitHandle:
+    Condition: update_lambda_cloudtrail_source
+    DependsOn: SumoLambdaCloudTrailSource
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  LambdaCloudWatchWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [update_lambda_cloudtrail_source, !Ref LambdaCloudWatchWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
   SumoLambdaCloudWatchHostedCollector:
     Type: Custom::Collector
+    DependsOn: LambdaCloudWatchWaitCondition
     Condition: update_lambda_cloudwatch_source
     Properties:
       ServiceToken: !If
@@ -526,3 +581,5 @@ Resources:
       SumoDeployment: !Ref SumoDeployment
       Fields:
         account: !Ref AccountAlias
+        namespace: "aws/lambda"
+        region: !Ref "AWS::Region"
