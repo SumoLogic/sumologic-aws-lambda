@@ -389,6 +389,9 @@ Resources:
       AccountID: !Ref "AWS::AccountId"
       Filter: !Ref FilterExpression
 
+  WaitHandle:
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
     Condition: do_not_use_parent_stack
@@ -411,8 +414,21 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
+  LambdaMetricWaitHandle:
+    Condition: do_not_use_parent_stack
+    DependsOn: CreateSumoLogicAWSExplorerView
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  LambdaMetricWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [do_not_use_parent_stack, !Ref LambdaMetricWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
+
   LambdaMetricRule:
     Type: Custom::SumoLogicMetricRules
+    DependsOn: LambdaMetricWaitCondition
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
@@ -430,8 +446,16 @@ Resources:
       SumoAccessKey: !Ref SumoAccessKey
       SumoDeployment: !Ref SumoDeployment
 
+  LambdaFERWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [do_not_use_parent_stack, !Ref LambdaMetricWaitHandle, !Ref WaitHandle]
+      Timeout: "15"
+      Count: 0
+
   LambdaFieldExtractionRule:
     Type: Custom::SumoLogicFieldExtractionRule
+    DependsOn: LambdaFERWaitCondition
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
