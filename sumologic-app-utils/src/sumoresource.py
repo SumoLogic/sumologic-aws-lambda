@@ -651,7 +651,7 @@ class SumoLogicAWSExplorer(SumoResource):
                     if error.get('code') == 'topology:duplicate':
                         print("AWS EXPLORER -  Duplicate Exists for Name %s" % explorer_name)
                         return {"EXPLORER_NAME": explorer_name}, "Duplicate"
-            raise
+            raise e
 
     # No Update API. So, Explorer view can be updated and deleted from the main stack where it was created.
     def update(self, explorer_id, explorer_name, hierarchy, *args, **kwargs):
@@ -712,7 +712,7 @@ class SumoLogicMetricRules(SumoResource):
                             or error.get('code') == 'metrics:rule_already_exists':
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
                         return {"METRIC_RULES": metric_rule_name}, "Duplicate"
-            raise
+            raise e
 
     # No Update API. So, Metric rules can be updated and deleted from the main stack where it was created.
     def update(self, job_name, metric_rule_name, match_expression, variables, *args, **kwargs):
@@ -856,7 +856,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
                             fer_details["scope"] = fer_details["scope"] + " or " + fer_scope
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
                         return {"FER_RULES": fer_name}, "Duplicate"
-            raise
+            raise e
 
     # Field Extraction Rule can be updated and deleted from the main stack where it was created.
     def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
