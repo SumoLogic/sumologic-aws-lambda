@@ -276,26 +276,28 @@ Parameters:
       - in
       - fed
     Description: "Enter au, ca, de, eu, jp, us2, in, fed or us1."
-    AllowedPattern: ".+"
   SumoAccessID:
     Type: String
     Description: "The Sumo Logic Access ID. Used for Sumo Logic API calls."
     AllowedPattern: ".+"
+    ConstraintDescription: "Sumo Logic Access ID can not be empty."
   SumoAccessKey:
     Type: String
     Description: "The Sumo Logic Access Key. Used for Sumo Logic API calls."
     AllowedPattern: ".+"
+    ConstraintDescription: "Sumo Logic Access Key can not be empty."
     NoEcho: true
   SumoOrganizationId:
     Description: "The Account Overview page displays information about your Sumo Logic organization. Used for IAM Role in Sumo Logic AWS Sources."
     Type: String
     AllowedPattern: ".+"
+    ConstraintDescription: "Sumo Logic Organization Id can not be empty."
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
       - false
-    Default: false
-    Description: "To delete collector, sources and app when stack is deleted, set this parameter to true. Default is false.
+    Default: true
+    Description: "To delete collectors, sources and apps when the stack is deleted, set this parameter to true. Default is true.
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
@@ -303,6 +305,7 @@ Parameters:
     Type: String
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
     AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: "Alias must only contain uppercase and lowercase letters and numbers."
 
   InstallEC2App:
     Type: String
@@ -463,19 +466,19 @@ Parameters:
   CreateLambdaCloudTrailBucket:
     Type: String
     Description: "Yes -> Create a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.\n
-                 No -> Use an existing S3 bucket from AWS S3 which has CloudTrail Logs for DynamoDB."
+                 No -> Use an existing S3 bucket from AWS S3 which has CloudTrail Logs for lambda."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   LambdaCloudTrailLogsBucketName:
     Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name which has CloudTrail logs for DynamoDB."
+    Description: "Required when Flag = No. Provide an Existing bucket name which has CloudTrail logs for lambda."
     Default: ""
   CreateLambdaCloudTrailLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect DynamoDB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
-                 No -> If you already have an CloudTrail Log source collecting DynamoDB logs into Sumo Logic."
+    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect lambda logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
+                 No -> If you already have an CloudTrail Log source collecting lambda logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -580,14 +583,16 @@ Parameters:
 
   AutoEnableTaggingAWSResources:
     Type: String
-    Description: "Yes -> To automatically tag newly created AWS resources."
+    Description: "Yes -> To automatically tag newly created EC2, ALB, RDS, API Gateway, Lambda and DynamoDB AWS resources to make them part of AWS Observability Solution.
+                  No - > New Resources will not be tagged and will not become a part of AWS Observability Solution"
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   AutoEnableS3LogsALBResources:
     Type: String
-    Description: "Yes -> To automatically enable S3 logging for existing and newly created ALB resources."
+    Description: "Yes -> To automatically enable S3 logging for existing and newly created ALB resources to collect logs for ALB resources. This does not affect ALB resources already collecting logs.
+                  No -> Does not enable logging for ALB resources."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -598,22 +603,23 @@ Parameters:
     Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
   AutoSubscribeLogGroupsLambda:
     Type: String
-    Description: "Yes -> To automatically Subscribe new log groups to lambda."
+    Description: "Yes -> To automatically Subscribe new log groups to lambda to send logs to Sumo Logic.
+                  No -> New lambda are not subscribed to send logs to Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   LambdaLogGroupPattern:
     Type: String
-    Default: Test
-    Description: Enter regex for matching logGroups
+    Default: "Lambda-regex-value"
+    Description: "Enter regex for matching logGroups. Regex will check for the name."
   LambdaSubscribeExistingLogGroups:
     Type: String
     Default: 'false'
     AllowedValues:
       - 'true'
       - 'false'
-    Description: Select true for subscribing existing logs
+    Description: "Select true for subscribing existing logs groups. Select false for skipping existing log groups."
 
 Conditions:
   # Conditions for EC2

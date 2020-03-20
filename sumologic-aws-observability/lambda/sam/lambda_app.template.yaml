@@ -176,7 +176,6 @@ Parameters:
     Type: String
     Description: "Existing Bucket Name - Provide value if the Flag is set to No.\n
                   New Bucket Name - Provide a unique Bucket Name if the flag is set to Yes."
-    AllowedPattern: ".+"
   CreateCloudTrailLogSource:
     Type: String
     Description: "Choose Yes to create Sumo Logic Cloud Trail Log Source with provided bucket Name."
