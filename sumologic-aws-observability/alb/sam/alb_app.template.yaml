@@ -339,6 +339,8 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                  - s3:GetBucketPolicy
+                  - s3:PutBucketPolicy
                 Resource: '*'
 
   SumoLogicHelperFunction:
@@ -424,6 +426,7 @@ Resources:
       BucketName: !Ref S3LogsBucketName
       Filter: !Ref FilterExpression
       BucketPrefix: !Sub "elasticloadbalancing"
+      RegionAccountId: !FindInMap [Region2ELBAccountId, !Ref 'AWS::Region', AccountId]
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
