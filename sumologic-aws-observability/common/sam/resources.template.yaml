@@ -399,6 +399,8 @@ Resources:
                   - cloudtrail:DeleteTrail
                   - cloudtrail:UpdateTrail
                   - cloudtrail:StartLogging
+                  - s3:GetBucketPolicy
+                  - s3:PutBucketPolicy
                 Resource: '*'
 
   SumoLogicLambdaHelper:

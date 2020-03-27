@@ -853,7 +853,7 @@ class AlbResources(AWSResourcesAbstract):
                 raise e
 
         bucket_policy = {
-            'Sid': 'AwsAlbLogsasxasxa',
+            'Sid': 'AwsAlbLogs',
             'Effect': 'Allow',
             'Principal': {
                 "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"

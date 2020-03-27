@@ -16,7 +16,7 @@ do
 
     aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ././../sam/${template_file} \
     --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name "${AppName}-${InstallType}" \
-    --parameter-overrides BucketName="${BucketName}" EnableS3LoggingALBResources="${EnableS3LoggingALBResources}"
+    --parameter-overrides BucketName="${BucketName}" EnableS3LoggingALBResources="${EnableS3LoggingALBResources}" AccountAlias="test"
 
 done
 
