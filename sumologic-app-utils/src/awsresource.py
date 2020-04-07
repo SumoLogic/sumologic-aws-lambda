@@ -925,7 +925,19 @@ class S3Resource(AWSResourcesAbstract):
                 if bucket_name != s3_bucket:
                     response = self.client.get_bucket_logging(Bucket=bucket_name)
                     if not ("LoggingEnabled" in response and "TargetBucket" in response["LoggingEnabled"]):
-                        self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus=bucket_logging)
+                        try:
+                            self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus=bucket_logging)
+                        except ClientError as e:
+                            if "Error" in e.response and "Message" in e.response["Error"] \
+                                    and "InvalidTargetBucketForLogging" in e.response['Error']['Code']:
+                                self.client.put_bucket_acl(
+                                    Bucket=s3_bucket,
+                                    GrantWrite='uri=http://acs.amazonaws.com/groups/s3/LogDelivery',
+                                    GrantReadACP='uri=http://acs.amazonaws.com/groups/s3/LogDelivery'
+                                )
+                                self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus=bucket_logging)
+                            else:
+                                raise e
 
     def disable_s3_logs(self, arns, s3_bucket):
         if arns:
@@ -995,7 +1007,13 @@ class VpcResource(AWSResourcesAbstract):
                 )
                 if "*Access Denied for LogDestination*" in str(response):
                     self.add_bucket_policy(s3_bucket, s3_prefix)
-                    self.enable_s3_logs(arns, s3_bucket, s3_prefix)
+                    self.client.create_flow_logs(
+                        ResourceIds=record,
+                        ResourceType='VPC',
+                        TrafficType='ALL',
+                        LogDestinationType='s3',
+                        LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix + '/'
+                    )
 
     def add_bucket_policy(self, bucket_name, prefix):
         print("Adding policy to the bucket " + bucket_name)
@@ -1091,5 +1109,5 @@ if __name__ == '__main__':
     # value.create("Six_Hours", "config-bucket-668508221233", "config", "")
 
     value = EnableS3LogsResources(params)
-    # value.create("us-east-1", "vpc", "lambda-all-randmomstring", "s3logs", "", "")
-    value.delete("us-east-1", "vpc", "lambda-all-randmomstring", "s3logs", "", True)
+    # value.create("us-east-2", "s3", "sadasdasdasd-us-east-2", "s3logs/", "", "", "")
+    value.delete("us-east-2", "s3", "sadasdasdasd-us-east-2", "s3logs", "", True, "")
