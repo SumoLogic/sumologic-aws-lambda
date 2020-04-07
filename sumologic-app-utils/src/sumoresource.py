@@ -1,15 +1,14 @@
-from abc import abstractmethod
-
-import six
-import re
 import json
-import requests
-from sumologic import SumoLogic
+import re
 import tempfile
-from datetime import datetime
 import time
+from abc import abstractmethod
+from datetime import datetime
 
+import requests
+import six
 from resourcefactory import AutoRegisterResource
+from sumologic import SumoLogic
 
 
 @six.add_metaclass(AutoRegisterResource)

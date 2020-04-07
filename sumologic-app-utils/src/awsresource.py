@@ -360,7 +360,8 @@ class AWSResourcesAbstract(object):
         "CreateFunction20150331": "lambda",
         "CreateDBCluster": "rds",
         "CreateDBInstance": "rds",
-        "CreateLoadBalancer": "elbv2"
+        "CreateLoadBalancer": "elbv2",
+        "CreateBucket": "s3"
     }
 
     def __init__(self, aws_resource, region_value, account_id):
@@ -876,6 +877,133 @@ class AlbResources(AWSResourcesAbstract):
                         self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
 
 
+class S3Resource(AWSResourcesAbstract):
+
+    def fetch_resources(self):
+        resources = []
+        response = self.client.list_buckets()
+
+        if "Buckets" in response:
+            resources.extend(response['Buckets'])
+
+        return resources
+
+    def get_arn_list(self, resources):
+        arns = []
+        if resources:
+            for bucket_detail in resources:
+                bucket_name = bucket_detail["Name"]
+                response = self.client.get_bucket_location(Bucket=bucket_name)
+                if "LocationConstraint" in response:
+                    location = response["LocationConstraint"]
+                    if (location is None and self.region_value == "us-east-1") \
+                            or (location and self.region_value in response["LocationConstraint"]):
+                        arns.append(bucket_name)
+        return arns
+
+    def process_tags(self, tags):
+        return tags
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = []
+        request_elements = event_detail.get("requestParameters")
+        if request_elements and "bucketName" in request_elements:
+            arns.append(request_elements.get("bucketName"))
+        return arns
+
+    def tag_resources_cloud_trail_event(self, *args):
+        pass
+
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, region_account_id):
+
+        bucket_logging = {'LoggingEnabled': {'TargetBucket': s3_bucket, 'TargetPrefix': s3_prefix}}
+
+        if arns:
+            for bucket_name in arns:
+                if bucket_name != s3_bucket:
+                    response = self.client.get_bucket_logging(Bucket=bucket_name)
+                    if not ("LoggingEnabled" in response and "TargetBucket" in response["LoggingEnabled"]):
+                        self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus=bucket_logging)
+
+    def disable_s3_logs(self, arns, s3_bucket):
+        if arns:
+            for bucket_name in arns:
+                response = self.client.get_bucket_logging(Bucket=bucket_name)
+                if "LoggingEnabled" in response and "TargetBucket" in response["LoggingEnabled"] \
+                        and response["LoggingEnabled"]["TargetBucket"] == s3_bucket:
+                    self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus={})
+
+
+class VpcResource(AWSResourcesAbstract):
+
+    def __init__(self, aws_resource, region_value, account_id):
+        super().__init__("ec2", region_value, account_id)
+        self.aws_resource = aws_resource
+
+    def fetch_resources(self):
+        resources = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response, key = self.client.describe_vpcs(MaxResults=1000, NextToken=next_token)
+            else:
+                response = self.client.describe_vpcs(MaxResults=1000)
+
+            if "Vpcs" in response:
+                resources.extend(response["Vpcs"])
+
+            next_token = response["NextToken"] if "NextToken" in response else None
+
+            if not next_token:
+                next_token = 'END'
+        return resources
+
+    def get_arn_list(self, resources):
+        arns = []
+        if resources:
+            for resource in resources:
+                if "VpcId" in resource:
+                    arns.append(resource["VpcId"])
+        return arns
+
+    def process_tags(self, tags):
+        return tags
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        arns = []
+        response_elements = event_detail.get("responseElements")
+        if response_elements:
+            if "vpc" in response_elements and "vpcId" in response_elements["vpc"]:
+                arns.append(response_elements["vpc"]["vpcId"])
+        return arns
+
+    def tag_resources_cloud_trail_event(self, *args):
+        pass
+
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, region_account_id):
+        if arns:
+            chunk_records = self._batch_size_chunk(arns, 1000)
+            for record in chunk_records:
+                self.client.create_flow_logs(
+                    ResourceIds=record,
+                    ResourceType='VPC',
+                    TrafficType='ALL',
+                    LogDestinationType='s3',
+                    LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix + '/'
+                )
+
+    def disable_s3_logs(self, arns, s3_bucket):
+        if arns:
+            chunk_records = self._batch_size_chunk(list(arns), 1000)
+            for record in chunk_records:
+                response = self.client.describe_flow_logs(Filters=[{'Name': 'resource-id', 'Values': record}])
+                if response and "FlowLogs" in response:
+                    flow_ids = []
+                    for flow_logs in response["FlowLogs"]:
+                        flow_ids.append(flow_logs["FlowLogId"])
+                    self.client.delete_flow_logs(FlowLogIds=flow_ids)
+
+
 class AWSResourcesProvider(object):
     provider_map = {
         "ec2": EC2Resources,
@@ -892,7 +1020,11 @@ class AWSResourcesProvider(object):
         "CreateDBCluster": RDSResources,
         "CreateDBInstance": RDSResources,
         "elbv2": AlbResources,
-        "CreateLoadBalancer": AlbResources
+        "CreateLoadBalancer": AlbResources,
+        "s3": S3Resource,
+        "CreateBucket": S3Resource,
+        "vpc": VpcResource,
+        "CreateVpc": VpcResource
     }
 
     @classmethod
@@ -904,9 +1036,10 @@ class AWSResourcesProvider(object):
 
 
 if __name__ == '__main__':
-    params = {"AWSResource": "elbv2"}
+    params = {"AWSResource": "s3"}
     # value = ConfigDeliveryChannel()
     # value.create("Six_Hours", "config-bucket-668508221233", "config", "")
 
     value = EnableS3LogsResources(params)
-    value.create("us-east-1", "elbv2", "lambda-all-randmomstring", "elasticloadbalancing", "", "127311923021")
+    # value.create("us-east-1", "vpc", "lambda-all-randmomstring", "s3logs", "", "")
+    value.delete("us-east-1", "vpc", "lambda-all-randmomstring", "s3logs", "", True)
