@@ -1000,7 +1000,8 @@ class VpcResource(AWSResourcesAbstract):
                 if response and "FlowLogs" in response:
                     flow_ids = []
                     for flow_logs in response["FlowLogs"]:
-                        flow_ids.append(flow_logs["FlowLogId"])
+                        if "LogDestination" in flow_logs and s3_bucket in flow_logs["LogDestination"]:
+                            flow_ids.append(flow_logs["FlowLogId"])
                     self.client.delete_flow_logs(FlowLogIds=flow_ids)
 
 
