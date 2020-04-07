@@ -168,10 +168,10 @@ class EnableS3LogsResources(AWSResource):
         print('Enabling S3 for ALB aws resource %s' % props.get("AWSResource"))
 
     def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, bucket_prefix,
-                               delete_flag, filter_regex, region_account_id):
+                               delete_flag, filter_regex, region_account_id, account_id):
 
         # Get the class instance based on AWS Resource
-        tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, None)
+        tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, account_id)
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
@@ -188,25 +188,26 @@ class EnableS3LogsResources(AWSResource):
                 tag_resource.enable_s3_logs(arns, bucket_name, bucket_prefix, region_account_id)
 
     def create(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, region_account_id,
-               *args, **kwargs):
+               account_id, *args, **kwargs):
         print("ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket %s." % bucket_name)
         self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
-                                    False, filter_regex, region_account_id)
+                                    False, filter_regex, region_account_id, account_id)
         print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
 
         return {"S3_ENABLE": "Successful"}, "S3"
 
     def update(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, region_account_id,
-               *args, **kwargs):
+               account_id, *args, **kwargs):
         self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, region_account_id,
-                    *args, **kwargs)
+                    account_id, *args, **kwargs)
         print("updated S3 bucket to %s " % bucket_name)
         return {"S3_ENABLE": "Successful"}, "S3"
 
     def delete(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, remove_on_delete_stack,
-               *args, **kwargs):
+               account_id, *args, **kwargs):
         if remove_on_delete_stack:
-            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix, True, filter_regex, "")
+            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix, True,
+                                        filter_regex, "", account_id)
             print("ENABLE S3 LOGS - Completed the AWS resources S3 deletion to bucket.")
         else:
             print("ENABLE S3 LOGS - Skipping the AWS resources S3 deletion to bucket.")
@@ -220,7 +221,8 @@ class EnableS3LogsResources(AWSResource):
             "bucket_prefix": props.get("BucketPrefix"),
             "filter_regex": props.get("Filter"),
             "region_account_id": props.get("RegionAccountId"),
-            "remove_on_delete_stack": props.get("RemoveOnDeleteStack")
+            "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
+            "account_id": props.get("AccountID")
         }
 
 
@@ -984,13 +986,60 @@ class VpcResource(AWSResourcesAbstract):
         if arns:
             chunk_records = self._batch_size_chunk(arns, 1000)
             for record in chunk_records:
-                self.client.create_flow_logs(
+                response = self.client.create_flow_logs(
                     ResourceIds=record,
                     ResourceType='VPC',
                     TrafficType='ALL',
                     LogDestinationType='s3',
                     LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix + '/'
                 )
+                if "*Access Denied for LogDestination*" in str(response):
+                    self.add_bucket_policy(s3_bucket, s3_prefix)
+                    self.enable_s3_logs(arns, s3_bucket, s3_prefix)
+
+    def add_bucket_policy(self, bucket_name, prefix):
+        print("Adding policy to the bucket " + bucket_name)
+        s3 = boto3.client('s3')
+        try:
+            response = s3.get_bucket_policy(Bucket=bucket_name)
+            existing_policy = json.loads(response["Policy"])
+        except ClientError as e:
+            if "Error" in e.response and "Code" in e.response["Error"] \
+                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                existing_policy = {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                    ]
+                }
+            else:
+                raise e
+
+        bucket_policy = [{
+            "Sid": "AWSLogDeliveryAclCheck",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "delivery.logs.amazonaws.com"
+            },
+            "Action": "s3:GetBucketAcl",
+            "Resource": "arn:aws:s3:::" + bucket_name
+        },
+            {
+                "Sid": "AWSLogDeliveryWrite",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "delivery.logs.amazonaws.com"
+                },
+                "Action": "s3:PutObject",
+                "Resource": "arn:aws:s3:::" + bucket_name + "/" + prefix + "/AWSLogs/" + self.account_id + "/*",
+                "Condition": {
+                    "StringEquals": {
+                        "s3:x-amz-acl": "bucket-owner-full-control"
+                    }
+                }
+            }]
+        existing_policy["Statement"].extend(bucket_policy)
+
+        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
 
     def disable_s3_logs(self, arns, s3_bucket):
         if arns:
