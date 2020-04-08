@@ -1003,7 +1003,7 @@ class VpcResource(AWSResourcesAbstract):
                     ResourceType='VPC',
                     TrafficType='ALL',
                     LogDestinationType='s3',
-                    LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix + '/'
+                    LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix
                 )
                 if "*Access Denied for LogDestination*" in str(response):
                     self.add_bucket_policy(s3_bucket, s3_prefix)
@@ -1012,7 +1012,7 @@ class VpcResource(AWSResourcesAbstract):
                         ResourceType='VPC',
                         TrafficType='ALL',
                         LogDestinationType='s3',
-                        LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix + '/'
+                        LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix
                     )
 
     def add_bucket_policy(self, bucket_name, prefix):
