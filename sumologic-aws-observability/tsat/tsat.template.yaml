@@ -1,0 +1,293 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: "Template to setup the Common AWS and Sumo Logic resources."
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: "Sumo Logic Access Configuration (Required)"
+        Parameters:
+          - SumoDeployment
+          - SumoAccessID
+          - SumoAccessKey
+          - SumoOrganizationId
+          - RemoveSumoResourcesOnDeleteStack
+
+      - Label:
+          default: "Common Collector Details"
+        Parameters:
+          - CreateCollector
+          - CollectorName
+
+      - Label:
+          default: "Common CloudWatch Metrics Source Details"
+        Parameters:
+          - CreateAwsInventorySource
+          - AwsInventorySourceName
+          - AwsInventorySourceCategoryName
+          - Namespaces
+
+    ParameterLabels:
+      SumoDeployment:
+        default: "Sumo Logic Deployment Name"
+      SumoAccessID:
+        default: "Sumo Logic Access ID"
+      SumoAccessKey:
+        default: "Sumo Logic Access Key"
+      SumoOrganizationId:
+        default: "Sumo Logic Organization Id"
+      RemoveSumoResourcesOnDeleteStack:
+        default: "Delete Sumo Logic Resources when stack is deleted"
+
+      CreateCollector:
+        default: "Create Sumo Logic Collector"
+      CollectorName:
+        default: "Collector Name"
+
+      CreateAwsInventorySource:
+        default: "Create Sumo Logic AWS Inventory Source"
+      AwsInventorySourceName:
+        default: "Sumo Logic AWS Inventory Source Name"
+      AwsInventorySourceCategoryName:
+        default: "Sumo Logic AWS Inventory Source Category Name"
+      Namespaces:
+        default: "Namespaces for which Metrics need to be collected"
+
+Parameters:
+  SumoDeployment:
+    Type: String
+    AllowedValues:
+      - au
+      - ca
+      - de
+      - eu
+      - jp
+      - us2
+      - us1
+      - in
+      - fed
+      - nite
+    Description: "Enter au, ca, de, eu, jp, us2, in, fed or us1."
+    AllowedPattern: ".+"
+  SumoAccessID:
+    Type: String
+    Description: "The Sumo Logic Access ID."
+    AllowedPattern: ".+"
+  SumoAccessKey:
+    Type: String
+    Description: "The Sumo Logic Access Key."
+    AllowedPattern: ".+"
+    NoEcho: true
+  SumoOrganizationId:
+    Description: "The Account Overview page displays information about your Sumo Logic organization."
+    Type: String
+    AllowedPattern: ".+"
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Description: "To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
+                  Deletes the resources created by the stack. Deletion of updated resources will be skipped."
+    Type: String
+
+  CreateCollector:
+    Type: String
+    Description: "Yes - Create a new collector in Sumo Logic."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  CollectorName:
+    Type: String
+    Description: Change the collector name to be created else default name will be used.
+    Default: AWS-Collector
+
+  CreateAwsInventorySource:
+    Type: String
+    Description: "Choose Yes to create Sumo Logic Aws Inventory Source."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  AwsInventorySourceName:
+    Type: String
+    Description: Change the Aws Inventory Source name to be created else default name will be used.
+    Default: AWS-CloudWatch-Metrics-Source
+  AwsInventorySourceCategoryName:
+    Type: String
+    Description: "Existing - Change to an existing Source Category from Sumo Logic if Aws Inventory Source is not created.\n
+                  New - Default will be used if Aws Inventory Source is Created"
+    Default: AWS/CloudWatch/Metrics
+  Namespaces:
+    Default: "AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS"
+    Description: Provide Comma delimited list of the namespaces to collect.
+    Type: CommaDelimitedList
+
+Conditions:
+  install_aws_inventory_source: !Equals [!Ref CreateAwsInventorySource, 'Yes']
+  install_collector: !Equals [!Ref CreateCollector, 'Yes']
+
+Resources:
+
+  SumoLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  SumoLogicLambdaHelper:
+    Type: 'AWS::Serverless::Function'
+    DependsOn: SumoLambdaRole
+    Properties:
+      Handler: main.handler
+      Runtime: python3.7
+      CodeUri:
+        Bucket: !Sub "sumologiclambdahelper-${AWS::Region}"
+        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+      MemorySize: 128
+      Timeout: 900
+      Role:
+        Fn::GetAtt:
+          - SumoLambdaRole
+          - Arn
+
+  SumoSourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::246946804217:root
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
+      Path: "/"
+      Policies:
+        - PolicyName: SumoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - apigateway:GET
+                  - autoscaling:Describe*
+                  - ce:Get*
+                  - cur:Describe*
+                  - cloudfront:GetDistributionConfig
+                  - cloudfront:ListDistributions
+                  - cloudtrail:Describe*
+                  - cloudtrail:GetTrailStatus
+                  - cloudtrail:LookupEvents
+                  - cloudwatch:Describe*
+                  - cloudwatch:Get*
+                  - cloudwatch:List*
+                  - codedeploy:List*
+                  - dynamodb:Describe*
+                  - dynamodb:List*
+                  - ec2:Describe*
+                  - ecs:Describe*
+                  - ecs:List*
+                  - elasticache:Describe*
+                  - elasticache:List*
+                  - elasticfilesystem:Describe*
+                  - elasticloadbalancing:Describe*
+                  - elasticmapreduce:Describe*
+                  - elasticmapreduce:List*
+                  - es:Describe*
+                  - es:List*
+                  - health:Describe*
+                  - kinesis:Describe*
+                  - kinesis:List*
+                  - lambda:GetPolicy
+                  - lambda:List*
+                  - mq:Describe*
+                  - mq:List*
+                  - rds:Describe*
+                  - rds:List*
+                  - redshift:Describe*
+                  - route53:List*
+                  - sqs:ListQueues
+                  - ses:Get*
+                  - sns:List*
+                  - sqs:List*
+                  - tag:GetResources
+                  - tag:GetTagKeys
+                  - tag:GetTagValues
+                  - xray:BatchGetTraces
+                  - xray:Get*
+                Effect: Allow
+                Resource: "*"
+              - Action:
+                  - pi:DescribeDimensionKeys
+                  - pi:GetResourceMetrics
+                Effect: Allow
+                Resource: arn:aws:pi:*:*:metrics/*/*
+
+  SumoHostedCollector:
+    Type: Custom::Collector
+    Condition: install_collector
+    DependsOn: SumoLogicLambdaHelper
+    Properties:
+      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      CollectorName: !Ref CollectorName
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+
+  SumoAwsInventorySource:
+    Type: Custom::AWSSource
+    DependsOn: SumoHostedCollector
+    Condition: install_aws_inventory_source
+    Properties:
+      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      Region: !Ref "AWS::Region"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      SourceType: AwsInventory
+      Namespaces: !Ref Namespaces
+      SourceName: !Ref AwsInventorySourceName
+      SourceCategory: !Ref AwsInventorySourceCategoryName
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+      RoleArn: !GetAtt SumoSourceRole.Arn
+
+  sumoOverview:
+    Type: Custom::App
+    Properties:
+      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      Region: !Ref "AWS::Region"
+      AppName: "AWS Observability Overview App Tsat"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        lambdametricsrc: !Sub "_sourceCategory=Labs/AWS/Lambda/Metric"
+        dynamodbmetricsrc: !Sub "_sourceCategory=Labs/AWS/DynamoDB/Metrics"
+        ec2metricsrc: !Sub "_sourceCategory=Labs/AWS/Host/Metrics"
+        rdsmetricsrc: !Sub "_sourceCategory=Labs/AWS/RDS/Metric"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment

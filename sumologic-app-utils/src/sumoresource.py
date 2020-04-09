@@ -328,6 +328,12 @@ class AWSSource(BaseSource):
                 "limitToRegions": regions,
                 "limitToNamespaces": props.get("Namespaces")
             }
+        elif source_type == "AwsInventory":
+            return {
+                "type": "AwsInventoryPath",
+                "limitToRegions": regions,
+                "limitToNamespaces": props.get("Namespaces")
+            }
         else:
             return {
                 "type": "S3BucketPathExpression",
