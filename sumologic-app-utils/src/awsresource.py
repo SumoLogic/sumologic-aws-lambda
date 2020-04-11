@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import time
 from abc import abstractmethod
 
 import boto3
@@ -935,6 +936,7 @@ class S3Resource(AWSResourcesAbstract):
                                     GrantWrite='uri=http://acs.amazonaws.com/groups/s3/LogDelivery',
                                     GrantReadACP='uri=http://acs.amazonaws.com/groups/s3/LogDelivery'
                                 )
+                                time.sleep(20)
                                 self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus=bucket_logging)
                             else:
                                 raise e
@@ -1007,6 +1009,7 @@ class VpcResource(AWSResourcesAbstract):
                 )
                 if "*Access Denied for LogDestination*" in str(response):
                     self.add_bucket_policy(s3_bucket, s3_prefix)
+                    time.sleep(10)
                     self.client.create_flow_logs(
                         ResourceIds=record,
                         ResourceType='VPC',
