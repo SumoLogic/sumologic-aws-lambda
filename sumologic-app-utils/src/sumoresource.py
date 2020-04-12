@@ -129,11 +129,11 @@ class Collector(SumoResource):
         '''
         this should not have any sources?
         '''
-        sources = self.sumologic_cli.sources(collector_id, limit=10)
-
-        if remove_on_delete_stack and len(sources) == 0:
-            response = self.sumologic_cli.delete_collector({"collector": {"id": collector_id}})
-            print("deleted collector %s : %s" % (collector_id, response.text))
+        if remove_on_delete_stack:
+            sources = self.sumologic_cli.sources(collector_id, limit=10)
+            if len(sources) == 0:
+                response = self.sumologic_cli.delete_collector({"collector": {"id": collector_id}})
+                print("deleted collector %s : %s" % (collector_id, response.text))
         else:
             print("skipping collector deletion")
 
