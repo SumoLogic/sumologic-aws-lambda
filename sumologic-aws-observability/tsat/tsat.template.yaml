@@ -197,7 +197,7 @@ Resources:
       Runtime: python3.7
       CodeUri:
         Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-        Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        Key: !Sub "quickstart-sumo-logic-log-centralization/submodules/sumo-aws-apps/sumologic-app-utils/sumo_app_utils.zip"
       MemorySize: 128
       Timeout: 900
       Role:
