@@ -21,7 +21,7 @@ Metadata:
           - CollectorName
 
       - Label:
-          default: "Common CloudWatch Metrics Source Details"
+          default: "Common AWS Inventory Source Details"
         Parameters:
           - CreateAwsInventorySource
           - AwsInventorySourceName
@@ -52,7 +52,7 @@ Metadata:
       AwsInventorySourceCategoryName:
         default: "Sumo Logic AWS Inventory Source Category Name"
       Namespaces:
-        default: "Namespaces for which Metrics need to be collected"
+        default: "Limit Inventory collection to following namespaces"
 
 Parameters:
   SumoDeployment:
@@ -101,8 +101,8 @@ Parameters:
       - 'No'
   CollectorName:
     Type: String
-    Description: Change the collector name to be created else default name will be used.
-    Default: AWS-Collector
+    Description: "Change the collector name to be created else default name will be used."
+    Default: "AWS-Collector"
 
   CreateAwsInventorySource:
     Type: String
@@ -113,16 +113,16 @@ Parameters:
       - 'No'
   AwsInventorySourceName:
     Type: String
-    Description: Change the Aws Inventory Source name to be created else default name will be used.
-    Default: AWS-CloudWatch-Metrics-Source
+    Description: "Change the Aws Inventory Source name to be created else default name will be used."
+    Default: "AWS-Inventory-Source"
   AwsInventorySourceCategoryName:
     Type: String
     Description: "Existing - Change to an existing Source Category from Sumo Logic if Aws Inventory Source is not created.\n
                   New - Default will be used if Aws Inventory Source is Created"
-    Default: AWS/CloudWatch/Metrics
+    Default: "AWS/Inventory"
   Namespaces:
-    Default: "AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS"
-    Description: Provide Comma delimited list of the namespaces to collect.
+    Default: ""
+    Description: "Provide Comma delimited list of the namespaces to collect. For Eg.- AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS"
     Type: CommaDelimitedList
 
 Conditions:
@@ -220,7 +220,7 @@ Resources:
                 sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
       Path: "/"
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: SumoInventoryPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
