@@ -165,20 +165,20 @@ Metadata:
       Section4eALBS3LogsBucketName:
         default: "AWS S3 Bucket Name"
       Section4fALBCreateLogSource:
-        default: "Create Sumo Logic ELB Logs Source"
+        default: "Create Sumo Logic ALB Logs Source"
       Section4gALBS3LogsCollectorName:
-        default: "Sumo Logic ALB S3 Logs Collector Name"
+        default: "Sumo Logic ALB Logs Collector Name"
       Section4hALBLogsSourceName:
-        default: "Sumo Logic ALB ELB Logs Source Name"
+        default: "Sumo Logic ALB Logs Source Name"
       Section4iALBLogsSourceCategoryName:
-        default: "Sumo Logic ALB App ELB Logs Source Category Name"
+        default: "Sumo Logic ALB App Logs Source Category Name"
       Section4bALBCreateCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
       Section4cALBCloudWatchMetricsSourceCategoryName:
         default: "Sumo Logic ALB App CloudWatch Metrics Source Category Name"
 
       Section5aDynamoDBInstallApp:
-        default: "Install Dynamo DB App"
+        default: "Install DynamoDB App"
       Section5dDynamoDBCreateCloudTrailBucket:
         default: "Create AWS S3 Bucket for CloudTrail Logs"
       Section5eDynamoDBCloudTrailLogsBucketName:
@@ -239,15 +239,15 @@ Metadata:
       Section8fAPIGatewayCreateCloudTrailLogSource:
         default: "Create Sumo Logic CloudTrail Logs Source"
       Section8gAPIGatewayCloudTrailCollectorName:
-        default: "Sumo Logic Api Gateway CloudTrail Logs Collector Name"
+        default: "Sumo Logic API Gateway CloudTrail Logs Collector Name"
       Section8hAPIGatewayCloudTrailLogsSourceName:
-        default: "Sumo Logic Api Gateway CloudTrail Logs Source Name"
+        default: "Sumo Logic API Gateway CloudTrail Logs Source Name"
       Section8iAPIGatewayCloudTrailLogsSourceCategoryName:
-        default: "Sumo Logic Api Gateway App CloudTrail Logs Source Category Name"
+        default: "Sumo Logic API Gateway App CloudTrail Logs Source Category Name"
       Section8bAPIGatewayCreateCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
       Section8cAPIGatewayCloudWatchMetricsSourceCategoryName:
-        default: "Sumo Logic Lambda App CloudWatch Metrics Source Category Name"
+        default: "Sumo Logic Api Gateway App CloudWatch Metrics Source Category Name"
 
       Section9aAutoEnableTaggingAWSResources:
         default: "Auto Enable Tagging of new AWS Resources"
@@ -278,17 +278,17 @@ Parameters:
     Description: "Enter au, ca, de, eu, jp, us2, in, fed or us1."
   Section1bSumoLogicAccessID:
     Type: String
-    Description: "The Sumo Logic Access ID. Used for Sumo Logic API calls."
+    Description: "Sumo Logic Access ID. Used for Sumo Logic API calls."
     AllowedPattern: ".+"
     ConstraintDescription: "Sumo Logic Access ID can not be empty."
   Section1cSumoLogicAccessKey:
     Type: String
-    Description: "The Sumo Logic Access Key. Used for Sumo Logic API calls."
+    Description: "Sumo Logic Access Key. Used for Sumo Logic API calls."
     AllowedPattern: ".+"
     ConstraintDescription: "Sumo Logic Access Key can not be empty."
     NoEcho: true
   Section1dSumoLogicOrganizationId:
-    Description: "The Account Overview page displays information about your Sumo Logic organization. Used for IAM Role in Sumo Logic AWS Sources."
+    Description: "Appears on the Account Overview page that displays information about your Sumo Logic organization. Used for IAM Role in Sumo Logic AWS Sources."
     Type: String
     AllowedPattern: ".+"
     ConstraintDescription: "Sumo Logic Organization Id can not be empty."
@@ -297,7 +297,7 @@ Parameters:
       - true
       - false
     Default: true
-    Description: "To delete collectors, sources and apps when the stack is deleted, set this parameter to true. Default is true.
+    Description: "To delete collectors, sources and apps when the stack is deleted, set this parameter to True. Default is True.
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
@@ -310,142 +310,142 @@ Parameters:
   Section3aEC2InstallApp:
     Type: String
     Default: 'Yes'
-    Description: "Yes -> To Install EC2 App in Sumo Logic for AWS Observability Solution.
-                  No -> Skip Installation of the app."
+    Description: "Yes – Installs the EC2 App for the Sumo Logic AWS Observability Solution.
+                  No – Skips the installation of this app."
     AllowedValues:
       - 'Yes'
       - 'No'
   Section3bEC2CreateMetaDataSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic MetaData Source. A common metadata source will be created with the region selected.
-                  No -> If you already have a MetaData Source."
+    Description: "Yes – Creates Sumo Logic MetaData Source. A common metadata source will be created with the region selected.
+                  No – If you already have a MetaData Source configured."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section3cEC2AppSourceCategoryName:
     Type: String
-    Description: "Provide any existing EC2 Instances Host Metrics source category name."
+    Description: "Required Value. Provide any existing EC2 Instances Host Metrics source category names."
     Default: "hostmetrics"
 
   Section4aALBInstallApp:
     Type: String
     Default: 'Yes'
-    Description: "Yes -> To Install ALB App in Sumo Logic for AWS Observability Solution.
-                  No -> Skip Installation of the app."
+    Description: "Yes – Installs the ALB App for the Sumo Logic AWS Observability Solution.
+                  No – Skips the installation of this app."
     AllowedValues:
       - 'Yes'
       - 'No'
   Section4dALBCreateS3Bucket:
     Type: String
-    Description: "Yes -> Create a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.\n
-                  No -> Use an existing S3 bucket from AWS S3 which has ALB Logs."
+    Description: "Yes – Creates a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
+                  No – Uses an existing S3 bucket from AWS S3 which has ALB Logs."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section4eALBS3LogsBucketName:
     Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name which has ALB logs."
+    Description: "Required when Flag = No. Provide an existing bucket name that has ALB logs."
     Default: ""
   Section4fALBCreateLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic ELB Log Source which collect ALB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-alb-Region-AccountId.
-                  No -> If you already have an ELB Source collecting ALB logs into Sumo Logic."
+    Description: "Yes – Creates a Sumo Logic ALB Log Source that collects ALB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-alb-Region-AccountId.
+                  No – If you already have an ALB source collecting ALB logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section4gALBS3LogsCollectorName:
     Type: String
-    Description: "Required when Flag = No. Provide ALB app existing collector name from Sumo Logic."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the ALB app."
     Default: ""
   Section4hALBLogsSourceName:
     Type: String
-    Description: "Required when Flag = No. Provide ALB app existing source name from Sumo Logic. account, region and namespace Fields will be added."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the ALB app. Account, region and namespace Fields will be added."
     Default: ""
   Section4iALBLogsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide ALB app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the ALB app. Used for the app installation."
     Default: ""
   Section4bALBCreateCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No -> If you already have an CloudWatch Metrics Source collecting ALB metrics."
+    Description: "Yes – Creates a Sumo Logic CloudWatch Metrics Source which collects Metrics for multiple Namespaces from the region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
+                  No – If you already have a CloudWatch Metrics Source collecting ALB metrics."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section4cALBCloudWatchMetricsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide ALB app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the ALB app. Used for app installation."
     Default: ""
 
   Section5aDynamoDBInstallApp:
     Type: String
     Default: 'Yes'
-    Description: "Yes -> To Install DynamoDB App in Sumo Logic for AWS Observability Solution.
-                  No -> Skip Installation of the app."
+    Description: "Yes – Installs the DynamoDB App for the Sumo Logic AWS Observability Solution.
+                  No – Skips the installation of this app."
     AllowedValues:
       - 'Yes'
       - 'No'
   Section5dDynamoDBCreateCloudTrailBucket:
     Type: String
-    Description: "Yes -> Create a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.\n
-                  No -> Use an existing S3 bucket from AWS S3 which has CloudTrail Logs for DynamoDB."
+    Description: "Yes – Creates a new Common S3 bucket for all logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
+                  No – Uses an existing S3 bucket from AWS S3 which has CloudTrail Logs for DynamoDB."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section5eDynamoDBCloudTrailLogsBucketName:
     Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name which has CloudTrail logs for DynamoDB."
+    Description: "Required when Flag = No. Provide an Existing bucket name that has CloudTrail logs for DynamoDB."
     Default: ""
   Section5fDynamoDBCreateCloudTrailLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect DynamoDB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
-                  No -> If you already have an CloudTrail Log source collecting DynamoDB logs into Sumo Logic."
+    Description: "Yes – Creates a Sumo Logic CloudTrail Log Source that collects DynamoDB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
+                  No – If you already have a CloudTrail Log source collecting DynamoDB logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section5gDynamoDBCloudTrailCollectorName:
     Type: String
-    Description: "Required when Flag = No. Provide DynamoDB app existing collector name from Sumo Logic."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the DynamoDB app."
     Default: ""
   Section5hDynamoDBCloudTrailLogsSourceName:
     Type: String
-    Description: "Required when Flag = No. Provide DynamoDB app existing source name from Sumo Logic. account, region and namespace Fields will be added."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the DynamoDB app. Account, region and namespace fields will be added."
     Default: ""
   Section5iDynamoDBCloudTrailLogsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide DynamoDB app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the DynamoDB app. Used for the app installation."
     Default: ""
   Section5bDynamoDBCreateCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No -> If you already have an CloudWatch Metrics Source collecting DynamoDB metrics."
+    Description: "Yes – Creates a Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from the selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
+                  No – If you already have a CloudWatch Metrics Source collecting DynamoDB metrics."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section5cDynamoDBCloudWatchMetricsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide DynamoDB app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the DynamoDB app. Used for the app installation."
     Default: ""
 
   Section6aRDSInstallApp:
     Type: String
     Default: 'Yes'
-    Description: "Yes -> To Install RDS App in Sumo Logic for AWS Observability Solution.
-                  No -> Skip Installation of the app."
+    Description: "Yes – Installs the RDS App for the Sumo Logic AWS Observability Solution.
+                  No – Skips the installation of this app."
     AllowedValues:
       - 'Yes'
       - 'No'
   Section6bRDSCreateCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No -> If you already have an CloudWatch Metrics Source collecting RDS metrics."
+    Description: "Yes – Creates the Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from the selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
+                  No – If you already have a CloudWatch Metrics Source collecting RDS metrics."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -458,141 +458,141 @@ Parameters:
   Section7aLambdaInstallApp:
     Type: String
     Default: 'Yes'
-    Description: "Yes -> To Install Lambda App in Sumo Logic for AWS Observability Solution.
-                  No -> Skip Installation of the app."
+    Description: "Yes – Installs the Lambda App for the Sumo Logic AWS Observability Solution.
+                  No – Skips the installation of this app."
     AllowedValues:
       - 'Yes'
       - 'No'
   Section7dLambdaCreateCloudTrailBucket:
     Type: String
-    Description: "Yes -> Create a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.\n
-                 No -> Use an existing S3 bucket from AWS S3 which has CloudTrail Logs for lambda."
+    Description: "Yes – Creates a new Common S3 bucket for all logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
+                  No – Use an existing S3 bucket from AWS S3 that has CloudTrail Logs for Lambda."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section7eLambdaCloudTrailLogsBucketName:
     Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name which has CloudTrail logs for lambda."
+    Description: "Required when Flag = No. Provide an Existing bucket name that has CloudTrail logs for Lambda."
     Default: ""
   Section7fLambdaCreateCloudTrailLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect lambda logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
-                 No -> If you already have an CloudTrail Log source collecting lambda logs into Sumo Logic."
+    Description: "Yes – Creates a Sumo Logic CloudTrail Log Source that collects Lambda logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
+                  No – If you already have a CloudTrail Log source collecting Lambda logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section7gLambdaCloudTrailCollectorName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing collector name from Sumo Logic."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the Lambda app."
     Default: ""
   Section7hLambdaCloudTrailLogsSourceName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing source name from Sumo Logic. account, region and namespace Fields will be added."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the Lambda app existing source name from Sumo Logic. Account, region and namespace fields will be added."
     Default: ""
   Section7iLambdaCloudTrailLogsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the Lambda app. Used for the app installation."
     Default: ""
   Section7jLambdaCreateCloudWatchLogsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Log Source which collect Lambda logs from AWS. Default Name - AccountAlias-aws-observability-cloudwatch-logs-Region.
-                  No -> If you already have an CloudWatch Log source collecting Lambda logs into Sumo Logic."
+    Description: "Yes – Creates the Sumo Logic CloudWatch Log Source that collects Lambda logs from AWS. Default Name - AccountAlias-aws-observability-cloudwatch-logs-Region.
+                  No – If you already have a CloudWatch Log source collecting Lambda logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section7kLambdaCloudWatchLogsCollectorName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing CloudWatch logs collector name from Sumo Logic."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name used for CloudWatch logs in the Lambda app."
     Default: ""
   Section7lLambdaCloudWatchLogsSourceName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing CloudWatch logs source name from Sumo Logic. account, region and namespace Fields will be added."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name used for CloudWatch logs in the Lambda app. Account, region and namespace fields will be added."
     Default: ""
   Section7mLambdaCloudWatchLogsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing CloudWatch logs source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name used for CloudWatch logs in the Lambda app. Used for the app installation."
     Default: ""
   Section7bLambdaCreateCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                 No -> If you already have an CloudWatch Metrics Source collecting Lambda metrics."
+    Description: "Yes – Creates a Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from a selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
+                  No – If you already have a CloudWatch Metrics Source collecting Lambda metrics."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section7cLambdaCloudWatchMetricsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the Lambda app. Used for the app installation."
     Default: ""
 
   Section8aAPIGatewayInstallApp:
     Type: String
     Default: 'Yes'
-    Description: "Yes -> To Install API Gateway App in Sumo Logic for AWS Observability Solution.
-                  No -> Skip Installation of the app."
+    Description: "Yes – Installs the API Gateway App in Sumo Logic AWS Observability Solution.
+                  No – Skips the installation of this app."
     AllowedValues:
       - 'Yes'
       - 'No'
   Section8dAPIGatewayCreateCloudTrailBucket:
     Type: String
-    Description: "Yes -> Create a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.\n
-                 No -> Use an existing S3 bucket from AWS S3 which has CloudTrail Logs for API Gateway."
+    Description: "Yes – Creates a new Common S3 bucket for all logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
+                  No – Use an existing S3 bucket from AWS S3 that has CloudTrail Logs for API Gateway."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section8eAPIGatewayCloudTrailLogsBucketName:
     Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name which has CloudTrail logs for API Gateway."
+    Description: "Required when Flag = No. Provide an Existing bucket name that has CloudTrail logs for API Gateway."
     Default: ""
   Section8fAPIGatewayCreateCloudTrailLogSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudTrail Log Source which collect API Gateway logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
-                 No -> If you already have an CloudTrail Log source collecting API Gateway logs into Sumo Logic."
+    Description: "Yes – Creates a Sumo Logic CloudTrail Log Source that collects API Gateway logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
+                  No – If you already have a CloudTrail log source collecting API Gateway logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section8gAPIGatewayCloudTrailCollectorName:
     Type: String
-    Description: "Required when Flag = No. Provide API Gateway app existing collector name from Sumo Logic."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the API Gateway app."
     Default: ""
   Section8hAPIGatewayCloudTrailLogsSourceName:
     Type: String
-    Description: "Required when Flag = No. Provide API Gateway app existing source name from Sumo Logic. account, region and namespace Fields will be added."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the API Gateway app. Account, region and namespace fields will be added."
     Default: ""
   Section8iAPIGatewayCloudTrailLogsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide API Gateway app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the API Gateway app. Used for the app installation."
     Default: ""
   Section8bAPIGatewayCreateCloudWatchMetricsSource:
     Type: String
-    Description: "Yes -> To create Sumo Logic CloudWatch Metrics Source which collect Metrics for multiple Namespaces from region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                 No -> If you already have an CloudWatch Metrics Source collecting API Gateway metrics."
+    Description: "Yes – Creates a Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from the selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
+                  No – If you already have a CloudWatch Metrics Source collecting API Gateway metrics."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section8cAPIGatewayCloudWatchMetricsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide Lambda app existing source category name from Sumo Logic. Used for app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the Api Gateway app. Used for the app installation."
     Default: ""
 
   Section9aAutoEnableTaggingAWSResources:
     Type: String
-    Description: "Yes -> To automatically tag newly created EC2, ALB, RDS, API Gateway, Lambda and DynamoDB AWS resources to make them part of AWS Observability Solution.
-                  No - > New Resources will not be tagged and will not become a part of AWS Observability Solution"
+    Description: "Yes - Automatically tags newly created EC2, ALB, RDS, API Gateway, Lambda and DynamoDB AWS resources to make them part of AWS Observability Solution.
+                  No -  New Resources are not tagged and will not become a part of AWS Observability Solution."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
   Section9bAutoEnableS3LogsALBResources:
     Type: String
-    Description: "Yes -> To automatically enable S3 logging for existing and newly created ALB resources to collect logs for ALB resources. This does not affect ALB resources already collecting logs.
-                  No -> Does not enable logging for ALB resources."
+    Description: "Yes - Automatically enables S3 logging for existing and newly created ALB resources to collect logs for ALB resources. This does not affect ALB resources already collecting logs.
+                  No - Does not enable logging for ALB resources."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -600,11 +600,12 @@ Parameters:
   Section9cAutoEnableFilterExpression:
     Type: String
     Default: ""
-    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
+    Description: "Provide a regular expression for matching AWS resources. For example- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'
+                  If empty, all AWS resources will be tagged."
   Section9dAutoSubscribeLogGroupsLambda:
     Type: String
-    Description: "Yes -> To automatically Subscribe new log groups to lambda to send logs to Sumo Logic.
-                  No -> New lambda are not subscribed to send logs to Sumo Logic."
+    Description: "Yes - Automatically subscribes new log groups to lambda to send logs to Sumo Logic.
+                  No - New Lambda groups are not subscribed to send logs to Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -619,7 +620,8 @@ Parameters:
     AllowedValues:
       - 'true'
       - 'false'
-    Description: "Select true for subscribing existing logs groups. Select false for skipping existing log groups."
+    Description: "Select True for subscribing existing logs groups.
+                  Select False for skipping existing log groups."
 
 Conditions:
   # Conditions for EC2
