@@ -582,11 +582,15 @@ class App(SumoResource):
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
-        if "Amazon QuickStart" in appname:
-            folder_id = self._create_or_fetch_quickstart_apps_parent_folder("SumoLogic Amazon QuickStart Apps ")
-        else:
-            response = self.sumologic_cli.get_personal_folder()
-            folder_id = response.json()['id']
+        folder_id = None
+
+        while not folder_id:
+            if "Amazon QuickStart" in appname:
+                folder_id = self._create_or_fetch_quickstart_apps_parent_folder("SumoLogic Amazon QuickStart Apps ")
+            else:
+                response = self.sumologic_cli.get_personal_folder()
+                folder_id = response.json()['id']
+
         content = {'name': appname + datetime.now().strftime("_%d-%b-%Y_%H:%M:%S.%f"), 'description': appname,
                    'dataSourceValues': source_params, 'destinationFolderId': folder_id}
 
@@ -895,55 +899,38 @@ class SumoLogicFieldExtractionRule(SumoResource):
 if __name__ == '__main__':
 
     props = {
-        "SumoAccessID": "",
-        "SumoAccessKey": "",
+        "SumoAccessID": "suvp7c42zrgd93",
+        "SumoAccessKey": "r9D4Bu039gxIzC4tek5O18gTY2YB8Ut8Y4lWFTvHjm0KT6MXXUTeO91L5dGdd4Zz",
         "SumoDeployment": "us1",
     }
-    app_prefix = "CloudTrail"
-    # app_prefix = "GuardDuty"
-    collector_id = None
-    collector_type = "Hosted"
-    collector_name = "%sCollector" % app_prefix
-    source_name = "%sEvents" % app_prefix
-    source_category = "Labs/AWS/%s" % app_prefix
-    # appname = "Global Intelligence for Amazon GuardDuty"
-    appname = "Global Intelligence for AWS CloudTrail"
-    appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
-    # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
-    # appid = None
-    # source_params = {
-    #     "logsrc": "_sourceCategory=%s" % source_category
-    # }
-    source_params = {
-        "cloudtraillogsource": "_sourceCategory=%s" % source_category,
-        "indexname": '%rnd%',
-        "incrementalindex": "%rnd%"
-    }
-    # col = Collector(**params)
-    # src = HTTPSource(**params)
     app = App(props)
 
-    # create
-    # _, collector_id = col.create(collector_type, collector_name, source_category)
-    # _, source_id = src.create(collector_id, source_name, source_category)
+    app_names = {
+        "alb": "AWS Observability Alb App",
+        "rds": "AWS Observability Rds App",
+        "api": "AWS Observability Api Gateway App",
+        "dynamo": "AWS Observability DynamoDb App",
+        "ec2": "AWS Observability EC2 Metrics App",
+        "lambda": "AWS Observability Lambda App",
+        "overview": "AWS Observability Overview App"
+    }
 
-    _, app_folder_id = app.create(appname, source_params, appid)
-    app.delete(app_folder_id, True)
+    source_params = {
+        "alb": {"metricsrc": "_sourceCategory=Labs/AWS/ALB/Metrics", "logsrc": "_sourceCategory=Labs/AWS/ALB"},
+        "rds": {"paramId123": "_sourceCategory=Labs/AWS/RDS/Metric"},
+        "api": {"metricssrc": "_sourceCategory=Labs/AWS/APIGateway/Metric",
+                "logsrc": "_sourceCategory=Labs/AWS/CloudTrail/APIGateway"},
+        "dynamo": {"metricsrc": "_sourceCategory=Labs/AWS/DynamoDB/Metrics",
+                   "cloudtrail": "_sourceCategory=Labs/AWS/DynamoDB"},
+        "ec2": {"paramId123": "_sourceCategory=Labs/AWS/Host/Metrics"},
+        "lambda": {"metricssrc": "_sourceCategory=Labs/AWS/Lambda/Metric",
+                   "logsrccw": "_sourceCategory=Labs/AWS/Lambda", "logsrcct": "_sourceCategory=Labs/AWS/CloudTrail"},
+        "overview": {"lambdametricsrc": "_sourceCategory=Labs/AWS/Lambda/Metric",
+                     "dynamodbmetricsrc": "_sourceCategory=Labs/AWS/DynamoDB/Metrics",
+                     "ec2metricsrc": "_sourceCategory=Labs/AWS/Host/Metrics",
+                     "rdsmetricsrc": "_sourceCategory=Labs/AWS/RDS/Metric"}
+    }
 
-    # update
-    # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
-    # assert(collector_id == new_collector_id)
-    # _, new_source_id = src.update(collector_id, source_id, "%sEventsNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, date_format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", date_locator='\"createTime\":(.*),')
-    # assert(source_id == new_source_id)
-    # new_source_params = {
-    #     "logsrc": "_sourceCategory=%s" % ("Labs/AWS/%sNew" % app_prefix)
-    # }
-
-    # _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params, appid)
-    # assert(app_folder_id != new_app_folder_id)
-
-    # delete
-    # src.delete(collector_id, source_id, True)
-    # col.delete(collector_id, True)
-    # app.delete(new_app_folder_id, True)
+    for app_id, name in app_names.items():
+        app.create(name, source_params[app_id])
 
