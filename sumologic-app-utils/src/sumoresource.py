@@ -541,7 +541,7 @@ class App(SumoResource):
 
     def _create_or_fetch_quickstart_apps_parent_folder(self, folder_prefix):
         response = self.sumologic_cli.get_personal_folder()
-        folder_name = folder_prefix + str(datetime.now().strftime("%d-%m-%Y"))
+        folder_name = folder_prefix + str(datetime.now().strftime(" %d-%m-%Y"))
         description = "This folder contains all the apps created as a part of SumoLogic Amazon QuickStart Apps."
         try:
             folder = self.sumologic_cli.create_folder(folder_name, description, response.json()['id'])
@@ -591,7 +591,7 @@ class App(SumoResource):
                 response = self.sumologic_cli.get_personal_folder()
                 folder_id = response.json()['id']
 
-        content = {'name': appname + datetime.now().strftime("_%d-%b-%Y_%H:%M:%S.%f"), 'description': appname,
+        content = {'name': appname + datetime.now().strftime(" %d-%b-%Y %H:%M"), 'description': appname,
                    'dataSourceValues': source_params, 'destinationFolderId': folder_id}
 
         response = self.sumologic_cli.install_app(appid, content)
