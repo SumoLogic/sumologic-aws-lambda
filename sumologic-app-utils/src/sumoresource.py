@@ -591,7 +591,7 @@ class App(SumoResource):
                 response = self.sumologic_cli.get_personal_folder()
                 folder_id = response.json()['id']
 
-        content = {'name': appname + datetime.now().strftime(" %d-%b-%Y %H:%M"), 'description': appname,
+        content = {'name': appname + datetime.now().strftime(" %d-%b-%Y %H:%M:%S"), 'description': appname,
                    'dataSourceValues': source_params, 'destinationFolderId': folder_id}
 
         response = self.sumologic_cli.install_app(appid, content)
