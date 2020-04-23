@@ -42,7 +42,7 @@ Metadata:
           - Section4bALBCreateCloudWatchMetricsSource
           - Section4cALBCloudWatchMetricsSourceCategoryName
       - Label:
-          default: "4.2 Amazon ELB Source details"
+          default: "4.2 Amazon ALB Source details"
         Parameters:
           - Section4dALBCreateS3Bucket
           - Section4eALBS3LogsBucketName
@@ -325,7 +325,7 @@ Parameters:
       - 'No'
   Section3cEC2AppSourceCategoryName:
     Type: String
-    Description: "Required Value. Provide any existing EC2 Instances Host Metrics source category names."
+    Description: "Required Value. Provide any existing EC2 Instances Host Metrics source category names. Default value - hostmetrics"
     Default: "hostmetrics"
 
   Section4aALBInstallApp:
