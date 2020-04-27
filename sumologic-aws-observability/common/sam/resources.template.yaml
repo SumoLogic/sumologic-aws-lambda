@@ -365,6 +365,7 @@ Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub "aws-observability-lambda-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -374,7 +375,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: AwsObservabilityLambdaExecutePolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -382,16 +383,26 @@ Resources:
                 Action:
                   - tag:TagResources
                   - tag:UntagResources
-                  - rds:Describe*
-                  - rds:*Tag*
-                  - apigateway:*
-                  - ec2:Describe*
-                  - ec2:*Tag*
-                  - elasticloadbalancing:*
-                  - lambda:List*
-                  - lambda:*Tag*
-                  - dynamodb:List*
-                  - dynamodb:*Tag*
+                  - rds:DescribeDBClusters
+                  - rds:DescribeDBInstances
+                  - rds:AddTagsToResource
+                  - rds:RemoveTagsFromResource
+                  - apigateway:GET
+                  - apigateway:DELETE
+                  - ec2:DescribeInstances
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:AddTags
+                  - elasticloadbalancing:RemoveTags
+                  - elasticloadbalancing:ModifyLoadBalancerAttributes
+                  - lambda:ListFunctions
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                  - dynamodb:ListTables
+                  - dynamodb:TagResource
+                  - dynamodb:UntagResource
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -407,6 +418,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     DependsOn: SumoLambdaRole
     Properties:
+      FunctionName: !Sub "aws-observability-lambda-${AccountAlias}"
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
@@ -422,6 +434,7 @@ Resources:
   SumoSourceRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub "aws-observability-source-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -434,7 +447,7 @@ Resources:
                 sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
       Path: "/"
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: SumoLogicAwsSourcesPolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -486,7 +499,16 @@ Resources:
     Type: 'AWS::SNS::Topic'
     Condition: create_sns_subscription
     Properties:
-      TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
+      TopicName: !Join
+        - ""
+        - - "aws-observability-sns-topic-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
 
   SumoSNSpolicy:
     Condition: create_sns_subscription

@@ -108,6 +108,7 @@ Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName : !Sub "aws-observability-auto-tag-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -117,7 +118,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: AwsObservabilityLambdaExecutePolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -125,16 +126,26 @@ Resources:
                 Action:
                   - tag:TagResources
                   - tag:UntagResources
-                  - rds:Describe*
-                  - rds:*Tag*
-                  - apigateway:*
-                  - ec2:Describe*
-                  - ec2:*Tag*
-                  - elasticloadbalancing:*
-                  - lambda:List*
-                  - lambda:*Tag*
-                  - dynamodb:List*
-                  - dynamodb:*Tag*
+                  - rds:DescribeDBClusters
+                  - rds:DescribeDBInstances
+                  - rds:AddTagsToResource
+                  - rds:RemoveTagsFromResource
+                  - apigateway:GET
+                  - apigateway:DELETE
+                  - ec2:DescribeInstances
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:AddTags
+                  - elasticloadbalancing:RemoveTags
+                  - elasticloadbalancing:ModifyLoadBalancerAttributes
+                  - lambda:ListFunctions
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                  - dynamodb:ListTables
+                  - dynamodb:TagResource
+                  - dynamodb:UntagResource
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -143,6 +154,7 @@ Resources:
   AwsTagResourcesLambda:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: !Sub "aws-observability-auto-tag-${AccountAlias}"
       Code:
         S3Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
         S3Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"

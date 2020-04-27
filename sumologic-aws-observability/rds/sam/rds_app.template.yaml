@@ -200,6 +200,7 @@ Resources:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
+      RoleName : !Sub "aws-observability-lambda-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -209,7 +210,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: AwsObservabilityLambdaExecutePolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -217,8 +218,10 @@ Resources:
                 Action:
                   - tag:TagResources
                   - tag:UntagResources
-                  - rds:Describe*
-                  - rds:*Tag*
+                  - rds:DescribeDBClusters
+                  - rds:DescribeDBInstances
+                  - rds:AddTagsToResource
+                  - rds:RemoveTagsFromResource
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -229,6 +232,7 @@ Resources:
     DependsOn: SumoLogicHelperRole
     Condition: do_not_use_parent_stack
     Properties:
+      FunctionName: !Sub "aws-observability-lambda-${AccountAlias}"
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
@@ -245,6 +249,7 @@ Resources:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
+      RoleName : !Sub "aws-observability-source-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -257,7 +262,7 @@ Resources:
                 sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
       Path: "/"
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: SumoLogicAwsSourcesPolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:

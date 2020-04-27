@@ -26,7 +26,11 @@ def create(event, context):
     # if None is returned an ID will be generated. If a poll_create function is defined
     # return value is placed into the poll event as event['CrHelperData']['PhysicalResourceId']
     resource, resource_type, params = get_resource(event)
-    data, resource_id = resource.create(**params)
+    # Handle Exception to send a proper error to CF logs.
+    try:
+        data, resource_id = resource.create(**params)
+    except Exception as e:
+        raise e
     print(data)
     print(resource_id)
     helper.Data.update(data)
@@ -63,6 +67,7 @@ def delete(event, context):
 
 def handler(event, context):
     helper(event, context)
+
 
 if __name__ == "__main__":
     event = {}

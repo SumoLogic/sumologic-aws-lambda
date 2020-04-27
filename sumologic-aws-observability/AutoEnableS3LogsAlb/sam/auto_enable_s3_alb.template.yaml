@@ -120,6 +120,7 @@ Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName : !Sub "aws-observability-s3-auto-enable-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -129,7 +130,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: AwsObservabilityLambdaExecutePolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -137,7 +138,11 @@ Resources:
                 Action:
                   - tag:TagResources
                   - tag:UntagResources
-                  - elasticloadbalancing:*
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:AddTags
+                  - elasticloadbalancing:RemoveTags
+                  - elasticloadbalancing:ModifyLoadBalancerAttributess
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -148,6 +153,7 @@ Resources:
   AwsAlbS3LogsResourcesLambda:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: !Sub "aws-observability-s3-auto-enable-${AccountAlias}"
       Code:
         S3Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
         S3Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"

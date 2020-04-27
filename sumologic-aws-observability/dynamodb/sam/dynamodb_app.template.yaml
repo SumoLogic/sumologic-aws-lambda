@@ -261,6 +261,7 @@ Resources:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
+      RoleName : !Sub "aws-observability-lambda-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -270,7 +271,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: AwsObservabilityLambdaExecutePolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -278,8 +279,9 @@ Resources:
                 Action:
                   - tag:TagResources
                   - tag:UntagResources
-                  - dynamodb:List*
-                  - dynamodb:*Tag*
+                  - dynamodb:ListTables
+                  - dynamodb:TagResource
+                  - dynamodb:UntagResource
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -294,6 +296,7 @@ Resources:
     DependsOn: SumoLogicHelperRole
     Condition: do_not_use_parent_stack
     Properties:
+      FunctionName: !Sub "aws-observability-lambda-${AccountAlias}"
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
@@ -310,6 +313,7 @@ Resources:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
+      RoleName : !Sub "aws-observability-source-role-${AccountAlias}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -322,7 +326,7 @@ Resources:
                 sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
       Path: "/"
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: SumoLogicAwsSourcesPolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -560,7 +564,16 @@ Resources:
     Condition: install_cloudtrail_logs_source
     Type: "AWS::SNS::Topic"
     Properties:
-      TopicName: !Sub "SumoSNSTopic-${AWS::StackName}"
+      TopicName: !Join
+        - ""
+        - - "aws-observability-sns-topic-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
 
   SumoSNSSubscription:
     Condition: install_cloudtrail_logs_source
