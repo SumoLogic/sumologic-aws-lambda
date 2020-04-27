@@ -816,7 +816,16 @@ Resources:
         CreateCollector: !If [install_collector, 'Yes', 'No']
         CollectorName: !Sub "aws-observability-collector"
         CreateS3Bucket: !If [create_target_s3_bucket, 'Yes', 'No']
-        BucketName: !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}"
+        BucketName: !Join
+          - ""
+          - - "aws-observability-logs-"
+            - !Select
+              - 0
+              - !Split
+                - "-"
+                - !Select
+                  - 2
+                  - !Split ["/", !Ref "AWS::StackId"]
         CreateELBLogSource: !If [install_common_alb_s3_log_source, 'Yes', 'No']
         S3BucketPathExpression: !Sub "elasticloadbalancing/AWSLogs/${AWS::AccountId}/*"
         ELBLogsSourceName: !Sub "${Section2aAccountAlias}-aws-observability-alb-${AWS::Region}"
@@ -941,7 +950,7 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
         CollectorName: !Sub "aws-observability-collector"
         CreateS3Bucket: "No"
-        S3LogsBucketName: !If [create_alb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref Section4eALBS3LogsBucketName]
+        S3LogsBucketName: !If [create_alb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section4eALBS3LogsBucketName]
         CreateELBLogSource: !If [install_uncommon_alb_s3_log_source, "Yes", "No"]
         S3BucketPathExpression: "*"
         ELBLogsSourceName: !Sub "${Section2aAccountAlias}-aws-observability-alb-${AWS::Region}"
@@ -984,7 +993,7 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
         CollectorName: !Sub "aws-observability-collector"
         CreateCloudTrailBucket: "No"
-        CloudTrailLogsBucketName: !If [create_dynamodb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref Section5eDynamoDBCloudTrailLogsBucketName]
+        CloudTrailLogsBucketName: !If [create_dynamodb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section5eDynamoDBCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_dynamo_cloudtrail_log_source, "Yes", "No"]
         CloudTrailBucketPathExpression: "*"
         CloudTrailLogsSourceName: !If [install_uncommon_dynamo_cloudtrail_log_source, !Sub "${Section2aAccountAlias}-aws-observability-dynamodb-cloudtrail-${AWS::Region}", !Sub "${Section2aAccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
@@ -1061,7 +1070,7 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
         CollectorName: !Sub "aws-observability-collector"
         CreateCloudTrailBucket: "No"
-        CloudTrailLogsBucketName: !If [create_lambda_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref Section7eLambdaCloudTrailLogsBucketName]
+        CloudTrailLogsBucketName: !If [create_lambda_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section7eLambdaCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_lambda_cloudtrail_log_source, "Yes", "No"]
         CloudTrailBucketPathExpression: "*"
         CloudTrailLogsSourceName: !If [install_uncommon_lambda_cloudtrail_log_source, !Sub "${Section2aAccountAlias}-aws-observability-lambda-cloudtrail-${AWS::Region}", !Sub "${Section2aAccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
@@ -1105,7 +1114,7 @@ Resources:
         RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
         CollectorName: !Sub "aws-observability-collector"
         CreateCloudTrailBucket: "No"
-        CloudTrailLogsBucketName: !If [create_api_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref Section8eAPIGatewayCloudTrailLogsBucketName]
+        CloudTrailLogsBucketName: !If [create_api_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section8eAPIGatewayCloudTrailLogsBucketName]
         CreateCloudTrailLogSource: !If [install_uncommon_api_cloudtrail_log_source, "Yes", "No"]
         CloudTrailBucketPathExpression: "*"
         CloudTrailLogsSourceName: !If [install_uncommon_api_cloudtrail_log_source, !Sub "${Section2aAccountAlias}-aws-observability-api-cloudtrail-${AWS::Region}", !Sub "${Section2aAccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
@@ -1192,7 +1201,7 @@ Resources:
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
           - ".s3.amazonaws.com/sumologic-aws-observability/AutoEnableS3LogsAlb/sam/auto_enable_s3_alb.template.yaml"
       Parameters:
-        BucketName: !If [create_alb_bucket, !Sub "aws-observability-logs-${AWS::Region}-${AWS::AccountId}", !Ref Section4eALBS3LogsBucketName]
+        BucketName: !If [create_alb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section4eALBS3LogsBucketName]
         EnableS3LoggingALBResources: !Ref Section9bAutoEnableS3LogsALBResources
         FilterExpression: !Ref Section9cAutoEnableFilterExpression
         AccountAlias: !Ref Section2aAccountAlias

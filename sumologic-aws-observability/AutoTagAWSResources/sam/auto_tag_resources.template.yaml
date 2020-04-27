@@ -108,7 +108,16 @@ Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName : !Sub "aws-observability-auto-tag-role-${AccountAlias}"
+      RoleName : !Join
+        - ""
+        - - !Sub "aws-observability-auto-tag-role-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -132,6 +141,8 @@ Resources:
                   - rds:RemoveTagsFromResource
                   - apigateway:GET
                   - apigateway:DELETE
+                  - apigateway:POST
+                  - apigateway:PUT
                   - ec2:DescribeInstances
                   - ec2:CreateTags
                   - ec2:DeleteTags
@@ -154,7 +165,16 @@ Resources:
   AwsTagResourcesLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "aws-observability-auto-tag-${AccountAlias}"
+      FunctionName: !Join
+        - ""
+        - - !Sub "aws-observability-auto-tag-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       Code:
         S3Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
         S3Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"

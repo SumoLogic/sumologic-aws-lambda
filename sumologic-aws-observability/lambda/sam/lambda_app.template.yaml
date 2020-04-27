@@ -294,7 +294,16 @@ Resources:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
-      RoleName : !Sub "aws-observability-lambda-role-${AccountAlias}"
+      RoleName : !Join
+        - ""
+        - - !Sub "aws-observability-lambda-role-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -329,7 +338,16 @@ Resources:
     DependsOn: SumoLogicHelperRole
     Condition: do_not_use_parent_stack
     Properties:
-      FunctionName: !Sub "aws-observability-lambda-${AccountAlias}"
+      FunctionName: !Join
+        - ""
+        - - !Sub "aws-observability-lambda-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
@@ -346,7 +364,16 @@ Resources:
     Type: AWS::IAM::Role
     Condition: do_not_use_parent_stack
     Properties:
-      RoleName : !Sub "aws-observability-source-role-${AccountAlias}"
+      RoleName : !Join
+        - ""
+        - - !Sub "aws-observability-source-role-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:

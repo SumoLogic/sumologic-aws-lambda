@@ -365,7 +365,16 @@ Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "aws-observability-lambda-role-${AccountAlias}"
+      RoleName: !Join
+        - ""
+        - - !Sub "aws-observability-lambda-role-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -389,6 +398,8 @@ Resources:
                   - rds:RemoveTagsFromResource
                   - apigateway:GET
                   - apigateway:DELETE
+                  - apigateway:POST
+                  - apigateway:PUT
                   - ec2:DescribeInstances
                   - ec2:CreateTags
                   - ec2:DeleteTags
@@ -418,7 +429,16 @@ Resources:
     Type: 'AWS::Serverless::Function'
     DependsOn: SumoLambdaRole
     Properties:
-      FunctionName: !Sub "aws-observability-lambda-${AccountAlias}"
+      FunctionName: !Join
+        - ""
+        - - !Sub "aws-observability-lambda-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
@@ -434,7 +454,16 @@ Resources:
   SumoSourceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "aws-observability-source-role-${AccountAlias}"
+      RoleName: !Join
+        - ""
+        - - !Sub "aws-observability-source-role-${AccountAlias}-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -761,3 +790,6 @@ Outputs:
     Description: "Cloud Watch Lambda ARN"
     Condition: install_cloud_watch_logs_source
     Value: !GetAtt CloudWatchEventFunction.Outputs.SumoCWLogsLambdaArn
+  BucketName:
+    Description: "BucketName"
+    Value: !Ref BucketName
