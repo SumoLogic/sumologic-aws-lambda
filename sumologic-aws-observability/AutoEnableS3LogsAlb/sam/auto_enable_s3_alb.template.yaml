@@ -151,7 +151,7 @@ Resources:
                   - elasticloadbalancing:DescribeLoadBalancers
                   - elasticloadbalancing:AddTags
                   - elasticloadbalancing:RemoveTags
-                  - elasticloadbalancing:ModifyLoadBalancerAttributess
+                  - elasticloadbalancing:ModifyLoadBalancerAttributes
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents

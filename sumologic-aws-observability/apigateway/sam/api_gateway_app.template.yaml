@@ -574,7 +574,7 @@ Resources:
       IsLogging: true
       IsMultiRegionTrail: false
       S3BucketName: !Ref CloudTrailLogsBucketName
-      TrailName: !Sub "SumoCloudTrail-${AWS::StackName}"
+      TrailName: !Sub "Aws-Observability-${AccountAlias}"
 
   TargetS3Bucket:
     Condition: create_target_s3_bucket
@@ -594,7 +594,7 @@ Resources:
     Properties:
       TopicName: !Join
         - ""
-        - - "aws-observability-sns-topic-"
+        - - !Sub "aws-observability-sns-topic-${AccountAlias}-"
           - !Select
             - 0
             - !Split
