@@ -214,7 +214,16 @@ Resources:
             - elasticloadbalancing.amazonaws.com
           eventName:
             - CreateLoadBalancer
-      Name: !Sub "${AccountAlias}AutoEnableS3Logs"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-alb-s3-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsAlbS3LogsResourcesLambda.Arn

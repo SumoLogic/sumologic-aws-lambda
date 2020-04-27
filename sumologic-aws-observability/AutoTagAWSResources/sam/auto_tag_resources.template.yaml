@@ -215,7 +215,16 @@ Resources:
             - rds.amazonaws.com
           eventName:
             - CreateDBInstance
-      Name: !Sub "${AccountAlias}CreateDBInstanceRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-Instance-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -246,7 +255,16 @@ Resources:
             - rds.amazonaws.com
           eventName:
             - CreateDBCluster
-      Name: !Sub "${AccountAlias}CreateDBClusterRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-Cluster-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -277,7 +295,16 @@ Resources:
             - ec2.amazonaws.com
           eventName:
             - RunInstances
-      Name: !Sub "${AccountAlias}CreateInstanceRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-ec2-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -308,7 +335,16 @@ Resources:
             - dynamodb.amazonaws.com
           eventName:
             - CreateTable
-      Name: !Sub "${AccountAlias}CreateTableRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-dynamo-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -339,7 +375,16 @@ Resources:
             - elasticloadbalancing.amazonaws.com
           eventName:
             - CreateLoadBalancer
-      Name: !Sub "${AccountAlias}CreateLoadBalancerRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-alb-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -370,7 +415,16 @@ Resources:
             - lambda.amazonaws.com
           eventName:
             - CreateFunction20150331
-      Name: !Sub "${AccountAlias}CreateFunction20150331Rule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-lambda-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -401,7 +455,16 @@ Resources:
             - apigateway.amazonaws.com
           eventName:
             - CreateStage
-      Name: !Sub "${AccountAlias}CreateStageRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-api-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -432,7 +495,16 @@ Resources:
             - apigateway.amazonaws.com
           eventName:
             - CreateRestApi
-      Name: !Sub "${AccountAlias}CreateRestApiRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-restapi-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
@@ -463,7 +535,16 @@ Resources:
             - apigateway.amazonaws.com
           eventName:
             - CreateDeployment
-      Name: !Sub "${AccountAlias}CreateDeploymentRule"
+      Name: !Join
+        - ""
+        - - !Sub "${AccountAlias}-deployment-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
         - Arn: !GetAtt AwsTagResourcesLambda.Arn
