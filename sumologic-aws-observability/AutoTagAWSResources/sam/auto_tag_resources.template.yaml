@@ -204,7 +204,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_rds_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateDBInstance Event.
       EventPattern:
         source:
           - aws.rds
@@ -244,7 +244,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_rds_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateDBCluster Event.
       EventPattern:
         source:
           - aws.rds
@@ -284,7 +284,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_ec2_metrics_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for RunInstances event.
       EventPattern:
         source:
           - aws.ec2
@@ -324,7 +324,7 @@ Resources:
     Condition: add_dynamodb_tags
     DependsOn: AwsTagResourcesLambda
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateTable event.
       EventPattern:
         source:
           - aws.dynamodb
@@ -364,7 +364,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_alb_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateLoadBalancer event.
       EventPattern:
         source:
           - aws.elasticloadbalancing
@@ -404,7 +404,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_lambda_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateFunction20150331 event.
       EventPattern:
         source:
           - aws.lambda
@@ -444,7 +444,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_api_gateway_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateStage event.
       EventPattern:
         source:
           - aws.apigateway
@@ -484,7 +484,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_api_gateway_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateRestApi event.
       EventPattern:
         source:
           - aws.apigateway
@@ -524,7 +524,7 @@ Resources:
     DependsOn: AwsTagResourcesLambda
     Condition: add_api_gateway_tags
     Properties:
-      Description: Auto-tag resources with Lambda from events
+      Description: Auto-tag resources with Lambda for CreateDeployment event.
       EventPattern:
         source:
           - aws.apigateway
