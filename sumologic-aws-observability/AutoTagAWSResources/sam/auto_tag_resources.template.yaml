@@ -217,7 +217,7 @@ Resources:
             - CreateDBInstance
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-Instance-"
+        - - !Sub "aws-obs-${AccountAlias}-Instance-"
           - !Select
             - 0
             - !Split
@@ -257,7 +257,7 @@ Resources:
             - CreateDBCluster
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-Cluster-"
+        - - !Sub "aws-obs-${AccountAlias}-Cluster-"
           - !Select
             - 0
             - !Split
@@ -297,7 +297,7 @@ Resources:
             - RunInstances
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-ec2-"
+        - - !Sub "aws-obs-${AccountAlias}-ec2-"
           - !Select
             - 0
             - !Split
@@ -337,7 +337,7 @@ Resources:
             - CreateTable
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-dynamo-"
+        - - !Sub "aws-obs-${AccountAlias}-dynamo-"
           - !Select
             - 0
             - !Split
@@ -377,7 +377,7 @@ Resources:
             - CreateLoadBalancer
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-alb-"
+        - - !Sub "aws-obs-${AccountAlias}-alb-"
           - !Select
             - 0
             - !Split
@@ -417,7 +417,7 @@ Resources:
             - CreateFunction20150331
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-lambda-"
+        - - !Sub "aws-obs-${AccountAlias}-lambda-"
           - !Select
             - 0
             - !Split
@@ -457,7 +457,7 @@ Resources:
             - CreateStage
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-api-"
+        - - !Sub "aws-obs-${AccountAlias}-api-"
           - !Select
             - 0
             - !Split
@@ -497,7 +497,7 @@ Resources:
             - CreateRestApi
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-restapi-"
+        - - !Sub "aws-obs-${AccountAlias}-restapi-"
           - !Select
             - 0
             - !Split
@@ -537,7 +537,7 @@ Resources:
             - CreateDeployment
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-deployment-"
+        - - !Sub "aws-obs-${AccountAlias}-deployment-"
           - !Select
             - 0
             - !Split

@@ -216,7 +216,7 @@ Resources:
             - CreateLoadBalancer
       Name: !Join
         - ""
-        - - !Sub "${AccountAlias}-alb-s3-"
+        - - !Sub "aws-obs-${AccountAlias}-alb-s3-"
           - !Select
             - 0
             - !Split
