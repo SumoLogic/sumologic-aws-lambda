@@ -110,7 +110,7 @@ Resources:
     Properties:
       RoleName : !Join
         - ""
-        - - !Sub "aws-observability-auto-tag-role-${AccountAlias}-"
+        - - !Sub "sumo-tag-role-${AccountAlias}-"
           - !Select
             - 0
             - !Split
@@ -167,7 +167,7 @@ Resources:
     Properties:
       FunctionName: !Join
         - ""
-        - - !Sub "aws-observability-auto-tag-${AccountAlias}-"
+        - - !Sub "sumo-tag-${AccountAlias}-"
           - !Select
             - 0
             - !Split

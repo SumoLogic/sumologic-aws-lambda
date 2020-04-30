@@ -284,7 +284,7 @@ Resources:
     Properties:
       RoleName : !Join
         - ""
-        - - !Sub "aws-observability-lambda-role-${AccountAlias}-"
+        - - !Sub "sumo-lambda-role-${AccountAlias}-"
           - !Select
             - 0
             - !Split
@@ -323,7 +323,7 @@ Resources:
     Properties:
       FunctionName: !Join
         - ""
-        - - !Sub "aws-observability-lambda-${AccountAlias}-"
+        - - !Sub "sumo-lambda-${AccountAlias}-"
           - !Select
             - 0
             - !Split

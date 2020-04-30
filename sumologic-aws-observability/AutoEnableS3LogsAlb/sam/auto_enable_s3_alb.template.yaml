@@ -122,7 +122,7 @@ Resources:
     Properties:
       RoleName : !Join
         - ""
-        - - !Sub "aws-observability-s3-auto-enable-role-${AccountAlias}-"
+        - - !Sub "sumo-s3-enable-role-${AccountAlias}-"
           - !Select
             - 0
             - !Split
@@ -164,7 +164,7 @@ Resources:
     Properties:
       FunctionName: !Join
         - ""
-        - - !Sub "aws-observability-s3-auto-enable-${AccountAlias}-"
+        - - !Sub "sumo-s3-enable-${AccountAlias}-"
           - !Select
             - 0
             - !Split
