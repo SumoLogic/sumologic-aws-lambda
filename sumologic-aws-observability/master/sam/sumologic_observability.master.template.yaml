@@ -305,7 +305,8 @@ Parameters:
     Type: String
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
     AllowedPattern: "[a-zA-Z0-9]+"
-    ConstraintDescription: "Alias must only contain uppercase and lowercase letters and numbers."
+    ConstraintDescription: "Alias must only contain uppercase, lowercase letters, number and length less than or equal to 30 characters."
+    MaxLength: 30
 
   Section3aEC2InstallApp:
     Type: String

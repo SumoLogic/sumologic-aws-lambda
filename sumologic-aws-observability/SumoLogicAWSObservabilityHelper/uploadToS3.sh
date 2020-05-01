@@ -15,4 +15,8 @@ do
     aws s3 cp sumologic-aws-observability/ s3://$bucket_name/sumologic-aws-observability/ --recursive --exclude '.git/*' --exclude '.idea/*' --acl public-read
 done
 
+cd sumologic-aws-observability/master/sam/
+
+aws s3 cp sumologic_observability.master.template.yaml s3://sumologic-appdev-aws-sam-apps/ --acl public-read
+
 echo "End S3 upload Script....."
