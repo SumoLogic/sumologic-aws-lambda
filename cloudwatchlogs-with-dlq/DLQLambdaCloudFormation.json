@@ -46,12 +46,16 @@
             "ap-southeast-1": {"bucketname": "appdevzipfiles-ap-southeast-1"},
             "ap-southeast-2": {"bucketname": "appdevzipfiles-ap-southeast-2"},
             "ap-northeast-1": {"bucketname": "appdevzipfiles-ap-northeast-1"},
+            "ap-east-1": {"bucketname": "appdevzipfiles-ap-east-1s"},
+            "af-south-1": {"bucketname": "appdevzipfiles-af-south-1s"},
             "ca-central-1": {"bucketname": "appdevzipfiles-ca-central-1"},
             "eu-central-1": {"bucketname": "appdevzipfiles-eu-central-1"},
             "eu-west-1": {"bucketname": "appdevzipfiles-eu-west-1"},
             "eu-west-2": {"bucketname": "appdevzipfiles-eu-west-2"},
             "eu-west-3": {"bucketname": "appdevzipfiles-eu-west-3"},
             "eu-north-1": {"bucketname": "appdevzipfiles-eu-north-1s"},
+            "eu-south-1": {"bucketname": "appdevzipfiles-eu-south-1"},
+            "me-south-1": {"bucketname": "appdevzipfiles-me-south-1s"},
             "sa-east-1": {"bucketname": "appdevzipfiles-sa-east-1"}
         }
     },
