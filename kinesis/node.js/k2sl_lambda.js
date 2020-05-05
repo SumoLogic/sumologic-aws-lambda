@@ -24,7 +24,7 @@ var includeLogInfo = true; // default is true
 // Regex used to detect logs coming from lambda functions.
 // The regex will parse out the requestID and strip the timestamp
 // Example: 2016-11-10T23:11:54.523Z 108af3bb-a79b-11e6-8bd7-91c363cc05d9 some message
-var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\t(\w+?-\w+?-\w+?-\w+?-\w+)\t/;
+var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\s(\w+?-\w+?-\w+?-\w+?-\w+)\s(INFO|ERROR|WARN|DEBUG)?/;
 
 // Used to extract RequestID
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
