@@ -31,7 +31,7 @@
       },
       "LogStreamPrefix": {
         "Type": "String",
-        "Description": "Enter comma separated list of logStream name prefixes to filter by logStream",
+        "Description": "(Optional) Enter comma separated list of logStream name prefixes to filter by logStream. Please note this is seperate from a logGroup. This is used to only send certain logStreams within a cloudwatch logGroup(s). LogGroups still need to be subscribed to the created Lambda funciton, regardless of what is input for this value.",
         "Default": ""
       }
     },
