@@ -8,6 +8,25 @@ Globals:
   Function:
     Timeout: 300
     MemorySize: 128
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: Lambda Function for automatic subscription of any Sumo Logic lambda
+      function with loggroups matching an input pattern.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+    - lambda
+    - sumologic
+    - autosubscribe
+    - serverless
+    - loggroups
+    - cloudwatch
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.2/5122657d5b9a0d3713e24d3a33eae431
+    Name: sumologic-loggroup-connector
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.2/0490ecc943c35a5d04b00813554c06ad
+    SemanticVersion: 1.0.2
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
+    SpdxLicenseId: Apache-2.0
 Parameters:
   LambdaARN:
     Type: String
@@ -28,7 +47,7 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.1/188fa5e39f6b0e3d1087902cb169327d
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.2/06605e5d4a1e561027da885250b6d539
       Handler: loggroup-lambda-connector.handler
       Runtime: nodejs10.x
       Environment:
