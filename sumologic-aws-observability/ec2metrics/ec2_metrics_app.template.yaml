@@ -232,7 +232,7 @@ Resources:
                 Resource: '*'
 
   SumoLogicHelperFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: 'AWS::Serverless::Function'
     Condition: do_not_use_parent_stack
     Properties:
       FunctionName: !Join
@@ -247,9 +247,9 @@ Resources:
                 - !Split ["/", !Ref "AWS::StackId"]
       Handler: main.handler
       Runtime: python3.7
-      Code:
-        S3Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-        S3Key: "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+      CodeUri:
+        Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
+        Key: "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:
