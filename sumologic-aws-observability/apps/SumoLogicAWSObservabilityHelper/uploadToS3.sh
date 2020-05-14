@@ -12,7 +12,7 @@ do
     echo "Region is $region and Bucket Name is $bucket_name"
     cd ..\/..\/
 
-    aws s3 cp sumologic-aws-observability/ s3://$bucket_name/sumologic-aws-observability/ --recursive --exclude '.git/*' --exclude '.idea/*' --acl public-read
+    aws s3 cp sumologic-aws-observability/ s3://$bucket_name/sumologic-aws-observability/ --recursive --exclude '*.sh' --exclude '.git/*' --exclude '.idea/*' --acl public-read
 done
 
 cd sumologic-aws-observability/master/sam/
