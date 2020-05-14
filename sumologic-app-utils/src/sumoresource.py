@@ -476,8 +476,9 @@ class App(SumoResource):
     def _replace_source_category(self, appjson_filepath, sourceDict):
         with open(appjson_filepath, 'r') as old_file:
             text = old_file.read()
-            for k, v in sourceDict.items():
-                text = text.replace("$$%s" % k, v)
+            if sourceDict:
+                for k, v in sourceDict.items():
+                    text = text.replace("$$%s" % k, v)
             appjson = json.loads(text)
 
         return appjson
@@ -541,7 +542,7 @@ class App(SumoResource):
 
     def _create_or_fetch_quickstart_apps_parent_folder(self, folder_prefix):
         response = self.sumologic_cli.get_personal_folder()
-        folder_name = folder_prefix + str(datetime.now().strftime(" %d-%m-%Y"))
+        folder_name = folder_prefix + str(datetime.now().strftime(" %d-%b-%Y"))
         description = "This folder contains all the apps created as a part of SumoLogic Amazon QuickStart Apps."
         try:
             folder = self.sumologic_cli.create_folder(folder_name, description, response.json()['id'])
