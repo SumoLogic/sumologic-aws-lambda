@@ -177,7 +177,7 @@ Resources:
                 - !Split ["/", !Ref "AWS::StackId"]
       Code:
         S3Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-        S3Key: !Sub "sumologic-aws-observability/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        S3Key: !Sub "sumologic-aws-observability/apps/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       Handler: "awsresource.resource_tagging"
       Runtime: python3.7
       Role: !GetAtt SumoLambdaRole.Arn
