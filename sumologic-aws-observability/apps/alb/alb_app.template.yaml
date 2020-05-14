@@ -61,7 +61,7 @@ Metadata:
         default: "Delete Sumo Logic Resources when stack is deleted"
 
       Section2aTagExistingAWSResources:
-        default: "Tag Existing AWS EC2 Resources."
+        default: "Tag Existing AWS ALB Resources."
       Section2bAccountAlias:
         default: "Alias for AWS Account Identification"
       Section2cFilterExpression:

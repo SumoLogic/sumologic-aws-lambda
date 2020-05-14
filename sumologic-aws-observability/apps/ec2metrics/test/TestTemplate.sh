@@ -50,7 +50,7 @@ fi
 # Stack Name
 export stackName="${AppName}-${InstallType}"
 pwd
-aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./${AppName}/ec2_metrics_app.template.yaml --region ${AWS_REGION} \
+aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./apps/${AppName}/ec2_metrics_app.template.yaml --region ${AWS_REGION} \
 --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name ${stackName} \
 --parameter-overrides Section1aSumoDeployment="${Section1aSumoDeployment}" Section1bSumoAccessID="${Section1bSumoAccessID}" \
 Section1cSumoAccessKey="${Section1cSumoAccessKey}" Section1dSumoOrganizationId="${Section1dSumoOrganizationId}" \
