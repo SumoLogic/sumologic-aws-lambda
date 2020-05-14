@@ -21,22 +21,26 @@ export Section4bCloudWatchMetricsSourceName="Source-metrics-${AppName}-${Install
 export Section5dCloudTrailBucketPathExpression="*"
 export Section5fCloudTrailLogsSourceCategoryName="Labs/${AppName}/${InstallType}"
 export Section5bCloudTrailLogsBucketName="${AppName}-${InstallType}-${uid}"
+export Section6cCloudWatchLogsSourceCategoryName="Labs/cloudwatch/${AppName}/${InstallType}"
 
 export Section2aTagExistingAWSResources="No"
 export Section3aInstallApp="No"
 export Section4aCreateCloudWatchMetricsSource="No"
 export Section5aCreateCloudTrailBucket="No"
 export Section5cCreateCloudTrailLogSource="No"
+export Section6aCreateCloudWatchLogSource="No"
 
 if [[ "${InstallType}" == "all" ]]
 then
     export Section3bCollectorName="Sourabh-Collector-${AppName}-${InstallType}"
     export Section5eCloudTrailLogsSourceName="Source-${AppName}-${InstallType}"
+    export Section6bCloudWatchLogsSourceName="cloudwatch-${AppName}-${InstallType}"
     export Section2aTagExistingAWSResources="Yes"
     export Section3aInstallApp="Yes"
     export Section4aCreateCloudWatchMetricsSource="Yes"
     export Section5aCreateCloudTrailBucket="Yes"
     export Section5cCreateCloudTrailLogSource="Yes"
+    export Section6aCreateCloudWatchLogSource="Yes"
 elif [[ "${InstallType}" == "onlyapp" ]]
 then
     export Section3aInstallApp="Yes"
@@ -59,14 +63,24 @@ then
     export Section5eCloudTrailLogsSourceName="Source-${AppName}-${InstallType}"
     export Section5cCreateCloudTrailLogSource="Yes"
     export Section5bCloudTrailLogsBucketName="sumologiclambdahelper-${AWS_REGION}"
+elif [[ "${InstallType}" == "onlycloudwatchlogsource" ]]
+then
+    export Section3bCollectorName="Sourabh-Collector-${AppName}-${InstallType}"
+    export Section6bCloudWatchLogsSourceName="cloudwatch-${AppName}-${InstallType}"
+    export Section6aCreateCloudWatchLogSource="Yes"
 elif [[ "${InstallType}" == "updatesourceonly" ]]
 then
     export Section3bCollectorName="Sourabh-Collector-${AppName}-onlylogsourcewithoutbucket"
     export Section5eCloudTrailLogsSourceName="Source-${AppName}-onlylogsourcewithoutbucket"
+elif [[ "${InstallType}" == "updatecloudwatchsourceonly" ]]
+then
+    export Section3bCollectorName="Sourabh-Collector-${AppName}-onlycloudwatchlogsource"
+    export Section6bCloudWatchLogsSourceName="cloudwatch-${AppName}-onlycloudwatchlogsource"
 elif [[ "${InstallType}" == "nothing" ]]
 then
     export Section3bCollectorName=""
     export Section5eCloudTrailLogsSourceName=""
+    export Section6bCloudWatchLogsSourceName=""
 else
     echo "No Valid Choice."
 fi
@@ -74,7 +88,7 @@ fi
 # Stack Name
 export stackName="${AppName}-${InstallType}"
 pwd
-aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./apps/${AppName}/dynamodb_app.template.yaml --region ${AWS_REGION} \
+aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./apps/${AppName}/lambda_app.template.yaml --region ${AWS_REGION} \
 --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name ${stackName} \
 --parameter-overrides Section1aSumoDeployment="${Section1aSumoDeployment}" Section1bSumoAccessID="${Section1bSumoAccessID}" \
 Section1cSumoAccessKey="${Section1cSumoAccessKey}" Section1dSumoOrganizationId="${Section1dSumoOrganizationId}" \
@@ -84,4 +98,6 @@ Section4bCloudWatchMetricsSourceName="${Section4bCloudWatchMetricsSourceName}" S
 Section5eCloudTrailLogsSourceName="${Section5eCloudTrailLogsSourceName}" Section5fCloudTrailLogsSourceCategoryName="${Section5fCloudTrailLogsSourceCategoryName}" \
 Section2aTagExistingAWSResources="${Section2aTagExistingAWSResources}" Section3aInstallApp="${Section3aInstallApp}" \
 Section4aCreateCloudWatchMetricsSource="${Section4aCreateCloudWatchMetricsSource}" Section5aCreateCloudTrailBucket="${Section5aCreateCloudTrailBucket}" \
-Section5cCreateCloudTrailLogSource="${Section5cCreateCloudTrailLogSource}" Section5bCloudTrailLogsBucketName="${Section5bCloudTrailLogsBucketName}"
+Section5cCreateCloudTrailLogSource="${Section5cCreateCloudTrailLogSource}" Section5bCloudTrailLogsBucketName="${Section5bCloudTrailLogsBucketName}" \
+Section6aCreateCloudWatchLogSource="${Section6aCreateCloudWatchLogSource}" Section6cCloudWatchLogsSourceCategoryName="${Section6cCloudWatchLogsSourceCategoryName}" \
+Section6bCloudWatchLogsSourceName="${Section6bCloudWatchLogsSourceName}"

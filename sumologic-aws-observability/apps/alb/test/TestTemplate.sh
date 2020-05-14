@@ -18,7 +18,7 @@ export Section1eRemoveSumoResourcesOnDeleteStack=true
 export Section2bAccountAlias=${InstallType}
 export Section2cFilterExpression=".*"
 export Section4bCloudWatchMetricsSourceName="Source-metrics-${AppName}-${InstallType}"
-export Section5dS3BucketPathExpression="ALB_LOGS"
+export Section5dS3BucketPathExpression="*"
 export Section5fALBLogsSourceCategoryName="Labs/${AppName}/${InstallType}"
 export Section5bS3LogsBucketName="${AppName}-${InstallType}-${uid}"
 
