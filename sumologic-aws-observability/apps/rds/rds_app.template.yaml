@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: "Template to setup the API Gateway app with AWS and Sumo Logic resources for AWS Observability Solution."
+Description: "Template to setup the RDS app with AWS and Sumo Logic resources for AWS Observability Solution."
 
 Metadata:
   'AWS::CloudFormation::Interface':
@@ -61,7 +61,7 @@ Metadata:
         default: "Delete Sumo Logic Resources when stack is deleted"
 
       Section2aTagExistingAWSResources:
-        default: "Tag Existing AWS API Gateway Resources."
+        default: "Tag Existing AWS RDS Resources."
       Section2bAccountAlias:
         default: "Alias for AWS Account Identification"
       Section2cFilterExpression:
@@ -134,7 +134,7 @@ Parameters:
 
   Section2aTagExistingAWSResources:
     Type: String
-    Description: "Yes - Tags the existing AWS API Gateway resources with key - Value as account - account alias.
+    Description: "Yes - Tags the existing AWS RDS resources with key - Value as account - account alias.
                   No - Skip AWS Resources tagging."
     Default: 'Yes'
     AllowedValues:
@@ -153,7 +153,7 @@ Parameters:
 
   Section3aInstallApp:
     Type: String
-    Description: "Yes - Installs the API Gateway App for the Sumo Logic AWS Observability Solution.
+    Description: "Yes - Installs the RDS App for the Sumo Logic AWS Observability Solution.
                   No - Skips the installation of this app."
     Default: 'Yes'
     AllowedValues:
@@ -167,7 +167,7 @@ Parameters:
   Section4aCreateCloudWatchMetricsSource:
     Type: String
     Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source which collects Metrics for multiple Namespaces from the region selected.
-                  No - If you already have a CloudWatch Metrics Source collecting API Gateway metrics."
+                  No - If you already have a CloudWatch Metrics Source collecting RDS metrics."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
@@ -208,7 +208,7 @@ Parameters:
     Type: String
     Description: "Existing - Change to an existing Source Category from Sumo Logic if CloudTrail Source is not created.\n
                   New - Default will be used if CloudTrail Source is Created"
-    Default: AWS/API/Gateway/CloudTrail/Logs
+    Default: AWS/Rds/CloudTrail/Logs
 
   Section6aParentStackName:
     Type: String
@@ -259,14 +259,14 @@ Conditions:
   create_target_s3_bucket: !Equals [!Ref Section5aCreateCloudTrailBucket, 'Yes']
   install_cloudtrail_logs_source: !Equals [!Ref Section5cCreateCloudTrailLogSource, 'Yes']
   install_cloud_watch_metric_source: !Equals [!Ref Section4aCreateCloudWatchMetricsSource, 'Yes']
-  update_api_gateway_source: !And
+  update_rds_source: !And
     - !Not [!Condition install_cloudtrail_logs_source]
     - !Not [!Equals [!Ref Section5eCloudTrailLogsSourceName, '']]
     - !Not [!Equals [!Ref Section3bCollectorName, '']]
   install_collector: !Or
     - !Condition install_cloudtrail_logs_source
     - !Condition install_cloud_watch_metric_source
-    - !Condition update_api_gateway_source
+    - !Condition update_rds_source
 
 Resources:
   SumoLogicHelperRole:
@@ -288,6 +288,12 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - rds:DescribeDBClusters
+                  - rds:DescribeDBInstances
+                  - rds:AddTagsToResource
+                  - rds:RemoveTagsFromResource
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -295,12 +301,6 @@ Resources:
                   - cloudtrail:DeleteTrail
                   - cloudtrail:UpdateTrail
                   - cloudtrail:StartLogging
-                  - tag:TagResources
-                  - tag:UntagResources
-                  - apigateway:GET
-                  - apigateway:DELETE
-                  - apigateway:POST
-                  - apigateway:PUT
                 Resource: '*'
 
   SumoLogicHelperFunction:
@@ -374,7 +374,7 @@ Resources:
           'Fn::Sub': '${Section6aParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
       Region: !Ref "AWS::Region"
-      AWSResource: apigateway
+      AWSResource: rds
       Tags:
         account: !Ref Section2bAccountAlias
       AccountID: !Ref "AWS::AccountId"
@@ -402,7 +402,7 @@ Resources:
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
-  APIGatewayMetricRule:
+  RDSMetricRule:
     Type: Custom::SumoLogicMetricRules
     Properties:
       ServiceToken: !If
@@ -413,15 +413,15 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${Section6aParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: false
-      MetricRuleName: "AwsObservabilityApiGatewayMetricsEntityRule"
-      MatchExpression: "Namespace=AWS/ApiGateway ApiName=*"
+      MetricRuleName: "AwsObservabilityRDSMetricsEntityRule"
+      MatchExpression: "Namespace=AWS/RDS cluster=*"
       ExtractVariables:
-        entity: "$ApiName._1"
+        entity: "$cluster._1"
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
-  APIGatewayFieldExtractionRule:
+  RdsFieldExtractionRule:
     Type: Custom::SumoLogicFieldExtractionRule
     Properties:
       ServiceToken: !If
@@ -433,7 +433,7 @@ Resources:
           'Fn::Sub': '${Section6aParentStackName}-SumoLogicHelperFunctionARN'
       RemoveOnDeleteStack: false
       FieldExtractionRuleName: "AwsObservabilityFieldExtractionRule"
-      FieldExtractionRuleScope: !Sub "(_sourceCategory=${Section5fCloudTrailLogsSourceCategoryName} \"eventSource\":\"apigateway.amazonaws.com\")"
+      FieldExtractionRuleScope: !Sub "(_sourceCategory=${Section5fCloudTrailLogsSourceCategoryName} \"eventSource\":\"rds.amazonaws.com\")"
       FieldExtractionRuleParseExpression: "| json \"eventSource\" | where eventSource in (\"rds.amazonaws.com\", \"apigateway.amazonaws.com\", \"lambda.amazonaws.com\", \"dynamodb.amazonaws.com\") | if (eventSource matches \"rds.amazonaws.com\", \"aws/rds\", if (eventSource matches \"apigateway.amazonaws.com\",  \"aws/apigateway\", if (eventSource matches \"lambda.amazonaws.com\",  \"aws/lambda\", if (eventSource matches \"dynamodb.amazonaws.com\",  \"aws/dynamodb\", \"\")))) as Namespace"
       FieldExtractionRuleParseEnabled: true
       SumoAccessID: !Ref Section1bSumoAccessID
@@ -474,10 +474,10 @@ Resources:
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
       SourceType: AwsCloudWatch
       Namespaces:
-        - 'AWS/ApiGateway'
+        - 'AWS/RDS'
       SourceName: !Ref Section4bCloudWatchMetricsSourceName
       CollectorId: !If
-        - install_collector
+        - install_cloud_watch_metric_source
         - !GetAtt
           - SumoHostedCollector
           - COLLECTOR_ID
@@ -506,10 +506,10 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${Section6aParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      AppName: "AWS Observability Api Gateway App"
+      AppName: "AWS Observability Rds App"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
       AppSources:
-        logsrc: !Sub "_sourceCategory=${Section5fCloudTrailLogsSourceCategoryName}"
+        paramId123: !Sub "_sourceCategory=${Section5fCloudTrailLogsSourceCategoryName}"
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
@@ -673,7 +673,7 @@ Resources:
 
   SumoCloudTrailUpdateSource:
     Type: Custom::SumoLogicUpdateFields
-    Condition: update_api_gateway_source
+    Condition: update_rds_source
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
