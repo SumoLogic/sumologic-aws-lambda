@@ -8,54 +8,59 @@ Metadata:
       - Label:
           default: "Sumo Logic Access Configuration (Required)"
         Parameters:
-          - SumoDeployment
-          - SumoAccessID
-          - SumoAccessKey
-          - SumoOrganizationId
-          - RemoveSumoResourcesOnDeleteStack
+          - Section1aSumoDeployment
+          - Section1bSumoAccessID
+          - Section1cSumoAccessKey
+          - Section1dSumoOrganizationId
+          - Section1eRemoveSumoResourcesOnDeleteStack
 
       - Label:
-          default: "Common Collector Details"
+          default: "App Details - Sumo Logic Collector Configuration"
         Parameters:
-          - CreateCollector
-          - CollectorName
+          - Section2aInstallApp
+          - Section2bCollectorName
 
       - Label:
-          default: "Common AWS Inventory Source Details"
+          default: "AWS Inventory Source Details"
         Parameters:
-          - CreateAwsInventorySource
-          - AwsInventorySourceName
-          - AwsInventorySourceCategoryName
-          - Namespaces
+          - Section3aCreateAwsInventorySource
+          - Section3bAwsInventorySourceName
+          - Section3cNamespaces
+
+      - Label:
+          default: "Local Parameters. Do Not Edit the values."
+        Parameters:
+          - Section4aParentStackName
 
     ParameterLabels:
-      SumoDeployment:
+      Section1aSumoDeployment:
         default: "Sumo Logic Deployment Name"
-      SumoAccessID:
+      Section1bSumoAccessID:
         default: "Sumo Logic Access ID"
-      SumoAccessKey:
+      Section1cSumoAccessKey:
         default: "Sumo Logic Access Key"
-      SumoOrganizationId:
+      Section1dSumoOrganizationId:
         default: "Sumo Logic Organization Id"
-      RemoveSumoResourcesOnDeleteStack:
+      Section1eRemoveSumoResourcesOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted"
 
-      CreateCollector:
-        default: "Create Sumo Logic Collector"
-      CollectorName:
+      Section2aInstallApp:
+        default: "Create AWS Anomaly App"
+      Section2bCollectorName:
         default: "Collector Name"
 
-      CreateAwsInventorySource:
+      Section3aCreateAwsInventorySource:
         default: "Create Sumo Logic AWS Inventory Source"
-      AwsInventorySourceName:
+      Section3bAwsInventorySourceName:
         default: "Sumo Logic AWS Inventory Source Name"
-      AwsInventorySourceCategoryName:
-        default: "Sumo Logic AWS Inventory Source Category Name"
-      Namespaces:
+      Section3cNamespaces:
         default: "Limit Inventory collection to following namespaces"
 
+      Section4aParentStackName:
+        default: "If Any, Name of parent Stack"
+
 Parameters:
-  SumoDeployment:
+  Section1aSumoDeployment:
     Type: String
     AllowedValues:
       - au
@@ -67,67 +72,72 @@ Parameters:
       - us1
       - in
       - fed
-      - nite
     Description: "Enter au, ca, de, eu, jp, us2, in, fed or us1."
-    AllowedPattern: ".+"
-  SumoAccessID:
+  Section1bSumoAccessID:
     Type: String
-    Description: "The Sumo Logic Access ID."
+    Description: "Sumo Logic Access ID. Used for Sumo Logic API calls."
     AllowedPattern: ".+"
-  SumoAccessKey:
+    ConstraintDescription: "Sumo Logic Access ID can not be empty."
+  Section1cSumoAccessKey:
     Type: String
-    Description: "The Sumo Logic Access Key."
+    Description: "Sumo Logic Access Key. Used for Sumo Logic API calls."
     AllowedPattern: ".+"
+    ConstraintDescription: "Sumo Logic Access Key can not be empty."
     NoEcho: true
-  SumoOrganizationId:
-    Description: "The Account Overview page displays information about your Sumo Logic organization."
+  Section1dSumoOrganizationId:
+    Description: "Appears on the Account Overview page that displays information about your Sumo Logic organization. Used for IAM Role in Sumo Logic AWS Sources."
     Type: String
     AllowedPattern: ".+"
-  RemoveSumoResourcesOnDeleteStack:
+    ConstraintDescription: "Sumo Logic Organization Id can not be empty."
+  Section1eRemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
       - false
     Default: true
-    Description: "To delete collector, sources and app when stack is deleted, set this parameter to true. Default is true.
+    Description: "To delete collectors, sources and apps when the stack is deleted, set this parameter to True. Default is True.
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
-  CreateCollector:
+  Section2aInstallApp:
     Type: String
-    Description: "Yes - Create a new collector in Sumo Logic."
+    Description: "Yes - Installs the Anomaly App for the Sumo Logic AWS Observability Solution.
+                  No - Skips the installation of this app."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
-  CollectorName:
+  Section2bCollectorName:
     Type: String
     Description: "Change the collector name to be created else default name will be used."
-    Default: "AWS-Collector"
+    Default: ""
 
-  CreateAwsInventorySource:
+  Section3aCreateAwsInventorySource:
     Type: String
-    Description: "Choose Yes to create Sumo Logic Aws Inventory Source."
+    Description: "Choose Yes to create Sumo Logic Aws Inventory Source. Choose No to skip Source Creation."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
-  AwsInventorySourceName:
+  Section3bAwsInventorySourceName:
     Type: String
     Description: "Change the Aws Inventory Source name to be created else default name will be used."
-    Default: "AWS-Inventory-Source"
-  AwsInventorySourceCategoryName:
-    Type: String
-    Description: "Existing - Change to an existing Source Category from Sumo Logic if Aws Inventory Source is not created.\n
-                  New - Default will be used if Aws Inventory Source is Created"
-    Default: "AWS/Inventory"
-  Namespaces:
+    Default: ""
+  Section3cNamespaces:
     Default: ""
     Description: "Provide Comma delimited list of the namespaces to collect. For Eg.- AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS"
     Type: CommaDelimitedList
 
+  Section4aParentStackName:
+    Type: String
+    Default: "ParentStackName"
+    Description: Parent Stack Name. Do Not Edit the value.
+
 Conditions:
-  install_aws_inventory_source: !Equals [!Ref CreateAwsInventorySource, 'Yes']
-  install_collector: !Equals [!Ref CreateCollector, 'Yes']
+  do_not_use_parent_stack: !Equals [ !Ref Section4aParentStackName, "ParentStackName"]
+
+  install_app: !Equals [!Ref Section2aInstallApp, 'Yes']
+
+  install_aws_inventory_source: !Equals [!Ref Section3aCreateAwsInventorySource, 'Yes']
 
 Mappings:
   RegionMap:
@@ -166,8 +176,9 @@ Mappings:
 
 Resources:
 
-  SumoLambdaRole:
+  SumoLogicHelperRole:
     Type: AWS::IAM::Role
+    Condition: do_not_use_parent_stack
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -178,7 +189,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: SumoPolicy
+        - PolicyName: AwsObservabilityLambdaExecutePolicies
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -189,35 +200,46 @@ Resources:
                   - logs:PutLogEvents
                 Resource: '*'
 
-  SumoLogicLambdaHelper:
+  SumoLogicHelperFunction:
     Type: 'AWS::Serverless::Function'
-    DependsOn: SumoLambdaRole
+    Condition: do_not_use_parent_stack
     Properties:
+      FunctionName: !Join
+        - ""
+        - - "sumo-lambda-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
       Handler: main.handler
       Runtime: python3.7
       CodeUri:
         Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-        Key: !Sub "quickstart-sumo-logic-log-centralization/submodules/sumo-aws-apps/sumologic-app-utils/sumo_app_utils.zip"
+        Key: "sumologic-aws-observability/apps/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       MemorySize: 128
       Timeout: 900
       Role:
         Fn::GetAtt:
-          - SumoLambdaRole
+          - SumoLogicHelperRole
           - Arn
 
-  SumoSourceRole:
+  SumoRole:
     Type: AWS::IAM::Role
+    Condition: install_aws_inventory_source
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              AWS: arn:aws:iam::246946804217:root
+              AWS: arn:aws:iam::926226587429:root
             Action: sts:AssumeRole
             Condition:
               StringEquals:
-                sts:ExternalId: !Sub "${SumoDeployment}:${SumoOrganizationId}"
+                sts:ExternalId: !Sub "${Section1aSumoDeployment}:${Section1dSumoOrganizationId}"
       Path: "/"
       Policies:
         - PolicyName: SumoInventoryPolicy
@@ -281,48 +303,59 @@ Resources:
 
   SumoHostedCollector:
     Type: Custom::Collector
-    Condition: install_collector
-    DependsOn: SumoLogicLambdaHelper
+    Condition: install_aws_inventory_source
     Properties:
-      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${Section4aParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      CollectorName: !Ref CollectorName
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
+      RemoveOnDeleteStack: !If [do_not_use_parent_stack, !Ref Section1eRemoveSumoResourcesOnDeleteStack, false]
+      CollectorName: !Ref Section2bCollectorName
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
 
   SumoAwsInventorySource:
     Type: Custom::AWSSource
-    DependsOn: SumoHostedCollector
     Condition: install_aws_inventory_source
     Properties:
-      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${Section4aParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
       SourceType: AwsInventory
-      Namespaces: !Ref Namespaces
-      SourceName: !Ref AwsInventorySourceName
-      SourceCategory: !Ref AwsInventorySourceCategoryName
+      Namespaces: !Ref Section3cNamespaces
+      SourceName: !Ref Section3bAwsInventorySourceName
       CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
-      RoleArn: !GetAtt SumoSourceRole.Arn
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+      RoleArn: !GetAtt SumoRole.Arn
 
   sumoOverview:
     Type: Custom::App
+    Condition: install_app
     Properties:
-      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${Section4aParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
       AppName: "AWS Observability Overview App Tsat"
-      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
-      AppSources:
-        lambdametricsrc: !Sub "_sourceCategory=Labs/AWS/Lambda/Metric"
-        dynamodbmetricsrc: !Sub "_sourceCategory=Labs/AWS/DynamoDB/Metrics"
-        ec2metricsrc: !Sub "_sourceCategory=Labs/AWS/Host/Metrics"
-        rdsmetricsrc: !Sub "_sourceCategory=Labs/AWS/RDS/Metric"
-      SumoAccessID: !Ref SumoAccessID
-      SumoAccessKey: !Ref SumoAccessKey
-      SumoDeployment: !Ref SumoDeployment
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
