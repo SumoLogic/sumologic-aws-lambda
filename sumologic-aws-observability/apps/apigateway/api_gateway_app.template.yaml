@@ -256,8 +256,10 @@ Conditions:
   tag_existing_aws_resources: !Equals [!Ref Section2aTagExistingAWSResources, 'Yes']
 
   install_app: !Equals [!Ref Section3aInstallApp, 'Yes']
-  create_target_s3_bucket: !Equals [!Ref Section5aCreateCloudTrailBucket, 'Yes']
   install_cloudtrail_logs_source: !Equals [!Ref Section5cCreateCloudTrailLogSource, 'Yes']
+  create_target_s3_bucket: !And
+    - !Equals [!Ref Section5aCreateCloudTrailBucket, 'Yes']
+    - !Condition create_sns_topic
   install_cloud_watch_metric_source: !Equals [!Ref Section4aCreateCloudWatchMetricsSource, 'Yes']
   update_api_gateway_source: !And
     - !Not [!Condition install_cloudtrail_logs_source]
@@ -267,6 +269,10 @@ Conditions:
     - !Condition install_cloudtrail_logs_source
     - !Condition install_cloud_watch_metric_source
     - !Condition update_api_gateway_source
+
+  create_sns_topic: !And
+    - !Condition do_not_use_parent_stack
+    - !Condition install_cloudtrail_logs_source
 
 Resources:
   SumoLogicHelperRole:
@@ -579,7 +585,7 @@ Resources:
             Topic: !Ref SumoSNSTopic
 
   SumoSNSTopic:
-    Condition: install_cloudtrail_logs_source
+    Condition: create_sns_topic
     Type: "AWS::SNS::Topic"
     Properties:
       TopicName: !Join
@@ -597,8 +603,11 @@ Resources:
     Condition: install_cloudtrail_logs_source
     Type: "AWS::SNS::Subscription"
     Properties:
-      TopicArn:
-        Ref: SumoSNSTopic
+      TopicArn: !If
+        - create_sns_topic
+        - !Ref SumoSNSTopic
+        - !ImportValue
+          'Fn::Sub': '${Section6aParentStackName}-SNSTopicArn'
       Endpoint: !GetAtt SumoCloudTrailSource.SUMO_ENDPOINT
       Protocol: https
       DeliveryPolicy:
@@ -612,7 +621,7 @@ Resources:
           backoffFunction: exponential
 
   SumoSNSpolicy:
-    Condition: install_cloudtrail_logs_source
+    Condition: create_sns_topic
     Type: "AWS::SNS::TopicPolicy"
     Properties:
       PolicyDocument:

@@ -108,16 +108,6 @@ Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName : !Join
-        - ""
-        - - !Sub "sumo-tag-role-${AccountAlias}-"
-          - !Select
-            - 0
-            - !Split
-              - "-"
-              - !Select
-                - 2
-                - !Split ["/", !Ref "AWS::StackId"]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -177,7 +167,7 @@ Resources:
                 - !Split ["/", !Ref "AWS::StackId"]
       Code:
         S3Bucket: !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-        S3Key: !Sub "sumologic-aws-observability/apps/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
+        S3Key: "sumologic-aws-observability/apps/SumoLogicAWSObservabilityHelper/SumoLogicAWSObservabilityHelper.zip"
       Handler: "awsresource.resource_tagging"
       Runtime: python3.7
       Role: !GetAtt SumoLambdaRole.Arn
@@ -201,7 +191,6 @@ Resources:
 
   RdsDbInstanceEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_rds_tags
     Properties:
       Description: Auto-tag resources with Lambda for CreateDBInstance Event.
@@ -241,7 +230,6 @@ Resources:
 
   RdsDbClusterEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_rds_tags
     Properties:
       Description: Auto-tag resources with Lambda for CreateDBCluster Event.
@@ -281,7 +269,6 @@ Resources:
 
   CreateInstanceEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_ec2_metrics_tags
     Properties:
       Description: Auto-tag resources with Lambda for RunInstances event.
@@ -322,7 +309,6 @@ Resources:
   CreateTableEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
     Condition: add_dynamodb_tags
-    DependsOn: AwsTagResourcesLambda
     Properties:
       Description: Auto-tag resources with Lambda for CreateTable event.
       EventPattern:
@@ -361,7 +347,6 @@ Resources:
 
   CreateLoadBalancerEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_alb_tags
     Properties:
       Description: Auto-tag resources with Lambda for CreateLoadBalancer event.
@@ -401,7 +386,6 @@ Resources:
 
   CreateFunction20150331EventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_lambda_tags
     Properties:
       Description: Auto-tag resources with Lambda for CreateFunction20150331 event.
@@ -441,7 +425,6 @@ Resources:
 
   CreateStageEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_api_gateway_tags
     Properties:
       Description: Auto-tag resources with Lambda for CreateStage event.
@@ -481,7 +464,6 @@ Resources:
 
   CreateRestApiEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_api_gateway_tags
     Properties:
       Description: Auto-tag resources with Lambda for CreateRestApi event.
@@ -521,7 +503,6 @@ Resources:
 
   CreateDeploymentEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    DependsOn: AwsTagResourcesLambda
     Condition: add_api_gateway_tags
     Properties:
       Description: Auto-tag resources with Lambda for CreateDeployment event.
