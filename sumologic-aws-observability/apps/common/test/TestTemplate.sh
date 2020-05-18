@@ -17,51 +17,39 @@ export Section1eRemoveSumoResourcesOnDeleteStack=true
 
 export Section2aAccountAlias=${InstallType}
 export Section4bCloudWatchMetricsSourceName="Source-metrics-${AppName}-${InstallType}"
-export Section5dCloudTrailBucketPathExpression="*"
-export Section5fCloudTrailLogsSourceCategoryName="Labs/${AppName}/${InstallType}"
 export Section5bCommonBucketName="${AppName}-${InstallType}-${uid}"
 
 export Section3aCreateCollector="No"
 export Section4aCreateCloudWatchMetricsSource="No"
 export Section5aCreateCommonBucket="No"
-export Section5cCreateCloudTrailLogSource="No"
+export Section5cCreateTrail="No"
 
 if [[ "${InstallType}" == "all" ]]
 then
     export Section3bCollectorName="Sourabh-Collector-${AppName}-${InstallType}"
-    export Section5eCloudTrailLogsSourceName="Source-${AppName}-${InstallType}"
     export Section3aCreateCollector="Yes"
     export Section4aCreateCloudWatchMetricsSource="Yes"
     export Section5aCreateCommonBucket="Yes"
-    export Section5cCreateCloudTrailLogSource="Yes"
+    export Section5cCreateTrail="Yes"
+elif [[ "${InstallType}" == "onlycollector" ]]
+then
+    export Section3bCollectorName="Sourabh-Collector-${AppName}-${InstallType}"
+    export Section3aCreateCollector="Yes"
 elif [[ "${InstallType}" == "onlycwsource" ]]
 then
     export Section3bCollectorName="Sourabh-Collector-${AppName}-${InstallType}"
     export Section4aCreateCloudWatchMetricsSource="Yes"
     export Section3aCreateCollector="Yes"
-elif [[ "${InstallType}" == "onlylogsourcewithbucket" ]]
+elif [[ "${InstallType}" == "onlybukcetwithtrail" ]]
 then
-    export Section3bCollectorName="Sourabh-Collector-${AppName}-${InstallType}"
-    export Section5eCloudTrailLogsSourceName="Source-${AppName}-${InstallType}"
+    export Section5cCreateTrail="Yes"
     export Section5aCreateCommonBucket="Yes"
-    export Section5cCreateCloudTrailLogSource="Yes"
-    export Section3aCreateCollector="Yes"
-elif [[ "${InstallType}" == "onlylogsourcewithoutbucket" ]]
+elif [[ "${InstallType}" == "onlybukcetwithouttrail" ]]
 then
-    export Section3bCollectorName="Sourabh-Collector-${AppName}-${InstallType}"
-    export Section5eCloudTrailLogsSourceName="Source-${AppName}-${InstallType}"
-    export Section5cCreateCloudTrailLogSource="Yes"
-    export Section3aCreateCollector="Yes"
-    export Section5bCommonBucketName="sumologiclambdahelper-${AWS_REGION}"
-elif [[ "${InstallType}" == "updatesourceonl" ]]
-then
-    export Section3bCollectorName="Sourabh-Collector-${AppName}-onlylogsourcewithoutbucket"
-    export Section5eCloudTrailLogsSourceName="Source-${AppName}-onlylogsourcewithoutbucket"
-    export Section3aCreateCollector="Yes"
+    export Section5aCreateCommonBucket="Yes"
 elif [[ "${InstallType}" == "nothing" ]]
 then
     export Section3bCollectorName=""
-    export Section5eCloudTrailLogsSourceName=""
 else
     echo "No Valid Choice."
 fi
@@ -74,9 +62,7 @@ aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./apps/${AppN
 --parameter-overrides Section1aSumoDeployment="${Section1aSumoDeployment}" Section1bSumoAccessID="${Section1bSumoAccessID}" \
 Section1cSumoAccessKey="${Section1cSumoAccessKey}" Section1dSumoOrganizationId="${Section1dSumoOrganizationId}" \
 Section1eRemoveSumoResourcesOnDeleteStack="${Section1eRemoveSumoResourcesOnDeleteStack}" Section2aAccountAlias="${Section2aAccountAlias}" \
-Section3bCollectorName="${Section3bCollectorName}" \
-Section4bCloudWatchMetricsSourceName="${Section4bCloudWatchMetricsSourceName}" Section5dCloudTrailBucketPathExpression="${Section5dCloudTrailBucketPathExpression}" \
-Section5eCloudTrailLogsSourceName="${Section5eCloudTrailLogsSourceName}" Section5fCloudTrailLogsSourceCategoryName="${Section5fCloudTrailLogsSourceCategoryName}" \
-Section3aCreateCollector="${Section3aCreateCollector}" \
+Section3bCollectorName="${Section3bCollectorName}" Section5cCreateTrail="${Section5cCreateTrail}" \
+Section4bCloudWatchMetricsSourceName="${Section4bCloudWatchMetricsSourceName}" Section3aCreateCollector="${Section3aCreateCollector}" \
 Section4aCreateCloudWatchMetricsSource="${Section4aCreateCloudWatchMetricsSource}" Section5aCreateCommonBucket="${Section5aCreateCommonBucket}" \
-Section5cCreateCloudTrailLogSource="${Section5cCreateCloudTrailLogSource}" Section5bCommonBucketName="${Section5bCommonBucketName}"
+Section5bCommonBucketName="${Section5bCommonBucketName}"

@@ -33,14 +33,11 @@ Metadata:
           - Section4cNamespaces
 
       - Label:
-          default: "CloudTrail Log Source Configuration"
+          default: "S3 Bucket Configuration"
         Parameters:
           - Section5aCreateCommonBucket
           - Section5bCommonBucketName
-          - Section5cCreateCloudTrailLogSource
-          - Section5dCloudTrailBucketPathExpression
-          - Section5eCloudTrailLogsSourceName
-          - Section5fCloudTrailLogsSourceCategoryName
+          - Section5cCreateTrail
 
     ParameterLabels:
       Section1aSumoDeployment:
@@ -73,14 +70,8 @@ Metadata:
         default: "Create AWS S3 Bucket"
       Section5bCommonBucketName:
         default: "AWS S3 Bucket Name"
-      Section5cCreateCloudTrailLogSource:
-        default: "Create Sumo Logic CloudTrail Logs Source"
-      Section5dCloudTrailBucketPathExpression:
-        default: "Path Expression for the logs"
-      Section5eCloudTrailLogsSourceName:
-        default: "Sumo Logic CloudTrail Logs Source Name"
-      Section5fCloudTrailLogsSourceCategoryName:
-        default: "Sumo Logic CloudTrail Logs Source Category Name"
+      Section5cCreateTrail:
+        default: "Create Trail for the provided Bucket"
 
 Parameters:
   Section1aSumoDeployment:
@@ -170,32 +161,17 @@ Parameters:
     Type: String
     Description: "Existing Bucket Name - Provide value if the Flag is set to No.
                   New Bucket Name - Provide a unique Bucket Name if the flag is set to Yes."
-  Section5cCreateCloudTrailLogSource:
+    Default: ""
+  Section5cCreateTrail:
     Type: String
-    Description: "Choose Yes to create Sumo Logic Cloud Trail Log Source with provided bucket Name."
+    Description: "Yes - Create a trail for the provided S3 Bucket"
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section5dCloudTrailBucketPathExpression:
-    Type: String
-    Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
-    Default: "*"
-  Section5eCloudTrailLogsSourceName:
-    Type: String
-    Description: Change the CloudTrail Source name to be created else default name will be used.
-    Default: ""
-  Section5fCloudTrailLogsSourceCategoryName:
-    Type: String
-    Description: "Existing - Change to an existing Source Category from Sumo Logic if CloudTrail Source is not created.\n
-                  New - Default will be used if CloudTrail Source is Created"
-    Default: AWS/DynamoDb/CloudTrail/Logs
 
 Conditions:
   create_target_s3_bucket: !Equals [!Ref Section5aCreateCommonBucket, 'Yes']
-  install_cloudtrail_logs_source: !And
-    - !Equals [!Ref Section5cCreateCloudTrailLogSource, 'Yes']
-    - !Condition install_collector
   install_cloud_watch_metric_source: !And
     - !Equals [!Ref Section4aCreateCloudWatchMetricsSource, 'Yes']
     - !Condition install_collector
@@ -203,14 +179,9 @@ Conditions:
   create_sns_subscription: !Or
     - !Condition create_target_s3_bucket
     - !Condition install_collector
-  create_trail: !And
+  create_cloudtrail: !And
     - !Condition create_target_s3_bucket
-    - !Condition install_cloudtrail_logs_source
-  update_cloudtrail_source: !And
-    - !Not [!Condition install_cloudtrail_logs_source]
-    - !Condition install_collector
-    - !Not [!Equals [!Ref Section5eCloudTrailLogsSourceName, '']]
-    - !Not [!Equals [!Ref Section3bCollectorName, '']]
+    - !Equals [!Ref Section5cCreateTrail, 'Yes']
 
 Mappings:
   RegionMap:
@@ -482,59 +453,6 @@ Resources:
           - Event: s3:ObjectCreated:Put
             Topic: !Ref SumoSNSTopic
 
-  SumoCloudTrailSource:
-    Condition: install_cloudtrail_logs_source
-    Type: Custom::AWSSource
-    Properties:
-      SourceType: AwsCloudTrailBucket
-      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
-      Region: !Ref "AWS::Region"
-      SourceName: !Ref Section5eCloudTrailLogsSourceName
-      TargetBucketName: !Ref Section5bCommonBucketName
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      SourceCategory: !Ref Section5fCloudTrailLogsSourceCategoryName
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
-      SumoAccessID: !Ref Section1bSumoAccessID
-      SumoAccessKey: !Ref Section1cSumoAccessKey
-      SumoDeployment: !Ref Section1aSumoDeployment
-      PathExpression: !Ref Section5dCloudTrailBucketPathExpression
-      RoleArn: !GetAtt SumoSourceRole.Arn
-      Fields:
-        account: !Ref Section2aAccountAlias
-
-  SumoCloudTrailUpdateSource:
-    Type: Custom::SumoLogicUpdateFields
-    Condition: update_cloudtrail_source
-    Properties:
-      ServiceToken: !GetAtt SumoLogicLambdaHelper.Arn
-      Region: !Ref "AWS::Region"
-      SourceName: !Ref Section5eCloudTrailLogsSourceName
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
-      SumoAccessID: !Ref Section1bSumoAccessID
-      SumoAccessKey: !Ref Section1cSumoAccessKey
-      SumoDeployment: !Ref Section1aSumoDeployment
-      Fields:
-        account: !Ref Section2aAccountAlias
-
-  SumoCloudTrailSNSSubscription:
-    Condition: install_cloudtrail_logs_source
-    Type: "AWS::SNS::Subscription"
-    Properties:
-      TopicArn:
-        Ref: SumoSNSTopic
-      Endpoint: !GetAtt SumoCloudTrailSource.SUMO_ENDPOINT
-      Protocol: https
-      DeliveryPolicy:
-        healthyRetryPolicy:
-          numRetries: 40
-          minDelayTarget: 10
-          maxDelayTarget: 300
-          numMinDelayRetries: 3
-          numMaxDelayRetries: 5
-          numNoDelayRetries: 0
-          backoffFunction: exponential
-
   SumoBucketPolicy:
     Condition: create_target_s3_bucket
     Type: AWS::S3::BucketPolicy
@@ -581,7 +499,7 @@ Resources:
       - TargetS3Bucket
 
   SumoCloudTrail:
-    Condition: create_trail
+    Condition: create_cloudtrail
     Type: Custom::AWSTrail
     DependsOn: SumoBucketPolicy
     Properties:

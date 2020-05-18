@@ -22,26 +22,27 @@ Metadata:
           - Section2cFilterExpression
 
       - Label:
-          default: "App Details - Sumo Logic Collector Configuration"
+          default: "App Details - Sumo Logic App Configuration"
         Parameters:
           - Section3aInstallApp
-          - Section3bCollectorName
 
       - Label:
           default: "App Details - CloudWatch Metrics Source Configuration"
         Parameters:
-          - Section4aCreateCloudWatchMetricsSource
-          - Section4bCloudWatchMetricsSourceName
+          - Section4aCloudWatchMetricCollectorName
+          - Section4bCreateCloudWatchMetricsSource
+          - Section4cCloudWatchMetricsSourceName
 
       - Label:
           default: "App Details - ALB Source Log Source Configuration"
         Parameters:
           - Section5aCreateS3Bucket
           - Section5bS3LogsBucketName
-          - Section5cCreateALBLogSource
-          - Section5dS3BucketPathExpression
-          - Section5eALBLogsSourceName
-          - Section5fALBLogsSourceCategoryName
+          - Section5cALBCollectorName
+          - Section5dCreateALBLogSource
+          - Section5eS3BucketPathExpression
+          - Section5fALBLogsSourceName
+          - Section5gALBLogsSourceCategoryName
 
       - Label:
           default: "Local Parameters. Do Not Edit the values."
@@ -69,25 +70,27 @@ Metadata:
 
       Section3aInstallApp:
         default: "Install Sumo Logic App"
-      Section3bCollectorName:
-        default: "Collector Name"
 
-      Section4aCreateCloudWatchMetricsSource:
+      Section4aCloudWatchMetricCollectorName:
+        default: "CloudWatch Metrics Source Collector Name"
+      Section4bCreateCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
-      Section4bCloudWatchMetricsSourceName:
+      Section4cCloudWatchMetricsSourceName:
         default: "Sumo Logic CloudWatch Metrics Source Name"
 
       Section5aCreateS3Bucket:
         default: "Create AWS S3 Bucket"
       Section5bS3LogsBucketName:
         default: "AWS S3 Bucket Name"
-      Section5cCreateALBLogSource:
+      Section5cALBCollectorName:
+        default: "Sumo Logic ALB Source Collector Name"
+      Section5dCreateALBLogSource:
         default: "Create Sumo Logic ALB Logs Source"
-      Section5dS3BucketPathExpression:
+      Section5eS3BucketPathExpression:
         default: "Path Expression for the logs"
-      Section5eALBLogsSourceName:
+      Section5fALBLogsSourceName:
         default: "Sumo Logic ALB Logs Source Name"
-      Section5fALBLogsSourceCategoryName:
+      Section5gALBLogsSourceCategoryName:
         default: "Sumo Logic ALB Logs Source Category Name"
 
       Section6aParentStackName:
@@ -159,12 +162,12 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section3bCollectorName:
-    Type: String
-    Description: "Provide a Collector Name"
-    Default: ""
 
-  Section4aCreateCloudWatchMetricsSource:
+  Section4aCloudWatchMetricCollectorName:
+    Type: String
+    Description: "Provide a CloudWatch Metrics Source Collector Name"
+    Default: ""
+  Section4bCreateCloudWatchMetricsSource:
     Type: String
     Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source which collects Metrics for multiple Namespaces from the region selected.
                   No - If you already have a CloudWatch Metrics Source collecting ALB metrics."
@@ -172,7 +175,7 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section4bCloudWatchMetricsSourceName:
+  Section4cCloudWatchMetricsSourceName:
     Type: String
     Description: "Provide a Cloud Watch Metrics Source Name"
     Default: ""
@@ -189,22 +192,26 @@ Parameters:
     Type: String
     Description: "Existing Bucket Name - Provide value if the Flag is set to No.
                   New Bucket Name - Provide a unique Bucket Name if the flag is set to Yes."
-  Section5cCreateALBLogSource:
+  Section5cALBCollectorName:
+    Type: String
+    Description: "Provide a ALB Source Collector Name"
+    Default: ""
+  Section5dCreateALBLogSource:
     Type: String
     Description: "Choose Yes to create Sumo Logic ALB Log Source with provided bucket Name."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section5dS3BucketPathExpression:
+  Section5eS3BucketPathExpression:
     Type: String
     Description: Path expression to match one or more S3 objects. For example, ABC*.log or ABC.log
     Default: "*"
-  Section5eALBLogsSourceName:
+  Section5fALBLogsSourceName:
     Type: String
     Description: "Provide a ALB Logs Source Name"
     Default: ""
-  Section5fALBLogsSourceCategoryName:
+  Section5gALBLogsSourceCategoryName:
     Type: String
     Description: "Existing - Change to an existing Source Category from Sumo Logic if ALB Source is not created.\n
                   New - Default will be used if ALB Source is Created"
@@ -301,18 +308,17 @@ Conditions:
 
   tag_existing_aws_resources: !Equals [!Ref Section2aTagExistingAWSResources, 'Yes']
   install_app: !Equals [!Ref Section3aInstallApp, 'Yes']
-  install_alb_logs_source: !Equals [!Ref Section5cCreateALBLogSource, 'Yes']
+  install_alb_logs_source: !Equals [!Ref Section5dCreateALBLogSource, 'Yes']
   create_target_s3_bucket: !And
     - !Equals [!Ref Section5aCreateS3Bucket, 'Yes']
     - !Condition create_sns_topic
-  install_cloud_watch_metric_source: !Equals [!Ref Section4aCreateCloudWatchMetricsSource, 'Yes']
+  install_cloud_watch_metric_source: !Equals [!Ref Section4bCreateCloudWatchMetricsSource, 'Yes']
   update_alb_source: !And
     - !Not [!Condition install_alb_logs_source]
-    - !Not [!Equals [!Ref Section5eALBLogsSourceName, '']]
-    - !Not [!Equals [!Ref Section3bCollectorName, '']]
-  install_collector: !Or
+    - !Not [!Equals [!Ref Section5fALBLogsSourceName, '']]
+    - !Not [!Equals [!Ref Section5cALBCollectorName, '']]
+  install_alb_collector: !Or
     - !Condition install_alb_logs_source
-    - !Condition install_cloud_watch_metric_source
     - !Condition update_alb_source
 
   create_sns_topic: !And
@@ -471,9 +477,9 @@ Resources:
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
-  SumoHostedCollector:
+  SumoCloudwatchMetricsCollector:
     Type: Custom::Collector
-    Condition: install_collector
+    Condition: install_cloud_watch_metric_source
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
@@ -485,7 +491,7 @@ Resources:
       Region: !Ref "AWS::Region"
       CollectorType: Hosted
       RemoveOnDeleteStack: !If [do_not_use_parent_stack, !Ref Section1eRemoveSumoResourcesOnDeleteStack, false]
-      CollectorName: !Ref Section3bCollectorName
+      CollectorName: !Ref Section4aCloudWatchMetricCollectorName
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
@@ -506,11 +512,11 @@ Resources:
       SourceType: AwsCloudWatch
       Namespaces:
         - 'AWS/ApplicationELB'
-      SourceName: !Ref Section4bCloudWatchMetricsSourceName
+      SourceName: !Ref Section4cCloudWatchMetricsSourceName
       CollectorId: !If
         - install_cloud_watch_metric_source
         - !GetAtt
-          - SumoHostedCollector
+          - SumoCloudwatchMetricsCollector
           - COLLECTOR_ID
         - !ImportValue
           'Fn::Sub': '${Section6aParentStackName}-CollectorID'
@@ -540,7 +546,7 @@ Resources:
       AppName: "AWS Observability Alb App"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
       AppSources:
-        logsrc: !Sub "_sourceCategory=${Section5fALBLogsSourceCategoryName}"
+        logsrc: !Sub "_sourceCategory=${Section5gALBLogsSourceCategoryName}"
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
@@ -651,6 +657,25 @@ Resources:
       Timeout: "1"
       Count: 0
 
+  SumoALBCollector:
+    Type: Custom::Collector
+    Condition: install_alb_collector
+    Properties:
+      ServiceToken: !If
+        - do_not_use_parent_stack
+        - !GetAtt
+          - SumoLogicHelperFunction
+          - Arn
+        - !ImportValue
+          'Fn::Sub': '${Section6aParentStackName}-SumoLogicHelperFunctionARN'
+      Region: !Ref "AWS::Region"
+      CollectorType: Hosted
+      RemoveOnDeleteStack: !If [do_not_use_parent_stack, !Ref Section1eRemoveSumoResourcesOnDeleteStack, false]
+      CollectorName: !Ref Section5cALBCollectorName
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+
   SumoALBSource:
     Condition: install_alb_logs_source
     DependsOn: TargetS3BucketWaitCondition
@@ -665,15 +690,15 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${Section6aParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      SourceName: !Ref Section5eALBLogsSourceName
+      SourceName: !Ref Section5fALBLogsSourceName
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      SourceCategory: !Ref Section5fALBLogsSourceCategoryName
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SourceCategory: !Ref Section5gALBLogsSourceCategoryName
+      CollectorId: !GetAtt SumoALBCollector.COLLECTOR_ID
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
       TargetBucketName: !Ref Section5bS3LogsBucketName
-      PathExpression: !Ref Section5dS3BucketPathExpression
+      PathExpression: !Ref Section5eS3BucketPathExpression
       Fields:
         account: !Ref Section2bAccountAlias
         namespace: "aws/applicationelb"
@@ -698,9 +723,9 @@ Resources:
         - !ImportValue
           'Fn::Sub': '${Section6aParentStackName}-SumoLogicHelperFunctionARN'
       Region: !Ref "AWS::Region"
-      SourceName: !Ref Section5eALBLogsSourceName
+      SourceName: !Ref Section5fALBLogsSourceName
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      CollectorId: !GetAtt SumoALBCollector.COLLECTOR_ID
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
