@@ -100,14 +100,18 @@ Parameters:
       - 'VPC'
       - 'ALB'
 
-  ExistingResource:
+  TaggingResourceOptions:
     Type: String
-    Description: "Yes - Enable Logging for existing resources.
-                  No - Skip Existing resources."
-    Default: "Yes"
+    Description: "New - Automatically enables S3 logging for newly created AWS resources to send logs to S3 Buckets. This does not affect AWS resources already collecting logs.
+                  Existing - Automatically enables S3 logging for existing AWS resources to send logs to S3 Buckets.
+                  Both - Automatically enables S3 logging for new and existing AWS resources.
+                  None - Skips Automatic S3 Logging enable for AWS resources."
+    Default: 'Both'
     AllowedValues:
-      - 'Yes'
-      - 'No'
+      - 'New'
+      - 'Existing'
+      - 'Both'
+      - 'None'
 
   BucketName:
     Type: String
@@ -139,14 +143,26 @@ Parameters:
     Description: Parent Stack Name. Do Not Edit the value.
 
 Conditions:
-  enable_alb_logging: !Equals [!Ref EnableLogging, 'ALB']
-  enable_s3_buckets_logging: !Equals [!Ref EnableLogging, 'S3']
-  enable_vpc_flow_logs_logging: !Equals [!Ref EnableLogging, 'VPC']
+  enable_alb_logging: !And
+    - !Equals [!Ref EnableLogging, 'ALB']
+    - !Condition auto_enable_new
+  enable_s3_buckets_logging: !And
+    - !Equals [!Ref EnableLogging, 'S3']
+    - !Condition auto_enable_new
+  enable_vpc_flow_logs_logging: !And
+    - !Equals [!Ref EnableLogging, 'VPC']
+    - !Condition auto_enable_new
 
-  enable_existing_resources: !Equals [!Ref ExistingResource, 'Yes']
+  auto_enable_existing: !Or
+    - !Equals [ !Ref TaggingResourceOptions, 'Existing' ]
+    - !Equals [ !Ref TaggingResourceOptions, 'Both' ]
+  auto_enable_new: !Or
+    - !Equals [ !Ref TaggingResourceOptions, 'New' ]
+    - !Equals [ !Ref TaggingResourceOptions, 'Both' ]
+
   do_not_use_parent_stack: !And
-   - !Equals [ !Ref ParentStackName, "ParentStackName"]
-   - !Condition enable_existing_resources
+    - !Equals [ !Ref ParentStackName, "ParentStackName"]
+    - !Condition auto_enable_existing
 
 Resources:
 
@@ -195,8 +211,9 @@ Resources:
                   - s3:PutBucketLogging
                 Resource: '*'
 
-  AwsS3LogsResourcesLambda:
+  EnableNewAWSResourcesLambda:
     Type: AWS::Lambda::Function
+    Condition: auto_enable_new
     Properties:
       FunctionName: !Join
         - ""
@@ -230,7 +247,7 @@ Resources:
     Condition: enable_s3_buckets_logging
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref AwsS3LogsResourcesLambda
+      FunctionName: !Ref EnableNewAWSResourcesLambda
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt AutoEnableS3LogEventsRuleTrigger.Arn
 
@@ -261,7 +278,7 @@ Resources:
                 - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
-        - Arn: !GetAtt AwsS3LogsResourcesLambda.Arn
+        - Arn: !GetAtt EnableNewAWSResourcesLambda.Arn
           Id: Main
 
   AutoEnableVPCEventsInvokePermission:
@@ -269,7 +286,7 @@ Resources:
     Condition: enable_vpc_flow_logs_logging
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref AwsS3LogsResourcesLambda
+      FunctionName: !Ref EnableNewAWSResourcesLambda
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt AutoEnableVPCEventsRuleTrigger.Arn
 
@@ -300,7 +317,7 @@ Resources:
                 - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
-        - Arn: !GetAtt AwsS3LogsResourcesLambda.Arn
+        - Arn: !GetAtt EnableNewAWSResourcesLambda.Arn
           Id: Main
 
   AutoEnableAlbLogEventsInvokePermission:
@@ -308,7 +325,7 @@ Resources:
     Condition: enable_alb_logging
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref AwsS3LogsResourcesLambda
+      FunctionName: !Ref EnableNewAWSResourcesLambda
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt AutoEnableAlbLogEventsRuleTrigger.Arn
 
@@ -339,10 +356,10 @@ Resources:
                 - !Split ["/", !Ref "AWS::StackId"]
       State: ENABLED
       Targets:
-        - Arn: !GetAtt AwsS3LogsResourcesLambda.Arn
+        - Arn: !GetAtt EnableNewAWSResourcesLambda.Arn
           Id: Main
 
-  SumoLogicHelperFunction:
+  EnableExisitngAWSResourcesLambda:
     Type: 'AWS::Serverless::Function'
     Condition: do_not_use_parent_stack
     Properties:
@@ -358,15 +375,14 @@ Resources:
           - SumoLambdaRole
           - Arn
 
-  EnableS3LogsResources:
+  ExistingAWSResources:
     Type: Custom::EnableS3LogsResources
-    Condition: enable_existing_resources
-    DependsOn: AwsS3LogsResourcesLambda
+    Condition: auto_enable_existing
     Properties:
       ServiceToken: !If
         - do_not_use_parent_stack
         - !GetAtt
-          - SumoLogicHelperFunction
+          - EnableExisitngAWSResourcesLambda
           - Arn
         - !ImportValue
           'Fn::Sub': '${ParentStackName}-SumoLogicHelperFunctionARN'
@@ -380,6 +396,7 @@ Resources:
 
 Outputs:
 
-  AwsS3LogsResourcesLambda:
-    Description: "AwsS3LogsResourcesLambda Function ARN"
-    Value: !GetAtt AwsS3LogsResourcesLambda.Arn
+  EnableNewAWSResourcesLambda:
+    Description: "EnableNewAWSResourcesLambda Function ARN"
+    Value: !GetAtt EnableNewAWSResourcesLambda.Arn
+    Condition: auto_enable_new
