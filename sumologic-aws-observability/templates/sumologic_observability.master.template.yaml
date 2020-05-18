@@ -15,126 +15,71 @@ Metadata:
           - Section1eSumoLogicResourceRemoveOnDeleteStack
 
       - Label:
-          default: "2. AWS Resources Tag Configuration (Required)"
+          default: "2. AWS Resources Tags Configuration (Required)"
         Parameters:
-          - Section2aAccountAlias
+          - Section2aTagAWSResourcesOptions
+          - Section2bAWSResourcesList
+          - Section2cAccountAlias
+          - Section2dTagAWSResourcesFilterExpression
 
       - Label:
-          default: "3. AWS EC2 Metrics App Configuration"
+          default: "3. Sumo Logic AWS Observability Apps Configurations"
         Parameters:
           - Section3aEC2InstallApp
-      - Label:
-          default: "3.1 Meta Data Source details"
-        Parameters:
-          - Section3bEC2CreateMetaDataSource
-      - Label:
-          default: "3.2 EC2 Hosts Metrics Source Category"
-        Parameters:
-          - Section3cEC2AppSourceCategoryName
+          - Section3bALBInstallApp
+          - Section3cDynamoDBInstallApp
+          - Section3dRDSInstallApp
+          - Section3eLambdaInstallApp
+          - Section3fAPIGatewayInstallApp
 
       - Label:
-          default: "4. AWS ALB App Configuration"
+          default: "4. Sumo Logic AWS EC2 Meta Data Source details"
         Parameters:
-          - Section4aALBInstallApp
-      - Label:
-          default: "4.1 AWS CloudWatch Metrics Source details"
-        Parameters:
-          - Section4bALBCreateCloudWatchMetricsSource
-          - Section4cALBCloudWatchMetricsSourceCategoryName
-      - Label:
-          default: "4.2 Amazon ALB Source details"
-        Parameters:
-          - Section4dALBCreateS3Bucket
-          - Section4eALBS3LogsBucketName
-          - Section4fALBCreateLogSource
-          - Section4gALBS3LogsCollectorName
-          - Section4hALBLogsSourceName
-          - Section4iALBLogsSourceCategoryName
+          - Section4aEC2CreateMetaDataSource
 
       - Label:
-          default: "5. AWS DynamoDB App Configuration"
+          default: "5. Sumo Logic AWS CloudWatch Metrics Source Details"
         Parameters:
-          - Section5aDynamoDBInstallApp
-      - Label:
-          default: "5.1 AWS CloudWatch Metrics Source details"
-        Parameters:
-          - Section5bDynamoDBCreateCloudWatchMetricsSource
-          - Section5cDynamoDBCloudWatchMetricsSourceCategoryName
-      - Label:
-          default: "5.2 AWS CloudTrail Source details"
-        Parameters:
-          - Section5dDynamoDBCreateCloudTrailBucket
-          - Section5eDynamoDBCloudTrailLogsBucketName
-          - Section5fDynamoDBCreateCloudTrailLogSource
-          - Section5gDynamoDBCloudTrailCollectorName
-          - Section5hDynamoDBCloudTrailLogsSourceName
-          - Section5iDynamoDBCloudTrailLogsSourceCategoryName
-
+          - Section5aALBCreateCloudWatchMetricsSource
+          - Section5bCloudWatchMetricsNameSpaces
 
       - Label:
-          default: "6. AWS RDS App Configuration"
+          default: "6. Sumo Logic AWS ALB Log Source Details"
         Parameters:
-          - Section6aRDSInstallApp
-      - Label:
-          default: "6.1 AWS CloudWatch Metrics Source details"
-        Parameters:
-          - Section6bRDSCreateCloudWatchMetricsSource
-          - Section6cRDSCloudWatchMetricsSourceCategoryName
+          - Section6aALBCreateS3Bucket
+          - Section6bALBS3LogsBucketName
+          - Section6cALBS3BucketPathExpression
+          - Section6dALBCreateLogSource
+          - Section6eALBS3LogsCollectorName
+          - Section6fALBLogsSourceName
+          - Section6gALBLogsSourceCategoryName
 
       - Label:
-          default: "7. AWS Lambda App Configuration"
+          default: "7. Sumo Logic AWS CloudTrail Source details"
         Parameters:
-          - Section7aLambdaInstallApp
-      - Label:
-          default: "7.1 AWS CloudWatch Metrics Source details"
-        Parameters:
-          - Section7bLambdaCreateCloudWatchMetricsSource
-          - Section7cLambdaCloudWatchMetricsSourceCategoryName
-      - Label:
-          default: "7.2 AWS CloudTrail Source details"
-        Parameters:
-          - Section7dLambdaCreateCloudTrailBucket
-          - Section7eLambdaCloudTrailLogsBucketName
-          - Section7fLambdaCreateCloudTrailLogSource
-          - Section7gLambdaCloudTrailCollectorName
-          - Section7hLambdaCloudTrailLogsSourceName
-          - Section7iLambdaCloudTrailLogsSourceCategoryName
-      - Label:
-          default: "7.3 AWS CloudWatch Logs details"
-        Parameters:
-          - Section7jLambdaCreateCloudWatchLogsSource
-          - Section7kLambdaCloudWatchLogsCollectorName
-          - Section7lLambdaCloudWatchLogsSourceName
-          - Section7mLambdaCloudWatchLogsSourceCategoryName
+          - Section7aCreateCloudTrailBucket
+          - Section7bCloudTrailLogsBucketName
+          - Section7cCloudTrailBucketPathExpression
+          - Section7dCreateCloudTrailLogSource
+          - Section7eCloudTrailCollectorName
+          - Section7fCloudTrailLogsSourceName
+          - Section7gCloudTrailLogsSourceCategoryName
 
       - Label:
-          default: "8. AWS Api Gateway App Configuration"
+          default: "8. Sumo Logic AWS Lambda CloudWatch Logs details"
         Parameters:
-          - Section8aAPIGatewayInstallApp
-      - Label:
-          default: "8.1 AWS CloudWatch Metrics Source details"
-        Parameters:
-          - Section8bAPIGatewayCreateCloudWatchMetricsSource
-          - Section8cAPIGatewayCloudWatchMetricsSourceCategoryName
-      - Label:
-          default: "8.2 AWS CloudTrail Source details"
-        Parameters:
-          - Section8dAPIGatewayCreateCloudTrailBucket
-          - Section8eAPIGatewayCloudTrailLogsBucketName
-          - Section8fAPIGatewayCreateCloudTrailLogSource
-          - Section8gAPIGatewayCloudTrailCollectorName
-          - Section8hAPIGatewayCloudTrailLogsSourceName
-          - Section8iAPIGatewayCloudTrailLogsSourceCategoryName
+          - Section8aLambdaCreateCloudWatchLogsSource
+          - Section8bLambdaCloudWatchLogsCollectorName
+          - Section8cLambdaCloudWatchLogsSourceName
+          - Section8dLambdaCloudWatchLogsSourceCategoryName
 
       - Label:
           default: "9. Auto Enable Options"
         Parameters:
-          - Section9aAutoEnableTaggingAWSResources
-          - Section9bAutoEnableS3LogsALBResources
-          - Section9cAutoEnableFilterExpression
-          - Section9dAutoSubscribeLogGroupsLambda
-          - Section9eAutoSubscribeLambdaLogGroupPattern
-          - Section9fAutoSubscribeLambdaExistingLogGroups
+          - Section9aAutoEnableS3LogsALBResourcesOptions
+          - Section9bAutoEnableS3LogsFilterExpression
+          - Section9cAutoSubscribeLogGroupsLambdaOptions
+          - Section9dAutoSubscribeLambdaLogGroupPattern
 
     ParameterLabels:
       Section1aSumoLogicDeployment:
@@ -148,119 +93,83 @@ Metadata:
       Section1eSumoLogicResourceRemoveOnDeleteStack:
         default: "Delete Sumo Logic Resources when stack is deleted"
 
-      Section2aAccountAlias:
+      Section2aTagAWSResourcesOptions:
+        default: "Auto Enable Tagging of AWS Resources Options"
+      Section2bAWSResourcesList:
+        default: "Choose AWS Resources to Tag"
+      Section2cAccountAlias:
         default: "Alias for AWS Account Identification"
+      Section2dTagAWSResourcesFilterExpression:
+        default: "Regular expression to Filter AWS Resources"
 
       Section3aEC2InstallApp:
         default: "Install EC2 Metrics App"
-      Section3bEC2CreateMetaDataSource:
-        default: "Create Sumo Logic MetaData Source"
-      Section3cEC2AppSourceCategoryName:
-        default: "Sumo Logic EC2 Instances Metrics Source Category Name"
-
-      Section4aALBInstallApp:
+      Section3bALBInstallApp:
         default: "Install ALB App"
-      Section4dALBCreateS3Bucket:
-        default: "Create AWS S3 Bucket for Logs"
-      Section4eALBS3LogsBucketName:
-        default: "AWS S3 Bucket Name"
-      Section4fALBCreateLogSource:
-        default: "Create Sumo Logic ALB Logs Source"
-      Section4gALBS3LogsCollectorName:
-        default: "Sumo Logic ALB Logs Collector Name"
-      Section4hALBLogsSourceName:
-        default: "Sumo Logic ALB Logs Source Name"
-      Section4iALBLogsSourceCategoryName:
-        default: "Sumo Logic ALB App Logs Source Category Name"
-      Section4bALBCreateCloudWatchMetricsSource:
-        default: "Create Sumo Logic CloudWatch Metrics Source"
-      Section4cALBCloudWatchMetricsSourceCategoryName:
-        default: "Sumo Logic ALB App CloudWatch Metrics Source Category Name"
-
-      Section5aDynamoDBInstallApp:
-        default: "Install DynamoDB App"
-      Section5dDynamoDBCreateCloudTrailBucket:
-        default: "Create AWS S3 Bucket for CloudTrail Logs"
-      Section5eDynamoDBCloudTrailLogsBucketName:
-        default: "AWS S3 Bucket Name"
-      Section5fDynamoDBCreateCloudTrailLogSource:
-        default: "Create Sumo Logic CloudTrail Logs Source"
-      Section5gDynamoDBCloudTrailCollectorName:
-        default: "Sumo Logic Dynamo DB CloudTrail Logs Collector Name"
-      Section5hDynamoDBCloudTrailLogsSourceName:
-        default: "Sumo Logic Dynamo DB CloudTrail Logs Source Name"
-      Section5iDynamoDBCloudTrailLogsSourceCategoryName:
-        default: "Sumo Logic Dynamo DB App CloudTrail Logs Source Category Name"
-      Section5bDynamoDBCreateCloudWatchMetricsSource:
-        default: "Create Sumo Logic CloudWatch Metrics Source"
-      Section5cDynamoDBCloudWatchMetricsSourceCategoryName:
-        default: "Sumo Logic Dynamo DB App CloudWatch Metrics Source Category Name"
-
-      Section6aRDSInstallApp:
+      Section3cDynamoDBInstallApp:
+        default: "Install Dynamo DB App"
+      Section3dRDSInstallApp:
         default: "Install RDS App"
-      Section6bRDSCreateCloudWatchMetricsSource:
-        default: "Create Sumo Logic CloudWatch Metrics Source"
-      Section6cRDSCloudWatchMetricsSourceCategoryName:
-        default: "Sumo Logic RDS App CloudWatch Metrics Source Category Name"
-
-      Section7aLambdaInstallApp:
+      Section3eLambdaInstallApp:
         default: "Install Lambda App"
-      Section7dLambdaCreateCloudTrailBucket:
-        default: "Create AWS S3 Bucket for CloudTrail Logs"
-      Section7eLambdaCloudTrailLogsBucketName:
-        default: "AWS S3 Bucket Name"
-      Section7fLambdaCreateCloudTrailLogSource:
-        default: "Create Sumo Logic CloudTrail Logs Source"
-      Section7gLambdaCloudTrailCollectorName:
-        default: "Sumo Logic Lambda CloudTrail Logs Collector Name"
-      Section7hLambdaCloudTrailLogsSourceName:
-        default: "Sumo Logic Lambda CloudTrail Logs Source Name"
-      Section7iLambdaCloudTrailLogsSourceCategoryName:
-        default: "Sumo Logic Lambda App CloudTrail Logs Source Category Name"
-      Section7jLambdaCreateCloudWatchLogsSource:
-        default: "Create Sumo Logic CloudWatch Logs Source"
-      Section7kLambdaCloudWatchLogsCollectorName:
-        default: "Sumo Logic Lambda CloudWatch Logs Collector Name"
-      Section7lLambdaCloudWatchLogsSourceName:
-        default: "Sumo Logic Lambda CloudWatch Logs Source Name"
-      Section7mLambdaCloudWatchLogsSourceCategoryName:
-        default: "Sumo Logic Lambda App CloudWatch Logs Source Category Name"
-      Section7bLambdaCreateCloudWatchMetricsSource:
-        default: "Create Sumo Logic CloudWatch Metrics Source"
-      Section7cLambdaCloudWatchMetricsSourceCategoryName:
-        default: "Sumo Logic Lambda App CloudWatch Metrics Source Category Name"
-
-      Section8aAPIGatewayInstallApp:
+      Section3fAPIGatewayInstallApp:
         default: "Install API Gateway App"
-      Section8dAPIGatewayCreateCloudTrailBucket:
-        default: "Create AWS S3 Bucket for CloudTrail Logs"
-      Section8eAPIGatewayCloudTrailLogsBucketName:
-        default: "AWS S3 Bucket Name"
-      Section8fAPIGatewayCreateCloudTrailLogSource:
-        default: "Create Sumo Logic CloudTrail Logs Source"
-      Section8gAPIGatewayCloudTrailCollectorName:
-        default: "Sumo Logic API Gateway CloudTrail Logs Collector Name"
-      Section8hAPIGatewayCloudTrailLogsSourceName:
-        default: "Sumo Logic API Gateway CloudTrail Logs Source Name"
-      Section8iAPIGatewayCloudTrailLogsSourceCategoryName:
-        default: "Sumo Logic API Gateway App CloudTrail Logs Source Category Name"
-      Section8bAPIGatewayCreateCloudWatchMetricsSource:
-        default: "Create Sumo Logic CloudWatch Metrics Source"
-      Section8cAPIGatewayCloudWatchMetricsSourceCategoryName:
-        default: "Sumo Logic Api Gateway App CloudWatch Metrics Source Category Name"
 
-      Section9aAutoEnableTaggingAWSResources:
-        default: "Auto Enable Tagging of new AWS Resources"
-      Section9bAutoEnableS3LogsALBResources:
-        default: "Auto Enable S3 Logging for existing and new ALB Resources"
-      Section9cAutoEnableFilterExpression:
-        default: "Regular expression to Filter AWS Resources"
-      Section9dAutoSubscribeLogGroupsLambda:
+      Section4aEC2CreateMetaDataSource:
+        default: "Create Sumo Logic AWS EC2 MetaData Source"
+
+      Section5aALBCreateCloudWatchMetricsSource:
+        default: "Create Sumo Logic CloudWatch Metrics Source"
+      Section5bCloudWatchMetricsNameSpaces:
+        default: "Sumo Logic AWS CloudWatch Metrics Namespaces"
+
+      Section6aALBCreateS3Bucket:
+        default: "Create AWS S3 Bucket for Logs"
+      Section6bALBS3LogsBucketName:
+        default: "AWS S3 Bucket Name"
+      Section6cALBS3BucketPathExpression:
+        default: "Path Expression for the ALB logs"
+      Section6dALBCreateLogSource:
+        default: "Create Sumo Logic ALB Logs Source"
+      Section6eALBS3LogsCollectorName:
+        default: "Sumo Logic ALB Logs Collector Name"
+      Section6fALBLogsSourceName:
+        default: "Sumo Logic ALB Logs Source Name"
+      Section6gALBLogsSourceCategoryName:
+        default: "Sumo Logic ALB App Logs Source Category Name"
+
+      Section7aCreateCloudTrailBucket:
+        default: "Create AWS S3 Bucket for CloudTrail Logs"
+      Section7bCloudTrailLogsBucketName:
+        default: "AWS S3 Bucket Name"
+      Section7cCloudTrailBucketPathExpression:
+        default: "Path Expression for the CloudTrail logs"
+      Section7dCreateCloudTrailLogSource:
+        default: "Create Sumo Logic CloudTrail Logs Source"
+      Section7eCloudTrailCollectorName:
+        default: "Sumo Logic CloudTrail Logs Collector Name"
+      Section7fCloudTrailLogsSourceName:
+        default: "Sumo Logic CloudTrail Logs Source Name"
+      Section7gCloudTrailLogsSourceCategoryName:
+        default: "Sumo Logic CloudTrail Logs Source Category Name"
+
+      Section8aLambdaCreateCloudWatchLogsSource:
+        default: "Create Sumo Logic CloudWatch Logs Source"
+      Section8bLambdaCloudWatchLogsCollectorName:
+        default: "Sumo Logic Lambda CloudWatch Logs Collector Name"
+      Section8cLambdaCloudWatchLogsSourceName:
+        default: "Sumo Logic Lambda CloudWatch Logs Source Name"
+      Section8dLambdaCloudWatchLogsSourceCategoryName:
+        default: "Sumo Logic Lambda App CloudWatch Logs Source Category Name"
+
+      Section9aAutoEnableS3LogsALBResourcesOptions:
+        default: "Auto Enable S3 Logging of existing and new ALB Resources"
+      Section9bAutoEnableS3LogsFilterExpression:
+        default: "Regular expression to Filter AWS ALB Resources"
+      Section9cAutoSubscribeLogGroupsLambdaOptions:
         default: "Auto Subscribe new log groups to Lambda"
-      Section9eAutoSubscribeLambdaLogGroupPattern:
+      Section9dAutoSubscribeLambdaLogGroupPattern:
         default: "Regex for lambda"
-      Section9fAutoSubscribeLambdaExistingLogGroups:
-        default: "Auto Subscribe Existing log groups"
 
 Parameters:
   Section1aSumoLogicDeployment:
@@ -301,12 +210,33 @@ Parameters:
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
-  Section2aAccountAlias:
+  Section2aTagAWSResourcesOptions:
+    Type: String
+    Description: "New - Tags the new AWS Resources after creation. For New AWS Resources, Lambda function is invoked on CloudWatch Events.
+                  Existing - Tags the AWS Resources with account - account alias tag.
+                  Both - Tags New and Existing Resources.
+                  None - Skip The AWS Resource Tagging."
+    Default: 'Both'
+    AllowedValues:
+      - 'New'
+      - 'Existing'
+      - 'Both'
+      - 'None'
+  Section2bAWSResourcesList:
+    Default: "ec2, alb, dynamodb, apigateway, rds, lambda"
+    Description: "Provide Comma delimited list of the AWS Resource types to tag. Take input values from [ec2, alb, dynamodb, apigateway, rds, lambda]"
+    Type: String
+    AllowedPattern: "ec2|alb|dynamodb|apigateway|rds|lambda"
+  Section2cAccountAlias:
     Type: String
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
     AllowedPattern: "[a-zA-Z0-9]+"
     ConstraintDescription: "Alias must only contain uppercase, lowercase letters, number and length less than or equal to 30 characters."
     MaxLength: 30
+  Section2dTagAWSResourcesFilterExpression:
+    Type: String
+    Default: ".*"
+    Description: "Provide regular expression for matching aws resources. For eg;- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
 
   Section3aEC2InstallApp:
     Type: String
@@ -316,20 +246,7 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section3bEC2CreateMetaDataSource:
-    Type: String
-    Description: "Yes - Creates Sumo Logic MetaData Source. A common metadata source will be created with the region selected.
-                  No - If you already have a MetaData Source configured."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section3cEC2AppSourceCategoryName:
-    Type: String
-    Description: "Required Value. Provide any existing EC2 Instances Host Metrics source category names. Default value - hostmetrics"
-    Default: "hostmetrics"
-
-  Section4aALBInstallApp:
+  Section3bALBInstallApp:
     Type: String
     Default: 'Yes'
     Description: "Yes - Installs the ALB App for the Sumo Logic AWS Observability Solution.
@@ -337,52 +254,7 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section4dALBCreateS3Bucket:
-    Type: String
-    Description: "Yes - Creates a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
-                  No - Uses an existing S3 bucket from AWS S3 which has ALB Logs."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section4eALBS3LogsBucketName:
-    Type: String
-    Description: "Required when Flag = No. Provide an existing bucket name that has ALB logs."
-    Default: ""
-  Section4fALBCreateLogSource:
-    Type: String
-    Description: "Yes - Creates a Sumo Logic ALB Log Source that collects ALB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-alb-Region-AccountId.
-                  No - If you already have an ALB source collecting ALB logs into Sumo Logic."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section4gALBS3LogsCollectorName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the ALB app."
-    Default: ""
-  Section4hALBLogsSourceName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the ALB app. Account, region and namespace Fields will be added."
-    Default: ""
-  Section4iALBLogsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the ALB app. Used for the app installation."
-    Default: ""
-  Section4bALBCreateCloudWatchMetricsSource:
-    Type: String
-    Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source which collects Metrics for multiple Namespaces from the region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No - If you already have a CloudWatch Metrics Source collecting ALB metrics."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section4cALBCloudWatchMetricsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the ALB app. Used for app installation."
-    Default: ""
-
-  Section5aDynamoDBInstallApp:
+  Section3cDynamoDBInstallApp:
     Type: String
     Default: 'Yes'
     Description: "Yes - Installs the DynamoDB App for the Sumo Logic AWS Observability Solution.
@@ -390,52 +262,7 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section5dDynamoDBCreateCloudTrailBucket:
-    Type: String
-    Description: "Yes - Creates a new Common S3 bucket for all logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
-                  No - Uses an existing S3 bucket from AWS S3 which has CloudTrail Logs for DynamoDB."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section5eDynamoDBCloudTrailLogsBucketName:
-    Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name that has CloudTrail logs for DynamoDB."
-    Default: ""
-  Section5fDynamoDBCreateCloudTrailLogSource:
-    Type: String
-    Description: "Yes - Creates a Sumo Logic CloudTrail Log Source that collects DynamoDB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
-                  No - If you already have a CloudTrail Log source collecting DynamoDB logs into Sumo Logic."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section5gDynamoDBCloudTrailCollectorName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the DynamoDB app."
-    Default: ""
-  Section5hDynamoDBCloudTrailLogsSourceName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the DynamoDB app. Account, region and namespace fields will be added."
-    Default: ""
-  Section5iDynamoDBCloudTrailLogsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the DynamoDB app. Used for the app installation."
-    Default: ""
-  Section5bDynamoDBCreateCloudWatchMetricsSource:
-    Type: String
-    Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from the selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No - If you already have a CloudWatch Metrics Source collecting DynamoDB metrics."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section5cDynamoDBCloudWatchMetricsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the DynamoDB app. Used for the app installation."
-    Default: ""
-
-  Section6aRDSInstallApp:
+  Section3dRDSInstallApp:
     Type: String
     Default: 'Yes'
     Description: "Yes - Installs the RDS App for the Sumo Logic AWS Observability Solution.
@@ -443,20 +270,7 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section6bRDSCreateCloudWatchMetricsSource:
-    Type: String
-    Description: "Yes - Creates the Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from the selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No - If you already have a CloudWatch Metrics Source collecting RDS metrics."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section6cRDSCloudWatchMetricsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide RDS app existing source category name from Sumo Logic. Used for app installation."
-    Default: ""
-
-  Section7aLambdaInstallApp:
+  Section3eLambdaInstallApp:
     Type: String
     Default: 'Yes'
     Description: "Yes - Installs the Lambda App for the Sumo Logic AWS Observability Solution.
@@ -464,72 +278,7 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section7dLambdaCreateCloudTrailBucket:
-    Type: String
-    Description: "Yes - Creates a new Common S3 bucket for all logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
-                  No - Use an existing S3 bucket from AWS S3 that has CloudTrail Logs for Lambda."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section7eLambdaCloudTrailLogsBucketName:
-    Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name that has CloudTrail logs for Lambda."
-    Default: ""
-  Section7fLambdaCreateCloudTrailLogSource:
-    Type: String
-    Description: "Yes - Creates a Sumo Logic CloudTrail Log Source that collects Lambda logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
-                  No - If you already have a CloudTrail Log source collecting Lambda logs into Sumo Logic."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section7gLambdaCloudTrailCollectorName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the Lambda app."
-    Default: ""
-  Section7hLambdaCloudTrailLogsSourceName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the Lambda app existing source name from Sumo Logic. Account, region and namespace fields will be added."
-    Default: ""
-  Section7iLambdaCloudTrailLogsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the Lambda app. Used for the app installation."
-    Default: ""
-  Section7jLambdaCreateCloudWatchLogsSource:
-    Type: String
-    Description: "Yes - Creates the Sumo Logic CloudWatch Log Source that collects Lambda logs from AWS. Default Name - AccountAlias-aws-observability-cloudwatch-logs-Region.
-                  No - If you already have a CloudWatch Log source collecting Lambda logs into Sumo Logic."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section7kLambdaCloudWatchLogsCollectorName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name used for CloudWatch logs in the Lambda app."
-    Default: ""
-  Section7lLambdaCloudWatchLogsSourceName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source name used for CloudWatch logs in the Lambda app. Account, region and namespace fields will be added."
-    Default: ""
-  Section7mLambdaCloudWatchLogsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name used for CloudWatch logs in the Lambda app. Used for the app installation."
-    Default: ""
-  Section7bLambdaCreateCloudWatchMetricsSource:
-    Type: String
-    Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from a selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No - If you already have a CloudWatch Metrics Source collecting Lambda metrics."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section7cLambdaCloudWatchMetricsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the Lambda app. Used for the app installation."
-    Default: ""
-
-  Section8aAPIGatewayInstallApp:
+  Section3fAPIGatewayInstallApp:
     Type: String
     Default: 'Yes'
     Description: "Yes - Installs the API Gateway App in Sumo Logic AWS Observability Solution.
@@ -537,227 +286,217 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section8dAPIGatewayCreateCloudTrailBucket:
+
+  Section4aEC2CreateMetaDataSource:
+    Type: String
+    Description: "Yes - Creates Sumo Logic MetaData Source. A common metadata source will be created with the region selected.
+                  No - If you already have a MetaData Source configured."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+
+  Section5aALBCreateCloudWatchMetricsSource:
+    Type: String
+    Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source which collects Metrics for multiple Namespaces from the region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
+                  No - If you already have a CloudWatch Metrics Source collecting metrics."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  Section5bCloudWatchMetricsNameSpaces:
+    Default: "AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS"
+    Description: "Provide Comma delimited list of the namespaces to collect."
+    Type: CommaDelimitedList
+
+  Section6aALBCreateS3Bucket:
+    Type: String
+    Description: "Yes - Creates a new Common S3 bucket for all Logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
+                  No - Uses an existing S3 bucket from AWS S3 which has ALB Logs."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  Section6bALBS3LogsBucketName:
+    Type: String
+    Description: "Required when Flag = No. Provide an existing bucket name that has ALB logs."
+    Default: ""
+  Section6cALBS3BucketPathExpression:
+    Type: String
+    Description: "Path expression to match one or more S3 objects. For example, AWSLogs/*/ALB/us-east-1/*"
+    Default: "*"
+  Section6dALBCreateLogSource:
+    Type: String
+    Description: "Yes - Creates a Sumo Logic ALB Log Source that collects ALB logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-alb-Region-AccountId.
+                  No - If you already have an ALB source collecting ALB logs into Sumo Logic."
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  Section6eALBS3LogsCollectorName:
+    Type: String
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the ALB app."
+    Default: ""
+  Section6fALBLogsSourceName:
+    Type: String
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the ALB app. Account, region and namespace Fields will be added to the Source."
+    Default: ""
+  Section6gALBLogsSourceCategoryName:
+    Type: String
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the ALB app. Used for the ALB app installation."
+    Default: ""
+
+  Section7aCreateCloudTrailBucket:
     Type: String
     Description: "Yes - Creates a new Common S3 bucket for all logs in AWS S3. Default Name - aws-observability-logs-Region-AccountId.
-                  No - Use an existing S3 bucket from AWS S3 that has CloudTrail Logs for API Gateway."
+                  No - Uses an existing S3 bucket from AWS S3 which has CloudTrail Logs."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section8eAPIGatewayCloudTrailLogsBucketName:
+  Section7bCloudTrailLogsBucketName:
     Type: String
-    Description: "Required when Flag = No. Provide an Existing bucket name that has CloudTrail logs for API Gateway."
+    Description: "Required when Flag = No. Provide an Existing bucket name that has CloudTrail logs."
     Default: ""
-  Section8fAPIGatewayCreateCloudTrailLogSource:
+  Section7cCloudTrailBucketPathExpression:
     Type: String
-    Description: "Yes - Creates a Sumo Logic CloudTrail Log Source that collects API Gateway logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
-                  No - If you already have a CloudTrail log source collecting API Gateway logs into Sumo Logic."
+    Description: "Path expression to match one or more S3 objects. For example, AWSLogs/*/cloudtrail/us-east-1/*"
+    Default: "*"
+  Section7dCreateCloudTrailLogSource:
+    Type: String
+    Description: "Yes - Creates a Sumo Logic CloudTrail Log Source that collects CloudTrail logs from an existing bucket or a new bucket. Default Name - AccountAlias-aws-observability-cloudtrail-Region.
+                  No - If you already have a CloudTrail Log source collecting CloudTrail logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section8gAPIGatewayCloudTrailCollectorName:
+  Section7eCloudTrailCollectorName:
     Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name for the API Gateway app."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name."
     Default: ""
-  Section8hAPIGatewayCloudTrailLogsSourceName:
+  Section7fCloudTrailLogsSourceName:
     Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source name for the API Gateway app. Account, region and namespace fields will be added."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name. Account field will be added."
     Default: ""
-  Section8iAPIGatewayCloudTrailLogsSourceCategoryName:
+  Section7gCloudTrailLogsSourceCategoryName:
     Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the API Gateway app. Used for the app installation."
-    Default: ""
-  Section8bAPIGatewayCreateCloudWatchMetricsSource:
-    Type: String
-    Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source that collects Metrics for multiple Namespaces from the selected region. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
-                  No - If you already have a CloudWatch Metrics Source collecting API Gateway metrics."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section8cAPIGatewayCloudWatchMetricsSourceCategoryName:
-    Type: String
-    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the Api Gateway app. Used for the app installation."
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name for the DynamoDB app. Used for the app installation."
     Default: ""
 
-  Section9aAutoEnableTaggingAWSResources:
+  Section8aLambdaCreateCloudWatchLogsSource:
     Type: String
-    Description: "Yes - Automatically tags newly created EC2, ALB, RDS, API Gateway, Lambda and DynamoDB AWS resources to make them part of AWS Observability Solution.
-                  No -  New Resources are not tagged and will not become a part of AWS Observability Solution."
+    Description: "Yes - Creates the Sumo Logic CloudWatch Log Source that collects Lambda logs from AWS. Default Name - AccountAlias-aws-observability-cloudwatch-logs-Region.
+                  No - If you already have a CloudWatch Log source collecting Lambda logs into Sumo Logic."
     Default: 'Yes'
     AllowedValues:
       - 'Yes'
       - 'No'
-  Section9bAutoEnableS3LogsALBResources:
+  Section8bLambdaCloudWatchLogsCollectorName:
     Type: String
-    Description: "Yes - Automatically enables S3 logging for existing and newly created ALB resources to collect logs for ALB resources. This does not affect ALB resources already collecting logs.
-                  No - Does not enable logging for ALB resources."
-    Default: 'Yes'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section9cAutoEnableFilterExpression:
-    Type: String
+    Description: "Required when Flag = No. Provide the existing Sumo Logic collector name used for CloudWatch logs in the Lambda app."
     Default: ""
-    Description: "Provide a regular expression for matching AWS resources. For example- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'
-                  If empty, all AWS resources will be tagged."
-  Section9dAutoSubscribeLogGroupsLambda:
+  Section8cLambdaCloudWatchLogsSourceName:
     Type: String
-    Description: "Yes - Automatically subscribes new log groups to lambda to send logs to Sumo Logic.
-                  No - New Lambda groups are not subscribed to send logs to Sumo Logic."
-    Default: 'Yes'
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source name used for CloudWatch logs in the Lambda app. Account, region and namespace fields will be added."
+    Default: ""
+  Section8dLambdaCloudWatchLogsSourceCategoryName:
+    Type: String
+    Description: "Required when Flag = No. Provide the existing Sumo Logic source category name used for CloudWatch logs in the Lambda app. Used for the app installation."
+    Default: ""
+
+  Section9aAutoEnableS3LogsALBResourcesOptions:
+    Type: String
+    Description: "New - Automatically enables S3 logging for newly created ALB resources to collect logs for ALB resources. This does not affect ALB resources already collecting logs.
+                  Existing - Automatically enables S3 logging for existing ALB resources to collect logs for ALB resources.
+                  Both - Automatically enables S3 logging for new and existing ALB resources.
+                  None - Skips Automatic S3 Logging enable for ALB resources."
+    Default: 'Both'
     AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section9eAutoSubscribeLambdaLogGroupPattern:
+      - 'New'
+      - 'Existing'
+      - 'Both'
+      - 'None'
+  Section9bAutoEnableS3LogsFilterExpression:
     Type: String
-    Default: "Lambda-regex-value"
+    Default: ".*"
+    Description: "Provide a regular expression for matching AWS resources. For example- 'InstanceType': 't1.micro.*?'|'name': 'Test.*?']|'stageName': 'prod.*?'|'FunctionName': 'Test.*?'|TableName.*?|'LoadBalancerName': 'Test.*?'|'DBClusterIdentifier': 'Test.*?'|'DBInstanceIdentifier': 'Test.*?'"
+  Section9cAutoSubscribeLogGroupsLambdaOptions:
+    Type: String
+    Description: "New - Automatically subscribes new log groups to lambda to send logs to Sumo Logic.
+                  Existing - Automatically subscribes existing log groups to lambda to send logs to Sumo Logic.
+                  Both - Automatically subscribes new and existing log groups.
+                  None - Skips Automatic subscription."
+    Default: 'Both'
+    AllowedValues:
+      - 'New'
+      - 'Existing'
+      - 'Both'
+      - 'None'
+  Section9dAutoSubscribeLambdaLogGroupPattern:
+    Type: String
+    Default: ".*"
     Description: "Enter regex for matching logGroups. Regex will check for the name."
-  Section9fAutoSubscribeLambdaExistingLogGroups:
-    Type: String
-    Default: 'false'
-    AllowedValues:
-      - 'true'
-      - 'false'
-    Description: "Select True for subscribing existing logs groups.
-                  Select False for skipping existing log groups."
 
 Conditions:
-  # Conditions for EC2
-  install_ec2_metadata_source: !Equals [ !Ref Section3bEC2CreateMetaDataSource, 'Yes' ]
+  # Condition for Tagging Resources
+  tag_existing_aws_resources: !Or
+    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'Existing' ]
+    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'Both' ]
+  tag_new_aws_resources: !Or
+    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'New' ]
+    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'Both' ]
 
-  # Conditions for ALB
-  create_alb_bucket: !Equals [ !Ref Section4dALBCreateS3Bucket, 'Yes' ]
-  install_uncommon_alb_s3_log_source: !And
-    - !Not [!Condition create_alb_bucket]
-    - !Equals [ !Ref Section4fALBCreateLogSource, 'Yes' ]
-  install_common_alb_s3_log_source: !And
-    - !Condition create_alb_bucket
-    - !Equals [ !Ref Section4fALBCreateLogSource, 'Yes' ]
-  install_alb_cloudwatch_metrics_source: !Equals [ !Ref Section4bALBCreateCloudWatchMetricsSource, 'Yes' ]
+  # Condition for EC2 Meta Data Source
+  install_ec2_metadata_source: !Equals [ !Ref Section4aEC2CreateMetaDataSource, 'Yes' ]
 
-  # Conditions for DynamoDB
-  create_dynamodb_bucket: !Equals [ !Ref Section5dDynamoDBCreateCloudTrailBucket, 'Yes' ]
-  install_uncommon_dynamo_cloudtrail_log_source: !And
-    - !Not [!Condition create_dynamodb_bucket]
-    - !Equals [ !Ref Section5fDynamoDBCreateCloudTrailLogSource, 'Yes' ]
-  install_common_dynamo_cloudtrail_log_source: !And
-    - !Condition create_dynamodb_bucket
-    - !Equals [ !Ref Section5fDynamoDBCreateCloudTrailLogSource, 'Yes' ]
-  install_dynamoDB_cloudwatch_metrics_source: !Equals [ !Ref Section5bDynamoDBCreateCloudWatchMetricsSource, 'Yes' ]
+  # Condition for ALB Log Source
+  create_alb_bucket: !Equals [ !Ref Section6aALBCreateS3Bucket, 'Yes' ]
+  install_alb_s3_log_source: !Equals [ !Ref Section6dALBCreateLogSource, 'Yes' ]
 
-  # Conditions for RDS
-  install_rds_cloudwatch_metrics_source: !Equals [ !Ref Section6bRDSCreateCloudWatchMetricsSource, 'Yes' ]
+  # Condition for CloudWatch Metrics Source
+  install_cloudwatch_metrics_source: !Equals [ !Ref Section5aALBCreateCloudWatchMetricsSource, 'Yes' ]
 
-  # Conditions for Lambda
-  create_lambda_bucket: !Equals [ !Ref Section7dLambdaCreateCloudTrailBucket, 'Yes' ]
-  install_uncommon_lambda_cloudtrail_log_source: !And
-    - !Not [!Condition create_lambda_bucket]
-    - !Equals [ !Ref Section7fLambdaCreateCloudTrailLogSource, 'Yes' ]
-  install_common_lambda_cloudtrail_log_source: !And
-    - !Condition create_lambda_bucket
-    - !Equals [ !Ref Section7fLambdaCreateCloudTrailLogSource, 'Yes' ]
-  install_lambda_cloudwatch_metrics_source: !Equals [ !Ref Section7bLambdaCreateCloudWatchMetricsSource, 'Yes' ]
-  install_lambda_cloudwatch_logs_source: !Equals [ !Ref Section7jLambdaCreateCloudWatchLogsSource, 'Yes' ]
+  # Condition for CloudTrail Log Source
+  create_cloudtrail_bucket: !Equals [ !Ref Section7aCreateCloudTrailBucket, 'Yes' ]
+  install_cloudtrail_log_source: !Equals [ !Ref Section7dCreateCloudTrailLogSource, 'Yes' ]
 
-  # Conditions for API Gateway
-  create_api_bucket: !Equals [ !Ref Section8dAPIGatewayCreateCloudTrailBucket, 'Yes' ]
-  install_uncommon_api_cloudtrail_log_source: !And
-    - !Not [!Condition create_api_bucket]
-    - !Equals [ !Ref Section8fAPIGatewayCreateCloudTrailLogSource, 'Yes' ]
-  install_common_api_cloudtrail_log_source: !And
-    - !Condition create_api_bucket
-    - !Equals [ !Ref Section8fAPIGatewayCreateCloudTrailLogSource, 'Yes' ]
-  install_api_cloudwatch_metrics_source: !Equals [ !Ref Section8bAPIGatewayCreateCloudWatchMetricsSource, 'Yes' ]
+  # Condition for CloudWatch log Source
+  install_lambda_cloudwatch_logs_source: !Equals [ !Ref Section8aLambdaCreateCloudWatchLogsSource, 'Yes' ]
 
-  # Conditions for Common
-  create_target_s3_bucket: !Or
-    - !Condition create_dynamodb_bucket
-    - !Condition create_lambda_bucket
-    - !Condition create_api_bucket
-    - !Condition create_alb_bucket
-  install_cloudtrail_logs_source: !Or
-    - !Condition install_common_dynamo_cloudtrail_log_source
-    - !Condition install_common_lambda_cloudtrail_log_source
-    - !Condition install_common_api_cloudtrail_log_source
-  install_cloud_watch_logs_source: !Condition install_lambda_cloudwatch_logs_source
-  install_cloud_watch_metric_source: !Or
-    - !Condition install_alb_cloudwatch_metrics_source
-    - !Condition install_dynamoDB_cloudwatch_metrics_source
-    - !Condition install_rds_cloudwatch_metrics_source
-    - !Condition install_lambda_cloudwatch_metrics_source
-    - !Condition install_api_cloudwatch_metrics_source
+  # Condition for S3 Logging enable
+  auto_enable_s3_logs: !Not [!Equals [ !Ref Section9aAutoEnableS3LogsALBResourcesOptions, 'None' ]]
+
+  # Condition for Auto Subscribe Lambda
+  auto_subscribe_exisitng_lambda_log_groups: !Or
+    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'Existing' ]
+    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'Both' ]
+  auto_subscribe_new_lambda_log_groups: !Or
+    - !Equals [ !Ref Section9cAutoSubscribeLogGroupsLambdaOptions, 'New' ]
+    - !Equals [ !Ref Section9cAutoSubscribeLogGroupsLambdaOptions, 'Both' ]
+  auto_subscribe_lambda_log_groups: !And
+    - !Condition install_lambda_cloudwatch_logs_source
+    - !Condition auto_subscribe_new_lambda_log_groups
+
+  # Condition for common
   install_collector: !Or
     - !Condition install_ec2_metadata_source
-    - !Condition install_common_alb_s3_log_source
-    - !Condition install_cloudtrail_logs_source
-    - !Condition install_cloud_watch_logs_source
-    - !Condition install_cloud_watch_metric_source
-
-  # Condition for auto subscribe of tags, S3 logs and lambda log group
-  auto_tag_aws_resource: !Equals [ !Ref Section9aAutoEnableTaggingAWSResources, 'Yes' ]
-  auto_enable_s3_logs: !Equals [ !Ref Section9bAutoEnableS3LogsALBResources, 'Yes' ]
-  auto_subscribe_lambda_log_groups: !And
-    - !Condition install_cloud_watch_logs_source
-    - !Equals [ !Ref Section9dAutoSubscribeLogGroupsLambda, 'Yes' ]
-
-  # Conditions for calling child stack of each app. If any resource create condition is true.
-  install_ec2_metrics_app: !Or
-    - !Equals [ !Ref Section3aEC2InstallApp, 'Yes' ]
-    - !Condition install_ec2_metadata_source
-  install_alb_app: !Or
-    - !Equals [ !Ref Section4aALBInstallApp, 'Yes' ]
-    - !Condition create_alb_bucket
-    - !Condition install_common_alb_s3_log_source
-    - !Condition install_uncommon_alb_s3_log_source
-    - !Condition install_alb_cloudwatch_metrics_source
-  install_dynamo_db_app: !Or
-    - !Equals [ !Ref Section5aDynamoDBInstallApp, 'Yes' ]
-    - !Condition create_dynamodb_bucket
-    - !Condition install_uncommon_dynamo_cloudtrail_log_source
-    - !Condition install_common_dynamo_cloudtrail_log_source
-    - !Condition install_dynamoDB_cloudwatch_metrics_source
-  install_rds_app: !Or
-    - !Equals [ !Ref Section6aRDSInstallApp, 'Yes' ]
-    - !Condition install_rds_cloudwatch_metrics_source
-  install_lambda_app: !Or
-    - !Equals [ !Ref Section7aLambdaInstallApp, 'Yes' ]
-    - !Condition create_lambda_bucket
-    - !Condition install_uncommon_lambda_cloudtrail_log_source
-    - !Condition install_common_lambda_cloudtrail_log_source
-    - !Condition install_lambda_cloudwatch_metrics_source
+    - !Condition install_alb_s3_log_source
+    - !Condition install_cloudwatch_metrics_source
+    - !Condition install_cloudtrail_log_source
     - !Condition install_lambda_cloudwatch_logs_source
-  install_api_gateway_app: !Or
-    - !Equals [ !Ref Section8aAPIGatewayInstallApp, 'Yes' ]
-    - !Condition create_api_bucket
-    - !Condition install_uncommon_api_cloudtrail_log_source
-    - !Condition install_common_api_cloudtrail_log_source
-    - !Condition install_api_cloudwatch_metrics_source
+  create_bucket: !Or
+    - !Condition create_alb_bucket
+    - !Condition create_cloudtrail_bucket
+  create_trail: !Condition create_cloudtrail_bucket
 
-  common_resources_creation: !Or
-    - !Condition install_ec2_metrics_app
-    - !Condition install_alb_app
-    - !Condition install_dynamo_db_app
-    - !Condition install_rds_app
-    - !Condition install_lambda_app
-    - !Condition install_api_gateway_app
-
-  add_fields_to_log_sources: !Or
-    - !Equals [ !Ref Section4fALBCreateLogSource, "No"]
-    - !Equals [ !Ref Section5fDynamoDBCreateCloudTrailLogSource, "No"]
-    - !Equals [ !Ref Section8fAPIGatewayCreateCloudTrailLogSource, "No"]
-    - !Equals [ !Ref Section7fLambdaCreateCloudTrailLogSource, "No"]
-    - !Equals [ !Ref Section7jLambdaCreateCloudWatchLogsSource, "No"]
-
+  # Condition for Stacks creation. Calling Nested Stack EveryTime to create FER and Metric Rule. If already present, marked as duplicate in Resource.
   install_overview_dashboards: !Or
     - !Equals [ !Ref Section3aEC2InstallApp, 'Yes' ]
-    - !Equals [ !Ref Section4aALBInstallApp, 'Yes' ]
-    - !Equals [ !Ref Section5aDynamoDBInstallApp, 'Yes' ]
-    - !Equals [ !Ref Section6aRDSInstallApp, 'Yes' ]
-    - !Equals [ !Ref Section7aLambdaInstallApp, 'Yes' ]
-    - !Equals [ !Ref Section8aAPIGatewayInstallApp, 'Yes' ]
+    - !Equals [ !Ref Section3bALBInstallApp, 'Yes' ]
+    - !Equals [ !Ref Section3cDynamoDBInstallApp, 'Yes' ]
+    - !Equals [ !Ref Section3dRDSInstallApp, 'Yes' ]
+    - !Equals [ !Ref Section3eLambdaInstallApp, 'Yes' ]
+    - !Equals [ !Ref Section3fAPIGatewayInstallApp, 'Yes' ]
 
 Mappings:
   RegionMap:
@@ -799,6 +538,37 @@ Resources:
   WaitHandle:
     Type: "AWS::CloudFormation::WaitConditionHandle"
 
+  ConditionGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      InlineCode: |
+        import os
+        import cfnresponse
+
+        def handler(event, context):
+          values = os.environ['Section2bAWSResourcesList']
+          response_value = {}
+          if values:
+              response_value["tag_alb"] = "Yes" if "alb" in values else "No"
+              response_value["tag_ec2"] = "Yes" if "ec2" in values else "No"
+              response_value["tag_rds"] = "Yes" if "rds" in values else "No"
+              response_value["tag_dynamo"] = "Yes" if "dynamodb" in values else "No"
+              response_value["tag_apigateway"] = "Yes" if "apigateway" in values else "No"
+              response_value["tag_lambda"] = "Yes" if "lambda" in values else "No"
+
+          cfnresponse.send(event, context, cfnresponse.SUCCESS, response_value, "ConditionCheck")
+      Handler: index.handler
+      Runtime: python3.6
+      Environment:
+        Variables:
+          Section2bAWSResourcesList: !Ref Section2bAWSResourcesList
+
+  Primerinvoke:
+    Type: AWS::CloudFormation::CustomResource
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt ConditionGeneratorFunction.Arn
+
   CreateCommonResources:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -806,18 +576,21 @@ Resources:
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/common/sam/resources.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/common/resources.template.yaml"
       Parameters:
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
-        AccountAlias: !Ref Section2aAccountAlias
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        CreateCollector: !If [install_collector, 'Yes', 'No']
-        CollectorName: !Sub "aws-observability-collector"
-        CreateS3Bucket: !If [create_target_s3_bucket, 'Yes', 'No']
-        BucketName: !Join
+        Section1aSumoDeployment: !Ref Section1aSumoLogicDeployment
+        Section1bSumoAccessID: !Ref Section1bSumoLogicAccessID
+        Section1cSumoAccessKey: !Ref Section1cSumoLogicAccessKey
+        Section1dSumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
+        Section1eRemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        Section2aAccountAlias: !Ref Section2cAccountAlias
+        Section3aCreateCollector: !If [install_collector, "Yes", "No"]
+        Section3bCollectorName: "aws-observability-collector"
+        Section4aCreateCloudWatchMetricsSource: !If [install_cloudwatch_metrics_source, "Yes", "No"]
+        Section4bCloudWatchMetricsSourceName: !Sub "${Section2cAccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
+        Section4cNamespaces: !Ref Section5bCloudWatchMetricsNameSpaces
+        Section5aCreateCommonBucket: !If [create_bucket, "Yes", "No"]
+        Section5bCommonBucketName: !Join
           - ""
           - - "aws-observability-logs-"
             - !Select
@@ -827,43 +600,10 @@ Resources:
                 - !Select
                   - 2
                   - !Split ["/", !Ref "AWS::StackId"]
-        CreateELBLogSource: !If [install_common_alb_s3_log_source, 'Yes', 'No']
-        S3BucketPathExpression: !Sub "elasticloadbalancing/AWSLogs/${AWS::AccountId}/*"
-        ELBLogsSourceName: !Sub "${Section2aAccountAlias}-aws-observability-alb-${AWS::Region}"
-        ELBLogsSourceCategoryName: "aws/observability/alb/logs"
-        CreateCloudTrailLogSource: !If [install_cloudtrail_logs_source, 'Yes', 'No']
-        CloudTrailLogsSourceName: !Sub "${Section2aAccountAlias}-aws-observability-cloudtrail-${AWS::Region}"
-        CloudTrailLogsSourceCategoryName: "aws/observability/cloudtrail/logs"
-        CloudTrailBucketPathExpression: !Sub "AWSLogs/${AWS::AccountId}/CloudTrail/*"
-        CreateCloudWatchLogSource: !If [install_cloud_watch_logs_source, 'Yes', 'No']
-        CloudWatchLogsSourceName: !Sub "${Section2aAccountAlias}-aws-observability-cloudwatch-logs-${AWS::Region}"
-        CloudWatchLogsSourceCategoryName: "aws/observability/cloudwatch/logs"
-        CreateCloudWatchMetricsSource: !If [install_cloud_watch_metric_source, 'Yes', 'No']
-        CloudWatchMetricsSourceName: !Sub "${Section2aAccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
-        CloudWatchMetricsSourceCategoryName: "aws/observability/cloudwatch/metrics"
-        Namespaces: !Join
-          - ","
-          - - !If [install_dynamoDB_cloudwatch_metrics_source, "AWS/DynamoDB", !Ref "AWS::NoValue"]
-            - !If [install_alb_cloudwatch_metrics_source, "AWS/ApplicationELB", !Ref "AWS::NoValue"]
-            - !If [install_rds_cloudwatch_metrics_source, "AWS/RDS", !Ref "AWS::NoValue"]
-            - !If [install_api_cloudwatch_metrics_source, "AWS/ApiGateway", !Ref "AWS::NoValue"]
-            - !If [install_lambda_cloudwatch_metrics_source, "AWS/Lambda", !Ref "AWS::NoValue"]
-
-  CommonResourceStackWaitHandle:
-    Condition: common_resources_creation
-    DependsOn: CreateCommonResources
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  CommonResourceStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [common_resources_creation, !Ref CommonResourceStackWaitHandle, !Ref WaitHandle]
-      Timeout: "1"
-      Count: 0
+        Section5cCreateTrail: !If [create_trail, "Yes", "No"]
 
   CreateSumoLogicAWSExplorerView:
     Type: Custom::SumoLogicAWSExplorer
-    DependsOn: CreateCommonResources
     Properties:
       ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
       RemoveOnDeleteStack: false
@@ -879,343 +619,256 @@ Resources:
 
   sumoOverview:
     Type: Custom::App
-    DependsOn: CreateCommonResources
     Condition: install_overview_dashboards
     Properties:
       ServiceToken: !GetAtt CreateCommonResources.Outputs.SumoLogicLambdaHelperARN
       Region: !Ref "AWS::Region"
       AppName: "AWS Observability Overview App"
       RemoveOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-      AppSources:
-        lambdametricsrc: !If [install_lambda_cloudwatch_metrics_source, !Sub "_sourceCategory=aws/observability/cloudwatch/metrics", !Sub "_sourceCategory=${Section7cLambdaCloudWatchMetricsSourceCategoryName}"]
-        dynamodbmetricsrc: !If [install_dynamoDB_cloudwatch_metrics_source, !Sub "_sourceCategory=aws/observability/cloudwatch/metrics", !Sub "_sourceCategory=${Section5cDynamoDBCloudWatchMetricsSourceCategoryName}"]
-        ec2metricsrc: !Sub "_sourceCategory=${Section3cEC2AppSourceCategoryName}"
-        rdsmetricsrc: !If [install_rds_cloudwatch_metrics_source, !Sub "_sourceCategory=aws/observability/cloudwatch/metrics", !Sub "_sourceCategory=${Section6cRDSCloudWatchMetricsSourceCategoryName}"]
       SumoAccessID: !Ref Section1bSumoLogicAccessID
       SumoAccessKey: !Ref Section1cSumoLogicAccessKey
       SumoDeployment: !Ref Section1aSumoLogicDeployment
 
   sumoEC2MetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    Condition: install_ec2_metrics_app
-    DependsOn: CreateCommonResources
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/ec2metrics/sam/ec2_metrics_app.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/ec2metrics/ec2_metrics_app.template.yaml"
       Parameters:
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        AccountAlias: !Ref Section2aAccountAlias
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        CollectorName: !Sub "aws-observability-collector"
-        MetricsSourceCategoryName: !Ref Section3cEC2AppSourceCategoryName
-        CreateMetaDataSource: !Ref Section3bEC2CreateMetaDataSource
-        MetaDataSourceName: !Sub "${Section2aAccountAlias}-aws-observability-ec2-metaData-${AWS::Region}"
-        SumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
-        InstallApp: !Ref Section3aEC2InstallApp
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-
-  sumoAlbMetricsAppStackWaitHandle:
-    Condition: install_ec2_metrics_app
-    DependsOn: sumoEC2MetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoAlbMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_ec2_metrics_app, !Ref sumoAlbMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "5"
-      Count: 0
+        Section1aSumoDeployment: !Ref Section1aSumoLogicDeployment
+        Section1bSumoAccessID: !Ref Section1bSumoLogicAccessID
+        Section1cSumoAccessKey: !Ref Section1cSumoLogicAccessKey
+        Section1dSumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
+        Section1eRemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        Section2aTagExistingAWSResources: !If [tag_existing_aws_resources, !GetAtt Primerinvoke.tag_ec2, "No"]
+        Section2bAccountAlias: !Ref Section2cAccountAlias
+        Section2cFilterExpression: !Ref Section2dTagAWSResourcesFilterExpression
+        Section3aInstallApp: !Ref Section3aEC2InstallApp
+        Section3bCollectorName: "aws-observability-collector"
+        Section4aCreateMetaDataSource: !If [install_ec2_metadata_source, "Yes", "No" ]
+        Section4bMetaDataSourceName: !Sub "${Section2cAccountAlias}-aws-observability-ec2-metaData-${AWS::Region}"
+        Section5aParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
 
   sumoAlbMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: sumoAlbMetricsAppStackWaitCondition
-    Condition: install_alb_app
+    DependsOn: sumoEC2MetricsAppStack
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/alb/sam/alb_app.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/alb/alb_app.template.yaml"
       Parameters:
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        AccountAlias: !Ref Section2aAccountAlias
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        CollectorName: !Sub "aws-observability-collector"
-        CreateS3Bucket: "No"
-        S3LogsBucketName: !If [create_alb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section4eALBS3LogsBucketName]
-        CreateELBLogSource: !If [install_uncommon_alb_s3_log_source, "Yes", "No"]
-        S3BucketPathExpression: "*"
-        ELBLogsSourceName: !Sub "${Section2aAccountAlias}-aws-observability-alb-${AWS::Region}"
-        ELBLogsSourceCategoryName: !If [install_uncommon_alb_s3_log_source, "aws/observability/alb/logs", !Ref Section4iALBLogsSourceCategoryName]
-        CreateCloudWatchMetricsSource: "No"
-        CloudWatchMetricsSourceCategoryName: !If [install_alb_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref Section4cALBCloudWatchMetricsSourceCategoryName]
-        SumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
-        InstallApp: !Ref Section4aALBInstallApp
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-        AutoEnableS3LogsALBResources: !Ref Section9bAutoEnableS3LogsALBResources
-
-  sumoDynamoDBMetricsAppStackWaitHandle:
-    Condition: install_alb_app
-    DependsOn: sumoAlbMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoDynamoDBMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_alb_app, !Ref sumoDynamoDBMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "15"
-      Count: 0
+        Section1aSumoDeployment: !Ref Section1aSumoLogicDeployment
+        Section1bSumoAccessID: !Ref Section1bSumoLogicAccessID
+        Section1cSumoAccessKey: !Ref Section1cSumoLogicAccessKey
+        Section1dSumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
+        Section1eRemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        Section2aTagExistingAWSResources: !If [tag_existing_aws_resources, !GetAtt Primerinvoke.tag_alb, "No"]
+        Section2bAccountAlias: !Ref Section2cAccountAlias
+        Section2cFilterExpression: !Ref Section2dTagAWSResourcesFilterExpression
+        Section3aInstallApp: !Ref Section3bALBInstallApp
+        Section4aCloudWatchMetricCollectorName: "aws-observability-collector"
+        Section4bCreateCloudWatchMetricsSource: "No"
+        Section4cCloudWatchMetricsSourceName: !Sub "${Section2cAccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
+        Section5aCreateS3Bucket: "No"
+        Section5bS3LogsBucketName: !If [create_alb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section6bALBS3LogsBucketName]
+        Section5cALBCollectorName: !If [install_alb_s3_log_source, "aws-observability-collector", !Ref Section6eALBS3LogsCollectorName]
+        Section5dCreateALBLogSource: !If [install_alb_s3_log_source, "Yes", "No"]
+        Section5eS3BucketPathExpression: !If [create_alb_bucket, !Sub "elasticloadbalancing/AWSLogs/${AWS::AccountId}/*", !Ref Section6cALBS3BucketPathExpression]
+        Section5fALBLogsSourceName: !If [install_alb_s3_log_source, !Sub "${Section2cAccountAlias}-aws-observability-alb-${AWS::Region}", !Ref Section6fALBLogsSourceName]
+        Section5gALBLogsSourceCategoryName: !If [install_alb_s3_log_source, "aws/observability/alb/logs", !Ref Section6gALBLogsSourceCategoryName]
+        Section6aParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
 
   sumoDynamoDBMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: sumoDynamoDBMetricsAppStackWaitCondition
-    Condition: install_dynamo_db_app
+    DependsOn: sumoAlbMetricsAppStack
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/dynamodb/sam/dynamodb_app.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/dynamodb/dynamodb_app.template.yaml"
       Parameters:
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        AccountAlias: !Ref Section2aAccountAlias
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        CollectorName: !Sub "aws-observability-collector"
-        CreateCloudTrailBucket: "No"
-        CloudTrailLogsBucketName: !If [create_dynamodb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section5eDynamoDBCloudTrailLogsBucketName]
-        CreateCloudTrailLogSource: !If [install_uncommon_dynamo_cloudtrail_log_source, "Yes", "No"]
-        CloudTrailBucketPathExpression: "*"
-        CloudTrailLogsSourceName: !If [install_uncommon_dynamo_cloudtrail_log_source, !Sub "${Section2aAccountAlias}-aws-observability-dynamodb-cloudtrail-${AWS::Region}", !Sub "${Section2aAccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
-        CloudTrailLogsSourceCategoryName: !If [install_uncommon_dynamo_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !If [install_common_dynamo_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section5iDynamoDBCloudTrailLogsSourceCategoryName]]
-        CreateCloudWatchMetricsSource: "No"
-        CloudWatchMetricsSourceCategoryName: !If [install_dynamoDB_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref Section5cDynamoDBCloudWatchMetricsSourceCategoryName]
-        SumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
-        InstallApp: !Ref Section5aDynamoDBInstallApp
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-
-  sumoRdsMetricsAppStackWaitHandle:
-    Condition: install_dynamo_db_app
-    DependsOn: sumoDynamoDBMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoRdsMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_dynamo_db_app, !Ref sumoRdsMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "15"
-      Count: 0
+        Section1aSumoDeployment: !Ref Section1aSumoLogicDeployment
+        Section1bSumoAccessID: !Ref Section1bSumoLogicAccessID
+        Section1cSumoAccessKey: !Ref Section1cSumoLogicAccessKey
+        Section1dSumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
+        Section1eRemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        Section2aTagExistingAWSResources: !If [tag_existing_aws_resources, !GetAtt Primerinvoke.tag_dynamo, "No"]
+        Section2bAccountAlias: !Ref Section2cAccountAlias
+        Section2cFilterExpression: !Ref Section2dTagAWSResourcesFilterExpression
+        Section3aInstallApp: !Ref Section3cDynamoDBInstallApp
+        Section4aCloudWatchMetricCollectorName: "aws-observability-collector"
+        Section4bCreateCloudWatchMetricsSource: "No"
+        Section4cCloudWatchMetricsSourceName: !Sub "${Section2cAccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
+        Section5aCreateCloudTrailBucket: "No"
+        Section5bCloudTrailLogsBucketName: !If [create_cloudtrail_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section7bCloudTrailLogsBucketName]
+        Section5cCloudTrailCollectorName: ""
+        Section5dCreateCloudTrailLogSource: "No"
+        Section5eCloudTrailBucketPathExpression: "*"
+        Section5fCloudTrailLogsSourceName: ""
+        Section5gCloudTrailLogsSourceCategoryName: !If [install_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section7gCloudTrailLogsSourceCategoryName]
+        Section6aParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
 
   sumoRdsMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    Condition: install_rds_app
-    DependsOn: sumoRdsMetricsAppStackWaitCondition
+    DependsOn: sumoDynamoDBMetricsAppStack
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/rds/sam/rds_app.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/rds/rds_app.template.yaml"
       Parameters:
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        AccountAlias: !Ref Section2aAccountAlias
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        CreateCloudWatchMetricsSource: "No"
-        CloudWatchMetricsSourceCategoryName: !If [install_rds_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref Section6cRDSCloudWatchMetricsSourceCategoryName]
-        SumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
-        InstallApp: !Ref Section6aRDSInstallApp
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-
-  sumoLambdaMetricsAppStackWaitHandle:
-    Condition: install_rds_app
-    DependsOn: sumoRdsMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoLambdaMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_rds_app, !Ref sumoLambdaMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "5"
-      Count: 0
+        Section1aSumoDeployment: !Ref Section1aSumoLogicDeployment
+        Section1bSumoAccessID: !Ref Section1bSumoLogicAccessID
+        Section1cSumoAccessKey: !Ref Section1cSumoLogicAccessKey
+        Section1dSumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
+        Section1eRemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        Section2aTagExistingAWSResources: !If [tag_existing_aws_resources, !GetAtt Primerinvoke.tag_rds, "No"]
+        Section2bAccountAlias: !Ref Section2cAccountAlias
+        Section2cFilterExpression: !Ref Section2dTagAWSResourcesFilterExpression
+        Section3aInstallApp: !Ref Section3dRDSInstallApp
+        Section4aCloudWatchMetricCollectorName: "aws-observability-collector"
+        Section4bCreateCloudWatchMetricsSource: "No"
+        Section4cCloudWatchMetricsSourceName: !Sub "${Section2cAccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
+        Section5aCreateCloudTrailBucket: "No"
+        Section5bCloudTrailLogsBucketName: !If [create_cloudtrail_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section7bCloudTrailLogsBucketName]
+        Section5cCloudTrailCollectorName: ""
+        Section5dCreateCloudTrailLogSource: "No"
+        Section5eCloudTrailBucketPathExpression: "*"
+        Section5fCloudTrailLogsSourceName: ""
+        Section5gCloudTrailLogsSourceCategoryName: !If [install_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section7gCloudTrailLogsSourceCategoryName]
+        Section6aParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
 
   sumoLambdaMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: sumoLambdaMetricsAppStackWaitCondition
-    Condition: install_lambda_app
+    DependsOn: sumoRdsMetricsAppStack
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/lambda/sam/lambda_app.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/lambda/lambda_app.template.yaml"
       Parameters:
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        AccountAlias: !Ref Section2aAccountAlias
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        CollectorName: !Sub "aws-observability-collector"
-        CreateCloudTrailBucket: "No"
-        CloudTrailLogsBucketName: !If [create_lambda_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section7eLambdaCloudTrailLogsBucketName]
-        CreateCloudTrailLogSource: !If [install_uncommon_lambda_cloudtrail_log_source, "Yes", "No"]
-        CloudTrailBucketPathExpression: "*"
-        CloudTrailLogsSourceName: !If [install_uncommon_lambda_cloudtrail_log_source, !Sub "${Section2aAccountAlias}-aws-observability-lambda-cloudtrail-${AWS::Region}", !Sub "${Section2aAccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
-        CloudTrailLogsSourceCategoryName: !If [install_uncommon_lambda_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !If [install_common_lambda_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section7iLambdaCloudTrailLogsSourceCategoryName]]
-        CreateCloudWatchLogSource: "No"
-        CloudWatchLogsSourceCategoryName: !If [install_lambda_cloudwatch_logs_source, "aws/observability/cloudwatch/logs", !Ref Section7mLambdaCloudWatchLogsSourceCategoryName]
-        CreateCloudWatchMetricsSource: "No"
-        CloudWatchMetricsSourceCategoryName: !If [install_lambda_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref Section7cLambdaCloudWatchMetricsSourceCategoryName]
-        SumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
-        InstallApp: !Ref Section7aLambdaInstallApp
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-
-  sumoApiGatewayMetricsAppStackWaitHandle:
-    Condition: install_lambda_app
-    DependsOn: sumoLambdaMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  sumoApiGatewayMetricsAppStackWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_lambda_app, !Ref sumoApiGatewayMetricsAppStackWaitHandle, !Ref WaitHandle]
-      Timeout: "15"
-      Count: 0
+        Section1aSumoDeployment: !Ref Section1aSumoLogicDeployment
+        Section1bSumoAccessID: !Ref Section1bSumoLogicAccessID
+        Section1cSumoAccessKey: !Ref Section1cSumoLogicAccessKey
+        Section1dSumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
+        Section1eRemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        Section2aTagExistingAWSResources: !If [tag_existing_aws_resources, !GetAtt Primerinvoke.tag_lambda, "No"]
+        Section2bAccountAlias: !Ref Section2cAccountAlias
+        Section2cFilterExpression: !Ref Section2dTagAWSResourcesFilterExpression
+        Section3aInstallApp: !Ref Section3eLambdaInstallApp
+        Section4aCloudWatchMetricCollectorName: "aws-observability-collector"
+        Section4bCreateCloudWatchMetricsSource: "No"
+        Section4cCloudWatchMetricsSourceName: !Sub "${Section2cAccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
+        Section5aCreateCloudTrailBucket: "No"
+        Section5bCloudTrailLogsBucketName: !If [create_cloudtrail_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section7bCloudTrailLogsBucketName]
+        Section5cCloudTrailCollectorName: !If [install_cloudtrail_log_source, "aws-observability-collector", !Ref Section7eCloudTrailCollectorName]
+        Section5dCreateCloudTrailLogSource: !If [install_cloudtrail_log_source, "Yes", "No"]
+        Section5eCloudTrailBucketPathExpression: !If [create_cloudtrail_bucket, !Sub "AWSLogs/${AWS::AccountId}/CloudTrail/*", !Ref Section7cCloudTrailBucketPathExpression]
+        Section5fCloudTrailLogsSourceName: !If [install_cloudtrail_log_source, !Sub "${Section2cAccountAlias}-aws-observability-cloudtrail-${AWS::Region}", !Ref Section7fCloudTrailLogsSourceName]
+        Section5gCloudTrailLogsSourceCategoryName: !If [install_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section7gCloudTrailLogsSourceCategoryName]
+        Section6aCloudWatchLogsCollectorName: !If [install_lambda_cloudwatch_logs_source, "aws-observability-collector", !Ref Section8bLambdaCloudWatchLogsCollectorName]
+        Section6bCreateCloudWatchLogSource: !If [install_lambda_cloudwatch_logs_source, "Yes", "No"]
+        Section6cCloudWatchLogsSourceName: !If [install_lambda_cloudwatch_logs_source, !Sub "${Section2cAccountAlias}-aws-observability-cloudwatch-logs-${AWS::Region}", !Ref Section8cLambdaCloudWatchLogsSourceName]
+        Section6dCloudWatchLogsSourceCategoryName: !If [install_lambda_cloudwatch_logs_source, "aws/observability/cloudwatch/logs", !Ref Section8dLambdaCloudWatchLogsSourceCategoryName]
+        Section7aParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
 
   sumoApiGatewayMetricsAppStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: sumoApiGatewayMetricsAppStackWaitCondition
-    Condition: install_api_gateway_app
+    DependsOn: sumoLambdaMetricsAppStack
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/apigateway/sam/api_gateway_app.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/apigateway/api_gateway_app.template.yaml"
       Parameters:
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        AccountAlias: !Ref Section2aAccountAlias
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        CollectorName: !Sub "aws-observability-collector"
-        CreateCloudTrailBucket: "No"
-        CloudTrailLogsBucketName: !If [create_api_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section8eAPIGatewayCloudTrailLogsBucketName]
-        CreateCloudTrailLogSource: !If [install_uncommon_api_cloudtrail_log_source, "Yes", "No"]
-        CloudTrailBucketPathExpression: "*"
-        CloudTrailLogsSourceName: !If [install_uncommon_api_cloudtrail_log_source, !Sub "${Section2aAccountAlias}-aws-observability-api-cloudtrail-${AWS::Region}", !Sub "${Section2aAccountAlias}-aws-observability-cloudtrail-${AWS::Region}"]
-        CloudTrailLogsSourceCategoryName: !If [install_uncommon_api_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !If [install_common_api_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section8iAPIGatewayCloudTrailLogsSourceCategoryName]]
-        CreateCloudWatchMetricsSource: "No"
-        CloudWatchMetricsSourceCategoryName: !If [install_api_cloudwatch_metrics_source, "aws/observability/cloudwatch/metrics", !Ref Section8cAPIGatewayCloudWatchMetricsSourceCategoryName]
-        SumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
-        InstallApp: !Ref Section8aAPIGatewayInstallApp
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-
-  AddFieldsToLogSources:
-    Type: AWS::CloudFormation::Stack
-    Condition: add_fields_to_log_sources
-    DependsOn: CreateCommonResources
-    Properties:
-      TemplateURL: !Join
-        - ""
-        - - "https://"
-          - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/updatefields/sam/update_fields.template.yaml"
-      Parameters:
-        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
-        SumoDeployment: !Ref Section1aSumoLogicDeployment
-        SumoAccessID: !Ref Section1bSumoLogicAccessID
-        SumoAccessKey: !Ref Section1cSumoLogicAccessKey
-        RemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
-        AccountAlias: !Ref Section2aAccountAlias
-        CreateELBLogSource: !If [install_alb_app, !Ref Section4fALBCreateLogSource, "Yes"]
-        AlbS3LogsCollectorName: !Ref Section4gALBS3LogsCollectorName
-        AlbELBLogsSourceName: !Ref Section4hALBLogsSourceName
-        CreateDynamoDBCloudTrailLogSource: !If [install_dynamo_db_app, !Ref Section5fDynamoDBCreateCloudTrailLogSource, "Yes"]
-        DynamoDBCloudTrailCollectorName: !Ref Section5gDynamoDBCloudTrailCollectorName
-        DynamoDBCloudTrailLogsSourceName: !Ref Section5hDynamoDBCloudTrailLogsSourceName
-        CreateApiGatewayCloudTrailLogSource: !If [install_api_gateway_app, !Ref Section8fAPIGatewayCreateCloudTrailLogSource, "Yes"]
-        ApiGatewayCloudTrailCollectorName: !Ref Section8gAPIGatewayCloudTrailCollectorName
-        ApiGatewayCloudTrailLogsSourceName: !Ref Section8hAPIGatewayCloudTrailLogsSourceName
-        CreateLambdaCloudTrailLogSource: !If [install_lambda_app, !Ref Section7fLambdaCreateCloudTrailLogSource, "Yes"]
-        LambdaCloudTrailCollectorName: !Ref Section7gLambdaCloudTrailCollectorName
-        LambdaCloudTrailLogsSourceName: !Ref Section7hLambdaCloudTrailLogsSourceName
-        CreateLambdaCloudWatchLogsSource: !If [install_lambda_app, !Ref Section7jLambdaCreateCloudWatchLogsSource, "Yes"]
-        LambdaCloudWatchLogsCollectorName: !Ref Section7kLambdaCloudWatchLogsCollectorName
-        LambdaCloudWatchLogsSourceName: !Ref Section7lLambdaCloudWatchLogsSourceName
+        Section1aSumoDeployment: !Ref Section1aSumoLogicDeployment
+        Section1bSumoAccessID: !Ref Section1bSumoLogicAccessID
+        Section1cSumoAccessKey: !Ref Section1cSumoLogicAccessKey
+        Section1dSumoOrganizationId: !Ref Section1dSumoLogicOrganizationId
+        Section1eRemoveSumoResourcesOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        Section2aTagExistingAWSResources: !If [tag_existing_aws_resources, !GetAtt Primerinvoke.tag_apigateway, "No"]
+        Section2bAccountAlias: !Ref Section2cAccountAlias
+        Section2cFilterExpression: !Ref Section2dTagAWSResourcesFilterExpression
+        Section3aInstallApp: !Ref Section3fAPIGatewayInstallApp
+        Section4aCloudWatchMetricCollectorName: "aws-observability-collector"
+        Section4bCreateCloudWatchMetricsSource: "No"
+        Section4cCloudWatchMetricsSourceName: !Sub "${Section2cAccountAlias}-aws-observability-cloudwatch-metrics-${AWS::Region}"
+        Section5aCreateCloudTrailBucket: "No"
+        Section5bCloudTrailLogsBucketName: !If [create_cloudtrail_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section7bCloudTrailLogsBucketName]
+        Section5cCloudTrailCollectorName: ""
+        Section5dCreateCloudTrailLogSource: "No"
+        Section5eCloudTrailBucketPathExpression: "*"
+        Section5fCloudTrailLogsSourceName: ""
+        Section5gCloudTrailLogsSourceCategoryName: !If [install_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section7gCloudTrailLogsSourceCategoryName]
+        Section6aParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
 
   AutoEnableTaggingNewAWSResources:
     Type: AWS::CloudFormation::Stack
-    Condition: auto_tag_aws_resource
-    DependsOn: CommonResourceStackWaitCondition
+    Condition: tag_new_aws_resources
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/AutoTagAWSResources/sam/auto_tag_resources.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/AutoTagAWSResources/auto_tag_resources.template.yaml"
       Parameters:
-        AccountAlias: !Ref Section2aAccountAlias
-        AddTagsForALBResources: !If [install_alb_app, 'Yes', 'No']
-        AddTagsForAPIGatewayResources: !If [install_api_gateway_app, 'Yes', 'No']
-        AddTagsForRDSResources: !If [install_rds_app, 'Yes', 'No']
-        AddTagsForEC2MetricsResources: !If [install_ec2_metrics_app, 'Yes', 'No']
-        AddTagsForLambdaResources: !If [install_lambda_app, 'Yes', 'No']
-        AddTagsForDynamoDBResources: !If [install_dynamo_db_app, 'Yes', 'No']
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-
-  AutoEnableS3LogsAlbWaitHandle:
-    Condition: install_alb_app
-    DependsOn: sumoAlbMetricsAppStack
-    Type: "AWS::CloudFormation::WaitConditionHandle"
-
-  AutoEnableS3LogsAlbWaitCondition:
-    Type: "AWS::CloudFormation::WaitCondition"
-    Properties:
-      Handle: !If [install_alb_app, !Ref AutoEnableS3LogsAlbWaitHandle, !Ref WaitHandle]
-      Timeout: "5"
-      Count: 0
+        AccountAlias: !Ref Section2cAccountAlias
+        AddTagsForALBResources: !If [tag_new_aws_resources, !GetAtt Primerinvoke.tag_alb, "No"]
+        AddTagsForAPIGatewayResources: !If [tag_new_aws_resources, !GetAtt Primerinvoke.tag_apigateway, "No"]
+        AddTagsForRDSResources: !If [tag_new_aws_resources, !GetAtt Primerinvoke.tag_rds, "No"]
+        AddTagsForEC2MetricsResources: !If [tag_new_aws_resources, !GetAtt Primerinvoke.tag_ec2, "No"]
+        AddTagsForLambdaResources: !If [tag_new_aws_resources, !GetAtt Primerinvoke.tag_lambda, "No"]
+        AddTagsForDynamoDBResources: !If [tag_new_aws_resources, !GetAtt Primerinvoke.tag_dynamo, "No"]
+        FilterExpression: !Ref Section2dTagAWSResourcesFilterExpression
 
   AutoEnableS3LogsAlbAWSResources:
     Type: AWS::CloudFormation::Stack
     Condition: auto_enable_s3_logs
-    DependsOn: AutoEnableS3LogsAlbWaitCondition
+    DependsOn: sumoApiGatewayMetricsAppStack
     Properties:
       TemplateURL: !Join
         - ""
         - - "https://"
           - !FindInMap [RegionMap, !Ref 'AWS::Region', bucketname]
-          - ".s3.amazonaws.com/sumologic-aws-observability/AutoEnableS3LogsAlb/sam/auto_enable_s3_alb.template.yaml"
+          - ".s3.amazonaws.com/sumologic-aws-observability/apps/AutoEnableS3LogsAlb/auto_enable_s3_alb.template.yaml"
       Parameters:
-        BucketName: !If [create_alb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section4eALBS3LogsBucketName]
-        EnableS3LoggingALBResources: !Ref Section9bAutoEnableS3LogsALBResources
-        FilterExpression: !Ref Section9cAutoEnableFilterExpression
-        AccountAlias: !Ref Section2aAccountAlias
+        BucketName: !If [create_alb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section6bALBS3LogsBucketName]
+        BucketPrefix: "elasticloadbalancing"
+        EnableLogging: "ALB"
+        TaggingResourceOptions: !Ref Section9aAutoEnableS3LogsALBResourcesOptions
+        FilterExpression: !Ref Section9bAutoEnableS3LogsFilterExpression
+        RemoveOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+
+  AutoEnableLambdaLogsWaitHandle:
+    Condition: auto_enable_s3_logs
+    DependsOn: AutoEnableS3LogsAlbAWSResources
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  AutoEnableLambdaLogsWaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !If [auto_enable_s3_logs, !Ref AutoEnableLambdaLogsWaitHandle, !Ref WaitHandle]
+      Timeout: "5"
+      Count: 0
 
   AutoSubscribeLambdaLogGroupsAWSResources:
     Type: AWS::Serverless::Application
     Condition: auto_subscribe_lambda_log_groups
-    DependsOn: CreateCommonResources
+    DependsOn: AutoEnableLambdaLogsWaitCondition
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-loggroup-connector
-        SemanticVersion: 1.0.1
+        SemanticVersion: 1.0.2
       Parameters:
-        LambdaARN: !GetAtt CreateCommonResources.Outputs.CloudWatchLambdaARN
-        LogGroupPattern: !Ref Section9eAutoSubscribeLambdaLogGroupPattern
-        UseExistingLogs: !Ref Section9fAutoSubscribeLambdaExistingLogGroups
+        LambdaARN: !GetAtt sumoLambdaMetricsAppStack.Outputs.CloudWatchLambdaARN
+        LogGroupPattern: !Ref Section9dAutoSubscribeLambdaLogGroupPattern
+        UseExistingLogs: !If [auto_subscribe_exisitng_lambda_log_groups, "true", "false"]
