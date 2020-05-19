@@ -1,6 +1,9 @@
 var AWS = require("aws-sdk");
-
 var cwl = new AWS.CloudWatchLogs({apiVersion: '2014-03-28'});
+async function sleep(waitTimeInMs) {
+    console.log("sleeping for " + waitTimeInMs + " ms...");
+    return new Promise((resolve) => setTimeout(resolve, waitTimeInMs));
+}
 
 function subscribeToLambda(lambdaLogGroupName, lambdaArn, errorHandler) {
     var params = {
@@ -23,13 +26,17 @@ function filterLogGroups(event, logGroupRegex) {
     }
 }
 
-function subscribeExistingLogGroups(logGroups) {
+async function subscribeExistingLogGroups(logGroups) {
     var logGroupName;
     var logGroupRegex = new RegExp(process.env.LOG_GROUP_PATTERN, "i");
     var lambdaArn = process.env.LAMBDA_ARN;
     for (var i = logGroups.length - 1; i >= 0; i--) {
         logGroupName = logGroups[i].logGroupName;
         if (logGroupName.match(logGroupRegex)) {
+
+            // sleep time between calls
+            await sleep(1000*(process.env.SUBSCRIBE_DELAY_SECONDS || 2)); // 5 seconds
+
             subscribeToLambda(logGroupName, lambdaArn, (function(inner_logGroupName) { return function (err, data) {
                 if (err) {
                     console.log("Error in subscribing", inner_logGroupName, err);
@@ -47,7 +54,7 @@ function processExistingLogGroups(token, errorHandler) {
 
     var params = {
       limit: 50,
-      // logGroupNamePrefix: 'STRING_VALUE',
+      // logGroupNamePrefix: '',
       nextToken: token
     };
     var p = new Promise(function(resolve, reject) {
@@ -81,12 +88,13 @@ function processEvents(env, event, errorHandler) {
         console.log("Subscribing: ", logGroupName, env.LAMBDA_ARN);
         subscribeToLambda(logGroupName, env.LAMBDA_ARN, errorHandler);
     } else {
-        console.log("Unsubscribed: ", logGroupName, env.LAMBDA_ARN);
+        console.log("Unmatched: ", logGroupName, env.LAMBDA_ARN);
     }
 
 }
 
 exports.handler = function (event, context, callback) {
+    console.log("Invoking Log Group connector function")
     function errorHandler(err, msg) {
         if (err) {
             console.log(err, msg);
