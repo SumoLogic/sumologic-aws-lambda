@@ -40,7 +40,7 @@ Metadata:
       - Label:
           default: "5. Sumo Logic AWS CloudWatch Metrics Source Details"
         Parameters:
-          - Section5aALBCreateCloudWatchMetricsSource
+          - Section5aCreateCloudWatchMetricsSource
           - Section5bCloudWatchMetricsNameSpaces
 
       - Label:
@@ -118,7 +118,7 @@ Metadata:
       Section4aEC2CreateMetaDataSource:
         default: "Create Sumo Logic AWS EC2 MetaData Source"
 
-      Section5aALBCreateCloudWatchMetricsSource:
+      Section5aCreateCloudWatchMetricsSource:
         default: "Create Sumo Logic CloudWatch Metrics Source"
       Section5bCloudWatchMetricsNameSpaces:
         default: "Sumo Logic AWS CloudWatch Metrics Namespaces"
@@ -226,7 +226,6 @@ Parameters:
     Default: "ec2, alb, dynamodb, apigateway, rds, lambda"
     Description: "Provide Comma delimited list of the AWS Resource types to tag. Take input values from [ec2, alb, dynamodb, apigateway, rds, lambda]"
     Type: String
-    AllowedPattern: "ec2|alb|dynamodb|apigateway|rds|lambda"
   Section2cAccountAlias:
     Type: String
     Description: "Provide an Alias for AWS account for identification in Sumo Logic Explorer View, metrics and logs. Please do not include special characters."
@@ -296,7 +295,7 @@ Parameters:
       - 'Yes'
       - 'No'
 
-  Section5aALBCreateCloudWatchMetricsSource:
+  Section5aCreateCloudWatchMetricsSource:
     Type: String
     Description: "Yes - Creates a Sumo Logic CloudWatch Metrics Source which collects Metrics for multiple Namespaces from the region selected. Default Name - AccountAlias-aws-observability-cloudwatch-metrics-Region.
                   No - If you already have a CloudWatch Metrics Source collecting metrics."
@@ -306,8 +305,8 @@ Parameters:
       - 'No'
   Section5bCloudWatchMetricsNameSpaces:
     Default: "AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS"
-    Description: "Provide Comma delimited list of the namespaces to collect."
-    Type: CommaDelimitedList
+    Description: "Provide Comma delimited list of the namespaces to collect. Default will be AWS/ApplicationELB, AWS/ApiGateway, AWS/DynamoDB, AWS/Lambda, AWS/RDS."
+    Type: String
 
   Section6aALBCreateS3Bucket:
     Type: String
@@ -434,7 +433,7 @@ Parameters:
       - 'None'
   Section9dAutoSubscribeLambdaLogGroupPattern:
     Type: String
-    Default: ".*"
+    Default: "lambda"
     Description: "Enter regex for matching logGroups. Regex will check for the name."
 
 Conditions:
@@ -454,7 +453,7 @@ Conditions:
   install_alb_s3_log_source: !Equals [ !Ref Section6dALBCreateLogSource, 'Yes' ]
 
   # Condition for CloudWatch Metrics Source
-  install_cloudwatch_metrics_source: !Equals [ !Ref Section5aALBCreateCloudWatchMetricsSource, 'Yes' ]
+  install_cloudwatch_metrics_source: !Equals [ !Ref Section5aCreateCloudWatchMetricsSource, 'Yes' ]
 
   # Condition for CloudTrail Log Source
   create_cloudtrail_bucket: !Equals [ !Ref Section7aCreateCloudTrailBucket, 'Yes' ]
@@ -468,8 +467,8 @@ Conditions:
 
   # Condition for Auto Subscribe Lambda
   auto_subscribe_exisitng_lambda_log_groups: !Or
-    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'Existing' ]
-    - !Equals [ !Ref Section2aTagAWSResourcesOptions, 'Both' ]
+    - !Equals [ !Ref Section9cAutoSubscribeLogGroupsLambdaOptions, 'Existing' ]
+    - !Equals [ !Ref Section9cAutoSubscribeLogGroupsLambdaOptions, 'Both' ]
   auto_subscribe_new_lambda_log_groups: !Or
     - !Equals [ !Ref Section9cAutoSubscribeLogGroupsLambdaOptions, 'New' ]
     - !Equals [ !Ref Section9cAutoSubscribeLogGroupsLambdaOptions, 'Both' ]
@@ -847,6 +846,7 @@ Resources:
         TaggingResourceOptions: !Ref Section9aAutoEnableS3LogsALBResourcesOptions
         FilterExpression: !Ref Section9bAutoEnableS3LogsFilterExpression
         RemoveOnDeleteStack: !Ref Section1eSumoLogicResourceRemoveOnDeleteStack
+        ParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
 
   AutoEnableLambdaLogsWaitHandle:
     Condition: auto_enable_s3_logs
