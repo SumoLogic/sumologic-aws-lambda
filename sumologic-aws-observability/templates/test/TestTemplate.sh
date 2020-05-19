@@ -175,25 +175,43 @@ elif [[ "${InstallType}" == "updatealbsource" ]]
 then
     export Section6eALBS3LogsCollectorName="aws-observability-collector"
     export Section6fALBLogsSourceName="albsourcewithbukcetwithauto-aws-observability-alb-${AWS_REGION}"
+# onlysources - creates all sources with common bucket creation for ALB and CloudTrail with auto enable option.
 elif [[ "${InstallType}" == "onlysources" ]]
 then
-    echo "sdsad"
-elif [[ "${InstallType}" == "albwithexistingbukcetcloudtrailwithnewbucket" ]]
+    export Section4aEC2CreateMetaDataSource="Yes"
+    export Section5aCreateCloudWatchMetricsSource="Yes"
+    export Section6dALBCreateLogSource="Yes"
+    export Section6aALBCreateS3Bucket="Yes"
+    export Section7dCreateCloudTrailLogSource="Yes"
+    export Section7aCreateCloudTrailBucket="Yes"
+    export Section8aLambdaCreateCloudWatchLogsSource="Yes"
+    export Section9aAutoEnableS3LogsALBResourcesOptions="Existing"
+# albexistingcloudtrialnew - creates ALB source with existing bucket and CloudTrail with new bucket. Create CW metrics source also.
+elif [[ "${InstallType}" == "albexistingcloudtrialnew" ]]
+then
+    export Section5aCreateCloudWatchMetricsSource="Yes"
+    export Section5bCloudWatchMetricsNameSpaces="AWS/ApplicationELB, AWS/ApiGateway"
+    export Section6dALBCreateLogSource="Yes"
+    export Section6bALBS3LogsBucketName="sumologiclambdahelper-${AWS_REGION}"
+    export Section6cALBS3BucketPathExpression="Labs/ALB/asasdas"
+    export Section7dCreateCloudTrailLogSource="Yes"
+    export Section7aCreateCloudTrailBucket="Yes"
+# albnewcloudtrialexisting - creates ALB source with new bucket and CloudTrail with Existing bucket. Create EC2 source also.
+elif [[ "${InstallType}" == "albnewcloudtrialexisting" ]]
+then
+    export Section4aEC2CreateMetaDataSource="Yes"
+    export Section6dALBCreateLogSource="Yes"
+    export Section6aALBCreateS3Bucket="Yes"
+    export Section7dCreateCloudTrailLogSource="Yes"
+    export Section7cCloudTrailBucketPathExpression="AWSLogs/Sourabh/Test"
+    export Section7bCloudTrailLogsBucketName="sumologiclambdahelper-${AWS_REGION}"
+elif [[ "${InstallType}" == "onlyappswithexistingsources" ]]
 then
     echo "sdsad"
-elif [[ "${InstallType}" == "albwithnewbukcetcloudtrailwithexistingbucket" ]]
+elif [[ "${InstallType}" == "albec2appall" ]]
 then
     echo "sdsad"
-elif [[ "${InstallType}" == "albwithnewbukcetcloudtrailwithexistingbucket" ]]
-then
-    echo "sdsad"
-elif [[ "${InstallType}" == "albec2apponly" ]]
-then
-    echo "sdsad"
-elif [[ "${InstallType}" == "rdsdynamolambdaapponly" ]]
-then
-    echo "sdsad"
-elif [[ "${InstallType}" == "onlyappswithsourcesavailable" ]]
+elif [[ "${InstallType}" == "rdsdynamolambdaappall" ]]
 then
     echo "sdsad"
 else
