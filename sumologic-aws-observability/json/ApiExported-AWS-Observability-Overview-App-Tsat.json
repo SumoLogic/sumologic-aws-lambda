@@ -1,0 +1,1807 @@
+{
+    "type": "FolderSyncDefinition",
+    "name": "anomalies dashboards",
+    "description": "",
+    "children": [
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS API Gateway - Anomalies",
+            "description": "",
+            "title": "2. AWS API Gateway - Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/apigateway",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/apigateway"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS Account Anomalies",
+            "description": "",
+            "title": "2. AWS Account Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "fff",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "CsvVariableSourceDefinition",
+                            "values": "a,n"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS Application Load Balancer - Anomalies",
+            "description": "",
+            "title": "2. AWS Application Load Balancer - Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/applicationelb",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} availabilityzone={{availabilityZone}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "availabilityZone",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "availabilityzone"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "targetGroup",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "targetgroup"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "collector",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "_collector"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "sourceHost",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "_sourcehost"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/applicationelb"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS DynamoDB - Anomalies",
+            "description": "",
+            "title": "2. AWS DynamoDB - Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "=",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/dynamodb",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/dynamodb"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS EC2 Metrics - Anomalies",
+            "description": "",
+            "title": "2. AWS EC2 Metrics - Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/ec2",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/ec2"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS Lambda - Anomalies",
+            "description": "",
+            "title": "2. AWS Lambda - Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/lambda",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/lambda"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS RDS - Anomalies",
+            "description": "",
+            "title": "2. AWS RDS - Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/rds",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "dbinstanceidentifier",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}} entity={{entity}}",
+                            "key": "dbinstanceidentifier"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/rds"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "2. AWS Region Anomalies",
+            "description": "",
+            "title": "2. AWS Region Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "region": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "5. AWS API Gateway - Entity Anomalies",
+            "description": "",
+            "title": "5. AWS API Gateway - Entity Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/apigateway",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "stage",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}} entity={{entity}}",
+                            "key": "stage"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "method",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}} entity={{entity}} stage={{stage}}",
+                            "key": "method"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "resource",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}} entity={{entity}}",
+                            "key": "resource"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/apigateway"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "entity": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "5. AWS DynamoDB - Entity Anomalies",
+            "description": "",
+            "title": "5. AWS DynamoDB - Entity Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/dynamodb",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account=\"{{account}}\" region=\"{{region}}\"",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/dynamodb"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "entity": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "6. AWS Lambda - Entity Anomalies",
+            "description": "",
+            "title": "6. AWS Lambda - Entity Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/lambda",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/lambda"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "entity": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "6. AWS RDS - Entity Anomalies",
+            "description": "",
+            "title": "6. AWS RDS - Entity Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/rds",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "dbinstanceidentifier",
+                        "displayName": null,
+                        "defaultValue": null,
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}} entity={{entity}}",
+                            "key": "dbinstanceidentifier"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/rds"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "entity": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "7. AWS EC2 Metrics - Entity Anomalies",
+            "description": "",
+            "title": "7. AWS EC2 Metrics - Entity Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/ec2",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/ec2"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "entity": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        },
+        {
+            "type": "MewboardSyncDefinition",
+            "name": "8. AWS Application Load Balancer - Entity Anomalies",
+            "description": "",
+            "title": "8. AWS Application Load Balancer - Entity Anomalies",
+            "rootPanel": {
+                "id": null,
+                "key": "panel91837cb38c64794a",
+                "title": "",
+                "visualSettings": "",
+                "keepVisualSettingsConsistentWithParent": true,
+                "panelType": "ContainerPanel",
+                "layout": {
+                    "layoutType": "Grid",
+                    "layoutStructures": [
+                        {
+                            "key": "panelPANE-755772EE99E55B40",
+                            "structure": "{\"height\":13,\"width\":24,\"x\":0,\"y\":0}"
+                        }
+                    ]
+                },
+                "panels": [
+                    {
+                        "id": null,
+                        "key": "panelPANE-755772EE99E55B40",
+                        "title": "Events of Interest",
+                        "visualSettings": "{\"general\":{\"mode\":\"EventsOfInterestScatterPanel\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\"},\"title\":{\"fontSize\":16}}",
+                        "keepVisualSettingsConsistentWithParent": true,
+                        "panelType": "EventsOfInterestScatterPanel"
+                    }
+                ],
+                "variables": [
+                    {
+                        "id": null,
+                        "name": "account",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "account"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "region",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}}",
+                            "key": "region"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "namespace",
+                        "displayName": null,
+                        "defaultValue": "aws/applicationelb",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "namespace"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "entity",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}} availabilityzone={{availabilityZone}} namespace={{namespace}}",
+                            "key": "entity"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "availabilityZone",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "account={{account}} region={{region}}",
+                            "key": "availabilityzone"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "targetGroup",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "targetgroup"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "collector",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "_collector"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    },
+                    {
+                        "id": null,
+                        "name": "sourceHost",
+                        "displayName": null,
+                        "defaultValue": "*",
+                        "sourceDefinition": {
+                            "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+                            "filter": "",
+                            "key": "_sourcehost"
+                        },
+                        "allowMultiSelect": false,
+                        "includeAllOption": true,
+                        "hideFromUI": false
+                    }
+                ],
+                "coloringRules": []
+            },
+            "theme": "light",
+            "topologyLabelMap": {
+                "data": {
+                    "namespace": [
+                        "aws/applicationelb"
+                    ],
+                    "region": [
+                        "*"
+                    ],
+                    "entity": [
+                        "*"
+                    ],
+                    "account": [
+                        "*"
+                    ]
+                }
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-1h"
+                },
+                "to": null
+            },
+            "layout": null,
+            "panels": null,
+            "variables": null,
+            "coloringRules": null
+        }
+    ]
+}

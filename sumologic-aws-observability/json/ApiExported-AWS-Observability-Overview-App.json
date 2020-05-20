@@ -1,0 +1,736 @@
+{
+  "type": "FolderSyncDefinition",
+  "name": "Overview",
+  "description": "The Overview folder provides Account and Region level overview dashboards.",
+  "children": [
+    {
+      "type": "MewboardSyncDefinition",
+      "name": "AWS Account Overview",
+      "description": "This dashboard provide detail information about your AWS account.",
+      "title": "AWS Account Overview",
+      "rootPanel": {
+        "id": null,
+        "key": "paneldf318466858cb94b",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-7914d172a686b845",
+              "structure": "{\"height\":6,\"width\":6,\"x\":18,\"y\":7}"
+            },
+            {
+              "key": "panelpane-70a6e0a2acba1b47",
+              "structure": "{\"height\":1,\"width\":12,\"x\":0,\"y\":0}"
+            },
+            {
+              "key": "panelpane-b880f5feaefba94a",
+              "structure": "{\"height\":1,\"width\":12,\"x\":12,\"y\":0}"
+            },
+            {
+              "key": "panelpane-6bc131b8aefba843",
+              "structure": "{\"height\":6,\"width\":6,\"x\":12,\"y\":7}"
+            },
+            {
+              "key": "panelpane-6b1253898d854b40",
+              "structure": "{\"height\":6,\"width\":6,\"x\":0,\"y\":7}"
+            },
+            {
+              "key": "panelpane-ca3c365b98f73b4e",
+              "structure": "{\"height\":6,\"width\":6,\"x\":6,\"y\":7}"
+            },
+            {
+              "key": "panelpane-00c31d56abcda94d",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":1}"
+            },
+            {
+              "key": "panelpane-6c60a3c1a2b5d945",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":1}"
+            },
+            {
+              "key": "panelpane-81738ecdbf440a42",
+              "structure": "{\"height\":6,\"width\":6,\"x\":0,\"y\":13}"
+            },
+            {
+              "key": "panelpane-71f8315495fd0b46",
+              "structure": "{\"height\":6,\"width\":6,\"x\":6,\"y\":13}"
+            },
+            {
+              "key": "panelpane-d1e3bc4e9cdce944",
+              "structure": "{\"height\":6,\"width\":6,\"x\":18,\"y\":13}"
+            },
+            {
+              "key": "panelpane-134de510b5d4184a",
+              "structure": "{\"height\":6,\"width\":6,\"x\":12,\"y\":13}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-7914d172a686b845",
+            "title": "Lambda Errors",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"Errors\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":0,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":10,\"color\":\"#ffc508\"},{\"from\":10,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false},\"valueFontSize\":40,\"labelFontSize\":16}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=AWS/Lambda metric=Errors statistic=Sum account={{account}} | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-70a6e0a2acba1b47",
+            "title": "IaaS Overview ",
+            "visualSettings": "{\"general\":{\"mode\":\"TextPanel\",\"type\":\"text\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"text\":{\"fontSize\":24,\"backgroundColor\":\"#abb8c3\",\"textColor\":\"#090909\",\"alignment\":\"center\",\"showTitle\":true,\"format\":\"text\",\"text\":\"\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-b880f5feaefba94a",
+            "title": "Serverless Overview",
+            "visualSettings": "{\"general\":{\"mode\":\"TextPanel\",\"type\":\"text\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"text\":{\"fontSize\":24,\"backgroundColor\":\"#abb8c3\",\"textColor\":\"#222D3B\",\"alignment\":\"center\",\"showTitle\":true,\"format\":\"text\",\"text\":\"\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-6bc131b8aefba843",
+            "title": "DynamoDB Errors",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Sum\",\"label\":\"Errors\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":10,\"color\":\"#ffc508\"},{\"from\":10,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false},\"valueFontSize\":40,\"labelFontSize\":16},\"hiddenQueryKeys\":[\"A\",\"B\",\"C\"]}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=aws/dynamodb metric=UserErrors Statistic=SampleCount | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace=aws/dynamodb metric=SystemErrors Statistic=SampleCount | sum",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace=aws/dynamodb metric=ConditionalCheckFailedRequests Statistic=SampleCount | sum",
+                "queryType": "Metrics",
+                "queryKey": "C",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "#A+#B+#C",
+                "queryType": "Metrics",
+                "queryKey": "D",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-6b1253898d854b40",
+            "title": "EC2 Average CPU Utilization",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"% CPU Usgae\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":100,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true,\"min\":0,\"max\":100},\"valueFontSize\":20,\"labelFontSize\":8}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric=CPU_Sys account={{account}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-ca3c365b98f73b4e",
+            "title": "RDS Average CPU Utilization",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"% CPU Usage\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":100,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true,\"min\":0,\"max\":100},\"valueFontSize\":20,\"labelFontSize\":8}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=aws/rds metric=CPUUtilization  statistic=average account={{account}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-00c31d56abcda94d",
+            "title": "Load Balancer Latency (ms)",
+            "visualSettings": "{\"general\":{\"mode\":\"honeyComb\",\"type\":\"honeyComb\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"honeyComb\":{\"thresholds\":[{\"from\":0,\"to\":500,\"color\":\"#008000\"},{\"from\":500,\"to\":800,\"color\":\"#ffc508\"},{\"from\":800,\"to\":1000,\"color\":\"#ff0000\"}],\"shape\":\"hexagon\",\"groupBy\":[],\"aggregationType\":\"avg\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "Namespace=AWS/ApplicationELB metric=TargetResponseTime Statistic=Average account={{account}} | eval(_value*1000) | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-6c60a3c1a2b5d945",
+            "title": "API Gateway Latency (ms)‎",
+            "visualSettings": "{\"general\":{\"mode\":\"honeyComb\",\"type\":\"honeyComb\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"honeyComb\":{\"thresholds\":[{\"from\":0,\"to\":500,\"color\":\"#008000\"},{\"from\":500,\"to\":800,\"color\":\"#ffc508\"},{\"from\":800,\"to\":1000,\"color\":\"#ff0000\"}],\"shape\":\"hexagon\",\"groupBy\":[],\"aggregationType\":\"avg\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "Namespace=AWS/ApiGateway metric=Latency statistic=Average account={{account}} entity=* | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-81738ecdbf440a42",
+            "title": "EC2 Average Free Memory",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"GB\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":4.1,\"to\":null,\"color\":\"#008000\"},{\"from\":2.1,\"to\":4.1,\"color\":\"#ffc508\"},{\"from\":null,\"to\":2.1,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} metric=Mem_Free | eval _value / 1073741824 | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-71f8315495fd0b46",
+            "title": "RDS Average Freeable Memory",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"GB\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":4.1,\"to\":null,\"color\":\"#008000\"},{\"from\":2.1,\"to\":4.1,\"color\":\"#ffc508\"},{\"from\":null,\"to\":2.1,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=aws/rds metric=FreeableMemory statistic=average account={{account}} | eval _value / 1073741824 | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-d1e3bc4e9cdce944",
+            "title": "Lambda Invocation Throttles",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"Invocation Throttles\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":5,\"color\":\"#ffc508\"},{\"from\":5,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false},\"valueFontSize\":40}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "Namespace=aws/lambda metric=Throttles Statistic=average account={{account}} | avg ",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-134de510b5d4184a",
+            "title": "DynamoDB Throttled Requests",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"Throttled Requests\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":5,\"color\":\"#ffc508\"},{\"from\":5,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} metric=ThrottledRequests Statistic=sum | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-1h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    },
+    {
+      "type": "MewboardSyncDefinition",
+      "name": "AWS Region Overview",
+      "description": "This dashboard provide detail information about your AWS account and region.",
+      "title": "AWS Region Overview",
+      "rootPanel": {
+        "id": null,
+        "key": "paneldf318466858cb94b",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-7914d172a686b845",
+              "structure": "{\"height\":6,\"width\":6,\"x\":18,\"y\":7}"
+            },
+            {
+              "key": "panelpane-70a6e0a2acba1b47",
+              "structure": "{\"height\":1,\"width\":12,\"x\":0,\"y\":0}"
+            },
+            {
+              "key": "panelpane-b880f5feaefba94a",
+              "structure": "{\"height\":1,\"width\":12,\"x\":12,\"y\":0}"
+            },
+            {
+              "key": "panelpane-6bc131b8aefba843",
+              "structure": "{\"height\":6,\"width\":6,\"x\":12,\"y\":7}"
+            },
+            {
+              "key": "panelpane-6b1253898d854b40",
+              "structure": "{\"height\":6,\"width\":6,\"x\":0,\"y\":7}"
+            },
+            {
+              "key": "panelpane-ca3c365b98f73b4e",
+              "structure": "{\"height\":6,\"width\":6,\"x\":6,\"y\":7}"
+            },
+            {
+              "key": "panelpane-00c31d56abcda94d",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":1}"
+            },
+            {
+              "key": "panelpane-6c60a3c1a2b5d945",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":1}"
+            },
+            {
+              "key": "panelpane-81738ecdbf440a42",
+              "structure": "{\"height\":6,\"width\":6,\"x\":0,\"y\":13}"
+            },
+            {
+              "key": "panelpane-71f8315495fd0b46",
+              "structure": "{\"height\":6,\"width\":6,\"x\":6,\"y\":13}"
+            },
+            {
+              "key": "panelpane-d1e3bc4e9cdce944",
+              "structure": "{\"height\":6,\"width\":6,\"x\":18,\"y\":13}"
+            },
+            {
+              "key": "panelpane-134de510b5d4184a",
+              "structure": "{\"height\":6,\"width\":6,\"x\":12,\"y\":13}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-7914d172a686b845",
+            "title": "Lambda Errors",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"Errors\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":0,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":10,\"color\":\"#ffc508\"},{\"from\":10,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false},\"valueFontSize\":40,\"labelFontSize\":16}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=AWS/Lambda metric=Errors statistic=Sum account={{account}} region={{region}} region={{region}} | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-70a6e0a2acba1b47",
+            "title": "IaaS Overview",
+            "visualSettings": "{\"general\":{\"mode\":\"TextPanel\",\"type\":\"text\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"text\":{\"fontSize\":24,\"backgroundColor\":\"#abb8c3\",\"textColor\":\"#090909\",\"alignment\":\"center\",\"showTitle\":true,\"format\":\"text\",\"text\":\"\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-b880f5feaefba94a",
+            "title": "Serverless Overview",
+            "visualSettings": "{\"general\":{\"mode\":\"TextPanel\",\"type\":\"text\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"text\":{\"fontSize\":24,\"backgroundColor\":\"#abb8c3\",\"textColor\":\"#222D3B\",\"alignment\":\"center\",\"showTitle\":true,\"format\":\"text\",\"text\":\"\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-6bc131b8aefba843",
+            "title": "DynamoDB Errors",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Sum\",\"label\":\"Errors\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":10,\"color\":\"#ffc508\"},{\"from\":10,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false},\"valueFontSize\":40,\"labelFontSize\":16},\"hiddenQueryKeys\":[\"A\",\"B\",\"C\"]}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=aws/dynamodb metric=UserErrors Statistic=SampleCount | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace=aws/dynamodb metric=SystemErrors Statistic=SampleCount | sum",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace=aws/dynamodb metric=ConditionalCheckFailedRequests Statistic=SampleCount | sum",
+                "queryType": "Metrics",
+                "queryKey": "C",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "#A+#B+#C",
+                "queryType": "Metrics",
+                "queryKey": "D",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-6b1253898d854b40",
+            "title": "EC2 Average CPU Utilization",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"% CPU Usgae\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":100,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true,\"min\":0,\"max\":100},\"valueFontSize\":20,\"labelFontSize\":8}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric=CPU_Sys account={{account}} region={{region}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-ca3c365b98f73b4e",
+            "title": "RDS Average CPU Utilization",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"% CPU Usage\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":100,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true,\"min\":0,\"max\":100},\"valueFontSize\":20,\"labelFontSize\":8}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=aws/rds metric=CPUUtilization statistic=average account={{account}} region={{region}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-00c31d56abcda94d",
+            "title": "Load Balancer Latency (ms)",
+            "visualSettings": "{\"general\":{\"mode\":\"honeyComb\",\"type\":\"honeyComb\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"honeyComb\":{\"thresholds\":[{\"from\":0,\"to\":500,\"color\":\"#008000\"},{\"from\":500,\"to\":800,\"color\":\"#ffc508\"},{\"from\":800,\"to\":1000,\"color\":\"#ff0000\"}],\"shape\":\"hexagon\",\"groupBy\":[],\"aggregationType\":\"avg\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "Namespace=AWS/ApplicationELB metric=TargetResponseTime Statistic=Average account={{account}} region={{region}} | eval(_value*1000) | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-6c60a3c1a2b5d945",
+            "title": "API Gateway Latency (ms)‎",
+            "visualSettings": "{\"general\":{\"mode\":\"honeyComb\",\"type\":\"honeyComb\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"honeyComb\":{\"thresholds\":[{\"from\":0,\"to\":500,\"color\":\"#008000\"},{\"from\":500,\"to\":800,\"color\":\"#ffc508\"},{\"from\":800,\"to\":1000,\"color\":\"#ff0000\"}],\"shape\":\"hexagon\",\"groupBy\":[],\"aggregationType\":\"avg\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "Namespace=AWS/ApiGateway metric=Latency statistic=Average account={{account}} region={{region}} | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-81738ecdbf440a42",
+            "title": "EC2 Average Free Memory",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"GB\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":4.1,\"to\":null,\"color\":\"#008000\"},{\"from\":2.1,\"to\":4.1,\"color\":\"#ffc508\"},{\"from\":null,\"to\":2.1,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} metric=Mem_Free | eval _value / 1073741824 | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-71f8315495fd0b46",
+            "title": "RDS Average Freeable Memory",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"GB\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":4.1,\"to\":null,\"color\":\"#008000\"},{\"from\":2.1,\"to\":4.1,\"color\":\"#ffc508\"},{\"from\":null,\"to\":2.1,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=aws/rds metric=FreeableMemory statistic=average account={{account}} region={{region}} | eval _value / 1073741824 | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-d1e3bc4e9cdce944",
+            "title": "Lambda Invocation Throttles",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"Invocation Throttles\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":5,\"color\":\"#ffc508\"},{\"from\":5,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false},\"valueFontSize\":40}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace=aws/lambda metric=Throttles Statistic=average account={{account}} region={{region}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-134de510b5d4184a",
+            "title": "DynamoDB Throttled Requests",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"Throttled Requests\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"0\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":5,\"color\":\"#ffc508\"},{\"from\":5,\"to\":null,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} metric=ThrottledRequests Statistic=sum | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "region",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}}",
+              "key": "region"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "region": [
+            "*"
+          ],
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-1h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    }
+  ]
+}

@@ -1,0 +1,2079 @@
+{
+  "type": "FolderSyncDefinition",
+  "name": "AWS DynamoDB",
+  "description": "The Sumo Logic App for Amazon DynamoDB is a unified logs and metrics (ULM) App which provides operational insights into your DynamoDB solution. The App includes Dashboards that allow you to monitor key metrics and view the throttle events, errors, latency, and help you plan the capacity of your DynamoDB solution.",
+  "children": [
+    {
+      "type": "MewboardSyncDefinition",
+      "name": "1. AWS DynamoDB - Capacity Planning",
+      "description": "See the details of your DynamoDB capacity including the provisioned read/write consumed, read/write throttle events, and throttled requests.",
+      "title": "1. AWS DynamoDB - Capacity Planning",
+      "rootPanel": {
+        "id": null,
+        "key": "panel41f5a8d787170a41",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-49154ef9a5d3d84f",
+              "structure": "{\"height\":1,\"width\":12,\"x\":0,\"y\":0}"
+            },
+            {
+              "key": "panelpane-779e6317a216eb4d",
+              "structure": "{\"height\":1,\"width\":12,\"x\":12,\"y\":0}"
+            },
+            {
+              "key": "panelpane-3333fe389aec3b42",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":1}"
+            },
+            {
+              "key": "panelpane-6783ddb5b85c4a49",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":1}"
+            },
+            {
+              "key": "panelpane-758a87f88db51a42",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":19}"
+            },
+            {
+              "key": "panelpane-7ce3de61ba35494b",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":19}"
+            },
+            {
+              "key": "panelpane-c19a008d8deb484a",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":7}"
+            },
+            {
+              "key": "panelpane-111875ec95757b47",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":25}"
+            },
+            {
+              "key": "panelpane-23b8449dba70ab40",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":7}"
+            },
+            {
+              "key": "panelpane-37a79b0eb9b0eb41",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":25}"
+            },
+            {
+              "key": "panelpane-33fc42308e69684d",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":31}"
+            },
+            {
+              "key": "panelpane-7bb8c9c3bf64594d",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":31}"
+            },
+            {
+              "key": "panelpane-64a23ff7af69e845",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":13}"
+            },
+            {
+              "key": "panelpane-2e19df1fbc923a4f",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":13}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-49154ef9a5d3d84f",
+            "title": "Read Capacity",
+            "visualSettings": "{\"text\":{\"backgroundColor\":\"#abb8c3\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-779e6317a216eb4d",
+            "title": "Write Capacity",
+            "visualSettings": "{\"text\":{\"backgroundColor\":\"#abb8c3\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-3333fe389aec3b42",
+            "title": "Read Capacity Consumed Percentage",
+            "visualSettings": "{\"general\":{\"type\":\"honeyComb\"},\"hiddenQueryKeys\":[\"A\",\"B\"],\"honeyComb\":{\"groupBy\":[],\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":null,\"color\":\"#ff0000\"}],\"aggregationType\":\"latest\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ProvisionedReadCapacityUnits Statistic=Maximum | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace={{namespace}} account={{account}} region={{region}} entity={{entity}} metric=ConsumedReadCapacityUnits Statistic=Maximum | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "(#B/#A)*100 along entity",
+                "queryType": "Metrics",
+                "queryKey": "C",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-6783ddb5b85c4a49",
+            "title": "Write Capacity Consumed Percentage",
+            "visualSettings": "{\"general\":{\"type\":\"honeyComb\"},\"hiddenQueryKeys\":[\"A\",\"B\"],\"honeyComb\":{\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":null,\"color\":\"#ff0000\"}],\"aggregationType\":\"latest\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ProvisionedWriteCapacityUnits Statistic=Maximum | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace={{namespace}} account={{account}} region={{region}} entity={{entity}} metric=ConsumedWriteCapacityUnits Statistic=Maximum | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "100 *(#B/#A) along entity",
+                "queryType": "Metrics",
+                "queryKey": "C",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-758a87f88db51a42",
+            "title": "Read Capacity Consumed",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"hiddenQueryKeys\":[\"C\"],\"axes\":{\"axisY\":{\"title\":\"Read Capacity\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ProvisionedReadCapacityUnits Statistic=Maximum | avg by entity, GlobalSecondaryIndexName",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ConsumedReadCapacityUnits Statistic=Maximum | avg by entity, GlobalSecondaryIndexName",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-7ce3de61ba35494b",
+            "title": "Write Capacity Consumed",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"hiddenQueryKeys\":[],\"axes\":{\"axisY\":{\"title\":\"Write Capacity\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ProvisionedWriteCapacityUnits Statistic=Maximum | avg by entity, GlobalSecondaryIndexName",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ConsumedWriteCapacityUnits Statistic=Maximum | avg by entity, GlobalSecondaryIndexName",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-c19a008d8deb484a",
+            "title": "Throttled Read Requests by Table and Operation",
+            "visualSettings": "{\"general\":{\"type\":\"honeyComb\"},\"honeyComb\":{\"groupBy\":[{\"label\":\"entity\",\"value\":\"entity\"}],\"aggregationType\":\"latest\",\"thresholds\":[{\"from\":0,\"to\":10,\"color\":\"#008000\"},{\"from\":10,\"to\":20,\"color\":\"#ffc508\"},{\"from\":20,\"to\":null,\"color\":\"#ff0000\"}]}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} account={{account}} region={{region}} entity={{entity}} metric=ThrottledRequests Statistic=sum (operation=*get* or operation=*scan* or operation=*query*)| sum by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-111875ec95757b47",
+            "title": "Throttled Read Requests by Table and Operation",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Throttled Requests\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ThrottledRequests Statistic=sum (operation=*get* or operation=*scan* or operation=*query*) | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-23b8449dba70ab40",
+            "title": "Throttled Write Requests by Table and Operation",
+            "visualSettings": "{\"general\":{\"type\":\"honeyComb\"},\"honeyComb\":{\"groupBy\":[{\"label\":\"entity\",\"value\":\"entity\"}],\"aggregationType\":\"latest\",\"thresholds\":[{\"from\":0,\"to\":10,\"color\":\"#008000\"},{\"from\":10,\"to\":20,\"color\":\"#ffc508\"},{\"from\":20,\"to\":null,\"color\":\"#ff0000\"}]}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} account={{account}} region={{region}} entity={{entity}} metric=ThrottledRequests Statistic=sum (operation=*update* or operation=*put* or operation=*delete* or operation=*write*)| sum by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-37a79b0eb9b0eb41",
+            "title": "Throttled Write Requests by Table and Operation",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Throttled Requests\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ThrottledRequests Statistic=sum (operation=*update* or operation=*put* or operation=*delete* or operation=*write*)| sum by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-33fc42308e69684d",
+            "title": "Read Throttle Events by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Read Throttle\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=ReadThrottleEvents Statistic=sum | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-7bb8c9c3bf64594d",
+            "title": "Write Throttle Events by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Write Throttle\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} metric=WriteThrottleEvents Statistic=sum | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-64a23ff7af69e845",
+            "title": "Account Allotted Max Reads",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\",\"type\":\"line\",\"displayType\":\"default\",\"markerSize\":0,\"lineDashType\":\"solid\",\"markerType\":\"none\",\"lineThickness\":3},\"title\":{\"fontSize\":16},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$metricsrc region={{region}} namespace={{namespace}} metric=AccountMaxReads Statistic=Average | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "$$metricsrc region={{region}} namespace={{namespace}} metric=AccountMaxTableLevelReads Statistic=Average | sum",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-2e19df1fbc923a4f",
+            "title": "Account Allotted Max Writes",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\",\"type\":\"line\",\"displayType\":\"default\",\"markerSize\":0,\"lineDashType\":\"solid\",\"markerType\":\"none\",\"lineThickness\":3},\"title\":{\"fontSize\":16},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$metricsrc region={{region}} namespace={{namespace}} metric=AccountMaxWrites Statistic=Average | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "$$metricsrc region={{region}} namespace={{namespace}} metric=AccountMaxTableLevelWrites Statistic=Average | sum",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "region",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}}",
+              "key": "region"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "namespace",
+            "displayName": null,
+            "defaultValue": "aws/dynamodb",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}}",
+              "key": "namespace"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "entity",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+              "key": "entity"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "namespace": [
+            "aws/dynamodb"
+          ],
+          "region": [
+            "*"
+          ],
+          "entity": [
+            "*"
+          ],
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-3h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    },
+    {
+      "type": "MewboardSyncDefinition",
+      "name": "2. AWS DynamoDB  - Latency and Errors",
+      "description": "See the details of errors and latency of your DynamoDB including the user error, system error, failed request, and latency.",
+      "title": "2. AWS DynamoDB  - Latency and Errors",
+      "rootPanel": {
+        "id": null,
+        "key": "panel7a619e3f8d0d0849",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-1c57082ea2a7b94a",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":6}"
+            },
+            {
+              "key": "panelpane-cb93c390b6c9e84c",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":6}"
+            },
+            {
+              "key": "panelpane-e7058e6080478b40",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":12}"
+            },
+            {
+              "key": "panelpane-d56511dfbeed1b4f",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":12}"
+            },
+            {
+              "key": "panelpane-54a8916e95a1aa41",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":0}"
+            },
+            {
+              "key": "panelpane-c089356b96a23a43",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":0}"
+            },
+            {
+              "key": "panelpane-565f9477bb219b49",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":18}"
+            },
+            {
+              "key": "panelpane-2ddf6d7cac068a4a",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":18}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-1c57082ea2a7b94a",
+            "title": "Get Latency by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\",\"type\":\"line\",\"displayType\":\"default\",\"markerSize\":0,\"lineDashType\":\"solid\",\"markerType\":\"none\",\"lineThickness\":3},\"title\":{\"fontSize\":16},\"axes\":{\"axisX\":{\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Latency\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} account={{account}} entity={{entity}} metric=SuccessfulRequestLatency Statistic=Average (operation=*get* or operation=*scan* or operation=*query*) | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-cb93c390b6c9e84c",
+            "title": "Put Latency by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\",\"type\":\"line\",\"displayType\":\"default\",\"markerSize\":0,\"lineDashType\":\"solid\",\"markerType\":\"none\",\"lineThickness\":3},\"title\":{\"fontSize\":16},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Latency\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} account={{account}} entity={{entity}} metric=SuccessfulRequestLatency Statistic=Average (operation=*update* or operation=*put* or operation=*delete* or operation=*write*) | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-e7058e6080478b40",
+            "title": "User Errors",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Errors\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=UserErrors Statistic=SampleCount | avg by region",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-d56511dfbeed1b4f",
+            "title": "System Errors",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Errors\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=SystemErrors Statistic=SampleCount | avg by region",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-54a8916e95a1aa41",
+            "title": "Get Latency by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"honeyComb\",\"type\":\"honeyComb\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"honeyComb\":{\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#98ECA9\"},{\"from\":null,\"to\":null,\"color\":\"#F2DA73\"},{\"from\":null,\"to\":null,\"color\":\"#FFB5B5\"}],\"shape\":\"hexagon\",\"groupBy\":[{\"label\":\"entity\",\"value\":\"entity\"}],\"aggregationType\":\"avg\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} region={{region}} account={{account}} entity={{entity}} metric=SuccessfulRequestLatency Statistic=Average (operation=*get* or operation=*scan* or operation=*query*) | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-c089356b96a23a43",
+            "title": "Put Latency by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"honeyComb\",\"type\":\"honeyComb\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"honeyComb\":{\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#98ECA9\"},{\"from\":null,\"to\":null,\"color\":\"#F2DA73\"},{\"from\":null,\"to\":null,\"color\":\"#FFB5B5\"}],\"shape\":\"hexagon\",\"groupBy\":[{\"label\":\"entity\",\"value\":\"entity\"}],\"aggregationType\":\"avg\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} region={{region}} account={{account}} entity={{entity}} metric=SuccessfulRequestLatency Statistic=Average (operation=*update* or operation=*put* or operation=*delete* or operation=*write*) | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-565f9477bb219b49",
+            "title": "Conditional Check Fail by Table",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Check Fail\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} entity={{entity}} metric=ConditionalCheckFailedRequests Statistic=SampleCount | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-2ddf6d7cac068a4a",
+            "title": "Transaction Conflict",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Transaction Conflicts\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=TransactionConflict Statistic=SampleCount | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "region",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}}",
+              "key": "region"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "namespace",
+            "displayName": null,
+            "defaultValue": "aws/dynamodb",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}}",
+              "key": "namespace"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "entity",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+              "key": "entity"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "namespace": [
+            "aws/dynamodb"
+          ],
+          "region": [
+            "*"
+          ],
+          "entity": [
+            "*"
+          ],
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-3h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    },
+    {
+      "type": "MewboardSyncDefinition",
+      "name": "3. AWS DynamoDB - Events",
+      "description": "See the details on events in your DynamoDB including the location, users, errors, updates, creations, and deletions to tables.",
+      "title": "3. AWS DynamoDB - Events",
+      "rootPanel": {
+        "id": null,
+        "key": "panel488884e08adc384b",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-86e1f420a9e24948",
+              "structure": "{\"height\":6,\"width\":6,\"x\":6,\"y\":0}"
+            },
+            {
+              "key": "panelpane-da8bb2b4afbc5948",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":0}"
+            },
+            {
+              "key": "panelpane-45b8f26c8c98fa45",
+              "structure": "{\"height\":6,\"width\":6,\"x\":0,\"y\":0}"
+            },
+            {
+              "key": "panelpane-8dbaa36c93bfb84b",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":6}"
+            },
+            {
+              "key": "panelpane-b8faa804b5a87b46",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":6}"
+            },
+            {
+              "key": "panelpane-4c0728c1af8c2a4c",
+              "structure": "{\"height\":6,\"width\":24,\"x\":0,\"y\":12}"
+            },
+            {
+              "key": "panelpane-e435b2fb9dd53844",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":18}"
+            },
+            {
+              "key": "panelpane-80e6456e88830b48",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":18}"
+            },
+            {
+              "key": "panelpane-de3ac047b48a0940",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":24}"
+            },
+            {
+              "key": "panelpane-7077b98a876e0846",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":24}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-86e1f420a9e24948",
+            "title": "Events",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"pie\",\"displayType\":\"default\",\"fillOpacity\":1,\"startAngle\":270,\"innerRadius\":50,\"maxNumOfSlices\":10},\"title\":{\"fontSize\":16},\"legend\":{\"enabled\":false}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, src_ip, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count by event_name",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-da8bb2b4afbc5948",
+            "title": "Events Over Time",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\",\"type\":\"line\",\"displayType\":\"default\",\"markerSize\":0,\"lineDashType\":\"solid\",\"markerType\":\"none\",\"lineThickness\":3},\"title\":{\"fontSize\":16},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, src_ip, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| timeslice 1h\n| count by event_name, _timeslice\n| transpose row _timeslice column event_name \n| fillmissing timeslice (1h)",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-45b8f26c8c98fa45",
+            "title": "Total Errors",
+            "visualSettings": "{\"general\":{\"mode\":\"singleValueMetrics\",\"type\":\"svp\",\"displayType\":\"default\"},\"title\":{\"fontSize\":16},\"svp\":{\"option\":\"Average\",\"label\":\"Errors\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"\",\"hideData\":false,\"rounding\":2,\"thresholds\":[{\"from\":0,\"to\":10,\"color\":\"#ffb5b5\"},{\"from\":10,\"to\":50,\"color\":\"#ff5d5d\"},{\"from\":50,\"to\":null,\"color\":\"#bf2121\"}],\"sparkline\":{\"show\":false,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" errorCode errorMessage\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\", \"errorCode\", \"errorMessage\" as event_name, Region, entity, src_ip, user, error_code, error_msg\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-8dbaa36c93bfb84b",
+            "title": "Top 10 Tables with Errors",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"bar\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"distribution\"},\"axes\":{\"axisX\":{\"titleFontSize\":11,\"labelFontSize\":10,\"title\":\"Table Name\"},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Errors\"}},\"legend\":{\"enabled\":false,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" errorCode errorMessage\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\", \"errorCode\", \"errorMessage\" as event_name, Region, entity, src_ip, user, error_code, error_msg\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count by entity\n| sort by _count\n| limit 5",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-b8faa804b5a87b46",
+            "title": "Top 10 IAM Users",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"bar\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"distribution\"},\"axes\":{\"axisX\":{\"titleFontSize\":11,\"labelFontSize\":10,\"title\":\"User\"},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Count\"}},\"legend\":{\"enabled\":false,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, src_ip, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count as count by user\n| sort count \n| limit 10 ",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-4c0728c1af8c2a4c",
+            "title": "Top Errors",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"table\",\"displayType\":\"default\",\"paginationPageSize\":100,\"fontSize\":12,\"mode\":\"distribution\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" errorCode errorMessage\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\", \"errorCode\", \"errorMessage\" as event_name, Region, entity, src_ip, user, error_code, error_msg\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count as Count by error_code, error_msg, event_name, user, src_ip\n| sort by Count\n| limit 20",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-e435b2fb9dd53844",
+            "title": "Create Table Events",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"table\",\"displayType\":\"default\",\"paginationPageSize\":100,\"fontSize\":12,\"mode\":\"distribution\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" CreateTable\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\", \"requestParameters.keySchema\", \"requestParameters.attributeDefinitions\", \"userAgent\", \"responseElements.tableDescription.provisionedThroughput\" as event_name, Region, entity, src_ip, user, table_schema, attribute_definition, user_agent, provisioned_throughput\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count by event_name, entity, table_schema, attribute_definition, provisioned_throughput, user, region, src_ip",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-80e6456e88830b48",
+            "title": "Update Table Events",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"table\",\"displayType\":\"default\",\"paginationPageSize\":100,\"fontSize\":12,\"mode\":\"distribution\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" UpdateTable !(errorCode)\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, src_ip, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count by event_name, entity, user, region, src_ip",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-de3ac047b48a0940",
+            "title": "Delete Table",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"table\",\"displayType\":\"default\",\"paginationPageSize\":100,\"fontSize\":12,\"mode\":\"distribution\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" DeleteTable\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\", \"userIdentity.sessionContext.attributes.mfaAuthenticated\" as event_name, Region, entity, src_ip, user, mfa_authentication\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\" \n| count by event_name, entity, user, region, src_ip, mfa_authentication",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-7077b98a876e0846",
+            "title": "Update Time to Live Events",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"table\",\"displayType\":\"default\",\"paginationPageSize\":100,\"fontSize\":12,\"mode\":\"distribution\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" UpdateTimeToLive\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\", \"requestParameters\", \"responseElements\" as event_name, Region, entity, src_ip, user, req_params, resp_elements\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| count by event_name, region, user, src_ip, req_params, resp_elements",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "region",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}}",
+              "key": "region"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "namespace",
+            "displayName": null,
+            "defaultValue": "aws/dynamodb",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}}",
+              "key": "namespace"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "entity",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+              "key": "entity"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "namespace": [
+            "aws/dynamodb"
+          ],
+          "region": [
+            "*"
+          ],
+          "entity": [
+            "*"
+          ],
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-3h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    },
+    {
+      "type": "MewboardSyncDefinition",
+      "name": "4. AWS DynamoDB - Threat Intel",
+      "description": "See the details of IP threats including the count, location, and highly malicious IP threats.",
+      "title": "4. AWS DynamoDB - Threat Intel",
+      "rootPanel": {
+        "id": null,
+        "key": "panel13952110bef9c84b",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-3b762241ac0aba4d",
+              "structure": "{\"height\":6,\"width\":6,\"x\":0,\"y\":0}"
+            },
+            {
+              "key": "panelpane-c08479a8a0390b4d",
+              "structure": "{\"height\":6,\"width\":18,\"x\":6,\"y\":6}"
+            },
+            {
+              "key": "panelpane-b8ffc92b8b722a41",
+              "structure": "{\"height\":6,\"width\":24,\"x\":0,\"y\":12}"
+            },
+            {
+              "key": "panelpane-382cdd568e5a3b4c",
+              "structure": "{\"height\":6,\"width\":8,\"x\":6,\"y\":0}"
+            },
+            {
+              "key": "panelpane-c605d948852ffb48",
+              "structure": "{\"height\":6,\"width\":10,\"x\":14,\"y\":0}"
+            },
+            {
+              "key": "panelpane-be426ea69f99384f",
+              "structure": "{\"height\":6,\"width\":6,\"x\":0,\"y\":6}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-3b762241ac0aba4d",
+            "title": "All IP Threat Count",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Sum\",\"label\":\"Threats\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"valueFontSize\":20,\"labelFontSize\":8,\"sparkline\":{\"show\":false,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, ip_address, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| where ip_address != \"0.0.0.0\" and ip_address != \"127.0.0.1\"\n| count as ip_count by ip_address\n| lookup type, actor, raw, threatlevel as malicious_confidence from sumo://threat/cs on threat=ip_address \n| json field=raw \"labels[*].name\" as label_name \n| replace(label_name, \"\\\\/\",\"->\") as label_name\n| replace(label_name, \"\\\"\",\" \") as label_name\n| where  type=\"ip_address\" and !isNull(malicious_confidence)\n| if (isEmpty(actor), \"Unassigned\", actor) as Actor\n| sum (ip_count) as threat_count",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-c08479a8a0390b4d",
+            "title": "Highly Malicious IP Threats Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\",\"type\":\"table\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, ip_address, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| where ip_address != \"0.0.0.0\" and ip_address != \"127.0.0.1\"\n| timeslice 5m\n| count as ip_count by ip_address, _sourceCategory, entity\n| lookup type, actor, raw, threatlevel as malicious_confidence from sumo://threat/cs on threat=ip_address \n| json field=raw \"labels[*].name\" as label_name \n| replace(label_name, \"\\\\/\",\"->\") as label_name\n| replace(label_name, \"\\\"\",\" \") as label_name\n| where  type=\"ip_address\" and malicious_confidence=\"high\"\n| if (isEmpty(actor), \"Unassigned\", actor) as Actor\n| sum (ip_count) as threat_count by ip_address, malicious_confidence, entity, Actor,  _sourceCategory, label_name\n| sort by threat_count",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-b8ffc92b8b722a41",
+            "title": "All IP Threats Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\",\"type\":\"table\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, ip_address, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| where ip_address != \"0.0.0.0\" and ip_address != \"127.0.0.1\"\n| count as ip_count by ip_address, _sourceCategory\n| lookup type, actor, raw, threatlevel as malicious_confidence from sumo://threat/cs on threat=ip_address \n| json field=raw \"labels[*].name\" as label_name \n| replace(label_name, \"\\\\/\",\"->\") as label_name\n| replace(label_name, \"\\\"\",\" \") as label_name\n| where  type=\"ip_address\" and !isNull(malicious_confidence)\n| if (isEmpty(actor), \"Unassigned\", actor) as Actor\n| sum (ip_count) as threat_count by ip_address, malicious_confidence, Actor,  _sourceCategory, label_name\n| sort by threat_count",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-382cdd568e5a3b4c",
+            "title": "Top IPs",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"pie\",\"fillOpacity\":1,\"innerRadius\":30,\"maxNumOfSlices\":11,\"startAngle\":-90},\"legend\":{\"enabled\":false}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, ip_address, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| where ip_address != \"0.0.0.0\" and ip_address != \"127.0.0.1\"\n| count as ip_count by ip_address\n| lookup type, actor, raw, threatlevel as malicious_confidence from sumo://threat/cs on threat=ip_address \n| json field=raw \"labels[*].name\" as label_name \n| replace(label_name, \"\\\\/\",\"->\") as label_name\n| replace(label_name, \"\\\"\",\" \") as label_name\n| where  type=\"ip_address\" and !isNull(malicious_confidence)\n| if (isEmpty(actor), \"Unassigned\", actor) as Actor\n| count by ip_address | limit 10",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-c605d948852ffb48",
+            "title": "Malicious Confidence",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"bar\"},\"legend\":{\"enabled\":false},\"axes\":{\"axisX\":{\"title\":\"Malicious Confidence\"},\"axisY\":{\"title\":\"Count\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, ip_address, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| where ip_address != \"0.0.0.0\" and ip_address != \"127.0.0.1\"\n| count as ip_count by ip_address, _sourceCategory\n| lookup type, actor, raw, threatlevel as malicious_confidence from sumo://threat/cs on threat=ip_address \n| json field=raw \"labels[*].name\" as label_name \n| replace(label_name, \"\\\\/\",\"->\") as label_name\n| replace(label_name, \"\\\"\",\" \") as label_name\n| where  type=\"ip_address\"\n| if (isEmpty(actor), \"Unassigned\", actor) as Actor\n| count by malicious_confidence",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-be426ea69f99384f",
+            "title": "Top 10 Highly Vulnerable Tables",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"pie\",\"displayType\":\"default\",\"outlierBandColor\":\"#FDECF5\",\"outlierBandMarkerColor\":\"#ED3CPE\",\"outlierBandFillOpacity\":0.15,\"outlierBandLineThickness\":2,\"outlierBandMarkerSize\":10,\"outlierBandMarkerType\":\"triangle\",\"fillOpacity\":1,\"startAngle\":270,\"innerRadius\":\"50%\",\"maxNumOfSlices\":10},\"title\":{\"fontSize\":16},\"legend\":{\"enabled\":false}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, ip_address, user\n| where Region matches \"{{region}}\" and tolowercase(entity) matches \"{{entity}}\"\n| where ip_address != \"0.0.0.0\" and ip_address != \"127.0.0.1\"\n| timeslice 5m\n| count as ip_count by ip_address, _sourceCategory, entity\n| lookup type, actor, raw, threatlevel as malicious_confidence from sumo://threat/cs on threat=ip_address \n| json field=raw \"labels[*].name\" as label_name \n| replace(label_name, \"\\\\/\",\"->\") as label_name\n| replace(label_name, \"\\\"\",\" \") as label_name\n| where  type=\"ip_address\" and malicious_confidence=\"high\"\n| if (isEmpty(actor), \"Unassigned\", actor) as Actor\n| sum (ip_count) as threat_count by entity\n| sort by threat_count",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "region",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}}",
+              "key": "region"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "namespace",
+            "displayName": null,
+            "defaultValue": "aws/dynamodb",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}}",
+              "key": "namespace"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "entity",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+              "key": "entity"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "namespace": [
+            "aws/dynamodb"
+          ],
+          "region": [
+            "*"
+          ],
+          "entity": [
+            "*"
+          ],
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-3h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    },
+    {
+      "type": "MewboardSyncDefinition",
+      "name": "AWS DynamoDB - Overview",
+      "description": "See the overview of your DynamoDB environment including the events, errors, requests, users, and latency.",
+      "title": "AWS DynamoDB - Overview",
+      "rootPanel": {
+        "id": null,
+        "key": "panelf064505da3ec684a",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-cdd99b9baa95ab46",
+              "structure": "{\"height\":10,\"width\":8,\"x\":0,\"y\":1}"
+            },
+            {
+              "key": "panelpane-03afc899b83e3b40",
+              "structure": "{\"height\":5,\"width\":6,\"x\":8,\"y\":1}"
+            },
+            {
+              "key": "panelpane-8e0495858ee4a94d",
+              "structure": "{\"height\":5,\"width\":5,\"x\":14,\"y\":6}"
+            },
+            {
+              "key": "panelpane-3e2796b7b77b5940",
+              "structure": "{\"height\":5,\"width\":5,\"x\":14,\"y\":1}"
+            },
+            {
+              "key": "panelpane-e29e6cc9af5e4b42",
+              "structure": "{\"height\":5,\"width\":5,\"x\":19,\"y\":1}"
+            },
+            {
+              "key": "panelpane-0484a988b07b8844",
+              "structure": "{\"height\":5,\"width\":5,\"x\":19,\"y\":6}"
+            },
+            {
+              "key": "panelpane-76e9b4a7ba681b45",
+              "structure": "{\"height\":6,\"width\":8,\"x\":8,\"y\":12}"
+            },
+            {
+              "key": "panelpane-59d508b6a02e1b47",
+              "structure": "{\"height\":6,\"width\":8,\"x\":16,\"y\":12}"
+            },
+            {
+              "key": "panelpane-f2957042aa078a4c",
+              "structure": "{\"height\":6,\"width\":8,\"x\":16,\"y\":24}"
+            },
+            {
+              "key": "panelpane-4b0d076ea131fb4f",
+              "structure": "{\"height\":6,\"width\":8,\"x\":8,\"y\":18}"
+            },
+            {
+              "key": "panelpane-1aa7cdd18a1a9948",
+              "structure": "{\"height\":6,\"width\":8,\"x\":8,\"y\":24}"
+            },
+            {
+              "key": "panelpane-602970d1b5685b42",
+              "structure": "{\"height\":6,\"width\":8,\"x\":16,\"y\":18}"
+            },
+            {
+              "key": "panelpane-379759c691e78b41",
+              "structure": "{\"height\":6,\"width\":8,\"x\":0,\"y\":18}"
+            },
+            {
+              "key": "panelpane-064f62b0b148db44",
+              "structure": "{\"height\":6,\"width\":8,\"x\":0,\"y\":24}"
+            },
+            {
+              "key": "panelpane-c0cb88ffbad6eb42",
+              "structure": "{\"height\":6,\"width\":8,\"x\":0,\"y\":12}"
+            },
+            {
+              "key": "panelpane-cb38146a9ea4b84f",
+              "structure": "{\"height\":1,\"width\":24,\"x\":0,\"y\":0}"
+            },
+            {
+              "key": "panelpane-16e1bb8eac58794f",
+              "structure": "{\"height\":1,\"width\":16,\"x\":8,\"y\":11}"
+            },
+            {
+              "key": "panelpane-7547b8908ee39841",
+              "structure": "{\"height\":1,\"width\":8,\"x\":0,\"y\":11}"
+            },
+            {
+              "key": "panelpane-7180293892a2384f",
+              "structure": "{\"height\":5,\"width\":6,\"x\":8,\"y\":6}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-cdd99b9baa95ab46",
+            "title": "Tables",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"pie\",\"aggregationType\":\"avg\",\"fillOpacity\":1,\"fontSize\":12,\"paginationPageSize\":100,\"innerRadius\":30,\"maxNumOfSlices\":15,\"startAngle\":-90},\"legend\":{\"enabled\":false}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc account={{account}} region={{region}} entity={{entity}} | count by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-03afc899b83e3b40",
+            "title": "Average Write Capacity",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"label\":\"Write Capacity\",\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":100,\"color\":\"#ff0000\"}],\"option\":\"Average\",\"valueFontSize\":20,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true}},\"hiddenQueryKeys\":[]}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=AccountProvisionedWriteCapacityUtilization Statistic=Average | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-8e0495858ee4a94d",
+            "title": "User Errors",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Sum\",\"valueFontSize\":40,\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":10,\"color\":\"#ffc508\"},{\"from\":10,\"to\":null,\"color\":\"#ff0000\"}],\"labelFontSize\":8,\"label\":\"User Errors\",\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"noDataString\":\"0\",\"rounding\":0}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=UserErrors Statistic=SampleCount | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-3e2796b7b77b5940",
+            "title": "System Errors",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Sum\",\"label\":\"System Errors\",\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":10,\"color\":\"#ffc508\"},{\"from\":10,\"to\":null,\"color\":\"#ff0000\"}],\"rounding\":0,\"valueFontSize\":40,\"labelFontSize\":8,\"noDataString\":\"0\",\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=SystemErrors Statistic=SampleCount | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-e29e6cc9af5e4b42",
+            "title": "Conditional Check Fail Requests",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Sum\",\"label\":\"Conditional Check Fails\",\"thresholds\":[{\"from\":0,\"to\":10,\"color\":\"#008000\"},{\"from\":10,\"to\":20,\"color\":\"#ffc508\"},{\"from\":20,\"to\":null,\"color\":\"#ff0000\"}],\"rounding\":0,\"valueFontSize\":40,\"labelFontSize\":8,\"noDataString\":\"0\",\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=ConditionalCheckFailedRequests Statistic=SampleCount | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-0484a988b07b8844",
+            "title": "Transaction Conflict",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Sum\",\"label\":\"Transaction Conflict\",\"thresholds\":[{\"from\":0,\"to\":1,\"color\":\"#008000\"},{\"from\":1,\"to\":10,\"color\":\"#ffc508\"},{\"from\":10,\"to\":null,\"color\":\"#ff0000\"}],\"rounding\":0,\"valueFontSize\":40,\"labelFontSize\":8,\"noDataString\":\"0\",\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=TransactionConflict Statistic=SampleCount | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-76e9b4a7ba681b45",
+            "title": "Get Latency by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Get Latency\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} account={{account}} entity={{entity}} metric=SuccessfulRequestLatency Statistic=Average (operation=*get* or operation=*scan* or operation=*query*) | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-59d508b6a02e1b47",
+            "title": "Put Latency by Table",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Put Latency\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} account={{account}} entity={{entity}} metric=SuccessfulRequestLatency Statistic=Average (operation=*update* or operation=*put* or operation=*delete* or operation=*write*) | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-f2957042aa078a4c",
+            "title": "Number of Successful Requests by Table and Operation Name",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Requests\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} account={{account}} entity={{entity}} metric=SuccessfulRequestLatency Statistic=SampleCount | avg by entity, operation",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-4b0d076ea131fb4f",
+            "title": "User Errors",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Errors\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=UserErrors Statistic=SampleCount | avg by region",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-1aa7cdd18a1a9948",
+            "title": "System Errors",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Errors\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=SystemErrors Statistic=SampleCount | avg by region",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-602970d1b5685b42",
+            "title": "Conditional Check Fail",
+            "visualSettings": "{\"title\":{\"fontSize\":16},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"axes\":{\"axisX\":{\"title\":\"\",\"titleFontSize\":11,\"labelFontSize\":10},\"axisY\":{\"titleFontSize\":11,\"labelFontSize\":12,\"logarithmic\":false,\"gridColor\":\"#dde4e9\",\"title\":\"Check Fail\"}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"scheme9\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=ConditionalCheckFailedRequests Statistic=SampleCount | avg by region",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-379759c691e78b41",
+            "title": "Events Over Time",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, src_ip, user nodrop\n| where Region matches \"{{region}}\"\n| timeslice 1h\n| count by event_name, _timeslice\n| transpose row _timeslice column event_name ",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-064f62b0b148db44",
+            "title": "Errors in Events",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"table\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\" errorCode errorMessage\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\", \"errorCode\", \"errorMessage\" as event_name, Region, entity, src_ip, user, error_code, error_msg nodrop\n| where Region matches \"{{region}}\"\n| count by error_code, error_msg, event_name, user, src_ip",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-c0cb88ffbad6eb42",
+            "title": "Top 10 IAM Users",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"bar\"},\"legend\":{\"enabled\":false}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "$$cloudtrail account={{account}} namespace={{namespace}} \"\\\"eventSource\\\":\\\"dynamodb.amazonaws.com\\\"\"\n| json \"eventName\", \"awsRegion\", \"requestParameters.tableName\", \"sourceIPAddress\", \"userIdentity.userName\" as event_name, Region, entity, src_ip, user nodrop\n| where Region matches \"{{region}}\"\n| count as count by user\n| sort count \n| limit 10 ",
+                "queryType": "Logs",
+                "queryKey": "A",
+                "metricsQueryMode": null,
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-cb38146a9ea4b84f",
+            "title": "DynamoDB Information",
+            "visualSettings": "{\"text\":{\"backgroundColor\":\"#abb8c3\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-16e1bb8eac58794f",
+            "title": "Latency and Errors",
+            "visualSettings": "{\"text\":{\"backgroundColor\":\"#abb8c3\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-7547b8908ee39841",
+            "title": "Log Events",
+            "visualSettings": "{\"text\":{\"backgroundColor\":\"#abb8c3\"}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "TextPanel",
+            "text": ""
+          },
+          {
+            "id": null,
+            "key": "panelpane-7180293892a2384f",
+            "title": "Average Read Capacity",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"hiddenQueryKeys\":[\"B\"],\"svp\":{\"option\":\"Latest\",\"label\":\"Read Capacity\",\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":100,\"color\":\"#ff0000\"}],\"rounding\":2,\"valueFontSize\":20,\"labelFontSize\":8,\"noDataString\":\"\",\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "namespace={{namespace}} $$metricsrc region={{region}} metric=AccountProvisionedReadCapacityUtilization Statistic=Average | sum",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "timerange": null,
+            "timerangeTemp": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "region",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}}",
+              "key": "region"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "namespace",
+            "displayName": null,
+            "defaultValue": "aws/dynamodb",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}}",
+              "key": "namespace"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "entity",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+              "key": "entity"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "namespace": [
+            "aws/dynamodb"
+          ],
+          "region": [
+            "*"
+          ],
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-3h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    }
+  ]
+}
