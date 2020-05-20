@@ -223,7 +223,7 @@ then
     export Section6dALBCreateLogSource="Yes"
     export Section7dCreateCloudTrailLogSource="Yes"
     export Section7aCreateCloudTrailBucket="Yes"
-# albnewcloudtrialexisting - creates everything for RDS, DYNAMO DB and LAMBDA apps.
+# rdsdynamolambdaappall - creates everything for RDS, DYNAMO DB and LAMBDA apps.
 elif [[ "${InstallType}" == "rdsdynamolambdaappall" ]]
 then
     export Section3cDynamoDBInstallApp="Yes"

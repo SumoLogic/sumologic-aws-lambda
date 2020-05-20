@@ -5,6 +5,502 @@
   "children": [
     {
       "type": "MewboardSyncDefinition",
+      "name": "1. AWS EC2 Metrics - Overview",
+      "description": "The AWS EC2 Metrics - Overview dashboard provides at-a-glance information about a EC2 CPU, memory, network and disk usage.",
+      "title": "1. AWS EC2 Metrics - Overview",
+      "rootPanel": {
+        "id": null,
+        "key": "paneld449ecc8a6826b4d",
+        "title": "",
+        "visualSettings": "",
+        "keepVisualSettingsConsistentWithParent": true,
+        "panelType": "ContainerPanel",
+        "layout": {
+          "layoutType": "Grid",
+          "layoutStructures": [
+            {
+              "key": "panelpane-b03ffbbdb0b59b4d",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":12}"
+            },
+            {
+              "key": "panelpane-73159cd48a30e84d",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":12}"
+            },
+            {
+              "key": "panelpane-7c0398e384ef0b4b",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":18}"
+            },
+            {
+              "key": "panelpane-2a01fd42b58b994e",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":18}"
+            },
+            {
+              "key": "panelpane-21f9df3286d4d843",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":24}"
+            },
+            {
+              "key": "panelpane-b0342f51a88b2a47",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":24}"
+            },
+            {
+              "key": "panelpane-2f4529faa0fcc94e",
+              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":30}"
+            },
+            {
+              "key": "panelpane-909c4962a7e08843",
+              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":30}"
+            },
+            {
+              "key": "panelpane-33b218968b91a845",
+              "structure": "{\"height\":6,\"width\":5,\"x\":9,\"y\":0}"
+            },
+            {
+              "key": "panelpane-481cfaaf957d7842",
+              "structure": "{\"height\":6,\"width\":5,\"x\":14,\"y\":0}"
+            },
+            {
+              "key": "panelpane-d3677624bfee3b41",
+              "structure": "{\"height\":6,\"width\":5,\"x\":19,\"y\":0}"
+            },
+            {
+              "key": "panelpane-cea7ffdeb458fb4e",
+              "structure": "{\"height\":6,\"width\":5,\"x\":9,\"y\":6}"
+            },
+            {
+              "key": "panelpane-33ac098a81186b4e",
+              "structure": "{\"height\":6,\"width\":5,\"x\":14,\"y\":6}"
+            },
+            {
+              "key": "panelpane-9d0a24618eef0a4e",
+              "structure": "{\"height\":6,\"width\":5,\"x\":19,\"y\":6}"
+            },
+            {
+              "key": "panelpane-1e29da5dbd267a45",
+              "structure": "{\"height\":12,\"width\":9,\"x\":0,\"y\":0}"
+            }
+          ]
+        },
+        "panels": [
+          {
+            "id": null,
+            "key": "panelpane-b03ffbbdb0b59b4d",
+            "title": "Average CPU Idle",
+            "visualSettings": "{\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Avg CPU Idle\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric=CPU_Idle account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-73159cd48a30e84d",
+            "title": "Overall Average CPU Load (1m, 5m, 15m)",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Avg CPU Load\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=CPU_LoadAvg_1min | avg by metric",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=CPU_LoadAvg_5min | avg by metric",
+                "queryType": "Metrics",
+                "queryKey": "B",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              },
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=CPU_LoadAvg_15min | avg by metric",
+                "queryType": "Metrics",
+                "queryKey": "C",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-7c0398e384ef0b4b",
+            "title": "Total Free System Memory per EC2 Instance",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Free Memory\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Mem_Free | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-2a01fd42b58b994e",
+            "title": "Total Used, Less Buffers and Cached Memory per EC2 Instance",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Used Memory\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Mem_ActualUsed | avg by entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-21f9df3286d4d843",
+            "title": "Disk Used Bytes per EC2 Instance",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Disk Used Bytes\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Disk_Used ",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-b0342f51a88b2a47",
+            "title": "Disk Available Bytes per EC2 Instance",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Disk Available Bytes\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Disk_Available ",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-2f4529faa0fcc94e",
+            "title": "Network InByte Rate per EC2 Instance",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Network InByte Rate\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Net_InBytes | sum by entity | rate",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-909c4962a7e08843",
+            "title": "Network OutByte Rate per EC2 Instance",
+            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"legend\":{\"wrap\":true,\"enabled\":true},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Network OutByte Rate\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Net_OutBytes | sum by entity | rate",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-33b218968b91a845",
+            "title": "Average CPU Utilization",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":101,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true,\"min\":0,\"max\":100},\"label\":\"%\",\"valueFontSize\":10,\"option\":\"Latest\",\"labelFontSize\":10}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric=CPU_Sys account={{account}} region={{region}} namespace={{namespace}} entity={{entity}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-481cfaaf957d7842",
+            "title": "Average Memory Usage",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Latest\",\"label\":\"%\",\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":101,\"color\":\"#ff0000\"}],\"valueFontSize\":10,\"labelFontSize\":10,\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric= Mem_UsedPercent account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-d3677624bfee3b41",
+            "title": "Average Inbound Connection",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Average\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"label\":\"Connections\",\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric= TCP_InboundTotal account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-cea7ffdeb458fb4e",
+            "title": "Average Outbound Connections",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"label\":\"connections\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric= TCP_OutboundTotal account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-33ac098a81186b4e",
+            "title": "Average Received Bytes",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"label\":\"MB\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric= Net_InBytes account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg | eval _value/1024/1024",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-9d0a24618eef0a4e",
+            "title": "Average Sent Bytes",
+            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"label\":\"MB\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "metric= Net_OutBytes account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg | eval _value/1024/1024",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          },
+          {
+            "id": null,
+            "key": "panelpane-1e29da5dbd267a45",
+            "title": "Instances",
+            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"column\",\"aggregationType\":\"latest\",\"fillOpacity\":1,\"displayType\":\"default\",\"innerRadius\":5,\"lineDashType\":\"solid\",\"markerType\":\"none\",\"startAngle\":90,\"fontSize\":12,\"paginationPageSize\":100},\"color\":{\"family\":\"scheme7\"},\"legend\":{\"enabled\":false,\"fontSize\":8,\"showAsTable\":false,\"wrap\":true}}",
+            "keepVisualSettingsConsistentWithParent": true,
+            "panelType": "SumoSearchPanel",
+            "queries": [
+              {
+                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | count by instancetype, entity",
+                "queryType": "Metrics",
+                "queryKey": "A",
+                "metricsQueryMode": "advanced",
+                "metricsQueryData": null
+              }
+            ],
+            "description": "",
+            "timeRange": null,
+            "coloringRules": null,
+            "linkedDashboards": []
+          }
+        ],
+        "variables": [
+          {
+            "id": null,
+            "name": "account",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "",
+              "key": "account"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "region",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}}",
+              "key": "region"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "namespace",
+            "displayName": null,
+            "defaultValue": "aws/ec2",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}}",
+              "key": "namespace"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          },
+          {
+            "id": null,
+            "name": "entity",
+            "displayName": null,
+            "defaultValue": "*",
+            "sourceDefinition": {
+              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
+              "filter": "account={{account}} region={{region}} namespace={{namespace}}",
+              "key": "entity"
+            },
+            "allowMultiSelect": false,
+            "includeAllOption": true,
+            "hideFromUI": false
+          }
+        ],
+        "coloringRules": []
+      },
+      "theme": "light",
+      "topologyLabelMap": {
+        "data": {
+          "namespace": [
+            "aws/ec2"
+          ],
+          "region": [
+            "*"
+          ],
+          "account": [
+            "*"
+          ]
+        }
+      },
+      "refreshInterval": 0,
+      "timeRange": {
+        "type": "BeginBoundedTimeRange",
+        "from": {
+          "type": "RelativeTimeRangeBoundary",
+          "relativeTime": "-1h"
+        },
+        "to": null
+      },
+      "layout": null,
+      "panels": null,
+      "variables": null,
+      "coloringRules": null
+    },
+    {
+      "type": "MewboardSyncDefinition",
       "name": "1. AWS EC2 Metrics - Summary",
       "description": "The AWS EC2 Metrics - Summary dashboard provides at-a-glance information about a EC2 CPU, memory, network and disk usage.",
       "title": "1. AWS EC2 Metrics - Summary",
@@ -2109,502 +2605,6 @@
             "*"
           ],
           "entity": [
-            "*"
-          ],
-          "account": [
-            "*"
-          ]
-        }
-      },
-      "refreshInterval": 0,
-      "timeRange": {
-        "type": "BeginBoundedTimeRange",
-        "from": {
-          "type": "RelativeTimeRangeBoundary",
-          "relativeTime": "-1h"
-        },
-        "to": null
-      },
-      "layout": null,
-      "panels": null,
-      "variables": null,
-      "coloringRules": null
-    },
-    {
-      "type": "MewboardSyncDefinition",
-      "name": "AWS EC2 Metrics - Overview",
-      "description": "The AWS EC2 Metrics - Overview dashboard provides at-a-glance information about a EC2 CPU, memory, network and disk usage.",
-      "title": "AWS EC2 Metrics - Overview",
-      "rootPanel": {
-        "id": null,
-        "key": "paneld449ecc8a6826b4d",
-        "title": "",
-        "visualSettings": "",
-        "keepVisualSettingsConsistentWithParent": true,
-        "panelType": "ContainerPanel",
-        "layout": {
-          "layoutType": "Grid",
-          "layoutStructures": [
-            {
-              "key": "panelpane-b03ffbbdb0b59b4d",
-              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":12}"
-            },
-            {
-              "key": "panelpane-73159cd48a30e84d",
-              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":12}"
-            },
-            {
-              "key": "panelpane-7c0398e384ef0b4b",
-              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":18}"
-            },
-            {
-              "key": "panelpane-2a01fd42b58b994e",
-              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":18}"
-            },
-            {
-              "key": "panelpane-21f9df3286d4d843",
-              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":24}"
-            },
-            {
-              "key": "panelpane-b0342f51a88b2a47",
-              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":24}"
-            },
-            {
-              "key": "panelpane-2f4529faa0fcc94e",
-              "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":30}"
-            },
-            {
-              "key": "panelpane-909c4962a7e08843",
-              "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":30}"
-            },
-            {
-              "key": "panelpane-33b218968b91a845",
-              "structure": "{\"height\":6,\"width\":5,\"x\":9,\"y\":0}"
-            },
-            {
-              "key": "panelpane-481cfaaf957d7842",
-              "structure": "{\"height\":6,\"width\":5,\"x\":14,\"y\":0}"
-            },
-            {
-              "key": "panelpane-d3677624bfee3b41",
-              "structure": "{\"height\":6,\"width\":5,\"x\":19,\"y\":0}"
-            },
-            {
-              "key": "panelpane-cea7ffdeb458fb4e",
-              "structure": "{\"height\":6,\"width\":5,\"x\":9,\"y\":6}"
-            },
-            {
-              "key": "panelpane-33ac098a81186b4e",
-              "structure": "{\"height\":6,\"width\":5,\"x\":14,\"y\":6}"
-            },
-            {
-              "key": "panelpane-9d0a24618eef0a4e",
-              "structure": "{\"height\":6,\"width\":5,\"x\":19,\"y\":6}"
-            },
-            {
-              "key": "panelpane-1e29da5dbd267a45",
-              "structure": "{\"height\":12,\"width\":9,\"x\":0,\"y\":0}"
-            }
-          ]
-        },
-        "panels": [
-          {
-            "id": null,
-            "key": "panelpane-b03ffbbdb0b59b4d",
-            "title": "Average CPU Idle",
-            "visualSettings": "{\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Avg CPU Idle\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "metric=CPU_Idle account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg by entity",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-73159cd48a30e84d",
-            "title": "Overall Average CPU Load (1m, 5m, 15m)",
-            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Avg CPU Load\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=CPU_LoadAvg_1min | avg by metric",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              },
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=CPU_LoadAvg_5min | avg by metric",
-                "queryType": "Metrics",
-                "queryKey": "B",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              },
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=CPU_LoadAvg_15min | avg by metric",
-                "queryType": "Metrics",
-                "queryKey": "C",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-7c0398e384ef0b4b",
-            "title": "Total Free System Memory per EC2 Instance",
-            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Free Memory\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Mem_Free | avg by entity",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-2a01fd42b58b994e",
-            "title": "Total Used, Less Buffers and Cached Memory per EC2 Instance",
-            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Used Memory\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Mem_ActualUsed | avg by entity",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-21f9df3286d4d843",
-            "title": "Disk Used Bytes per EC2 Instance",
-            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Disk Used Bytes\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Disk_Used ",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-b0342f51a88b2a47",
-            "title": "Disk Available Bytes per EC2 Instance",
-            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"axes\":{\"axisY\":{\"title\":\"Disk Available Bytes\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Disk_Available ",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-2f4529faa0fcc94e",
-            "title": "Network InByte Rate per EC2 Instance",
-            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Network InByte Rate\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Net_InBytes | sum by entity | rate",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-909c4962a7e08843",
-            "title": "Network OutByte Rate per EC2 Instance",
-            "visualSettings": "{\"general\":{\"mode\":\"timeSeries\"},\"legend\":{\"wrap\":true,\"enabled\":true},\"color\":{\"family\":\"scheme7\"},\"axes\":{\"axisY\":{\"title\":\"Network OutByte Rate\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} metric=Net_OutBytes | sum by entity | rate",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-33b218968b91a845",
-            "title": "Average CPU Utilization",
-            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":101,\"color\":\"#ff0000\"}],\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true,\"min\":0,\"max\":100},\"label\":\"%\",\"valueFontSize\":10,\"option\":\"Latest\",\"labelFontSize\":10}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "metric=CPU_Sys account={{account}} region={{region}} namespace={{namespace}} entity={{entity}} | avg",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-481cfaaf957d7842",
-            "title": "Average Memory Usage",
-            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Latest\",\"label\":\"%\",\"thresholds\":[{\"from\":0,\"to\":75,\"color\":\"#008000\"},{\"from\":75,\"to\":85,\"color\":\"#ffc508\"},{\"from\":85,\"to\":101,\"color\":\"#ff0000\"}],\"valueFontSize\":10,\"labelFontSize\":10,\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":true}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "metric= Mem_UsedPercent account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-d3677624bfee3b41",
-            "title": "Average Inbound Connection",
-            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"option\":\"Average\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"label\":\"Connections\",\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "metric= TCP_InboundTotal account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-cea7ffdeb458fb4e",
-            "title": "Average Outbound Connections",
-            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"label\":\"connections\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "metric= TCP_OutboundTotal account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-33ac098a81186b4e",
-            "title": "Average Received Bytes",
-            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"label\":\"MB\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "metric= Net_InBytes account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg | eval _value/1024/1024",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-9d0a24618eef0a4e",
-            "title": "Average Sent Bytes",
-            "visualSettings": "{\"general\":{\"type\":\"svp\"},\"svp\":{\"label\":\"MB\",\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"valueFontSize\":15,\"labelFontSize\":8,\"sparkline\":{\"show\":true,\"color\":\"\"}}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "metric= Net_OutBytes account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | avg | eval _value/1024/1024",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          },
-          {
-            "id": null,
-            "key": "panelpane-1e29da5dbd267a45",
-            "title": "Instances",
-            "visualSettings": "{\"general\":{\"mode\":\"distribution\",\"type\":\"column\",\"aggregationType\":\"latest\",\"fillOpacity\":1,\"displayType\":\"default\",\"innerRadius\":5,\"lineDashType\":\"solid\",\"markerType\":\"none\",\"startAngle\":90,\"fontSize\":12,\"paginationPageSize\":100},\"color\":{\"family\":\"scheme7\"},\"legend\":{\"enabled\":false,\"fontSize\":8,\"showAsTable\":false,\"wrap\":true}}",
-            "keepVisualSettingsConsistentWithParent": true,
-            "panelType": "SumoSearchPanel",
-            "queries": [
-              {
-                "queryString": "account={{account}} region={{region}} entity={{entity}} namespace={{namespace}} | count by instancetype, entity",
-                "queryType": "Metrics",
-                "queryKey": "A",
-                "metricsQueryMode": "advanced",
-                "metricsQueryData": null
-              }
-            ],
-            "description": "",
-            "timeRange": null,
-            "coloringRules": null,
-            "linkedDashboards": []
-          }
-        ],
-        "variables": [
-          {
-            "id": null,
-            "name": "account",
-            "displayName": null,
-            "defaultValue": "*",
-            "sourceDefinition": {
-              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
-              "filter": "",
-              "key": "account"
-            },
-            "allowMultiSelect": false,
-            "includeAllOption": true,
-            "hideFromUI": false
-          },
-          {
-            "id": null,
-            "name": "region",
-            "displayName": null,
-            "defaultValue": "*",
-            "sourceDefinition": {
-              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
-              "filter": "account={{account}}",
-              "key": "region"
-            },
-            "allowMultiSelect": false,
-            "includeAllOption": true,
-            "hideFromUI": false
-          },
-          {
-            "id": null,
-            "name": "namespace",
-            "displayName": null,
-            "defaultValue": "aws/ec2",
-            "sourceDefinition": {
-              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
-              "filter": "account={{account}} region={{region}}",
-              "key": "namespace"
-            },
-            "allowMultiSelect": false,
-            "includeAllOption": true,
-            "hideFromUI": false
-          },
-          {
-            "id": null,
-            "name": "entity",
-            "displayName": null,
-            "defaultValue": "*",
-            "sourceDefinition": {
-              "variableSourceType": "MagellanMetadataVariableSourceDefinition",
-              "filter": "account={{account}} region={{region}} namespace={{namespace}}",
-              "key": "entity"
-            },
-            "allowMultiSelect": false,
-            "includeAllOption": true,
-            "hideFromUI": false
-          }
-        ],
-        "coloringRules": []
-      },
-      "theme": "light",
-      "topologyLabelMap": {
-        "data": {
-          "namespace": [
-            "aws/ec2"
-          ],
-          "region": [
             "*"
           ],
           "account": [

@@ -1,13 +1,13 @@
 {
   "type": "FolderSyncDefinition",
-  "name": "Overview",
+  "name": "Amazon Overview",
   "description": "The Overview folder provides Account and Region level overview dashboards.",
   "children": [
     {
       "type": "MewboardSyncDefinition",
-      "name": "AWS Account Overview",
+      "name": "1. AWS Account Overview",
       "description": "This dashboard provide detail information about your AWS account.",
-      "title": "AWS Account Overview",
+      "title": "1. AWS Account Overview",
       "rootPanel": {
         "id": null,
         "key": "paneldf318466858cb94b",
@@ -361,9 +361,9 @@
     },
     {
       "type": "MewboardSyncDefinition",
-      "name": "AWS Region Overview",
+      "name": "1. AWS Region Overview",
       "description": "This dashboard provide detail information about your AWS account and region.",
-      "title": "AWS Region Overview",
+      "title": "1. AWS Region Overview",
       "rootPanel": {
         "id": null,
         "key": "paneldf318466858cb94b",
@@ -434,7 +434,7 @@
             "panelType": "SumoSearchPanel",
             "queries": [
               {
-                "queryString": "namespace=AWS/Lambda metric=Errors statistic=Sum account={{account}} region={{region}} region={{region}} | sum",
+                "queryString": "namespace=AWS/Lambda metric=Errors statistic=Sum account={{account}} region={{region}} | sum",
                 "queryType": "Metrics",
                 "queryKey": "A",
                 "metricsQueryMode": "advanced",
@@ -473,21 +473,21 @@
             "panelType": "SumoSearchPanel",
             "queries": [
               {
-                "queryString": "namespace=aws/dynamodb metric=UserErrors Statistic=SampleCount | sum",
+                "queryString": "namespace=aws/dynamodb metric=UserErrors Statistic=SampleCount region={{region}} | sum",
                 "queryType": "Metrics",
                 "queryKey": "A",
                 "metricsQueryMode": "advanced",
                 "metricsQueryData": null
               },
               {
-                "queryString": "namespace=aws/dynamodb metric=SystemErrors Statistic=SampleCount | sum",
+                "queryString": "namespace=aws/dynamodb metric=SystemErrors Statistic=SampleCount region={{region}} | sum",
                 "queryType": "Metrics",
                 "queryKey": "B",
                 "metricsQueryMode": "advanced",
                 "metricsQueryData": null
               },
               {
-                "queryString": "namespace=aws/dynamodb metric=ConditionalCheckFailedRequests Statistic=SampleCount | sum",
+                "queryString": "namespace=aws/dynamodb metric=ConditionalCheckFailedRequests Statistic=SampleCount region={{region}} | sum",
                 "queryType": "Metrics",
                 "queryKey": "C",
                 "metricsQueryMode": "advanced",
