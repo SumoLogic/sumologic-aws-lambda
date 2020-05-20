@@ -677,7 +677,7 @@ Resources:
         Section5bS3LogsBucketName: !If [create_alb_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section6bALBS3LogsBucketName]
         Section5cALBCollectorName: !If [install_alb_s3_log_source, "aws-observability-collector", !Ref Section6eALBS3LogsCollectorName]
         Section5dCreateALBLogSource: !If [install_alb_s3_log_source, "Yes", "No"]
-        Section5eS3BucketPathExpression: !If [create_alb_bucket, !Sub "elasticloadbalancing/AWSLogs/${AWS::AccountId}/*", !Ref Section6cALBS3BucketPathExpression]
+        Section5eS3BucketPathExpression: !If [create_alb_bucket, !Sub "elasticloadbalancing/AWSLogs/${AWS::AccountId}/*/${AWS::Region}", !Ref Section6cALBS3BucketPathExpression]
         Section5fALBLogsSourceName: !If [install_alb_s3_log_source, !Sub "${Section2cAccountAlias}-aws-observability-alb-${AWS::Region}", !Ref Section6fALBLogsSourceName]
         Section5gALBLogsSourceCategoryName: !If [install_alb_s3_log_source, "aws/observability/alb/logs", !Ref Section6gALBLogsSourceCategoryName]
         Section6aParentStackName: !GetAtt CreateCommonResources.Outputs.StackName
@@ -770,7 +770,7 @@ Resources:
         Section5bCloudTrailLogsBucketName: !If [create_cloudtrail_bucket, !GetAtt CreateCommonResources.Outputs.BucketName, !Ref Section7bCloudTrailLogsBucketName]
         Section5cCloudTrailCollectorName: !If [install_cloudtrail_log_source, "aws-observability-collector", !Ref Section7eCloudTrailCollectorName]
         Section5dCreateCloudTrailLogSource: !If [install_cloudtrail_log_source, "Yes", "No"]
-        Section5eCloudTrailBucketPathExpression: !If [create_cloudtrail_bucket, !Sub "AWSLogs/${AWS::AccountId}/CloudTrail/*", !Ref Section7cCloudTrailBucketPathExpression]
+        Section5eCloudTrailBucketPathExpression: !If [create_cloudtrail_bucket, !Sub "AWSLogs/${AWS::AccountId}/CloudTrail/${AWS::Region}", !Ref Section7cCloudTrailBucketPathExpression]
         Section5fCloudTrailLogsSourceName: !If [install_cloudtrail_log_source, !Sub "${Section2cAccountAlias}-aws-observability-cloudtrail-${AWS::Region}", !Ref Section7fCloudTrailLogsSourceName]
         Section5gCloudTrailLogsSourceCategoryName: !If [install_cloudtrail_log_source, "aws/observability/cloudtrail/logs", !Ref Section7gCloudTrailLogsSourceCategoryName]
         Section6aCloudWatchLogsCollectorName: !If [install_lambda_cloudwatch_logs_source, "aws-observability-collector", !Ref Section8bLambdaCloudWatchLogsCollectorName]

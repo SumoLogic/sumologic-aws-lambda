@@ -56,6 +56,8 @@ export Section9aAutoEnableS3LogsALBResourcesOptions="None"
 export Section9cAutoSubscribeLogGroupsLambdaOptions="None"
 
 # By Default, we create explorer view, Metric Rules and FER, as we need them for each case.
+# Stack Name
+export stackName="${AppName}-${InstallType}"
 
 # onlyapps - Installs only the apps in Sumo Logic.
 if [[ "${InstallType}" == "onlyapps" ]]
@@ -205,43 +207,94 @@ then
     export Section7dCreateCloudTrailLogSource="Yes"
     export Section7cCloudTrailBucketPathExpression="AWSLogs/Sourabh/Test"
     export Section7bCloudTrailLogsBucketName="sumologiclambdahelper-${AWS_REGION}"
-elif [[ "${InstallType}" == "onlyappswithexistingsources" ]]
+# albec2apiappall - creates everything for EC2, ALB and API Gateway apps.
+elif [[ "${InstallType}" == "albec2apiappall" ]]
 then
-    echo "sdsad"
-elif [[ "${InstallType}" == "albec2appall" ]]
-then
-    echo "sdsad"
+    export Section3aEC2InstallApp="Yes"
+    export Section3bALBInstallApp="Yes"
+    export Section3fAPIGatewayInstallApp="Yes"
+    export Section2aTagAWSResourcesOptions="Both"
+    export Section2bAWSResourcesList="ec2, alb, apigateway"
+    export Section9aAutoEnableS3LogsALBResourcesOptions="Both"
+    export Section4aEC2CreateMetaDataSource="Yes"
+    export Section5aCreateCloudWatchMetricsSource="Yes"
+    export Section5bCloudWatchMetricsNameSpaces="AWS/ApplicationELB, AWS/ApiGateway"
+    export Section6aALBCreateS3Bucket="Yes"
+    export Section6dALBCreateLogSource="Yes"
+    export Section7dCreateCloudTrailLogSource="Yes"
+    export Section7aCreateCloudTrailBucket="Yes"
+# albnewcloudtrialexisting - creates everything for RDS, DYNAMO DB and LAMBDA apps.
 elif [[ "${InstallType}" == "rdsdynamolambdaappall" ]]
 then
-    echo "sdsad"
+    export Section3cDynamoDBInstallApp="Yes"
+    export Section3dRDSInstallApp="Yes"
+    export Section3eLambdaInstallApp="Yes"
+    export Section2aTagAWSResourcesOptions="Both"
+    export Section2bAWSResourcesList="dynamodb, rds, lambda"
+    export Section9cAutoSubscribeLogGroupsLambdaOptions="Both"
+    export Section9dAutoSubscribeLambdaLogGroupPattern="lambda"
+    export Section5aCreateCloudWatchMetricsSource="Yes"
+    export Section5bCloudWatchMetricsNameSpaces="AWS/DynamoDB, AWS/Lambda, AWS/RDS"
+    export Section7dCreateCloudTrailLogSource="Yes"
+    export Section7aCreateCloudTrailBucket="Yes"
+    export Section8aLambdaCreateCloudWatchLogsSource="Yes"
+# onlyappswithexistingsources - Install Apps with existing sources. This should Update the CloudTrail, CloudWatch and ALB sources.
+elif [[ "${InstallType}" == "onlyappswithexistingsources" ]]
+then
+    export Section3cDynamoDBInstallApp="Yes"
+    export Section3dRDSInstallApp="Yes"
+    export Section3eLambdaInstallApp="Yes"
+    export Section3aEC2InstallApp="Yes"
+    export Section3bALBInstallApp="Yes"
+    export Section3fAPIGatewayInstallApp="Yes"
+    export Section2aTagAWSResourcesOptions="Both"
+    export Section2bAWSResourcesList="ec2, alb, apigateway, dynamodb, rds, lambda"
+    export Section9aAutoEnableS3LogsALBResourcesOptions="Both"
+    export Section6bALBS3LogsBucketName="sumologiclambdahelper-${AWS_REGION}"
+    export Section9cAutoSubscribeLogGroupsLambdaOptions="Both"
+    export Section9dAutoSubscribeLambdaLogGroupPattern="lambda"
+    export Section6eALBS3LogsCollectorName="aws-observability-collector"
+    export Section6fALBLogsSourceName="defaultparameters-aws-observability-alb-${AWS_REGION}"
+    export Section8bLambdaCloudWatchLogsCollectorName="aws-observability-collector"
+    export Section8cLambdaCloudWatchLogsSourceName="defaultparameters-aws-observability-cloudwatch-logs-${AWS_REGION}"
+    export Section7eCloudTrailCollectorName="aws-observability-collector"
+    export Section7fCloudTrailLogsSourceName="defaultparameters-aws-observability-cloudtrail-${AWS_REGION}"
+# defaultparameters - Install CF with default parameters.
+elif [[ "${InstallType}" == "defaultparameters" ]]
+then
+    echo "Doing Default Installation .............................."
+    aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./templates/sumologic_observability.master.template.yaml --region ${AWS_REGION} \
+    --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name ${stackName} \
+    --parameter-overrides Section1aSumoLogicDeployment="${Section1aSumoLogicDeployment}" Section1bSumoLogicAccessID="${Section1bSumoLogicAccessID}" \
+    Section1cSumoLogicAccessKey="${Section1cSumoLogicAccessKey}" Section1dSumoLogicOrganizationId="${Section1dSumoLogicOrganizationId}" \
+    Section1eSumoLogicResourceRemoveOnDeleteStack="${Section1eSumoLogicResourceRemoveOnDeleteStack}" Section2cAccountAlias="${Section2cAccountAlias}"
 else
     echo "No Valid Choice."
 fi
 
-# Stack Name
-export stackName="${AppName}-${InstallType}"
-
-aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./templates/sumologic_observability.master.template.yaml --region ${AWS_REGION} \
---capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name ${stackName} \
---parameter-overrides Section1aSumoLogicDeployment="${Section1aSumoLogicDeployment}" Section1bSumoLogicAccessID="${Section1bSumoLogicAccessID}" \
-Section1cSumoLogicAccessKey="${Section1cSumoLogicAccessKey}" Section1dSumoLogicOrganizationId="${Section1dSumoLogicOrganizationId}" \
-Section1eSumoLogicResourceRemoveOnDeleteStack="${Section1eSumoLogicResourceRemoveOnDeleteStack}" Section2cAccountAlias="${Section2cAccountAlias}" \
-Section2dTagAWSResourcesFilterExpression="${Section2dTagAWSResourcesFilterExpression}" Section5bCloudWatchMetricsNameSpaces="${Section5bCloudWatchMetricsNameSpaces}" \
-Section6bALBS3LogsBucketName="${Section6bALBS3LogsBucketName}" Section6cALBS3BucketPathExpression="${Section6cALBS3BucketPathExpression}" \
-Section6eALBS3LogsCollectorName="${Section6eALBS3LogsCollectorName}" Section6fALBLogsSourceName="${Section6fALBLogsSourceName}" \
-Section6gALBLogsSourceCategoryName="${Section6gALBLogsSourceCategoryName}" Section7bCloudTrailLogsBucketName="${Section7bCloudTrailLogsBucketName}" \
-Section7cCloudTrailBucketPathExpression="${Section7cCloudTrailBucketPathExpression}" Section7eCloudTrailCollectorName="${Section7eCloudTrailCollectorName}" \
-Section7fCloudTrailLogsSourceName="${Section7fCloudTrailLogsSourceName}" Section7gCloudTrailLogsSourceCategoryName="${Section7gCloudTrailLogsSourceCategoryName}" \
-Section8bLambdaCloudWatchLogsCollectorName="${Section8bLambdaCloudWatchLogsCollectorName}" Section8cLambdaCloudWatchLogsSourceName="${Section8cLambdaCloudWatchLogsSourceName}" \
-Section8dLambdaCloudWatchLogsSourceCategoryName="${Section8dLambdaCloudWatchLogsSourceCategoryName}" \
-Section9bAutoEnableS3LogsFilterExpression="${Section9bAutoEnableS3LogsFilterExpression}" Section9dAutoSubscribeLambdaLogGroupPattern="${Section9dAutoSubscribeLambdaLogGroupPattern}" \
-Section2aTagAWSResourcesOptions="${Section2aTagAWSResourcesOptions}" Section2bAWSResourcesList="${Section2bAWSResourcesList}" \
-Section3aEC2InstallApp="${Section3aEC2InstallApp}" Section3bALBInstallApp="${Section3bALBInstallApp}" Section3cDynamoDBInstallApp="${Section3cDynamoDBInstallApp}" \
-Section3dRDSInstallApp="${Section3dRDSInstallApp}" Section3eLambdaInstallApp="${Section3eLambdaInstallApp}" Section3fAPIGatewayInstallApp="${Section3fAPIGatewayInstallApp}" \
-Section4aEC2CreateMetaDataSource="${Section4aEC2CreateMetaDataSource}" Section5aCreateCloudWatchMetricsSource="${Section5aCreateCloudWatchMetricsSource}" \
-Section6aALBCreateS3Bucket="${Section6aALBCreateS3Bucket}" Section6dALBCreateLogSource="${Section6dALBCreateLogSource}" \
-Section7aCreateCloudTrailBucket="${Section7aCreateCloudTrailBucket}" Section7dCreateCloudTrailLogSource="${Section7dCreateCloudTrailLogSource}" \
-Section8aLambdaCreateCloudWatchLogsSource="${Section8aLambdaCreateCloudWatchLogsSource}" \
-Section9aAutoEnableS3LogsALBResourcesOptions="${Section9aAutoEnableS3LogsALBResourcesOptions}" \
-Section9cAutoSubscribeLogGroupsLambdaOptions="${Section9cAutoSubscribeLogGroupsLambdaOptions}"
-
+if [[ "${InstallType}" != "defaultparameters" ]]
+then
+    aws cloudformation deploy --profile ${AWS_PROFILE} --template-file ./templates/sumologic_observability.master.template.yaml --region ${AWS_REGION} \
+    --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name ${stackName} \
+    --parameter-overrides Section1aSumoLogicDeployment="${Section1aSumoLogicDeployment}" Section1bSumoLogicAccessID="${Section1bSumoLogicAccessID}" \
+    Section1cSumoLogicAccessKey="${Section1cSumoLogicAccessKey}" Section1dSumoLogicOrganizationId="${Section1dSumoLogicOrganizationId}" \
+    Section1eSumoLogicResourceRemoveOnDeleteStack="${Section1eSumoLogicResourceRemoveOnDeleteStack}" Section2cAccountAlias="${Section2cAccountAlias}" \
+    Section2dTagAWSResourcesFilterExpression="${Section2dTagAWSResourcesFilterExpression}" Section5bCloudWatchMetricsNameSpaces="${Section5bCloudWatchMetricsNameSpaces}" \
+    Section6bALBS3LogsBucketName="${Section6bALBS3LogsBucketName}" Section6cALBS3BucketPathExpression="${Section6cALBS3BucketPathExpression}" \
+    Section6eALBS3LogsCollectorName="${Section6eALBS3LogsCollectorName}" Section6fALBLogsSourceName="${Section6fALBLogsSourceName}" \
+    Section6gALBLogsSourceCategoryName="${Section6gALBLogsSourceCategoryName}" Section7bCloudTrailLogsBucketName="${Section7bCloudTrailLogsBucketName}" \
+    Section7cCloudTrailBucketPathExpression="${Section7cCloudTrailBucketPathExpression}" Section7eCloudTrailCollectorName="${Section7eCloudTrailCollectorName}" \
+    Section7fCloudTrailLogsSourceName="${Section7fCloudTrailLogsSourceName}" Section7gCloudTrailLogsSourceCategoryName="${Section7gCloudTrailLogsSourceCategoryName}" \
+    Section8bLambdaCloudWatchLogsCollectorName="${Section8bLambdaCloudWatchLogsCollectorName}" Section8cLambdaCloudWatchLogsSourceName="${Section8cLambdaCloudWatchLogsSourceName}" \
+    Section8dLambdaCloudWatchLogsSourceCategoryName="${Section8dLambdaCloudWatchLogsSourceCategoryName}" \
+    Section9bAutoEnableS3LogsFilterExpression="${Section9bAutoEnableS3LogsFilterExpression}" Section9dAutoSubscribeLambdaLogGroupPattern="${Section9dAutoSubscribeLambdaLogGroupPattern}" \
+    Section2aTagAWSResourcesOptions="${Section2aTagAWSResourcesOptions}" Section2bAWSResourcesList="${Section2bAWSResourcesList}" \
+    Section3aEC2InstallApp="${Section3aEC2InstallApp}" Section3bALBInstallApp="${Section3bALBInstallApp}" Section3cDynamoDBInstallApp="${Section3cDynamoDBInstallApp}" \
+    Section3dRDSInstallApp="${Section3dRDSInstallApp}" Section3eLambdaInstallApp="${Section3eLambdaInstallApp}" Section3fAPIGatewayInstallApp="${Section3fAPIGatewayInstallApp}" \
+    Section4aEC2CreateMetaDataSource="${Section4aEC2CreateMetaDataSource}" Section5aCreateCloudWatchMetricsSource="${Section5aCreateCloudWatchMetricsSource}" \
+    Section6aALBCreateS3Bucket="${Section6aALBCreateS3Bucket}" Section6dALBCreateLogSource="${Section6dALBCreateLogSource}" \
+    Section7aCreateCloudTrailBucket="${Section7aCreateCloudTrailBucket}" Section7dCreateCloudTrailLogSource="${Section7dCreateCloudTrailLogSource}" \
+    Section8aLambdaCreateCloudWatchLogsSource="${Section8aLambdaCreateCloudWatchLogsSource}" \
+    Section9aAutoEnableS3LogsALBResourcesOptions="${Section9aAutoEnableS3LogsALBResourcesOptions}" \
+    Section9cAutoSubscribeLogGroupsLambdaOptions="${Section9cAutoSubscribeLogGroupsLambdaOptions}"
+fi
