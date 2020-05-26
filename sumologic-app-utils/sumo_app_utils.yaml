@@ -1,48 +1,93 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: >
-    This solution consists of a lambda function which which gets triggered when CF stack is deployed. This is used for creating sumologic resources like collector, source and app folders.
+  This solution consists of a lambda function which which gets triggered when CF stack is deployed. This is used for creating sumologic resources like collector, source and app folders.
 
 Globals:
-    Function:
-        Timeout: 300
+  Function:
+    Timeout: 300
+
 Metadata:
   AWS::ServerlessRepo::Application:
     Author: Sumo Logic
     Description: This solution consists of a lambda function which which gets triggered when CF stack is deployed. This is used for creating sumologic resources like collector, source and app folders.
     HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
     Labels:
-    - lambda
-    - sumologic
-    - serverless
+      - lambda
+      - sumologic
+      - serverless
     Name: sumologic-app-utils
-    SemanticVersion: 1.0.27
+    SemanticVersion: 1.0.29
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/sumologic-app-utils
     SpdxLicenseId: Apache-2.0
+    ReadmeUrl: ./README.md
+
+Parameters:
+
+  RoleArn:
+    Type: String
+    Description: "Attach any existing Role ARN to Lambda Function. If no Existing Role ARN is provided, a role will be created and attached to the lambda function."
+    Default: ""
+
+Conditions:
+  role_arn: !Not [!Equals [!Ref RoleArn, '']]
+  No_role_arn: !Equals [!Ref RoleArn, '']
 
 Resources:
+  SumoAppUtilsFunctionWithRole:
+    Type: 'AWS::Serverless::Function'
+    Condition: role_arn
+    Properties:
+      Handler: main.handler
+      FunctionName: !Join
+        - ""
+        - - "sumo-logic-app-utils-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      Runtime: python3.7
+      CodeUri: s3://appdevstore/sumo_app_utils/v1.0.29/sumo_app_utils.zip
+      MemorySize: 128
+      Timeout: 300
+      Role: !If [role_arn, !Ref RoleArn, !Ref "AWS::NoValue"]
+
   SumoAppUtilsFunction:
-      Type: 'AWS::Serverless::Function'
-      Properties:
-        Handler: main.handler
-        Runtime: python3.7
-        CodeUri: s3://appdevstore/sumo_app_utils/v1.0.27/sumo_app_utils.zip
-        MemorySize: 128
-        Timeout: 300
-        Policies:
+    Type: 'AWS::Serverless::Function'
+    Condition: No_role_arn
+    Properties:
+      Handler: main.handler
+      FunctionName: !Join
+        - ""
+        - - "sumo-logic-app-utils-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      Runtime: python3.7
+      CodeUri: s3://appdevstore/sumo_app_utils/v1.0.29/sumo_app_utils.zip
+      MemorySize: 128
+      Timeout: 300
+      Policies:
         - Statement:
-          - Action:
-            - cloudtrail:CreateTrail
-            - cloudtrail:DeleteTrail
-            - cloudtrail:UpdateTrail
-            - cloudtrail:StartLogging
-            Effect: Allow
-            Resource: arn:aws:cloudtrail:*:*:*
-            Sid: CreateCloudTrailPolicy
+            - Action:
+                - cloudtrail:CreateTrail
+                - cloudtrail:DeleteTrail
+                - cloudtrail:UpdateTrail
+                - cloudtrail:StartLogging
+              Effect: Allow
+              Resource: arn:aws:cloudtrail:*:*:*
+              Sid: CreateCloudTrailPolicy
 
 Outputs:
-    SumoAppUtilsFunction:
-      Description: "SumoAppUtils Function ARN"
-      Value: !GetAtt SumoAppUtilsFunction.Arn
-      Export:
-        Name : !Sub "${AWS::StackName}-SumoAppUtilsFunction"
+  SumoAppUtilsFunction:
+    Description: "SumoAppUtils Function ARN"
+    Value: !If [role_arn, !GetAtt SumoAppUtilsFunctionWithRole.Arn, !GetAtt SumoAppUtilsFunction.Arn]
+    Export:
+      Name: !Sub "${AWS::StackName}-SumoAppUtilsFunction"
