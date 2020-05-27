@@ -862,8 +862,14 @@ class SumoLogicFieldExtractionRule(SumoResource):
                         print("FER RULES -  Duplicate Exists for Name %s" % fer_name)
                         # check if there is difference in scope, if yes then merge the scopes.
                         fer_details = self._get_fer_by_name(fer_name)
+                        change_in_fer = False
                         if "scope" in fer_details and fer_scope not in fer_details["scope"]:
                             fer_details["scope"] = fer_details["scope"] + " or " + fer_scope
+                            change_in_fer = True
+                        if "parseExpression" in fer_details and fer_expression not in fer_details["parseExpression"]:
+                            fer_details["parseExpression"] = fer_expression
+                            change_in_fer = True
+                        if change_in_fer:
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
                         return {"FER_RULES": fer_name}, "Duplicate"
             raise e
