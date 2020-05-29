@@ -42,7 +42,7 @@ def create(event, context):
 @helper.update
 def update(event, context):
     resource, resource_type, params = get_resource(event)
-    data, resource_id = resource.create(**params)
+    data, resource_id = resource.update(**params)
     print(data)
     print(resource_id)
     helper.Data.update(data)

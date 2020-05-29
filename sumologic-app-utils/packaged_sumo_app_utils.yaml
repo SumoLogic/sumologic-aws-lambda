@@ -20,74 +20,17 @@ Metadata:
     - sumologic
     - serverless
     Name: sumologic-app-utils
-    SemanticVersion: 2.0.0
+    SemanticVersion: 2.0.1
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/sumologic-app-utils
     SpdxLicenseId: Apache-2.0
-    ReadmeUrl: s3://appdevstore/sumo_app_utils/v2.0.0/d261225f897cba410fd32b71c9991539
-Parameters:
-  RoleArn:
-    Type: String
-    Description: Attach any existing Role ARN to Lambda Function. If no Existing Role
-      ARN is provided, a role will be created and attached to the lambda function.
-    Default: ''
-Conditions:
-  role_arn:
-    Fn::Not:
-    - Fn::Equals:
-      - Ref: RoleArn
-      - ''
-  No_role_arn:
-    Fn::Equals:
-    - Ref: RoleArn
-    - ''
+    ReadmeUrl: s3://appdevstore/sumo_app_utils/v2.0.1/4d5a92c06a7fa9d956a900e51a1f6be4
 Resources:
-  SumoAppUtilsFunctionWithRole:
-    Type: AWS::Serverless::Function
-    Condition: role_arn
-    Properties:
-      Handler: main.handler
-      FunctionName:
-        Fn::Join:
-        - ''
-        - - sumo-logic-app-utils-
-          - Fn::Select:
-            - 0
-            - Fn::Split:
-              - '-'
-              - Fn::Select:
-                - 2
-                - Fn::Split:
-                  - /
-                  - Ref: AWS::StackId
-      Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.0/sumo_app_utils.zip
-      MemorySize: 128
-      Timeout: 300
-      Role:
-        Fn::If:
-        - role_arn
-        - Ref: RoleArn
-        - Ref: AWS::NoValue
   SumoAppUtilsFunction:
     Type: AWS::Serverless::Function
-    Condition: No_role_arn
     Properties:
       Handler: main.handler
-      FunctionName:
-        Fn::Join:
-        - ''
-        - - sumo-logic-app-utils-
-          - Fn::Select:
-            - 0
-            - Fn::Split:
-              - '-'
-              - Fn::Select:
-                - 2
-                - Fn::Split:
-                  - /
-                  - Ref: AWS::StackId
       Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.0/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.1/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 300
       Policies:
@@ -104,14 +47,18 @@ Outputs:
   SumoAppUtilsFunction:
     Description: SumoAppUtils Function ARN
     Value:
-      Fn::If:
-      - role_arn
-      - Fn::GetAtt:
-        - SumoAppUtilsFunctionWithRole
-        - Arn
-      - Fn::GetAtt:
-        - SumoAppUtilsFunction
-        - Arn
+      Fn::GetAtt:
+      - SumoAppUtilsFunction
+      - Arn
     Export:
       Name:
         Fn::Sub: ${AWS::StackName}-SumoAppUtilsFunction
+  SumoAppUtilsFunctionRole:
+    Description: SumoAppUtils Function Role ARN
+    Value:
+      Fn::GetAtt:
+      - SumoAppUtilsFunctionRole
+      - Arn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-SumoAppUtilsFunctionRole

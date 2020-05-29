@@ -244,3 +244,7 @@ class SumoLogic(object):
 
     def update_field_extraction_rules(self, fer_id, fer_details):
         return self.put('/extractionRules/%s' % fer_id, fer_details)
+
+    def get_fer_by_id(self, fer_id):
+        response = self.get('/extractionRules/%s' % fer_id)
+        return json.loads(response.text)

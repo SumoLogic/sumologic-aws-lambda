@@ -52,12 +52,16 @@ class AWSTrail(AWSResource):
             print("Error in creating trail %s" % e)
             raise
 
-    def update(self, trail_name, params, *args, **kwargs):
+    def update(self, old_trail_name, trail_name, params, *args, **kwargs):
         try:
-            response = self.cloudtrailcli.update_trail(**params)
-            print("Trail updated %s" % trail_name)
-            self.cloudtrailcli.start_logging(Name=trail_name)
-            return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
+            # Delete the trail if trail Name is changed.
+            if old_trail_name != trail_name:
+                return self.create(trail_name, params)
+            else:
+                response = self.cloudtrailcli.update_trail(**params)
+                print("Trail updated %s" % trail_name)
+                self.cloudtrailcli.start_logging(Name=trail_name)
+                return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
         except ClientError as e:
             print("Error in updating trail %s" % e.response['Error'])
             raise
@@ -90,10 +94,17 @@ class AWSTrail(AWSResource):
                       "EnableLogFileValidation", "IsOrganizationTrail"]
         params = {k: self._transform_bool_values(k, v) for k, v in props.items() if k in parameters}
         params['Name'] = props.get("TrailName")
+
+        # Get previous Trail Name
+        old_trail_name = None
+        if "OldResourceProperties" in event and "TrailName" in event['OldResourceProperties']:
+            old_trail_name = event["OldResourceProperties"]['TrailName']
+
         return {
             "props": props,
             "trail_name": props.get("TrailName"),
-            "params": params
+            "params": params,
+            "old_trail_name": old_trail_name
         }
 
 
@@ -127,12 +138,31 @@ class TagAWSResources(AWSResource):
             self._tag_aws_resources(region, aws_resource, tags, account_id, False, filter_regex)
         print("TAG AWS RESOURCES - Completed the AWS resources Tag addition.")
 
-        return {"TAG_CREATION": "Successful"}, "Tag"
+        return {"TAG_CREATION": "Successful"}, aws_resource
 
-    def update(self, region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs):
-        self.create(region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs)
+    def update(self, old_properties, region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs):
+        # First Delete Old Tags from old aws resource with old filter regex and Then add new Tags.
+        # Check if region or aws resource is changed, then create.
+        if old_properties['Region'] != region_value or old_properties['AWSResource'] != aws_resource:
+            data, aws_resource = self.create(region_value, aws_resource, tags, account_id, filter_regex)
+        else:
+            # If the region and aws resource is not changed, then check if any tag key is removed.
+            # If yes, then delete only those tags.
+            if tags and 'Tags' in old_properties and old_properties['Tags']:
+                old_tags = old_properties['Tags']
+                for tag_key in tags:
+                    old_tags.pop(tag_key, None)
+                if old_tags:
+                    self.delete(old_properties['Region'], old_properties['AWSResource'], old_tags,
+                                account_id, old_properties['Filter'], remove_on_delete_stack=True)
+
+            print("TAG AWS RESOURCES - Starting the AWS resources Tag update with Tags %s." % tags)
+            regions = [region_value]
+            for region in regions:
+                self._tag_aws_resources(region, aws_resource, tags, account_id, False, filter_regex)
+
         print("updated tags for aws resource %s " % aws_resource)
-        return {"TAG_UPDATE": "Successful"}, "Tag"
+        return {"TAG_UPDATE": "Successful"}, aws_resource
 
     def delete(self, region_value, aws_resource, tags, account_id, filter_regex, remove_on_delete_stack, *args,
                **kwargs):
@@ -153,13 +183,19 @@ class TagAWSResources(AWSResource):
         tags = {}
         if "Tags" in props:
             tags = props.get("Tags")
+
+        old_properties = None
+        if "OldResourceProperties" in event:
+            old_properties = event["OldResourceProperties"]
+
         return {
             "region_value": props.get("Region"),
             "aws_resource": props.get("AWSResource"),
             "tags": tags,
             "account_id": props.get("AccountID"),
             "filter_regex": props.get("Filter"),
-            "remove_on_delete_stack": props.get("RemoveOnDeleteStack")
+            "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
+            "old_properties": old_properties
         }
 
 
@@ -195,14 +231,26 @@ class EnableS3LogsResources(AWSResource):
                                     False, filter_regex, region_account_id, account_id)
         print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
 
-        return {"S3_ENABLE": "Successful"}, "S3"
+        return {"S3_ENABLE": "Successful"}, aws_resource
 
-    def update(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, region_account_id,
-               account_id, *args, **kwargs):
-        self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, region_account_id,
-                    account_id, *args, **kwargs)
-        print("updated S3 bucket to %s " % bucket_name)
-        return {"S3_ENABLE": "Successful"}, "S3"
+    def update(self, old_properties, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
+               region_account_id, account_id, *args, **kwargs):
+        # First Delete Old Tags from old aws resource with old filter regex and Then add new Tags.
+        # Check if aws resource is changed, then raise exception.
+        if old_properties['AWSResource'] != aws_resource:
+            data, aws_resource = self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
+                                             region_account_id, account_id)
+        else:
+            # If bucket name or prefix are not same, delete the old logging.
+            if old_properties['BucketName'] != bucket_name or old_properties['BucketPrefix'] != bucket_prefix:
+                self.delete(region_value, aws_resource, old_properties['BucketName'], old_properties['BucketPrefix'],
+                            old_properties['Filter'], True, account_id)
+
+            print("ENABLE S3 LOGS - Starting the AWS resources S3 Update with bucket %s." % bucket_name)
+            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
+                                        False, filter_regex, region_account_id, account_id)
+        print("ENABLE S3 LOGS - Completed the AWS resources S3 Update for bucket.")
+        return {"S3_ENABLE": "Successful"}, aws_resource
 
     def delete(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, remove_on_delete_stack,
                account_id, *args, **kwargs):
@@ -215,6 +263,10 @@ class EnableS3LogsResources(AWSResource):
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
+        old_properties = None
+        if "OldResourceProperties" in event:
+            old_properties = event["OldResourceProperties"]
+
         return {
             "region_value": os.environ.get("AWS_REGION"),
             "aws_resource": props.get("AWSResource"),
@@ -223,7 +275,8 @@ class EnableS3LogsResources(AWSResource):
             "filter_regex": props.get("Filter"),
             "region_account_id": props.get("RegionAccountId"),
             "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
-            "account_id": props.get("AccountID")
+            "account_id": props.get("AccountID"),
+            "old_properties": old_properties,
         }
 
 
@@ -232,9 +285,7 @@ class ConfigDeliveryChannel(AWSResource):
     def __init__(self, *args, **kwargs):
         self.config_client = boto3.client('config', region_name=os.environ.get("AWS_REGION"))
 
-    def create(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
-        print("DELIVERY CHANNEL - Starting the AWS config Delivery channel create with bucket %s." % bucket_name)
-
+    def create_delivery_channel(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn):
         name = "default"
         if not bucket_name:
             channels = self.config_client.describe_delivery_channels()
@@ -257,18 +308,26 @@ class ConfigDeliveryChannel(AWSResource):
 
         self.config_client.put_delivery_channel(DeliveryChannel=delivery_channel)
 
+        return name
+
+    def create(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
+        print("DELIVERY CHANNEL - Starting the AWS config Delivery channel create with bucket %s." % bucket_name)
+
+        name = self.create_delivery_channel(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn)
+
         print("DELIVERY CHANNEL - Completed the AWS config Delivery channel create.")
 
         return {"DELIVERY_CHANNEL": "Successful"}, name
 
     def update(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
         print("updated delivery channel to %s " % bucket_name)
-        return self.create(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs)
+        name = self.create_delivery_channel(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn)
+        return {"DELIVERY_CHANNEL": "Successful"}, name
 
     def delete(self, delivery_channel_name, bucket_name, delivery_frequency, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             if not bucket_name:
-                self.create(delivery_frequency, None, None, None)
+                self.create_delivery_channel(delivery_frequency, None, None, None)
             else:
                 self.config_client.delete_delivery_channel(DeliveryChannelName=delivery_channel_name)
             print("DELIVERY CHANNEL - Completed the AWS Config delivery channel delete.")
@@ -831,11 +890,13 @@ class AlbResources(AWSResourcesAbstract):
                     if attribute["Key"] == "access_logs.s3.enabled" and attribute["Value"] == "false":
                         try:
                             self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
+                            time.sleep(1)
                         except ClientError as e:
                             if "Error" in e.response and "Message" in e.response["Error"] \
                                     and "Access Denied for bucket" in e.response['Error']['Message']:
                                 self.add_bucket_policy(s3_bucket, elb_region_account_id)
-                                self.enable_s3_logs(arns, s3_bucket, s3_prefix, elb_region_account_id)
+                                time.sleep(10)
+                                self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
                             else:
                                 raise e
 
@@ -878,6 +939,7 @@ class AlbResources(AWSResourcesAbstract):
                 for attribute in response["Attributes"]:
                     if attribute["Key"] == "access_logs.s3.bucket" and attribute["Value"] == s3_bucket:
                         self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
+                        time.sleep(1)
 
 
 class S3Resource(AWSResourcesAbstract):
@@ -928,6 +990,7 @@ class S3Resource(AWSResourcesAbstract):
                     if not ("LoggingEnabled" in response and "TargetBucket" in response["LoggingEnabled"]):
                         try:
                             self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus=bucket_logging)
+                            time.sleep(1)
                         except ClientError as e:
                             if "Error" in e.response and "Message" in e.response["Error"] \
                                     and "InvalidTargetBucketForLogging" in e.response['Error']['Code']:
@@ -948,6 +1011,7 @@ class S3Resource(AWSResourcesAbstract):
                 if "LoggingEnabled" in response and "TargetBucket" in response["LoggingEnabled"] \
                         and response["LoggingEnabled"]["TargetBucket"] == s3_bucket:
                     self.client.put_bucket_logging(Bucket=bucket_name, BucketLoggingStatus={})
+                    time.sleep(1)
 
 
 class VpcResource(AWSResourcesAbstract):
@@ -1007,6 +1071,7 @@ class VpcResource(AWSResourcesAbstract):
                     LogDestinationType='s3',
                     LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix
                 )
+                print(response)
                 if "*Access Denied for LogDestination*" in str(response):
                     self.add_bucket_policy(s3_bucket, s3_prefix)
                     time.sleep(10)
@@ -1072,7 +1137,8 @@ class VpcResource(AWSResourcesAbstract):
                     for flow_logs in response["FlowLogs"]:
                         if "LogDestination" in flow_logs and s3_bucket in flow_logs["LogDestination"]:
                             flow_ids.append(flow_logs["FlowLogId"])
-                    self.client.delete_flow_logs(FlowLogIds=flow_ids)
+                    if flow_ids:
+                        self.client.delete_flow_logs(FlowLogIds=flow_ids)
 
 
 class AWSResourcesProvider(object):

@@ -17,61 +17,19 @@ Metadata:
       - sumologic
       - serverless
     Name: sumologic-app-utils
-    SemanticVersion: 2.0.0
+    SemanticVersion: 2.0.1
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/sumologic-app-utils
     SpdxLicenseId: Apache-2.0
     ReadmeUrl: ./README.md
 
-Parameters:
-
-  RoleArn:
-    Type: String
-    Description: "Attach any existing Role ARN to Lambda Function. If no Existing Role ARN is provided, a role will be created and attached to the lambda function."
-    Default: ""
-
-Conditions:
-  role_arn: !Not [!Equals [!Ref RoleArn, '']]
-  No_role_arn: !Equals [!Ref RoleArn, '']
-
 Resources:
-  SumoAppUtilsFunctionWithRole:
-    Type: 'AWS::Serverless::Function'
-    Condition: role_arn
-    Properties:
-      Handler: main.handler
-      FunctionName: !Join
-        - ""
-        - - "sumo-logic-app-utils-"
-          - !Select
-            - 0
-            - !Split
-              - "-"
-              - !Select
-                - 2
-                - !Split ["/", !Ref "AWS::StackId"]
-      Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.0/sumo_app_utils.zip
-      MemorySize: 128
-      Timeout: 300
-      Role: !If [role_arn, !Ref RoleArn, !Ref "AWS::NoValue"]
 
   SumoAppUtilsFunction:
     Type: 'AWS::Serverless::Function'
-    Condition: No_role_arn
     Properties:
       Handler: main.handler
-      FunctionName: !Join
-        - ""
-        - - "sumo-logic-app-utils-"
-          - !Select
-            - 0
-            - !Split
-              - "-"
-              - !Select
-                - 2
-                - !Split ["/", !Ref "AWS::StackId"]
       Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.0/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.1/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 300
       Policies:
@@ -88,6 +46,12 @@ Resources:
 Outputs:
   SumoAppUtilsFunction:
     Description: "SumoAppUtils Function ARN"
-    Value: !If [role_arn, !GetAtt SumoAppUtilsFunctionWithRole.Arn, !GetAtt SumoAppUtilsFunction.Arn]
+    Value: !GetAtt SumoAppUtilsFunction.Arn
     Export:
       Name: !Sub "${AWS::StackName}-SumoAppUtilsFunction"
+
+  SumoAppUtilsFunctionRole:
+    Description: "SumoAppUtils Function Role ARN"
+    Value: !GetAtt SumoAppUtilsFunctionRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-SumoAppUtilsFunctionRole"
