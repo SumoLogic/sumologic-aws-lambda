@@ -523,7 +523,7 @@ class EC2Resources(AWSResourcesAbstract):
         return arns
 
     def process_tags(self, tags):
-        tags["namespace"] = "AWS/EC2"
+        tags["Namespace"] = "AWS/EC2"
 
         tags_key_value = []
         for k, v in tags.items():
