@@ -424,13 +424,20 @@ class HTTPSource(SumoResource):
                 raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
-    def update(self, collector_id, source_id, source_name, source_category, date_format=None, date_locator=None, *args,
+    def update(self, collector_id, source_id, source_name, source_category, fields, date_format=None, date_locator=None, *args,
                **kwargs):
         sv, etag = self.sumologic_cli.source(collector_id, source_id)
         sv['source']['category'] = source_category
         sv['source']['name'] = source_name
         if date_format:
             sv['source']["defaultDateFormats"] = [{"format": date_format, "locator": date_locator}]
+        # Fields condition
+        if sv['source']['fields']:
+            existing_fields = sv['source']['fields']
+            if fields:
+                existing_fields.update(fields)
+                sv['source']['fields'] = existing_fields
+
         resp = self.sumologic_cli.update_source(collector_id, sv, etag)
         data = resp.json()['source']
         print("updated source %s" % data["id"])
@@ -800,59 +807,37 @@ class SumoLogicUpdateFields(SumoResource):
         Fields can also be added to new Sources using AWSSource, HTTPSources classes.
         Getting collector name, as Calling custom collector resource can update the collector name if stack is updated with different collector name.
     """
+    def add_fields_to_collector(self, collector_id, source_id, fields):
+        if collector_id and source_id:
+            sv, etag = self.sumologic_cli.source(collector_id, source_id)
 
-    def _get_collector_by_name(self, collector_name):
-        offset = 0
-        page_limit = 300
-        all_collectors = self.sumologic_cli.collectors(limit=page_limit, offset=offset)
-        while all_collectors:
-            for collector in all_collectors:
-                if collector["name"] == collector_name:
-                    return collector
-            offset += page_limit
-            all_collectors = self.sumologic_cli.collectors(limit=page_limit, offset=offset)
+            existing_fields = sv['source']['fields']
 
-        raise Exception("Collector with name %s not found" % collector_name)
+            new_fields = existing_fields.copy()
+            new_fields.update(fields)
 
-    def add_fields_to_collector(self, collector_name, source_name, fields):
-        if collector_name and source_name:
-            collector = self._get_collector_by_name(collector_name)
-            if collector and 'id' in collector:
-                collector_id = collector['id']
-                sources = self.sumologic_cli.sources(collector_id, limit=300)
-                source_id = None
-                for source in sources:
-                    if source["name"] == source_name:
-                        source_id = source["id"]
+            sv['source']['fields'] = new_fields
 
-                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
 
-                existing_fields = sv['source']['fields']
+            data = resp.json()['source']
+            print("Added Fields in Source %s" % data["id"])
 
-                new_fields = existing_fields.copy()
-                new_fields.update(fields)
+            return {"source_name": data["name"]}, str(source_id)
+        return {"source_name": "Not updated"}, "No_Source_Id"
 
-                sv['source']['fields'] = new_fields
-
-                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-
-                data = resp.json()['source']
-                print("Added Fields in Source %s" % data["id"])
-
-                return {"added_fields": fields}, str(source_id) + "#" + str(collector_id)
-        return {"added_fields": "Not updated"}, "No_Source_Id#No_Collector_Id"
-
-    def create(self, collector_name, source_name, fields, *args, **kwargs):
-        return self.add_fields_to_collector(collector_name, source_name, fields)
+    def create(self, collector_id, source_id, fields, *args, **kwargs):
+        return self.add_fields_to_collector(collector_id, source_id, fields)
 
     # Update the new fields to source.
-    def update(self, old_resource_properties, collector_id, source_id, collector_name, source_name, fields, *args,
+    def update(self, collector_id, source_id, fields, old_resource_properties, *args,
                **kwargs):
         # Fetch the source, get all fields. Merge the Old and New fields and the update source.
         # If Source name or collector name is changed, it is create again.
-        if collector_name != old_resource_properties['CollectorName'] or source_name != old_resource_properties[
-            'SourceName']:
-            return self.create(collector_name, source_name, fields)
+        if 'SourceApiUrl' in old_resource_properties and \
+                old_resource_properties['SourceApiUrl'].rsplit('/', 1)[-1] != source_id or \
+                re.search('collectors/(.*)/sources', old_resource_properties['SourceApiUrl']).group(1) != collector_id:
+            return self.create(collector_id, source_id, fields)
         else:
             sv, etag = self.sumologic_cli.source(collector_id, source_id)
             existing_source_fields = sv['source']['fields']
@@ -865,7 +850,7 @@ class SumoLogicUpdateFields(SumoResource):
             resp = self.sumologic_cli.update_source(collector_id, sv, etag)
             data = resp.json()['source']
             print("updated Fields in Source %s" % data["id"])
-            return {"updated_fields": fields}, str(source_id) + "#" + str(collector_id)
+            return {"source_name": data["name"]}, source_id
 
     def delete(self, collector_id, source_id, fields, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -887,10 +872,6 @@ class SumoLogicUpdateFields(SumoResource):
     def extract_params(self, event):
         props = event.get("ResourceProperties")
 
-        source_id = None
-        if event.get('PhysicalResourceId'):
-            _, source_id = event['PhysicalResourceId'].split("/")
-
         old_resource_properties = None
         if "OldResourceProperties" in event:
             old_resource_properties = event['OldResourceProperties']
@@ -900,11 +881,9 @@ class SumoLogicUpdateFields(SumoResource):
             fields = props.get("Fields")
 
         return {
-            "collector_name": props.get("CollectorName"),
-            "source_name": props.get("SourceName"),
             "fields": fields,
-            "source_id": source_id.split('#')[0] if source_id else None,
-            "collector_id": source_id.split('#')[1] if source_id else None,
+            "collector_id": re.search('collectors/(.*)/sources', props.get("SourceApiUrl")).group(1),
+            "source_id": props.get("SourceApiUrl").rsplit('/', 1)[-1],
             "old_resource_properties": old_resource_properties
         }
 
@@ -956,7 +935,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
                             change_in_fer = True
                         if change_in_fer:
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
-                        return {"FER_RULES": fer_name}, "Duplicate"
+                        return {"FER_RULES": fer_name}, fer_details["id"]
             raise e
 
     def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
