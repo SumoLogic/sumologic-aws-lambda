@@ -1,5 +1,8 @@
 from crhelper import CfnResource
-from api import ResourceFactory, SumoResource
+from sumoresource import SumoResource
+from awsresource import AWSResource
+
+from resourcefactory import ResourceFactory
 
 helper = CfnResource(json_logging=False, log_level='DEBUG')
 
@@ -23,7 +26,11 @@ def create(event, context):
     # if None is returned an ID will be generated. If a poll_create function is defined
     # return value is placed into the poll event as event['CrHelperData']['PhysicalResourceId']
     resource, resource_type, params = get_resource(event)
-    data, resource_id = resource.create(**params)
+    # Handle Exception to send a proper error to CF logs.
+    try:
+        data, resource_id = resource.create(**params)
+    except Exception as e:
+        raise e
     print(data)
     print(resource_id)
     helper.Data.update(data)
@@ -35,7 +42,7 @@ def create(event, context):
 @helper.update
 def update(event, context):
     resource, resource_type, params = get_resource(event)
-    data, resource_id = resource.create(**params)
+    data, resource_id = resource.update(**params)
     print(data)
     print(resource_id)
     helper.Data.update(data)
@@ -60,6 +67,7 @@ def delete(event, context):
 
 def handler(event, context):
     helper(event, context)
+
 
 if __name__ == "__main__":
     event = {}

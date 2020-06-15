@@ -218,3 +218,33 @@ class SumoLogic(object):
 
     def check_app_install_status(self, job_id):
         return self.get('/apps/install/%s/status' % job_id)
+
+    def create_explorer_view(self, content):
+        return self.post('/topologies', params=content, version='v1alpha')
+
+    def delete_explorer_view(self, explorer_id):
+        return self.delete('/topologies/%s' % explorer_id, version='v1alpha')
+
+    def create_metric_rule(self, content):
+        return self.post('/metricsRules', params=content)
+
+    def delete_metric_rule(self, metric_rule_name):
+        return self.delete('/metricsRules/%s' % metric_rule_name)
+
+    def create_field_extraction_rule(self, content):
+        return self.post('/extractionRules', params=content)
+
+    def delete_field_extraction_rule(self, fer_name):
+        return self.delete('/extractionRules/%s' % fer_name)
+
+    def get_all_field_extraction_rules(self, limit=None, token=None,):
+        params = {'limit': limit, 'token': token}
+        r = self.get('/extractionRules', params)
+        return json.loads(r.text)
+
+    def update_field_extraction_rules(self, fer_id, fer_details):
+        return self.put('/extractionRules/%s' % fer_id, fer_details)
+
+    def get_fer_by_id(self, fer_id):
+        response = self.get('/extractionRules/%s' % fer_id)
+        return json.loads(response.text)
