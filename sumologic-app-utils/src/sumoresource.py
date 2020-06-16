@@ -579,6 +579,7 @@ class App(SumoResource):
             response = self.sumologic_cli.get_personal_folder()
             folder_id = response.json()['id']
         app_folder_id = self._get_app_folder(content, folder_id)
+        time.sleep(5)
         response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true")
         job_id = response.json()["id"]
         print("installed app %s: appFolderId: %s personalFolderId: %s jobId: %s" % (
