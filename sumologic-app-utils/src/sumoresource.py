@@ -305,7 +305,7 @@ class AWSSource(BaseSource):
                     }
                 }]
             },
-            "scanInterval": props.get("ScanInterval") if "ScanInterval" in props else 300000,
+            "scanInterval": int(props.get("ScanInterval")) if "ScanInterval" in props else 300000,
             "paused": False,
         })
         return source_json
