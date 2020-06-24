@@ -3,28 +3,33 @@ import os
 from argparse import ArgumentParser
 
 regions = [
-        "us-east-2",
-        "us-east-1",
-        "us-west-1",
-        "us-west-2",
-        "ap-south-1",
-        "ap-northeast-2",
-        "ap-southeast-1",
-        "ap-southeast-2",
-        "ap-northeast-1",
-        "ca-central-1",
-        # "cn-north-1",
-        "eu-central-1",
-        "eu-west-1",
-        "eu-west-2",
-        "eu-west-3",
-        "eu-north-1",
-        "sa-east-1"
+    "us-east-2",
+    "us-east-1",
+    "us-west-1",
+    "us-west-2",
+    "ap-south-1",
+    "ap-northeast-2",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ca-central-1",
+    # "cn-north-1",
+    # "ap-northeast-3", #giving errror
+    "eu-central-1",
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3",
+    "eu-north-1",
+    "sa-east-1",
+    "ap-east-1",
+    "me-south-1",
+    "eu-south-1",
+    "af-south-1"
     ]
 
 
 def get_bucket_name(bucket_prefix, region):
-    if region == "eu-north-1":
+    if region in ("eu-north-1", "me-south-1", "ap-east-1", "af-south-1"):
         return '%s-%ss' % (bucket_prefix, region)
     return '%s-%s' % (bucket_prefix, region)
 
@@ -48,8 +53,10 @@ def create_buckets(bucket_prefix):
                                                 'LocationConstraint': region
                                             })
             print("Creating bucket", region, response)
-        except:
-            pass
+        except Exception as e:
+            print(bucket_name, region)
+            print(e)
+
 
 
 def upload_code_in_S3(filepath, bucket_name, region):
