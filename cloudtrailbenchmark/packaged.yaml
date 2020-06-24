@@ -43,9 +43,9 @@ Metadata:
     - benchmark
     - cloudtrail
     Name: sumologic-aws-cloudtrail-benchmark
-    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.10/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.10/8a901bb4fbbe82f128fc502dd3077508
-    SemanticVersion: 1.0.10
+    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.11/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.11/8a901bb4fbbe82f128fc502dd3077508
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 Parameters:
   CollectorName:
@@ -127,7 +127,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.24
+        SemanticVersion: 2.0.1
   SumoRole:
     Condition: SetupSumoResources
     Type: AWS::IAM::Role
@@ -363,10 +363,42 @@ Resources:
         Ref: SumoDeployment
     DependsOn:
     - SumoAppUtils
+  SumoGISCloudTrailDevOpsApp:
+    Type: Custom::App
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - SumoAppUtils
+        - Outputs.SumoAppUtilsFunction
+      Region:
+        Ref: AWS::Region
+      AppName: Global Intelligence for CloudTrail DevOps
+      AppId: c7e195de-f169-460a-8e8b-7bb23af0ee5e
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        cloudtraillogsource:
+          Fn::Sub: _sourceCategory=${SourceCategoryName}
+        indexname: '%rnd%'
+        incrementalindex: '%rnd%'
+      SumoAccessID:
+        Ref: SumoAccessID
+      SumoAccessKey:
+        Ref: SumoAccessKey
+      SumoDeployment:
+        Ref: SumoDeployment
+    DependsOn:
+    - SumoAppUtils
 Outputs:
   CloudTrailBenchmarkAppFolder:
     Description: Folder Name
     Value:
       Fn::GetAtt:
       - SumoCloudTrailBenchmarkApp
+      - APP_FOLDER_NAME
+  GISCloudTrailDevOpsAppFolder:
+    Description: Folder Name
+    Value:
+      Fn::GetAtt:
+      - SumoGISCloudTrailDevOpsApp
       - APP_FOLDER_NAME
