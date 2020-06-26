@@ -9,6 +9,7 @@ import requests
 import six
 from resourcefactory import AutoRegisterResource
 from sumologic import SumoLogic
+from awsresource import AWSResourcesProvider
 
 
 @six.add_metaclass(AutoRegisterResource)
@@ -988,8 +989,127 @@ class SumoLogicFieldExtractionRule(SumoResource):
         }
 
 
-if __name__ == '__main__':
+class AddFieldsInHostMetricsSources(SumoResource):
+    """
+    This class is specifically designed for Adding fields to HostMetrics Source.
+    """
 
+    def batch_size_chunking(self, iterable, size=1):
+        l = len(iterable)
+        for idx in range(0, l, size):
+            data = iterable[idx:min(idx + size, l)]
+            yield data
+
+    def get_source_and_collector_id(self, instances):
+        ids = []
+        for instance in instances:
+            ids.append("InstanceId=%s" % instance["InstanceId"])
+        query = " or ".join(ids)
+        content = {
+            "query": [
+                {
+                    "query": "_contentType=HostMetrics (%s) | count by _sourceId, _collectorId" % query,
+                    "rowId": "A"
+                }
+            ],
+            "startTime": int(time.time() * 1000) - 60 * 60 * 1000,
+            "endTime": int(time.time() * 1000),
+            "desiredQuantizationInSecs": 600,
+            "requestedDataPoints": 1
+        }
+        output = self.sumologic_cli.fetch_metric_data_points(content)
+        responses = json.loads(output.text)["response"]
+        sources = []
+        if responses:
+            for response in responses:
+                if "results" in response:
+                    for result in response["results"]:
+                        if "metric" in result and "dimensions" in result["metric"]:
+                            output = {}
+                            for dimension in result["metric"]["dimensions"]:
+                                if dimension["key"] == "_collectorId" or dimension["key"] == "_sourceId":
+                                    output[dimension["key"]] = str(int(dimension["value"], 16))
+                            sources.append(output)
+        return sources
+
+    def add_remove_fields(self, region_value, account_id, new_fields, old_fields=None):
+        # Get all EC2 Instance ID's
+        ec2_resource = AWSResourcesProvider.get_provider("ec2", region_value, account_id)
+        instance_ids = ec2_resource.fetch_resources()
+        chucked_data = self.batch_size_chunking(instance_ids, 50)
+        for instances in chucked_data:
+            sources = self.get_source_and_collector_id(instances)
+            for source in sources:
+                collector_id = source["_collectorId"]
+                source_id = source["_sourceId"]
+                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+                existing_source_fields = sv['source']['fields']
+                if old_fields:
+                    for k in old_fields:
+                        existing_source_fields.pop(k, None)
+                if new_fields:
+                    existing_source_fields.update(new_fields)
+
+                sv['source']['fields'] = existing_source_fields
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                data = resp.json()['source']
+                print("updated Fields in Source %s" % data["id"])
+
+    def create(self, region_value, account_id, fields, add_fields, *args, **kwargs):
+        if add_fields:
+            self.add_remove_fields(region_value, account_id, fields)
+        else:
+            print("Skipping Adding Fields to Sources for Region %s", region_value)
+        return {"Fields_Added": "Successful"}, region_value
+
+    def update(self, old_properties, region_value, account_id, fields, add_fields, *args, **kwargs):
+        if add_fields:
+            if old_properties['Region'] != region_value:
+                data, region_value = self.create(region_value, account_id, fields, add_fields)
+            else:
+                old_fields = None
+                if 'Fields' in old_properties and old_properties['Fields']:
+                    old_fields = old_properties['Fields']
+                self.add_remove_fields(region_value, account_id, fields, old_fields)
+        else:
+            print("Skipping Adding Fields to Sources for Region %s", region_value)
+        return {"Fields_Updated": "Successful"}, region_value
+
+    def delete(self, remove_on_delete_stack, region_value, account_id, fields, add_fields, *args, **kwargs):
+        if add_fields:
+            if remove_on_delete_stack:
+                self.add_remove_fields(region_value, account_id, None, fields)
+            else:
+                print("UPDATE FIELDS - Skipping the Fields deletion")
+        else:
+            print("Skipping Adding Fields to Sources for Region %s", region_value)
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        fields = {}
+        if "Fields" in props:
+            fields = props.get("Fields")
+
+        add_fields = True
+        if props.get("AddFields") == "No":
+            add_fields = False
+
+        old_resource_properties = None
+        if "OldResourceProperties" in event:
+            old_resource_properties = event['OldResourceProperties']
+
+        return {
+            "region_value": props.get("Region"),
+            "account_id": props.get("AccountID"),
+            "fields": fields,
+            "add_fields": add_fields,
+            "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
+            "old_properties": old_resource_properties
+        }
+
+
+if __name__ == '__main__':
     props = {
         "SumoAccessID": "",
         "SumoAccessKey": "",

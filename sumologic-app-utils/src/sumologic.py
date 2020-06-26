@@ -237,7 +237,7 @@ class SumoLogic(object):
     def delete_field_extraction_rule(self, fer_name):
         return self.delete('/extractionRules/%s' % fer_name)
 
-    def get_all_field_extraction_rules(self, limit=None, token=None,):
+    def get_all_field_extraction_rules(self, limit=None, token=None, ):
         params = {'limit': limit, 'token': token}
         r = self.get('/extractionRules', params)
         return json.loads(r.text)
@@ -248,3 +248,6 @@ class SumoLogic(object):
     def get_fer_by_id(self, fer_id):
         response = self.get('/extractionRules/%s' % fer_id)
         return json.loads(response.text)
+
+    def fetch_metric_data_points(self, content):
+        return self.post('/metrics/results', params=content)

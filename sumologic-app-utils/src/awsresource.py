@@ -495,22 +495,10 @@ class EC2Resources(AWSResourcesAbstract):
 
     def fetch_resources(self):
         instances = []
-        next_token = None
-        while next_token != 'END':
-            if next_token:
-                response = self.client.describe_instances(MaxResults=1000, NextToken=next_token)
-            else:
-                response = self.client.describe_instances(MaxResults=1000)
-
-            for reservation in response['Reservations']:
+        for page in self.client.get_paginator("describe_instances").paginate(MaxResults=1000):
+            for reservation in page['Reservations']:
                 if "Instances" in reservation:
                     instances.extend(reservation['Instances'])
-
-            next_token = response["NextToken"] if "NextToken" in response else None
-
-            if not next_token:
-                next_token = 'END'
-
         return instances
 
     def get_arn_list(self, resources):
