@@ -1036,7 +1036,7 @@ class AddFieldsInHostMetricsSources(SumoResource):
         # Get all EC2 Instance ID's
         ec2_resource = AWSResourcesProvider.get_provider("ec2", region_value, account_id)
         instance_ids = ec2_resource.fetch_resources()
-        chucked_data = self.batch_size_chunking(instance_ids, 50)
+        chucked_data = self.batch_size_chunking(instance_ids, 10)
         for instances in chucked_data:
             sources = self.get_source_and_collector_id(instances)
             for source in sources:
