@@ -433,11 +433,10 @@ class HTTPSource(SumoResource):
         if date_format:
             sv['source']["defaultDateFormats"] = [{"format": date_format, "locator": date_locator}]
         # Fields condition
-        if sv['source']['fields']:
-            existing_fields = sv['source']['fields']
-            if fields:
-                existing_fields.update(fields)
-                sv['source']['fields'] = existing_fields
+        existing_fields = sv['source']['fields']
+        if fields:
+            existing_fields.update(fields)
+            sv['source']['fields'] = existing_fields
 
         resp = self.sumologic_cli.update_source(collector_id, sv, etag)
         data = resp.json()['source']
