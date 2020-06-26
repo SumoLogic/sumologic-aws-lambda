@@ -49,7 +49,7 @@ Metadata:
     Name: sumologic-aws-cloudtrail-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.10
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 
 
@@ -123,7 +123,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.24
+        SemanticVersion: 2.0.1
 
   SumoRole:
     Condition: SetupSumoResources
@@ -323,8 +323,31 @@ Resources:
     DependsOn:
       - SumoAppUtils
 
+
+  SumoGISCloudTrailDevOpsApp:
+    Type: Custom::App
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      AppName: "Global Intelligence for CloudTrail DevOps"
+      AppId: "c7e195de-f169-460a-8e8b-7bb23af0ee5e"
+      RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        cloudtraillogsource: !Sub "_sourceCategory=${SourceCategoryName}"
+        indexname: "%rnd%"
+        incrementalindex: "%rnd%"
+      SumoAccessID: !Ref SumoAccessID
+      SumoAccessKey: !Ref SumoAccessKey
+      SumoDeployment: !Ref SumoDeployment
+    DependsOn:
+      - SumoAppUtils
+
+
 Outputs:
     CloudTrailBenchmarkAppFolder:
       Description: "Folder Name"
       Value: !GetAtt SumoCloudTrailBenchmarkApp.APP_FOLDER_NAME
+    GISCloudTrailDevOpsAppFolder:
+      Description: "Folder Name"
+      Value: !GetAtt SumoGISCloudTrailDevOpsApp.APP_FOLDER_NAME
 
