@@ -12,6 +12,7 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
         LambdaARN: "Enter ARN for target lambda function" All loggroups matching the pattern are subscribed to this function
         LogGroupPattern: "Enter regex for matching logGroups"
         UseExistingLogs: "Select true for subscribing existing logs"
+        LogGroupTags: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string. Supported only when UseExistingLogs is set to false."
     6. Click Deploy.
 
 
@@ -42,6 +43,8 @@ It has two environment variables
 ```
 
 **USE_EXISTING_LOGS**: This is used for subscribing existing log groups. By setting this parameter to true and invoking the function manually, all the existing log groups matching the pattern will be subscribed to lambda function with `LAMBDA_ARN` as arn
+
+**LogGroupTags**: This is used for filtering out loggroups based on tags.Only loggroups which match any one of the key value pairs will be subscribed to the lambda function. This works only for new loggroups not existing loggroups.
 
 ### For Developers
 
