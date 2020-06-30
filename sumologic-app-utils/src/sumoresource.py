@@ -1108,6 +1108,62 @@ class AddFieldsInHostMetricsSources(SumoResource):
         }
 
 
+class SumoLogicFieldsSchema(SumoResource):
+
+    def add_field(self, field_name):
+        content = {
+            "fieldName": field_name,
+        }
+        try:
+            response = self.sumologic_cli.create_new_field(content)
+            field_id = response["fieldId"]
+            print("FIELD NAME -  creation successful with Field Id %s" % field_id)
+            return {"FIELD_NAME": response["fieldName"]}, field_id
+        except Exception as e:
+            if hasattr(e, 'response') and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'field:already_exists':
+                        print("FIELD NAME -  Duplicate Exists for Name %s" % field_name)
+                        return {"FIELD_NAME": field_name}, "Duplicate"
+            raise e
+
+    def create(self, field_name, *args, **kwargs):
+        return self.add_field(field_name)
+
+    # No Update API. So, Fields will be added and deleted from the main stack.
+    def update(self, field_id, field_name, old_field_name, *args, **kwargs):
+        # Create a new field when field name changes. Delete will happen for old Field. No Update API, so no updates.
+        if field_name != old_field_name:
+            return self.create(field_name)
+        return {"FIELD_NAME": field_name}, field_id
+
+    def delete(self, field_id, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack and field_id != "Duplicate":
+            response = self.sumologic_cli.delete_existing_field(field_id)
+            print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
+        else:
+            print("FIELD NAME - Skipping the Field deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        field_id = None
+        if event.get('PhysicalResourceId'):
+            _, field_id = event['PhysicalResourceId'].split("/")
+
+        # Get previous Metric Rule Name
+        old_field_name = None
+        if "OldResourceProperties" in event and "FieldName" in event['OldResourceProperties']:
+            old_field_name = event["OldResourceProperties"]['FieldName']
+
+        return {
+            "field_name": props.get("FieldName"),
+            "field_id": field_id,
+            "old_field_name": old_field_name
+        }
+
+
 if __name__ == '__main__':
     props = {
         "SumoAccessID": "",

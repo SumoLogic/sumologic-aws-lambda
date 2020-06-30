@@ -251,3 +251,14 @@ class SumoLogic(object):
 
     def fetch_metric_data_points(self, content):
         return self.post('/metrics/results', params=content)
+
+    def create_new_field(self, content):
+        response = self.post('/fields', params=content)
+        return json.loads(response.text)
+
+    def get_existing_field(self, field_id):
+        response = self.get('/fields/%s' % field_id)
+        return json.loads(response.text)
+
+    def delete_existing_field(self, field_id):
+        return self.delete('/fields/%s' % field_id)
