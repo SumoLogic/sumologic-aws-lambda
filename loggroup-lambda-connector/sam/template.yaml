@@ -24,7 +24,7 @@ Metadata:
     LicenseUrl: ./LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.2
+    SemanticVersion: 1.0.3
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
@@ -45,6 +45,10 @@ Parameters:
         AllowedValues : ["true", "false"]
         Description: "Select true for subscribing existing logs"
 
+    LogGroupTags:
+        Type: CommaDelimitedList
+        Description: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string "
+
 Resources:
 
     SumoLogGroupLambdaConnector:
@@ -58,6 +62,7 @@ Resources:
             LAMBDA_ARN: !Ref "LambdaARN"
             LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
             USE_EXISTING_LOG_GROUPS: !Ref "UseExistingLogs"
+            LOG_GROUP_TAGS: !Join [",", {"Ref": "LogGroupTags"} ]
         Policies:
           - Statement:
             - Sid: ReadWriteFilterPolicy

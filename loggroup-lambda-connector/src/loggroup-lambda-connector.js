@@ -18,12 +18,25 @@ function subscribeToLambda(lambdaLogGroupName, lambdaArn, errorHandler) {
 
 function filterLogGroups(event, logGroupRegex) {
     logGroupRegex = new RegExp(logGroupRegex, "i");
-    var logGroupName = event.detail.requestParameters.logGroupName;
+    let logGroupName = event.detail.requestParameters.logGroupName;
     if (logGroupName.match(logGroupRegex) && event.detail.eventName === "CreateLogGroup") {
         return true;
-    } else {
-        return false;
     }
+    let lg_tags = event.detail.requestParameters.tags;
+    if (process.env.LOG_GROUP_TAGS && lg_tags) {
+        console.log("tags in loggroup: ", lg_tags);
+        var tags_array = process.env.LOG_GROUP_TAGS.split(",");
+        let tag, key, value;
+        for (let i = 0; i < tags_array.length; i++) {
+          tag = tags_array[i].split("=");
+          key = tag[0].trim();
+          value = tag[1].trim();
+          if (lg_tags[key] && lg_tags[key]==value) {
+              return true;
+          }
+        }
+    }
+    return false;
 }
 
 async function subscribeExistingLogGroups(logGroups) {
