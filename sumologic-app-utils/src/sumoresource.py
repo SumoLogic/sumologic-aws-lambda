@@ -283,6 +283,9 @@ class BaseSource(SumoResource):
         if 'useAutolineMatching' in props:
             source_json['useAutolineMatching'] = props['useAutolineMatching']
 
+        # Adding Cutofftimestamp 24 hours.
+        source_json['cutoffTimestamp'] = int(round(time.time() * 1000)) - 24*60*60*1000
+
         return source_json
 
 
@@ -1162,6 +1165,24 @@ class SumoLogicFieldsSchema(SumoResource):
             "field_id": field_id,
             "old_field_name": old_field_name
         }
+
+
+class EnterpriseOrTrialAccountCheck(SumoResource):
+
+    def create(self, *args, **kwargs):
+        is_enterprise = self.is_enterprise_or_trial_account()
+        return {"is_enterprise": is_enterprise}, is_enterprise
+
+    def update(self, *args, **kwargs):
+        is_enterprise = self.is_enterprise_or_trial_account()
+        return {"is_enterprise": is_enterprise}, is_enterprise
+
+    def delete(self, *args, **kwargs):
+        print("In Delete method for Enterprise or Trial account")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        return props
 
 
 if __name__ == '__main__':
