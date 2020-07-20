@@ -237,7 +237,7 @@ Resources:
     Properties:
       Handler: main.handler
       Runtime: python3.7
-      CodeUri: s3://sumologiclambdahelper-us-east-1/sumo_app_utils/v2.0.1/sumo_app_utils.zip
+      CodeUri: s3://sumologiclambdahelper-us-east-1/sumo_app_utils/v2.0.2/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 900
       Role:
