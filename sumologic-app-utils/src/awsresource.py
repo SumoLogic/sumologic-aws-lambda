@@ -872,6 +872,7 @@ class AlbResources(AWSResourcesAbstract):
                       {'Key': 'access_logs.s3.prefix', 'Value': s3_prefix}]
 
         for arn in arns:
+            print("Enable S3 logging for ALB " + arn)
             response = self.client.describe_load_balancer_attributes(LoadBalancerArn=arn)
             if "Attributes" in response:
                 for attribute in response["Attributes"]:
@@ -905,16 +906,39 @@ class AlbResources(AWSResourcesAbstract):
             else:
                 raise e
 
-        bucket_policy = {
-            'Sid': 'AwsAlbLogs',
-            'Effect': 'Allow',
-            'Principal': {
-                "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"
+        bucket_policy = [{
+                'Sid': 'AwsAlbLogs',
+                'Effect': 'Allow',
+                'Principal': {
+                    "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"
+                },
+                'Action': ['s3:PutObject'],
+                'Resource': f'arn:aws:s3:::{bucket_name}/*'
             },
-            'Action': ['s3:PutObject'],
-            'Resource': f'arn:aws:s3:::{bucket_name}/*'
-        }
-        existing_policy["Statement"].append(bucket_policy)
+            {
+                "Sid": "AWSLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "delivery.logs.amazonaws.com"
+                },
+                "Action": "s3:GetBucketAcl",
+                "Resource": "arn:aws:s3:::" + bucket_name
+            },
+            {
+                "Sid": "AWSLogDeliveryWrite",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "delivery.logs.amazonaws.com"
+                },
+                "Action": "s3:PutObject",
+                "Resource": "arn:aws:s3:::" + bucket_name + "/*",
+                "Condition": {
+                    "StringEquals": {
+                        "s3:x-amz-acl": "bucket-owner-full-control"
+                    }
+                }
+            }]
+        existing_policy["Statement"].extend(bucket_policy)
 
         s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
 
