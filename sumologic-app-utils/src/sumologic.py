@@ -225,6 +225,10 @@ class SumoLogic(object):
     def delete_explorer_view(self, explorer_id):
         return self.delete('/topologies/%s' % explorer_id, version='v1alpha')
 
+    def get_explorer_views(self):
+        response = self.get('/topologies', version='v1alpha')
+        return json.loads(response.text)
+
     def create_metric_rule(self, content):
         return self.post('/metricsRules', params=content)
 
@@ -255,6 +259,10 @@ class SumoLogic(object):
     def create_new_field(self, content):
         response = self.post('/fields', params=content)
         return json.loads(response.text)
+
+    def get_all_fields(self):
+        response = self.get('/fields')
+        return json.loads(response.text)['data']
 
     def get_existing_field(self, field_id):
         response = self.get('/fields/%s' % field_id)

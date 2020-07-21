@@ -656,6 +656,14 @@ class App(SumoResource):
 
 class SumoLogicAWSExplorer(SumoResource):
 
+    def get_explorer_id(self, explorer_name):
+        explorer_views = self.sumologic_cli.get_explorer_views()
+        if explorer_views:
+            for explorer_view in explorer_views:
+                if explorer_name == explorer_view["name"]:
+                    return explorer_view["id"]
+        raise Exception("Explorer View with name %s not found" % explorer_name)
+
     def create_explorer_view(self, explorer_name, hierarchy):
         content = {
             "name": explorer_name,
@@ -673,7 +681,9 @@ class SumoLogicAWSExplorer(SumoResource):
                 for error in errors:
                     if error.get('code') == 'topology:duplicate':
                         print("AWS EXPLORER -  Duplicate Exists for Name %s" % explorer_name)
-                        return {"EXPLORER_NAME": explorer_name}, "Duplicate"
+                        # Get the explorer view ID from all explorer.
+                        explorer_id = self.get_explorer_id(explorer_name)
+                        return {"EXPLORER_NAME": explorer_name}, explorer_id
             raise e
 
     def create(self, explorer_name, hierarchy, *args, **kwargs):
@@ -682,15 +692,19 @@ class SumoLogicAWSExplorer(SumoResource):
     # No Update API. So, Explorer view can be updated and deleted from the main stack where it was created.
     # First have to delete the explorer and then create new. Handling delete again due to CF in delete method.
     def update(self, old_explorer_name, explorer_id, explorer_name, hierarchy, *args, **kwargs):
-        self.delete(explorer_id, explorer_name, True)
+        self.delete(explorer_id, old_explorer_name, True)
         data, explorer_id = self.create_explorer_view(explorer_name, hierarchy)
         print("AWS EXPLORER -  update successful with ID %s" % explorer_id)
         return data, explorer_id
 
     # Handling exception as the Explorer is already deleted.
     def delete(self, explorer_id, explorer_name, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack and explorer_id != "Duplicate":
+        if remove_on_delete_stack:
             try:
+                # Backward Compatibility for 2.0.2 Versions.
+                # If id is duplicate then get the id from explorer name and delete it.
+                if explorer_id == "Duplicate":
+                    explorer_id = self.get_explorer_id(explorer_name)
                 response = self.sumologic_cli.delete_explorer_view(explorer_id)
                 print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
                     explorer_name, response.text))
@@ -755,7 +769,7 @@ class SumoLogicMetricRules(SumoResource):
                     if error.get('code') == 'metrics:rule_name_already_exists' \
                             or error.get('code') == 'metrics:rule_already_exists':
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
-                        return {"METRIC_RULES": metric_rule_name}, "Duplicate"
+                        return {"METRIC_RULES": metric_rule_name}, metric_rule_name
             raise e
 
     def create(self, metric_rule_name, match_expression, variables, *args, **kwargs):
@@ -764,19 +778,16 @@ class SumoLogicMetricRules(SumoResource):
     # No Update API. So, Metric rules can be updated and deleted from the main stack where it was created.
     def update(self, old_metric_rule_name, job_name, metric_rule_name, match_expression, variables, *args, **kwargs):
         # Need to add it because CF calls delete method if identifies change in metric rule name.
-        if metric_rule_name != old_metric_rule_name:
-            return self.create(metric_rule_name, match_expression, variables)
-        else:
-            self.delete(job_name, metric_rule_name, True)
-            data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables)
-            print("METRIC RULES -  Update successful with Name %s" % job_name)
-            return data, job_name
+        self.delete(job_name, old_metric_rule_name, True)
+        data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables)
+        print("METRIC RULES -  Update successful with Name %s" % job_name)
+        return data, job_name
 
     def delete(self, job_name, metric_rule_name, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack and job_name != "Duplicate":
-            response = self.sumologic_cli.delete_metric_rule(job_name)
+        if remove_on_delete_stack:
+            response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
             print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (
-                job_name, response.text))
+                metric_rule_name, response.text))
         else:
             print("METRIC RULES - Skipping the Metric Rule deletion")
 
@@ -968,7 +979,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             raise e
 
     def delete(self, fer_id, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack and fer_id != "Duplicate":
+        if remove_on_delete_stack:
             response = self.sumologic_cli.delete_field_extraction_rule(fer_id)
             print("FER RULES - Completed the Metric Rule deletion for ID %s, response - %s" % (
                 fer_id, response.text))
@@ -1113,6 +1124,14 @@ class AddFieldsInHostMetricsSources(SumoResource):
 
 class SumoLogicFieldsSchema(SumoResource):
 
+    def get_field_id(self, field_name):
+        all_fields = self.sumologic_cli.get_all_fields()
+        if all_fields:
+            for field in all_fields:
+                if field_name == field["fieldName"]:
+                    return field["fieldId"]
+        raise Exception("Field Name with name %s not found" % field_name)
+
     def add_field(self, field_name):
         content = {
             "fieldName": field_name,
@@ -1128,7 +1147,9 @@ class SumoLogicFieldsSchema(SumoResource):
                 for error in errors:
                     if error.get('code') == 'field:already_exists':
                         print("FIELD NAME -  Duplicate Exists for Name %s" % field_name)
-                        return {"FIELD_NAME": field_name}, "Duplicate"
+                        # Get the Field ID from the existing fields.
+                        field_id = self.get_field_id(field_name)
+                        return {"FIELD_NAME": field_name}, field_id
             raise e
 
     def create(self, field_name, *args, **kwargs):
@@ -1141,8 +1162,12 @@ class SumoLogicFieldsSchema(SumoResource):
             return self.create(field_name)
         return {"FIELD_NAME": field_name}, field_id
 
-    def delete(self, field_id, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack and field_id != "Duplicate":
+    def delete(self, field_id, field_name, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            # Backward Compatibility for 2.0.2 Versions.
+            # Check for field_id is duplicate, then get the field ID from name and delete the field.
+            if field_id == "Duplicate":
+                field_id = self.get_field_id(field_name)
             response = self.sumologic_cli.delete_existing_field(field_id)
             print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
         else:
