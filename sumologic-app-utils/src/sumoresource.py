@@ -698,6 +698,9 @@ class SumoLogicAWSExplorer(SumoResource):
         return data, explorer_id
 
     # Handling exception as the Explorer is already deleted.
+    # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
+    # already been deleted. This is required in case of multiple installation of
+    # CF template with same names for metric rule, explorer view or fields
     def delete(self, explorer_id, explorer_name, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             try:
@@ -709,13 +712,7 @@ class SumoLogicAWSExplorer(SumoResource):
                 print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
                     explorer_name, response.text))
             except Exception as e:
-                if hasattr(e, 'response') and e.response.json()["errors"]:
-                    errors = e.response.json()["errors"]
-                    for error in errors:
-                        if error.get('code') == 'topology:does_not_exist':
-                            print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s," % explorer_name)
-                else:
-                    raise e
+                print("AWS EXPLORER - Exception while deleting the Explorer view %s," % e)
         else:
             print("AWS EXPLORER - Skipping the AWS Explorer deletion")
 
@@ -783,11 +780,16 @@ class SumoLogicMetricRules(SumoResource):
         print("METRIC RULES -  Update successful with Name %s" % job_name)
         return data, job_name
 
+    # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
+    # already been deleted. This is required in case of multiple installation of
+    # CF template with same names for metric rule, explorer view or fields
     def delete(self, job_name, metric_rule_name, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
-            response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
-            print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (
-                metric_rule_name, response.text))
+            try:
+                response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
+                print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (metric_rule_name, response.text))
+            except Exception as e:
+                print("AWS EXPLORER - Exception while deleting the Metric Rules %s," % e)
         else:
             print("METRIC RULES - Skipping the Metric Rule deletion")
 
@@ -1162,14 +1164,20 @@ class SumoLogicFieldsSchema(SumoResource):
             return self.create(field_name)
         return {"FIELD_NAME": field_name}, field_id
 
+    # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
+    # already been deleted. This is required in case of multiple installation of
+    # CF template with same names for metric rule, explorer view or fields
     def delete(self, field_id, field_name, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             # Backward Compatibility for 2.0.2 Versions.
             # Check for field_id is duplicate, then get the field ID from name and delete the field.
-            if field_id == "Duplicate":
-                field_id = self.get_field_id(field_name)
-            response = self.sumologic_cli.delete_existing_field(field_id)
-            print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
+            try:
+                if field_id == "Duplicate":
+                    field_id = self.get_field_id(field_name)
+                response = self.sumologic_cli.delete_existing_field(field_id)
+                print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
+            except Exception as e:
+                print("AWS EXPLORER - Exception while deleting the Field %s," % e)
         else:
             print("FIELD NAME - Skipping the Field deletion")
 
