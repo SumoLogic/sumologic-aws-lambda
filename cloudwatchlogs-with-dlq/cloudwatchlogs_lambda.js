@@ -19,6 +19,29 @@ var url = require('url');
 var vpcutils = require('./vpcutils');
 var SumoLogsClient = require('./sumo-dlq-function-utils').SumoLogsClient;
 var Utils = require('./sumo-dlq-function-utils').Utils;
+const AWS = require('aws-sdk');
+const ssm = new AWS.SSM();
+
+exports.getEndpointURL = async function() {
+  console.log('Getting SUMO_ENDPOINT from AWS SSM Parameter Store');
+  return new Promise((resolve, reject) => {
+    ssm.getParameter(
+      {
+        Name: 'SUMO_ENDPOINT',
+        WithDecryption: true
+      },
+      (err, data) => {
+        if (err) {
+          console.log(err, err.stack);
+          reject(new Error('Unable to get EndpointURL from SSM: ' + err));
+        } else {
+          // console.log(data);
+          resolve(data.Parameter.Value);
+        }
+      }
+    );
+  });
+}
 
 function createRecords(config, events, awslogsData) {
     var records = [];
@@ -65,15 +88,13 @@ function createRecords(config, events, awslogsData) {
     return records;
 }
 
-function getConfig(env) {
-    var config = {
-        // SumoLogic Endpoint to post logs
-        "SumoURL": env.SUMO_ENDPOINT,
+async function getConfig(env) {
 
+    var config = {
         // The following parameters override the sourceCategory, sourceHost, sourceName and sourceFields metadata fields within SumoLogic.
         // Not these can also be overridden via json within the message payload. See the README for more information.
         "sourceCategoryOverride": ("SOURCE_CATEGORY_OVERRIDE" in env) ?  env.SOURCE_CATEGORY_OVERRIDE: '',  // If none sourceCategoryOverride will not be overridden
-	"sourceFieldsOverride": ("SOURCE_FIELDS_OVERRIDE" in env) ?  env.SOURCE_FIELDS_OVERRIDE: '',        // If none sourceFieldsOverride will not be overridden
+        "sourceFieldsOverride": ("SOURCE_FIELDS_OVERRIDE" in env) ?  env.SOURCE_FIELDS_OVERRIDE: '',        // If none sourceFieldsOverride will not be overridden
         "sourceHostOverride": ("SOURCE_HOST_OVERRIDE" in env) ? env.SOURCE_HOST_OVERRIDE : '',              // If none sourceHostOverride will not be set to the name of the logGroup
         "sourceNameOverride": ("SOURCE_NAME_OVERRIDE" in env) ? env.SOURCE_NAME_OVERRIDE : '',              // If none sourceNameOverride will not be set to the name of the logStream
         "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-aws-lambda',
@@ -89,9 +110,16 @@ function getConfig(env) {
                                 ? new RegExp('^(' + escapeRegExp(env.LOG_STREAM_PREFIX).replace(/,/g, '|')  + ')', 'i')
                                 : ''
     };
-    if (!config.SumoURL) {
-        return new Error('Undefined SUMO_ENDPOINT environment variable');
+    if (!env.SUMO_ENDPOINT) {
+        config['SumoURL'] = await exports.getEndpointURL();
+        if (config['SumoURL'] instanceof Error) {
+            return new Error('Either define SUMO_ENDPOINT environment variable or create a secure string named /sumologic/SUMO_ENDPOINT in SSM');
+        }
+    } else {
+        console.log("getConfig: getting SUMO_ENDPOINT from env");
+        config['SumoURL'] = env.SUMO_ENDPOINT;
     }
+
     // Validate URL has been set
     var urlObject = url.parse(config.SumoURL);
     if (urlObject.protocol !== 'https:' || urlObject.host === null || urlObject.path === null) {
@@ -128,9 +156,9 @@ function filterRecords(config, records) {
     return filteredRecords;
 }
 
-exports.processLogs = function (env, eventAwslogsData, callback) {
+exports.processLogs = async function (env, eventAwslogsData, callback) {
     var zippedInput = Buffer.from(eventAwslogsData, 'base64');
-    var config = getConfig(env);
+    var config = await getConfig(env);
     if (config instanceof Error) {
         console.log("Error in getConfig: ", config);
         callback(config, null);
