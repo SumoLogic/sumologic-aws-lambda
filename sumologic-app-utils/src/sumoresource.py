@@ -321,29 +321,23 @@ class AWSSource(BaseSource):
         if "Region" in props:
             regions = [props.get("Region")]
 
-        if source_type == "AwsMetadata":
-            return {
-                "type": "AwsMetadataPath",
-                "limitToRegions": regions
-            }
-        elif source_type == "AwsCloudWatch":
-            return {
-                "type": "CloudWatchPath",
-                "limitToRegions": regions,
-                "limitToNamespaces": props.get("Namespaces")
-            }
-        elif source_type == "AwsInventory":
-            return {
-                "type": "AwsInventoryPath",
-                "limitToRegions": regions,
-                "limitToNamespaces": props.get("Namespaces")
-            }
-        else:
+        if props.get("TargetBucketName"):
             return {
                 "type": "S3BucketPathExpression",
                 "bucketName": props.get("TargetBucketName"),
                 "pathExpression": props.get("PathExpression")
             }
+        else:
+            path = {}
+            if regions:
+                path["limitToRegions"] = regions
+            if "Namespaces" in props:
+                path["limitToNamespaces"] = props.get("Namespaces")
+            if source_type == "AwsCloudWatch":
+                path["type"] = "CloudWatchPath"
+            else:
+                path["type"] = source_type + "Path"
+            return path
 
     def create(self, collector_id, source_name, props, *args, **kwargs):
 
