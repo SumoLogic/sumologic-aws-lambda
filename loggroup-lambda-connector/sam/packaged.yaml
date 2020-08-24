@@ -21,10 +21,10 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.2/5122657d5b9a0d3713e24d3a33eae431
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.3/5122657d5b9a0d3713e24d3a33eae431
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.2/0490ecc943c35a5d04b00813554c06ad
-    SemanticVersion: 1.0.2
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.3/c98f2c0d986a3f55fbea539688ee6a2e
+    SemanticVersion: 1.0.3
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -43,11 +43,15 @@ Parameters:
     - 'true'
     - 'false'
     Description: Select true for subscribing existing logs
+  LogGroupTags:
+    Type: CommaDelimitedList
+    Description: 'Enter comma separated keyvalue pairs for filtering logGroups using
+      tags. Ex KeyName1=string,KeyName2=string '
 Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.2/06605e5d4a1e561027da885250b6d539
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.3/fef3de66919bef9861be16f25aec0343
       Handler: loggroup-lambda-connector.handler
       Runtime: nodejs10.x
       Environment:
@@ -58,6 +62,10 @@ Resources:
             Ref: LogGroupPattern
           USE_EXISTING_LOG_GROUPS:
             Ref: UseExistingLogs
+          LOG_GROUP_TAGS:
+            Fn::Join:
+            - ','
+            - Ref: LogGroupTags
       Policies:
       - Statement:
         - Sid: ReadWriteFilterPolicy
