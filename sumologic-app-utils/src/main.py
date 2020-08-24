@@ -4,7 +4,7 @@ from awsresource import AWSResource
 
 from resourcefactory import ResourceFactory
 
-helper = CfnResource(json_logging=False, log_level='DEBUG')
+helper = CfnResource(json_logging=False, log_level='INFO')
 
 
 def get_resource(event):
@@ -15,7 +15,6 @@ def get_resource(event):
     params = resource.extract_params(event)
     if isinstance(resource, SumoResource):
         params["remove_on_delete_stack"] = props.get("RemoveOnDeleteStack") == 'true'
-    print(params)
     return resource, resource_type, params
 
 
