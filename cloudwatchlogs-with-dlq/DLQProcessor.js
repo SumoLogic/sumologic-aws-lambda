@@ -1,12 +1,25 @@
 var AWS = require("aws-sdk");
 var processLogsHandler = require('./cloudwatchlogs_lambda').processLogs;
+var getEndpointURL = require('./cloudwatchlogs_lambda').getEndpointURL;
 var DLQUtils = require("./sumo-dlq-function-utils").DLQUtils;
 var Messages = DLQUtils.Messages;
 var invokeLambdas = DLQUtils.invokeLambdas;
 
-exports.consumeMessages = function (env, context, callback) {
+exports.consumeMessages = async function (env, context, callback) {
     var sqs = new AWS.SQS({region: env.AWS_REGION});
     var MessagesObj = new Messages(env);
+    env.SUMO_CLIENT_HEADER="dlq-aws-lambda";
+    if (!env.SUMO_ENDPOINT) {
+        let SUMO_ENDPOINT = await getEndpointURL();
+        if (SUMO_ENDPOINT instanceof Error) {
+            console.log("Error in getEndpointURL: ", SUMO_ENDPOINT);
+            callback(SUMO_ENDPOINT, null);
+            return;
+        }
+        env.SUMO_ENDPOINT = SUMO_ENDPOINT;
+    } else {
+        console.log("consumeMessages: Getting SUMO_ENDPOINT from env");
+    }
     MessagesObj.receiveMessages(10, function (err, data) {
         var messages = (data)? data.Messages: null;
         if (err) {
@@ -27,7 +40,6 @@ exports.consumeMessages = function (env, context, callback) {
                         return;
                     }
                     var logdata = payload.awslogs.data;
-                    env.SUMO_CLIENT_HEADER="dlq-aws-lambda";
                     processLogsHandler(env, logdata, function (err, msg) {
                         msgCount++;
                         if (err) {
@@ -58,7 +70,7 @@ exports.consumeMessages = function (env, context, callback) {
 
 exports.handler = function (event, context, callback) {
 
-    var env = process.env;
+    var env = Object.assign({}, process.env);
     env['is_worker'] = event.is_worker || 0;
     exports.consumeMessages(env, context, callback);
 };
