@@ -41,323 +41,151 @@ Parameters:
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
-  CreateExplorerView:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  ExplorerName:
-    Type: String
-    Default: ""
-  ExplorerFields:
-    Type: CommaDelimitedList
-    Default: ""
-
-  CreateMetricRule:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  MetricRuleName:
-    Type: String
-    Default: ""
-  MatchExpression:
-    Type: String
-    Default: ""
-  EntityRule:
-    Type: String
-    Default: ""
-
-  CreateFER:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  FERName:
-    Type: String
-    Default: ""
-  FERScope:
-    Type: String
-    Default: ""
-  FERExpression:
-    Type: String
-    Default: ""
-
-  InstallAPP:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  FolderName:
-    Type: String
-    Default: ""
-
-  CreateCollector:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-
-  UpdateSource:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-
-  TagResources:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-
-  AutoEnableS3:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-
-  CreateDeliveryChannel:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-
-  CreateTrail:
-    Type: String
-    Default: 'No'
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-
-Conditions:
-
-  create_explorer: !Equals [!Ref CreateExplorerView, 'Yes']
-
-  create_metric_rule: !Equals [!Ref CreateMetricRule, 'Yes']
-
-  create_fer: !Equals [!Ref CreateFER, 'Yes']
-
-  install_app: !Equals [!Ref InstallAPP, 'Yes']
-
-  update_source: !Equals [!Ref UpdateSource, 'Yes']
-
-  tag_existing_aws_resources: !Equals [!Ref TagResources, 'Yes']
-
-  create_collector: !Equals [!Ref CreateCollector, 'Yes']
-
-  auto_enable_existing: !Equals [!Ref AutoEnableS3, 'Yes']
-
-  create_sns_topic: !Equals [!Ref CreateDeliveryChannel, 'Yes']
-
-  creaye_trail: !Equals [!Ref CreateTrail, 'Yes']
-
 Resources:
-  SumoLogicHelperRole:
-    Type: AWS::IAM::Role
+
+  SumoAppUtils:
+    Type: AWS::Serverless::Application
     Properties:
-      AssumeRolePolicyDocument:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
+        SemanticVersion: 2.0.3
+
+  SumoLogicHelperPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SumoLogicLambdaPolicy
+      Roles:
+        - !Select ["1", !Split ["/", !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunctionRole]]
+      PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: AwsObservabilityLambdaExecutePolicies
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - tag:TagResources
-                  - tag:UntagResources
-                  - rds:DescribeDBClusters
-                  - rds:DescribeDBInstances
-                  - rds:AddTagsToResource
-                  - rds:RemoveTagsFromResource
-                  - apigateway:GET
-                  - apigateway:DELETE
-                  - apigateway:POST
-                  - apigateway:PUT
-                  - ec2:DescribeInstances
-                  - ec2:CreateTags
-                  - ec2:DeleteTags
-                  - elasticloadbalancing:DescribeLoadBalancerAttributes
-                  - elasticloadbalancing:DescribeLoadBalancers
-                  - elasticloadbalancing:AddTags
-                  - elasticloadbalancing:RemoveTags
-                  - elasticloadbalancing:ModifyLoadBalancerAttributes
-                  - lambda:ListFunctions
-                  - lambda:TagResource
-                  - lambda:UntagResource
-                  - dynamodb:ListTables
-                  - dynamodb:TagResource
-                  - dynamodb:UntagResource
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - cloudtrail:CreateTrail
-                  - cloudtrail:DeleteTrail
-                  - cloudtrail:UpdateTrail
-                  - cloudtrail:StartLogging
-                  - s3:GetBucketPolicy
-                  - s3:PutBucketPolicy
-                  - s3:ListAllMyBuckets
-                  - s3:GetBucketLocation
-                  - s3:PutBucketAcl
-                  - s3:GetBucketAcl
-                  - s3:GetBucketLogging
-                  - s3:PutBucketLogging
-                  - config:DescribeDeliveryChannels
-                  - config:PutDeliveryChannel
-                  - config:DeleteDeliveryChannel
-                  - s3:GetBucketPolicy
-                  - s3:PutBucketPolicy
-                  - ec2:DescribeInstances
-                  - ec2:DescribeVpcs
-                  - ec2:DeleteFlowLogs
-                  - ec2:CreateFlowLogs
-                  - ec2:DescribeFlowLogs
-                  - logs:CreateLogDelivery
-                  - logs:DeleteLogDelivery
-                Resource: '*'
+            Action:
+              - tag:TagResources
+              - tag:UntagResources
+              - rds:DescribeDBClusters
+              - rds:DescribeDBInstances
+              - rds:AddTagsToResource
+              - rds:RemoveTagsFromResource
+              - apigateway:GET
+              - apigateway:DELETE
+              - apigateway:POST
+              - apigateway:PUT
+              - ec2:DescribeInstances
+              - ec2:CreateTags
+              - ec2:DeleteTags
+              - elasticloadbalancing:DescribeLoadBalancerAttributes
+              - elasticloadbalancing:DescribeLoadBalancers
+              - elasticloadbalancing:AddTags
+              - elasticloadbalancing:RemoveTags
+              - elasticloadbalancing:ModifyLoadBalancerAttributes
+              - lambda:ListFunctions
+              - lambda:TagResource
+              - lambda:UntagResource
+              - dynamodb:ListTables
+              - dynamodb:TagResource
+              - dynamodb:UntagResource
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - cloudtrail:CreateTrail
+              - cloudtrail:DeleteTrail
+              - cloudtrail:UpdateTrail
+              - cloudtrail:StartLogging
+              - s3:GetBucketPolicy
+              - s3:PutBucketPolicy
+              - s3:ListAllMyBuckets
+              - s3:GetBucketLocation
+              - s3:PutBucketAcl
+              - s3:GetBucketAcl
+              - s3:GetBucketLogging
+              - s3:PutBucketLogging
+              - config:DescribeDeliveryChannels
+              - config:PutDeliveryChannel
+              - config:DeleteDeliveryChannel
+              - s3:GetBucketPolicy
+              - s3:PutBucketPolicy
+              - ec2:DescribeInstances
+              - ec2:DescribeVpcs
+              - ec2:DeleteFlowLogs
+              - ec2:CreateFlowLogs
+              - ec2:DescribeFlowLogs
+              - logs:CreateLogDelivery
+              - logs:DeleteLogDelivery
+            Resource: '*'
 
-  SumoLogicHelperFunction:
-    Type: 'AWS::Serverless::Function'
+  SumoCloudTrailExportPolicy:
+    DependsOn: SumoLogicHelperPolicy
+    Type: AWS::S3::BucketPolicy
     Properties:
-      Handler: main.handler
-      Runtime: python3.7
-      CodeUri: s3://sumologiclambdahelper-us-east-1/sumo_app_utils/v2.0.2/sumo_app_utils.zip
-      MemorySize: 128
-      Timeout: 900
-      Role:
-        Fn::GetAtt:
-          - SumoLogicHelperRole
-          - Arn
+      Bucket: "sumologiclambdahelper-us-east-2"
+      PolicyDocument:
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource:
+              - "arn:aws:s3:::sumologiclambdahelper-us-east-2"
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource:
+              - "arn:aws:s3:::sumologiclambdahelper-us-east-2/*"
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+          - Sid: AWSBucketExistenceCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:ListBucket
+            Resource:
+              - "arn:aws:s3:::sumologiclambdahelper-us-east-2"
 
   SumoCloudTrail:
-    Condition: creaye_trail
     Type: Custom::AWSTrail
+    DependsOn: SumoCloudTrailExportPolicy
     Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       IsLogging: true
       IsMultiRegionTrail: false
-      S3BucketName: "sumologiclambdahelper-us-east-1"
+      S3BucketName: "sumologiclambdahelper-us-east-2"
       TrailName: "Aws-Observability-onemoreupdae"
-
-  CreateSumoLogicAWSExplorerView:
-    Type: Custom::SumoLogicAWSExplorer
-    Condition: create_explorer
-    Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      ExplorerName: !Ref ExplorerName
-      MetadataKeys: !Ref ExplorerFields
-      SumoAccessID: !Ref Section1bSumoAccessID
-      SumoAccessKey: !Ref Section1cSumoAccessKey
-      SumoDeployment: !Ref Section1aSumoDeployment
 
-  TagAWSResources:
-    Type: Custom::TagAWSResources
-    Condition: tag_existing_aws_resources
+  SumoHostedCollector:
+    Type: Custom::Collector
     Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
-      AWSResource: dynamodb
-      Tags:
-        mili: "testingagain"
-      AccountID: !Ref "AWS::AccountId"
-      Filter: ".*"
-
-  APIGatewayMetricRule:
-    Type: Custom::SumoLogicMetricRules
-    Condition: create_metric_rule
-    Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
+      CollectorType: Hosted
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      MetricRuleName: !Ref MetricRuleName
-      MatchExpression: !Ref MatchExpression
-      ExtractVariables:
-        entity: !Ref EntityRule
+      CollectorName: "SourabhTestingCollector"
+      SourceCategory: "testingSource"
+      Description: "This is again Updated collector"
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
-  APIGatewayFieldExtractionRule:
-    Type: Custom::SumoLogicFieldExtractionRule
-    Condition: create_fer
+  SumoHTTPSource:
+    Type: Custom::HTTPSource
     Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      FieldExtractionRuleName: !Ref FERName
-      FieldExtractionRuleScope: !Ref FERScope
-      FieldExtractionRuleParseExpression: !Ref FERExpression
-      FieldExtractionRuleParseEnabled: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      SumoAccessID: !Ref Section1bSumoAccessID
-      SumoAccessKey: !Ref Section1cSumoAccessKey
-      SumoDeployment: !Ref Section1aSumoDeployment
-
-  sumoApp:
-    Type: Custom::App
-    Condition: install_app
-    Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
-      Region: !Ref "AWS::Region"
-      AppName: "AWS Observability Api Gateway App"
-      FolderName: !Ref FolderName
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      AppSources:
-        logsrc: "_sourceCategory=fasdfsdad"
-      SumoAccessID: !Ref Section1bSumoAccessID
-      SumoAccessKey: !Ref Section1cSumoAccessKey
-      SumoDeployment: !Ref Section1aSumoDeployment
-
-  sumoAppwithUID:
-    Type: Custom::App
-    Condition: install_app
-    Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
-      Region: !Ref "AWS::Region"
-      AppName: "Another App"
-      FolderName: !Ref FolderName
-      AppId: "924d7e2a-a14a-4b11-8c91-133241be2a51"
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      AppSources:
-        logsrc: "_sourceCategory=\"sfsdfsd\""
-      SumoAccessID: !Ref Section1bSumoAccessID
-      SumoAccessKey: !Ref Section1cSumoAccessKey
-      SumoDeployment: !Ref Section1aSumoDeployment
-
-  SumoCloudTrailUpdateSource:
-    Type: Custom::SumoLogicUpdateFields
-    Condition: update_source
-    Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
       SourceName: "SourabhTestingHTTPSource"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      CollectorName: "SourabhTestingCollector"
+      SourceCategory: "TestingCategory"
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
-      Fields:
-        account: "fsdsd"
-        region: "asfasf"
 
   SumoRole:
     Type: AWS::IAM::Role
-    Condition: create_collector
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -384,26 +212,10 @@ Resources:
                 Resource:
                   "*"
 
-  SumoHostedCollector:
-    Condition: create_collector
-    Type: Custom::Collector
-    Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
-      Region: !Ref "AWS::Region"
-      CollectorType: Hosted
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      CollectorName: "SourabhTestingCollector"
-      SourceCategory: "testingSource"
-      Description: "This is again Updated collector"
-      SumoAccessID: !Ref Section1bSumoAccessID
-      SumoAccessKey: !Ref Section1cSumoAccessKey
-      SumoDeployment: !Ref Section1aSumoDeployment
-
   SumoS3Source:
     Type: Custom::AWSSource
-    Condition: create_collector
     Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       SourceType: AwsS3Bucket
       Region: !Ref "AWS::Region"
       SourceName: "SourabhSource"
@@ -419,25 +231,127 @@ Resources:
       DateLocatorRegex: '.*"updatedAt":"(.*)".*'
       RoleArn: !GetAtt SumoRole.Arn
 
-  SumoHTTPSource:
-    Condition: create_collector
-    Type: Custom::HTTPSource
+  sumoApp:
+    Type: Custom::App
     Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
-      SourceName: "SourabhTestingHTTPSource"
+      AppName: "AWS Observability Api Gateway App"
+      FolderName: "My App without UUID"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      SourceCategory: "TestingCategory"
-      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      AppSources:
+        logsrc: "_sourceCategory=fasdfsdad"
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
+  sumoAppwithUID:
+    Type: Custom::App
+    DependsOn: sumoApp
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      AppName: "Another App"
+      FolderName: "My App with UUID"
+      AppId: "924d7e2a-a14a-4b11-8c91-133241be2a51"
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      AppSources:
+        logsrc: "_sourceCategory=\"sfsdfsd\""
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+
+  CreateSumoLogicAWSExplorerView:
+    Type: Custom::SumoLogicAWSExplorer
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      ExplorerName: "Test EXPLORER"
+      MetadataKeys:
+        - "account"
+        - "region"
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+
+  APIGatewayMetricRule:
+    Type: Custom::SumoLogicMetricRules
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      MetricRuleName: "TestMetricRuleSumoAppUtils"
+      MatchExpression: "account=asacss FunctionName=*"
+      ExtractVariables:
+        entity: "$FunctionName._1"
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+
+  SumoCloudTrailUpdateSource:
+    Type: Custom::SumoLogicUpdateFields
+    DependsOn: SumoHTTPSource
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      SourceApiUrl: "https://api.sumologic.com/api/v1/collectors/170503459/sources/779514196"
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+      Fields:
+        account: "fsdsd"
+        region: "asfasf"
+
+  APIGatewayFieldExtractionRule:
+    Type: Custom::SumoLogicFieldExtractionRule
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      FieldExtractionRuleName: "TestFieldSumoAppUtils"
+      FieldExtractionRuleScope: "_source=asca"
+      FieldExtractionRuleParseExpression: "| json \"eventSource\", \"awsRegion\" as eventSource, region"
+      FieldExtractionRuleParseEnabled: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+
+  AccountCheck:
+    Type: Custom::EnterpriseOrTrialAccountCheck
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+
+  AddAccountField:
+    Type: Custom::SumoLogicFieldsSchema
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      FieldName: "test_field"
+      RemoveOnDeleteStack: true
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+
+  TagAWSResources:
+    Type: Custom::TagAWSResources
+    DependsOn: SumoLogicHelperPolicy
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      Region: !Ref "AWS::Region"
+      AWSResource: dynamodb
+      Tags:
+        mili: "testingagain"
+      AccountID: !Ref "AWS::AccountId"
+      Filter: ".*"
+
   ExistingAWSResources:
     Type: Custom::EnableS3LogsResources
-    Condition: auto_enable_existing
+    DependsOn: SumoLogicHelperPolicy
     Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       AWSResource: "vpc"
       BucketName: "sumologiclambdahelper-us-east-1"
       Filter: ".*"
@@ -445,13 +359,10 @@ Resources:
       AccountID: !Ref "AWS::AccountId"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
 
-  DeliveryChannelWhenConfigIsTurnedOn:
-    Type: "Custom::ConfigDeliveryChannel"
-    Condition: create_sns_topic
-    Properties:
-      ServiceToken: !GetAtt SumoLogicHelperFunction.Arn
-      DeliveryFrequency: Six_Hours
-      S3BucketName: "sumologiclambdahelper-us-east-1"
-      S3KeyPrefix: "sourabh"
-      SnsTopicARN: "arn:aws:sns:us-east-1:668508221233:dynamodb"
-      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+Outputs:
+  EnterpriseCheck:
+    Description: "Check If Account is Enterprise or Not"
+    Value: !GetAtt AccountCheck.is_enterprise
+  PaidAccountCheck:
+    Description: "Check If Account is Paid or Not"
+    Value: !GetAtt AccountCheck.is_paid

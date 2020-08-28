@@ -1196,13 +1196,20 @@ class SumoLogicFieldsSchema(SumoResource):
 
 class EnterpriseOrTrialAccountCheck(SumoResource):
 
-    def create(self, *args, **kwargs):
+    def check_account(self):
         is_enterprise = self.is_enterprise_or_trial_account()
-        return {"is_enterprise": "Yes" if is_enterprise else "No"}, is_enterprise
+        is_paid = "Yes"
+        if not is_enterprise:
+            all_apps = self.sumologic_cli.get_apps()
+            if "apps" in all_apps and len(all_apps['apps']) <= 2:
+                is_paid = "No"
+        return {"is_enterprise": "Yes" if is_enterprise else "No", "is_paid": is_paid}, is_enterprise
+
+    def create(self, *args, **kwargs):
+        return self.check_account()
 
     def update(self, *args, **kwargs):
-        is_enterprise = self.is_enterprise_or_trial_account()
-        return {"is_enterprise": "Yes" if is_enterprise else "No"}, is_enterprise
+        return self.check_account()
 
     def delete(self, *args, **kwargs):
         print("In Delete method for Enterprise or Trial account")

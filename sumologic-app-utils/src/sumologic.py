@@ -219,6 +219,10 @@ class SumoLogic(object):
     def check_app_install_status(self, job_id):
         return self.get('/apps/install/%s/status' % job_id)
 
+    def get_apps(self):
+        response = self.get('/apps')
+        return json.loads(response.text)
+
     def create_explorer_view(self, content):
         return self.post('/topologies', params=content, version='v1alpha')
 
