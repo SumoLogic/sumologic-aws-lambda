@@ -219,11 +219,19 @@ class SumoLogic(object):
     def check_app_install_status(self, job_id):
         return self.get('/apps/install/%s/status' % job_id)
 
+    def get_apps(self):
+        response = self.get('/apps')
+        return json.loads(response.text)
+
     def create_explorer_view(self, content):
         return self.post('/topologies', params=content, version='v1alpha')
 
     def delete_explorer_view(self, explorer_id):
         return self.delete('/topologies/%s' % explorer_id, version='v1alpha')
+
+    def get_explorer_views(self):
+        response = self.get('/topologies', version='v1alpha')
+        return json.loads(response.text)
 
     def create_metric_rule(self, content):
         return self.post('/metricsRules', params=content)
@@ -237,7 +245,7 @@ class SumoLogic(object):
     def delete_field_extraction_rule(self, fer_name):
         return self.delete('/extractionRules/%s' % fer_name)
 
-    def get_all_field_extraction_rules(self, limit=None, token=None,):
+    def get_all_field_extraction_rules(self, limit=None, token=None, ):
         params = {'limit': limit, 'token': token}
         r = self.get('/extractionRules', params)
         return json.loads(r.text)
@@ -248,3 +256,21 @@ class SumoLogic(object):
     def get_fer_by_id(self, fer_id):
         response = self.get('/extractionRules/%s' % fer_id)
         return json.loads(response.text)
+
+    def fetch_metric_data_points(self, content):
+        return self.post('/metrics/results', params=content)
+
+    def create_new_field(self, content):
+        response = self.post('/fields', params=content)
+        return json.loads(response.text)
+
+    def get_all_fields(self):
+        response = self.get('/fields')
+        return json.loads(response.text)['data']
+
+    def get_existing_field(self, field_id):
+        response = self.get('/fields/%s' % field_id)
+        return json.loads(response.text)
+
+    def delete_existing_field(self, field_id):
+        return self.delete('/fields/%s' % field_id)

@@ -9,6 +9,7 @@ import requests
 import six
 from resourcefactory import AutoRegisterResource
 from sumologic import SumoLogic
+from awsresource import AWSResourcesProvider
 
 
 @six.add_metaclass(AutoRegisterResource)
@@ -282,6 +283,9 @@ class BaseSource(SumoResource):
         if 'useAutolineMatching' in props:
             source_json['useAutolineMatching'] = props['useAutolineMatching']
 
+        # Adding Cutofftimestamp 24 hours.
+        source_json['cutoffTimestamp'] = int(round(time.time() * 1000)) - 24*60*60*1000
+
         return source_json
 
 
@@ -305,7 +309,7 @@ class AWSSource(BaseSource):
                     }
                 }]
             },
-            "scanInterval": 300000,
+            "scanInterval": int(props.get("ScanInterval")) if "ScanInterval" in props else 300000,
             "paused": False,
         })
         return source_json
@@ -317,29 +321,23 @@ class AWSSource(BaseSource):
         if "Region" in props:
             regions = [props.get("Region")]
 
-        if source_type == "AwsMetadata":
-            return {
-                "type": "AwsMetadataPath",
-                "limitToRegions": regions
-            }
-        elif source_type == "AwsCloudWatch":
-            return {
-                "type": "CloudWatchPath",
-                "limitToRegions": regions,
-                "limitToNamespaces": props.get("Namespaces")
-            }
-        elif source_type == "AwsInventory":
-            return {
-                "type": "AwsInventoryPath",
-                "limitToRegions": regions,
-                "limitToNamespaces": props.get("Namespaces")
-            }
-        else:
+        if props.get("TargetBucketName"):
             return {
                 "type": "S3BucketPathExpression",
                 "bucketName": props.get("TargetBucketName"),
                 "pathExpression": props.get("PathExpression")
             }
+        else:
+            path = {}
+            if regions:
+                path["limitToRegions"] = regions
+            if "Namespaces" in props:
+                path["limitToNamespaces"] = props.get("Namespaces")
+            if source_type == "AwsCloudWatch":
+                path["type"] = "CloudWatchPath"
+            else:
+                path["type"] = source_type + "Path"
+            return path
 
     def create(self, collector_id, source_name, props, *args, **kwargs):
 
@@ -424,13 +422,19 @@ class HTTPSource(SumoResource):
                 raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
-    def update(self, collector_id, source_id, source_name, source_category, date_format=None, date_locator=None, *args,
+    def update(self, collector_id, source_id, source_name, source_category, fields, date_format=None, date_locator=None, *args,
                **kwargs):
         sv, etag = self.sumologic_cli.source(collector_id, source_id)
         sv['source']['category'] = source_category
         sv['source']['name'] = source_name
         if date_format:
             sv['source']["defaultDateFormats"] = [{"format": date_format, "locator": date_locator}]
+        # Fields condition
+        existing_fields = sv['source']['fields']
+        if fields:
+            existing_fields.update(fields)
+            sv['source']['fields'] = existing_fields
+
         resp = self.sumologic_cli.update_source(collector_id, sv, etag)
         data = resp.json()['source']
         print("updated source %s" % data["id"])
@@ -572,6 +576,7 @@ class App(SumoResource):
             response = self.sumologic_cli.get_personal_folder()
             folder_id = response.json()['id']
         app_folder_id = self._get_app_folder(content, folder_id)
+        time.sleep(5)
         response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true")
         job_id = response.json()["id"]
         print("installed app %s: appFolderId: %s personalFolderId: %s jobId: %s" % (
@@ -645,6 +650,14 @@ class App(SumoResource):
 
 class SumoLogicAWSExplorer(SumoResource):
 
+    def get_explorer_id(self, explorer_name):
+        explorer_views = self.sumologic_cli.get_explorer_views()
+        if explorer_views:
+            for explorer_view in explorer_views:
+                if explorer_name == explorer_view["name"]:
+                    return explorer_view["id"]
+        raise Exception("Explorer View with name %s not found" % explorer_name)
+
     def create_explorer_view(self, explorer_name, hierarchy):
         content = {
             "name": explorer_name,
@@ -662,7 +675,9 @@ class SumoLogicAWSExplorer(SumoResource):
                 for error in errors:
                     if error.get('code') == 'topology:duplicate':
                         print("AWS EXPLORER -  Duplicate Exists for Name %s" % explorer_name)
-                        return {"EXPLORER_NAME": explorer_name}, "Duplicate"
+                        # Get the explorer view ID from all explorer.
+                        explorer_id = self.get_explorer_id(explorer_name)
+                        return {"EXPLORER_NAME": explorer_name}, explorer_id
             raise e
 
     def create(self, explorer_name, hierarchy, *args, **kwargs):
@@ -671,26 +686,27 @@ class SumoLogicAWSExplorer(SumoResource):
     # No Update API. So, Explorer view can be updated and deleted from the main stack where it was created.
     # First have to delete the explorer and then create new. Handling delete again due to CF in delete method.
     def update(self, old_explorer_name, explorer_id, explorer_name, hierarchy, *args, **kwargs):
-        self.delete(explorer_id, explorer_name, True)
+        self.delete(explorer_id, old_explorer_name, True)
         data, explorer_id = self.create_explorer_view(explorer_name, hierarchy)
         print("AWS EXPLORER -  update successful with ID %s" % explorer_id)
         return data, explorer_id
 
     # Handling exception as the Explorer is already deleted.
+    # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
+    # already been deleted. This is required in case of multiple installation of
+    # CF template with same names for metric rule, explorer view or fields
     def delete(self, explorer_id, explorer_name, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack and explorer_id != "Duplicate":
+        if remove_on_delete_stack:
             try:
+                # Backward Compatibility for 2.0.2 Versions.
+                # If id is duplicate then get the id from explorer name and delete it.
+                if explorer_id == "Duplicate":
+                    explorer_id = self.get_explorer_id(explorer_name)
                 response = self.sumologic_cli.delete_explorer_view(explorer_id)
                 print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
                     explorer_name, response.text))
             except Exception as e:
-                if hasattr(e, 'response') and e.response.json()["errors"]:
-                    errors = e.response.json()["errors"]
-                    for error in errors:
-                        if error.get('code') == 'topology:does_not_exist':
-                            print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s," % explorer_name)
-                else:
-                    raise e
+                print("AWS EXPLORER - Exception while deleting the Explorer view %s," % e)
         else:
             print("AWS EXPLORER - Skipping the AWS Explorer deletion")
 
@@ -744,7 +760,7 @@ class SumoLogicMetricRules(SumoResource):
                     if error.get('code') == 'metrics:rule_name_already_exists' \
                             or error.get('code') == 'metrics:rule_already_exists':
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
-                        return {"METRIC_RULES": metric_rule_name}, "Duplicate"
+                        return {"METRIC_RULES": metric_rule_name}, metric_rule_name
             raise e
 
     def create(self, metric_rule_name, match_expression, variables, *args, **kwargs):
@@ -753,19 +769,21 @@ class SumoLogicMetricRules(SumoResource):
     # No Update API. So, Metric rules can be updated and deleted from the main stack where it was created.
     def update(self, old_metric_rule_name, job_name, metric_rule_name, match_expression, variables, *args, **kwargs):
         # Need to add it because CF calls delete method if identifies change in metric rule name.
-        if metric_rule_name != old_metric_rule_name:
-            return self.create(metric_rule_name, match_expression, variables)
-        else:
-            self.delete(job_name, metric_rule_name, True)
-            data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables)
-            print("METRIC RULES -  Update successful with Name %s" % job_name)
-            return data, job_name
+        self.delete(job_name, old_metric_rule_name, True)
+        data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables)
+        print("METRIC RULES -  Update successful with Name %s" % job_name)
+        return data, job_name
 
+    # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
+    # already been deleted. This is required in case of multiple installation of
+    # CF template with same names for metric rule, explorer view or fields
     def delete(self, job_name, metric_rule_name, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack and job_name != "Duplicate":
-            response = self.sumologic_cli.delete_metric_rule(job_name)
-            print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (
-                job_name, response.text))
+        if remove_on_delete_stack:
+            try:
+                response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
+                print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (metric_rule_name, response.text))
+            except Exception as e:
+                print("AWS EXPLORER - Exception while deleting the Metric Rules %s," % e)
         else:
             print("METRIC RULES - Skipping the Metric Rule deletion")
 
@@ -800,59 +818,37 @@ class SumoLogicUpdateFields(SumoResource):
         Fields can also be added to new Sources using AWSSource, HTTPSources classes.
         Getting collector name, as Calling custom collector resource can update the collector name if stack is updated with different collector name.
     """
+    def add_fields_to_collector(self, collector_id, source_id, fields):
+        if collector_id and source_id:
+            sv, etag = self.sumologic_cli.source(collector_id, source_id)
 
-    def _get_collector_by_name(self, collector_name):
-        offset = 0
-        page_limit = 300
-        all_collectors = self.sumologic_cli.collectors(limit=page_limit, offset=offset)
-        while all_collectors:
-            for collector in all_collectors:
-                if collector["name"] == collector_name:
-                    return collector
-            offset += page_limit
-            all_collectors = self.sumologic_cli.collectors(limit=page_limit, offset=offset)
+            existing_fields = sv['source']['fields']
 
-        raise Exception("Collector with name %s not found" % collector_name)
+            new_fields = existing_fields.copy()
+            new_fields.update(fields)
 
-    def add_fields_to_collector(self, collector_name, source_name, fields):
-        if collector_name and source_name:
-            collector = self._get_collector_by_name(collector_name)
-            if collector and 'id' in collector:
-                collector_id = collector['id']
-                sources = self.sumologic_cli.sources(collector_id, limit=300)
-                source_id = None
-                for source in sources:
-                    if source["name"] == source_name:
-                        source_id = source["id"]
+            sv['source']['fields'] = new_fields
 
-                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
 
-                existing_fields = sv['source']['fields']
+            data = resp.json()['source']
+            print("Added Fields in Source %s" % data["id"])
 
-                new_fields = existing_fields.copy()
-                new_fields.update(fields)
+            return {"source_name": data["name"]}, str(source_id)
+        return {"source_name": "Not updated"}, "No_Source_Id"
 
-                sv['source']['fields'] = new_fields
-
-                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-
-                data = resp.json()['source']
-                print("Added Fields in Source %s" % data["id"])
-
-                return {"added_fields": fields}, str(source_id) + "#" + str(collector_id)
-        return {"added_fields": "Not updated"}, "No_Source_Id#No_Collector_Id"
-
-    def create(self, collector_name, source_name, fields, *args, **kwargs):
-        return self.add_fields_to_collector(collector_name, source_name, fields)
+    def create(self, collector_id, source_id, fields, *args, **kwargs):
+        return self.add_fields_to_collector(collector_id, source_id, fields)
 
     # Update the new fields to source.
-    def update(self, old_resource_properties, collector_id, source_id, collector_name, source_name, fields, *args,
+    def update(self, collector_id, source_id, fields, old_resource_properties, *args,
                **kwargs):
         # Fetch the source, get all fields. Merge the Old and New fields and the update source.
         # If Source name or collector name is changed, it is create again.
-        if collector_name != old_resource_properties['CollectorName'] or source_name != old_resource_properties[
-            'SourceName']:
-            return self.create(collector_name, source_name, fields)
+        if 'SourceApiUrl' in old_resource_properties and \
+                old_resource_properties['SourceApiUrl'].rsplit('/', 1)[-1] != source_id or \
+                re.search('collectors/(.*)/sources', old_resource_properties['SourceApiUrl']).group(1) != collector_id:
+            return self.create(collector_id, source_id, fields)
         else:
             sv, etag = self.sumologic_cli.source(collector_id, source_id)
             existing_source_fields = sv['source']['fields']
@@ -865,7 +861,7 @@ class SumoLogicUpdateFields(SumoResource):
             resp = self.sumologic_cli.update_source(collector_id, sv, etag)
             data = resp.json()['source']
             print("updated Fields in Source %s" % data["id"])
-            return {"updated_fields": fields}, str(source_id) + "#" + str(collector_id)
+            return {"source_name": data["name"]}, source_id
 
     def delete(self, collector_id, source_id, fields, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -887,10 +883,6 @@ class SumoLogicUpdateFields(SumoResource):
     def extract_params(self, event):
         props = event.get("ResourceProperties")
 
-        source_id = None
-        if event.get('PhysicalResourceId'):
-            _, source_id = event['PhysicalResourceId'].split("/")
-
         old_resource_properties = None
         if "OldResourceProperties" in event:
             old_resource_properties = event['OldResourceProperties']
@@ -900,11 +892,9 @@ class SumoLogicUpdateFields(SumoResource):
             fields = props.get("Fields")
 
         return {
-            "collector_name": props.get("CollectorName"),
-            "source_name": props.get("SourceName"),
             "fields": fields,
-            "source_id": source_id.split('#')[0] if source_id else None,
-            "collector_id": source_id.split('#')[1] if source_id else None,
+            "collector_id": re.search('collectors/(.*)/sources', props.get("SourceApiUrl")).group(1),
+            "source_id": props.get("SourceApiUrl").rsplit('/', 1)[-1],
             "old_resource_properties": old_resource_properties
         }
 
@@ -956,7 +946,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
                             change_in_fer = True
                         if change_in_fer:
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
-                        return {"FER_RULES": fer_name}, "Duplicate"
+                        return {"FER_RULES": fer_name}, fer_details["id"]
             raise e
 
     def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
@@ -985,7 +975,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             raise e
 
     def delete(self, fer_id, remove_on_delete_stack, *args, **kwargs):
-        if remove_on_delete_stack and fer_id != "Duplicate":
+        if remove_on_delete_stack:
             response = self.sumologic_cli.delete_field_extraction_rule(fer_id)
             print("FER RULES - Completed the Metric Rule deletion for ID %s, response - %s" % (
                 fer_id, response.text))
@@ -1008,8 +998,228 @@ class SumoLogicFieldExtractionRule(SumoResource):
         }
 
 
-if __name__ == '__main__':
+class AddFieldsInHostMetricsSources(SumoResource):
+    """
+    This class is specifically designed for Adding fields to HostMetrics Source.
+    """
 
+    def batch_size_chunking(self, iterable, size=1):
+        l = len(iterable)
+        for idx in range(0, l, size):
+            data = iterable[idx:min(idx + size, l)]
+            yield data
+
+    def get_source_and_collector_id(self, instances):
+        ids = []
+        for instance in instances:
+            ids.append("InstanceId=%s" % instance["InstanceId"])
+        query = " or ".join(ids)
+        content = {
+            "query": [
+                {
+                    "query": "_contentType=HostMetrics (%s) | count by _sourceId, _collectorId" % query,
+                    "rowId": "A"
+                }
+            ],
+            "startTime": int(time.time() * 1000) - 60 * 60 * 1000,
+            "endTime": int(time.time() * 1000),
+            "desiredQuantizationInSecs": 600,
+            "requestedDataPoints": 1
+        }
+        output = self.sumologic_cli.fetch_metric_data_points(content)
+        responses = json.loads(output.text)["response"]
+        sources = []
+        if responses:
+            for response in responses:
+                if "results" in response:
+                    for result in response["results"]:
+                        if "metric" in result and "dimensions" in result["metric"]:
+                            output = {}
+                            for dimension in result["metric"]["dimensions"]:
+                                if dimension["key"] == "_collectorId" or dimension["key"] == "_sourceId":
+                                    output[dimension["key"]] = str(int(dimension["value"], 16))
+                            sources.append(output)
+        return sources
+
+    def add_remove_fields(self, region_value, account_id, new_fields, old_fields=None):
+        # Get all EC2 Instance ID's
+        ec2_resource = AWSResourcesProvider.get_provider("ec2", region_value, account_id)
+        instance_ids = ec2_resource.fetch_resources()
+        chucked_data = self.batch_size_chunking(instance_ids, 10)
+        for instances in chucked_data:
+            sources = self.get_source_and_collector_id(instances)
+            for source in sources:
+                collector_id = source["_collectorId"]
+                source_id = source["_sourceId"]
+                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+                existing_source_fields = sv['source']['fields']
+                if old_fields:
+                    for k in old_fields:
+                        existing_source_fields.pop(k, None)
+                if new_fields:
+                    existing_source_fields.update(new_fields)
+
+                sv['source']['fields'] = existing_source_fields
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                data = resp.json()['source']
+                print("updated Fields in Source %s" % data["id"])
+
+    def create(self, region_value, account_id, fields, add_fields, *args, **kwargs):
+        if add_fields:
+            self.add_remove_fields(region_value, account_id, fields)
+        else:
+            print("Skipping Adding Fields to Sources for Region %s", region_value)
+        return {"Fields_Added": "Successful"}, region_value
+
+    def update(self, old_properties, region_value, account_id, fields, add_fields, *args, **kwargs):
+        if add_fields:
+            if old_properties['Region'] != region_value:
+                data, region_value = self.create(region_value, account_id, fields, add_fields)
+            else:
+                old_fields = None
+                if 'Fields' in old_properties and old_properties['Fields']:
+                    old_fields = old_properties['Fields']
+                self.add_remove_fields(region_value, account_id, fields, old_fields)
+        else:
+            print("Skipping Adding Fields to Sources for Region %s", region_value)
+        return {"Fields_Updated": "Successful"}, region_value
+
+    def delete(self, remove_on_delete_stack, region_value, account_id, fields, add_fields, *args, **kwargs):
+        if add_fields:
+            if remove_on_delete_stack:
+                self.add_remove_fields(region_value, account_id, None, fields)
+            else:
+                print("UPDATE FIELDS - Skipping the Fields deletion")
+        else:
+            print("Skipping Adding Fields to Sources for Region %s", region_value)
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        fields = {}
+        if "Fields" in props:
+            fields = props.get("Fields")
+
+        add_fields = True
+        if props.get("AddFields") == "No":
+            add_fields = False
+
+        old_resource_properties = None
+        if "OldResourceProperties" in event:
+            old_resource_properties = event['OldResourceProperties']
+
+        return {
+            "region_value": props.get("Region"),
+            "account_id": props.get("AccountID"),
+            "fields": fields,
+            "add_fields": add_fields,
+            "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
+            "old_properties": old_resource_properties
+        }
+
+
+class SumoLogicFieldsSchema(SumoResource):
+
+    def get_field_id(self, field_name):
+        all_fields = self.sumologic_cli.get_all_fields()
+        if all_fields:
+            for field in all_fields:
+                if field_name == field["fieldName"]:
+                    return field["fieldId"]
+        raise Exception("Field Name with name %s not found" % field_name)
+
+    def add_field(self, field_name):
+        content = {
+            "fieldName": field_name,
+        }
+        try:
+            response = self.sumologic_cli.create_new_field(content)
+            field_id = response["fieldId"]
+            print("FIELD NAME -  creation successful with Field Id %s" % field_id)
+            return {"FIELD_NAME": response["fieldName"]}, field_id
+        except Exception as e:
+            if hasattr(e, 'response') and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'field:already_exists':
+                        print("FIELD NAME -  Duplicate Exists for Name %s" % field_name)
+                        # Get the Field ID from the existing fields.
+                        field_id = self.get_field_id(field_name)
+                        return {"FIELD_NAME": field_name}, field_id
+            raise e
+
+    def create(self, field_name, *args, **kwargs):
+        return self.add_field(field_name)
+
+    # No Update API. So, Fields will be added and deleted from the main stack.
+    def update(self, field_id, field_name, old_field_name, *args, **kwargs):
+        # Create a new field when field name changes. Delete will happen for old Field. No Update API, so no updates.
+        if field_name != old_field_name:
+            return self.create(field_name)
+        return {"FIELD_NAME": field_name}, field_id
+
+    # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
+    # already been deleted. This is required in case of multiple installation of
+    # CF template with same names for metric rule, explorer view or fields
+    def delete(self, field_id, field_name, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            # Backward Compatibility for 2.0.2 Versions.
+            # Check for field_id is duplicate, then get the field ID from name and delete the field.
+            try:
+                if field_id == "Duplicate":
+                    field_id = self.get_field_id(field_name)
+                response = self.sumologic_cli.delete_existing_field(field_id)
+                print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
+            except Exception as e:
+                print("AWS EXPLORER - Exception while deleting the Field %s," % e)
+        else:
+            print("FIELD NAME - Skipping the Field deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        field_id = None
+        if event.get('PhysicalResourceId'):
+            _, field_id = event['PhysicalResourceId'].split("/")
+
+        # Get previous Metric Rule Name
+        old_field_name = None
+        if "OldResourceProperties" in event and "FieldName" in event['OldResourceProperties']:
+            old_field_name = event["OldResourceProperties"]['FieldName']
+
+        return {
+            "field_name": props.get("FieldName"),
+            "field_id": field_id,
+            "old_field_name": old_field_name
+        }
+
+
+class EnterpriseOrTrialAccountCheck(SumoResource):
+
+    def check_account(self):
+        is_enterprise = self.is_enterprise_or_trial_account()
+        is_paid = "Yes"
+        if not is_enterprise:
+            all_apps = self.sumologic_cli.get_apps()
+            if "apps" in all_apps and len(all_apps['apps']) <= 2:
+                is_paid = "No"
+        return {"is_enterprise": "Yes" if is_enterprise else "No", "is_paid": is_paid}, is_enterprise
+
+    def create(self, *args, **kwargs):
+        return self.check_account()
+
+    def update(self, *args, **kwargs):
+        return self.check_account()
+
+    def delete(self, *args, **kwargs):
+        print("In Delete method for Enterprise or Trial account")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        return props
+
+
+if __name__ == '__main__':
     props = {
         "SumoAccessID": "",
         "SumoAccessKey": "",

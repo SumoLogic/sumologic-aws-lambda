@@ -24,10 +24,10 @@ Metadata:
     - s3logging
     - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.0
+    SemanticVersion: 1.0.2
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/awsautoenableS3Logging
-    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.0/978602b5b9ec16f8bab0e38fd6b3998f
-    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.0/d05d411471e0bb4db3389f2523f515f0
+    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.2/978602b5b9ec16f8bab0e38fd6b3998f
+    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.2/d05d411471e0bb4db3389f2523f515f0
     SpdxLicenseId: Apache-2.0
 Mappings:
   Region2ELBAccountId:
@@ -92,7 +92,7 @@ Parameters:
     - S3
     - VPC
     - ALB
-  AutoTaggingResourceOptions:
+  AutoEnableResourceOptions:
     Type: String
     Description: New - Automatically enables S3 logging for newly created AWS resources
       to send logs to S3 Buckets. This does not affect AWS resources already collecting
@@ -129,10 +129,6 @@ Parameters:
     Description: True - To remove S3 logging or Vpc flow logs. False - To keep the
       S3 logging.
     Type: String
-  ParentStackName:
-    Type: String
-    Default: ParentStackName
-    Description: Parent Stack Name. Do Not Edit the value.
 Conditions:
   enable_alb_logging:
     Fn::And:
@@ -155,25 +151,19 @@ Conditions:
   auto_enable_existing:
     Fn::Or:
     - Fn::Equals:
-      - Ref: AutoTaggingResourceOptions
+      - Ref: AutoEnableResourceOptions
       - Existing
     - Fn::Equals:
-      - Ref: AutoTaggingResourceOptions
+      - Ref: AutoEnableResourceOptions
       - Both
   auto_enable_new:
     Fn::Or:
     - Fn::Equals:
-      - Ref: AutoTaggingResourceOptions
+      - Ref: AutoEnableResourceOptions
       - New
     - Fn::Equals:
-      - Ref: AutoTaggingResourceOptions
+      - Ref: AutoEnableResourceOptions
       - Both
-  do_not_use_parent_stack:
-    Fn::And:
-    - Fn::Equals:
-      - Ref: ParentStackName
-      - ParentStackName
-    - Condition: auto_enable_existing
 Resources:
   SumoLambdaRole:
     Type: AWS::IAM::Role
@@ -223,20 +213,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: auto_enable_new
     Properties:
-      FunctionName:
-        Fn::Join:
-        - ''
-        - - sumo-s3-enable-
-          - Fn::Select:
-            - 0
-            - Fn::Split:
-              - '-'
-              - Fn::Select:
-                - 2
-                - Fn::Split:
-                  - /
-                  - Ref: AWS::StackId
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.0/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.2/sumo_app_utils.zip
       Handler: awsresource.enable_s3_logs
       Runtime: python3.7
       Role:
@@ -404,11 +381,11 @@ Resources:
         Id: Main
   EnableExisitngAWSResourcesLambda:
     Type: AWS::Serverless::Function
-    Condition: do_not_use_parent_stack
+    Condition: auto_enable_existing
     Properties:
       Handler: main.handler
       Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.0/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.2/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 900
       Role:
@@ -420,13 +397,9 @@ Resources:
     Condition: auto_enable_existing
     Properties:
       ServiceToken:
-        Fn::If:
-        - do_not_use_parent_stack
-        - Fn::GetAtt:
-          - EnableExisitngAWSResourcesLambda
-          - Arn
-        - Fn::ImportValue:
-            Fn::Sub: ${ParentStackName}-SumoLogicHelperFunctionARN
+        Fn::GetAtt:
+        - EnableExisitngAWSResourcesLambda
+        - Arn
       AWSResource:
         Fn::If:
         - enable_s3_buckets_logging
@@ -464,4 +437,4 @@ Outputs:
       Fn::GetAtt:
       - EnableExisitngAWSResourcesLambda
       - Arn
-    Condition: do_not_use_parent_stack
+    Condition: auto_enable_existing
