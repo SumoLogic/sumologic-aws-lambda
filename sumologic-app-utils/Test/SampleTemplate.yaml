@@ -315,7 +315,7 @@ Resources:
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
-  AccountCheck:
+  AccCheck:
     Type: Custom::EnterpriseOrTrialAccountCheck
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
@@ -362,7 +362,7 @@ Resources:
 Outputs:
   EnterpriseCheck:
     Description: "Check If Account is Enterprise or Not"
-    Value: !GetAtt AccountCheck.is_enterprise
+    Value: !GetAtt AccCheck.is_enterprise
   PaidAccountCheck:
     Description: "Check If Account is Paid or Not"
-    Value: !GetAtt AccountCheck.is_paid
+    Value: !GetAtt AccCheck.is_paid
