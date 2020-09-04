@@ -498,12 +498,15 @@ class App(SumoResource):
             response = self.sumologic_cli.create_folder(appdata["name"], appdata["description"][:255], parent_id)
             folder_id = response.json()["id"]
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()['errors']:
-                msg = e.response.json()['errors'][0]['message']
-                matched = re.search('(?<=ContentId\()\d+', msg)
-                if matched:
-                    folder_id = matched[0]
-            else:
+            if hasattr(e, 'response') and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'content:duplicate_content':
+                        folder_details = self.sumologic_cli.get_folder_by_id(parent_id)
+                        if "children" in folder_details:
+                            for children in folder_details["children"]:
+                                if "name" in children and children["name"] == appdata["name"]:
+                                    return children["id"]
                 raise
         return folder_id
 
@@ -533,6 +536,21 @@ class App(SumoResource):
             time.sleep(5)
 
         print("job status: %s" % response.text)
+
+    def _wait_for_folder_copy(self, folder_id, job_id):
+        print("waiting for folder copy folder_id %s job_id %s" % (folder_id, job_id))
+        waiting = True
+        while waiting:
+            response = self.sumologic_cli.check_copy_status(folder_id, job_id)
+            waiting = response.json()['status'] == "InProgress"
+            time.sleep(5)
+
+        print("job status: %s" % response.text)
+        matched = re.search('id:\s*(.*?)\"', response.text)
+        copied_folder_id = None
+        if matched:
+            copied_folder_id = matched[1]
+        return copied_folder_id
 
     def _wait_for_app_install(self, job_id):
         print("waiting for app installation job_id %s" % job_id)
@@ -620,12 +638,30 @@ class App(SumoResource):
         else:
             return self.create_by_import_api(appname, source_params, folder_name, *args, **kwargs)
 
-    def update(self, app_folder_id, appname, source_params, appid=None, folder_name=None, *args, **kwargs):
+    def update(self, app_folder_id, appname, source_params, appid=None, folder_name=None, retain_old_app=False, *args,
+               **kwargs):
         # Delete is called by CF itself on Old Resource if we create a new resource. So, no need to delete the resource here.
         # self.delete(app_folder_id, remove_on_delete_stack=True)
-        data, app_folder_id = self.create(appname, source_params, appid, folder_name)
-        print("updated app appFolderId: %s " % app_folder_id)
-        return data, app_folder_id
+        data, new_app_folder_id = self.create(appname, source_params, appid, folder_name)
+        print("updated app appFolderId: %s " % new_app_folder_id)
+        if retain_old_app:
+            # get the parent folder from new app folder. Create a OLD APPS folder in it.
+            # Copy the app_folder_id to OLD APPS.
+            new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id)
+            parent_folder_id = new_folder_details["parentId"]
+            backup_folder_id = self._get_app_folder({"name": "BackUpOldApps", "description": "The folder contains back up of all the apps that are updated using CloudFormation template."},
+                                                    parent_folder_id)
+            # Starting Folder Copy
+            response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id)
+            job_id = response.json()["id"]
+            print("Copy Completed parentFolderId: %s jobId: %s" % (backup_folder_id, job_id))
+            copied_folder_id = self._wait_for_folder_copy(app_folder_id, job_id)
+            # Updating copied folder name with suffix BackUp.
+            copied_folder_details = self.sumologic_cli.get_folder_by_id(copied_folder_id)
+            copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)", "- BackUp_" + datetime.now().strftime("%H:%M:%S")),
+                                     "description": copied_folder_details["description"][:255]}
+            self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details)
+        return data, new_app_folder_id
 
     def delete(self, app_folder_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -644,6 +680,7 @@ class App(SumoResource):
             "appname": props.get("AppName"),
             "source_params": props.get("AppSources"),
             "folder_name": props.get("FolderName"),
+            "retain_old_app": props.get("RetainOldAppOnUpdate"),
             "app_folder_id": app_folder_id
         }
 

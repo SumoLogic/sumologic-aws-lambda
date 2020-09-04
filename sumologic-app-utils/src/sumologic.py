@@ -1,7 +1,7 @@
 import json
 import requests
 import time
-import random
+from random import uniform
 
 try:
     import cookielib
@@ -48,6 +48,7 @@ class SumoLogic(object):
 
     def delete(self, method, params=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
+        time.sleep(uniform(1, 10))
         r = self.session.delete(endpoint + method, params=params)
         if 400 <= r.status_code < 600:
             r.reason = r.text
@@ -56,6 +57,7 @@ class SumoLogic(object):
 
     def get(self, method, params=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
+        time.sleep(uniform(1, 10))
         r = self.session.get(endpoint + method, params=params)
         if 400 <= r.status_code < 600:
             r.reason = r.text
@@ -64,6 +66,7 @@ class SumoLogic(object):
 
     def post(self, method, params, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
+        time.sleep(uniform(1, 10))
         r = self.session.post(endpoint + method, data=json.dumps(params), headers=headers)
         if 400 <= r.status_code < 600:
             r.reason = r.text
@@ -72,6 +75,7 @@ class SumoLogic(object):
 
     def put(self, method, params, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
+        time.sleep(uniform(1, 10))
         r = self.session.put(endpoint + method, data=json.dumps(params), headers=headers)
         if 400 <= r.status_code < 600:
             r.reason = r.text
@@ -205,6 +209,18 @@ class SumoLogic(object):
     def get_personal_folder(self):
         return self.get('/content/folders/personal', version='v2')
 
+    def get_folder_by_id(self, folder_id):
+        response = self.get('/content/folders/%s' % folder_id, version='v2')
+        return json.loads(response.text)
+
+    def update_folder_by_id(self, folder_id, content):
+        response = self.put('/content/folders/%s' % folder_id, version='v2', params=content)
+        return json.loads(response.text)
+
+    def copy_folder(self, folder_id, parent_folder_id):
+        return self.post('/content/%s/copy?destinationFolder=%s' % (folder_id, parent_folder_id), params={},
+                         version='v2')
+
     def import_content(self, folder_id, content, is_overwrite="false"):
         return self.post('/content/folders/%s/import?overwrite=%s' % (folder_id, is_overwrite), params=content,
                          version='v2')
@@ -212,8 +228,10 @@ class SumoLogic(object):
     def check_import_status(self, folder_id, job_id):
         return self.get('/content/folders/%s/import/%s/status' % (folder_id, job_id), version='v2')
 
+    def check_copy_status(self, folder_id, job_id):
+        return self.get('/content/%s/copy/%s/status' % (folder_id, job_id), version='v2')
+
     def install_app(self, app_id, content):
-        time.sleep(random.randint(1, 10))
         return self.post('/apps/%s/install' % (app_id), params=content)
 
     def check_app_install_status(self, job_id):
