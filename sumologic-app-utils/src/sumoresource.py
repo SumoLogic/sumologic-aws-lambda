@@ -54,6 +54,7 @@ class SumoResource(object):
                 | "2" as sev
                 | "UserPermissions" as threatName
                 | "Recon" as threatPurpose
+                | toint(sev) as sev
                 | benchmark percentage as global_percent from guardduty on threatpurpose=threatPurpose, threatname=threatName, severity=sev, resource=targetresource'''
             response = self.sumologic_cli.search_job(search_query, fromTime=from_time, toTime=to_time)
             print("schedule job status: %s" % response)
@@ -1000,9 +1001,12 @@ class SumoLogicFieldExtractionRule(SumoResource):
         }
         try:
             fer_details = self.sumologic_cli.get_fer_by_id(fer_id)
-
-            if "scope" in fer_details and fer_scope not in fer_details["scope"]:
-                content["scope"] = fer_details["scope"] + " or " + fer_scope
+            # Use existing or append the new scope to existing scope.
+            if "scope" in fer_details:
+                if fer_scope not in fer_details["scope"]:
+                    content["scope"] = fer_details["scope"] + " or " + fer_scope
+                else:
+                    content["scope"] = fer_details["scope"]
 
             response = self.sumologic_cli.update_field_extraction_rules(fer_id, content)
             job_id = response.json()["id"]
