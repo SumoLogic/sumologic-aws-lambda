@@ -47,44 +47,53 @@ function createRecords(config, events, awslogsData) {
     var records = [];
     var lastRequestID = null;
     console.log('Log events: ' + events.length);
-
+    var msgset = new Set();
+    var duplicate_count = 0;
     events.forEach(function (log) {
-        // Remove any trailing \n
-        log.message = log.message.replace(/\n$/, '');
-        // Try extract requestID
-        var requestId = requestIdRegex.exec(log.message);
-        if (requestId !== null) {
-            lastRequestID = requestId[1];
-        }
-        // Attempt to detect console log and auto extract requestID and message
-        var consoleLog = consoleFormatRegex.exec(log.message);
-        if (consoleLog !== null) {
-            lastRequestID = consoleLog[1];
-            log.message = log.message.substring(consoleLog[0].length);
-        }
-        if (lastRequestID) {
-            log.requestID = lastRequestID;
-        }
-        // Auto detect if message is json
-        try {
-            log.message = JSON.parse(log.message);
-        } catch (err) {
-            // Do nothing, leave as text
-            log.message = log.message.trim();
-        }
-        // delete id as it's not very useful
-        delete log.id;
-        if (config.LogFormat.startsWith("VPC")) {
-            delete log.timestamp;
-        }
-        delete log.extractedFields;
 
-        if (config.includeLogInfo) {
-            log.logStream = awslogsData.logStream;
-            log.logGroup = awslogsData.logGroup;
+        if (msgset.has(log.id)) {
+            console.log("Found duplicate message", log.id);
+            duplicate_count += 1;
+        } else {
+            msgset.add(log.id);
+            // Remove any trailing \n
+            log.message = log.message.replace(/\n$/, '');
+            // Try extract requestID
+            var requestId = requestIdRegex.exec(log.message);
+            if (requestId !== null) {
+                lastRequestID = requestId[1];
+            }
+            // Attempt to detect console log and auto extract requestID and message
+            var consoleLog = consoleFormatRegex.exec(log.message);
+            if (consoleLog !== null) {
+                lastRequestID = consoleLog[1];
+                log.message = log.message.substring(consoleLog[0].length);
+            }
+            if (lastRequestID) {
+                log.requestID = lastRequestID;
+            }
+            // Auto detect if message is json
+            try {
+                log.message = JSON.parse(log.message);
+            } catch (err) {
+                // Do nothing, leave as text
+                log.message = log.message.trim();
+            }
+            // delete id as it's not very useful
+            delete log.id;
+            if (config.LogFormat.startsWith("VPC")) {
+                delete log.timestamp;
+            }
+            delete log.extractedFields;
+
+            if (config.includeLogInfo) {
+                log.logStream = awslogsData.logStream;
+                log.logGroup = awslogsData.logGroup;
+            }
+            records.push(log);
         }
-        records.push(log);
     });
+    console.log('Duplicate events: ' + duplicate_count);
     return records;
 }
 
