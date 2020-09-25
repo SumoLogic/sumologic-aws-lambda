@@ -2,6 +2,8 @@ import json
 import requests
 import time
 from random import uniform
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 try:
     import cookielib
@@ -15,6 +17,9 @@ class SumoLogic(object):
 
     def __init__(self, accessId, accessKey, endpoint=None, cookieFile='cookies.txt'):
         self.session = requests.Session()
+        retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[502, 503, 504, 429])
+        self.session.mount('https://', HTTPAdapter(max_retries=retries))
+        self.session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session.auth = (accessId, accessKey)
         self.session.headers = {'content-type': 'application/json', 'accept': 'application/json'}
         cj = cookielib.FileCookieJar(cookieFile)
@@ -241,14 +246,17 @@ class SumoLogic(object):
         response = self.get('/apps')
         return json.loads(response.text)
 
-    def create_explorer_view(self, content):
-        return self.post('/topologies', params=content, version='v1alpha')
+    def create_hierarchy(self, content):
+        return self.post('/entities/hierarchies', params=content, version='v1')
 
-    def delete_explorer_view(self, explorer_id):
-        return self.delete('/topologies/%s' % explorer_id, version='v1alpha')
+    def delete_hierarchy(self, hierarchy_id):
+        return self.delete('/entities/hierarchies/%s' % hierarchy_id, version='v1alpha')
 
-    def get_explorer_views(self):
-        response = self.get('/topologies', version='v1alpha')
+    def update_hierarchy(self, hierarchy_id, content):
+        return self.put('/entities/hierarchies/%s' % hierarchy_id, params=content, version='v1')
+
+    def get_entity_hierarchies(self):
+        response = self.get('/entities/hierarchies', version='v1')
         return json.loads(response.text)
 
     def create_metric_rule(self, content):

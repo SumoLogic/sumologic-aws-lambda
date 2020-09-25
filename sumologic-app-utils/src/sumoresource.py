@@ -688,94 +688,80 @@ class App(SumoResource):
 
 class SumoLogicAWSExplorer(SumoResource):
 
-    def get_explorer_id(self, explorer_name):
-        explorer_views = self.sumologic_cli.get_explorer_views()
-        if explorer_views:
-            for explorer_view in explorer_views:
-                if explorer_name == explorer_view["name"]:
-                    return explorer_view["id"]
-        raise Exception("Explorer View with name %s not found" % explorer_name)
+    def get_explorer_id(self, hierarchy_name):
+        hierarchies = self.sumologic_cli.get_entity_hierarchies()
+        if hierarchies and "data" in hierarchies:
+            for hierarchy in hierarchies["data"]:
+                if hierarchy_name == hierarchy["name"]:
+                    return hierarchy["id"]
+        raise Exception("Hierarchy with name %s not found" % hierarchy_name)
 
-    def create_explorer_view(self, explorer_name, hierarchy):
+    def create_hierarchy(self, hierarchy_name, level, hierarchy_filter):
         content = {
-            "name": explorer_name,
-            "baseFilter": [],
-            "hierarchy": hierarchy
+            "name": hierarchy_name,
+            "filter": hierarchy_filter,
+            "level": level
         }
         try:
-            response = self.sumologic_cli.create_explorer_view(content)
-            job_id = response.json()["id"]
-            print("AWS EXPLORER -  creation successful with ID %s" % job_id)
-            return {"EXPLORER_NAME": response.json()["name"]}, job_id
+            response = self.sumologic_cli.create_hierarchy(content)
+            hierarchy_id = response.json()["id"]
+            print("Hierarchy -  creation successful with ID %s" % hierarchy_id)
+            return {"Hierarchy_Name": response.json()["name"]}, hierarchy_id
         except Exception as e:
             if hasattr(e, 'response') and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
-                    if error.get('code') == 'topology:duplicate':
-                        print("AWS EXPLORER -  Duplicate Exists for Name %s" % explorer_name)
-                        # Get the explorer view ID from all explorer.
-                        explorer_id = self.get_explorer_id(explorer_name)
-                        return {"EXPLORER_NAME": explorer_name}, explorer_id
+                    if error.get('code') == 'hierarchy:duplicate':
+                        print("Hierarchy -  Duplicate Exists for Name %s" % hierarchy_name)
+                        # Get the hierarchy ID from all explorer.
+                        hierarchy_id = self.get_explorer_id(hierarchy_name)
+                        response = self.sumologic_cli.update_hierarchy(hierarchy_id, content)
+                        hierarchy_id = response.json()["id"]
+                        print("Hierarchy -  update successful with ID %s" % hierarchy_id)
+                        return {"Hierarchy_Name": hierarchy_name}, hierarchy_id
             raise e
 
-    def create(self, explorer_name, hierarchy, *args, **kwargs):
-        return self.create_explorer_view(explorer_name, hierarchy)
+    def create(self, hierarchy_name, level, hierarchy_filter, *args, **kwargs):
+        return self.create_hierarchy(hierarchy_name, level, hierarchy_filter)
 
-    # No Update API. So, Explorer view can be updated and deleted from the main stack where it was created.
-    # First have to delete the explorer and then create new. Handling delete again due to CF in delete method.
-    def update(self, old_explorer_name, explorer_id, explorer_name, hierarchy, *args, **kwargs):
-        self.delete(explorer_id, old_explorer_name, True)
-        data, explorer_id = self.create_explorer_view(explorer_name, hierarchy)
-        print("AWS EXPLORER -  update successful with ID %s" % explorer_id)
-        return data, explorer_id
+    # Use the new update API.
+    def update(self, hierarchy_id, hierarchy_name, level, hierarchy_filter, *args, **kwargs):
+        data, hierarchy_id = self.create(hierarchy_name, level, hierarchy_filter)
+        print("Hierarchy -  update successful with ID %s" % hierarchy_id)
+        return data, hierarchy_id
 
-    # Handling exception as the Explorer is already deleted.
     # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
     # already been deleted. This is required in case of multiple installation of
     # CF template with same names for metric rule, explorer view or fields
-    def delete(self, explorer_id, explorer_name, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, hierarchy_id, hierarchy_name, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
-            try:
-                # Backward Compatibility for 2.0.2 Versions.
-                # If id is duplicate then get the id from explorer name and delete it.
-                if explorer_id == "Duplicate":
-                    explorer_id = self.get_explorer_id(explorer_name)
-                response = self.sumologic_cli.delete_explorer_view(explorer_id)
-                print("AWS EXPLORER - Completed the AWS Explorer deletion for Name %s, response - %s" % (
-                    explorer_name, response.text))
-            except Exception as e:
-                print("AWS EXPLORER - Exception while deleting the Explorer view %s," % e)
+            # Backward Compatibility for 2.0.2 Versions.
+            # If id is duplicate then get the id from explorer name and delete it.
+            if hierarchy_id == "Duplicate":
+                hierarchy_id = self.get_explorer_id(hierarchy_name)
+            response = self.sumologic_cli.delete_hierarchy(hierarchy_id)
+            print("Hierarchy - Completed the Hierarchy deletion for Name %s, response - %s"
+                  % (hierarchy_name, response.text))
         else:
-            print("AWS EXPLORER - Skipping the AWS Explorer deletion")
+            print("Hierarchy - Skipping the Hierarchy deletion.")
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
-        explorer_id = None
+        hierarchy_id = None
         if event.get('PhysicalResourceId'):
-            _, explorer_id = event['PhysicalResourceId'].split("/")
-
-        # Get previous Explorer View Name
-        old_explorer_name = None
-        if "OldResourceProperties" in event and "ExplorerName" in event['OldResourceProperties']:
-            old_explorer_name = event["OldResourceProperties"]['ExplorerName']
-
-        hierarchy = []
-        if "MetadataKeys" in props:
-            metadata_keys = props.get("MetadataKeys")
-            for value in metadata_keys:
-                hierarchy.append({"metadataKey": value})
+            _, hierarchy_id = event['PhysicalResourceId'].split("/")
 
         return {
-            "explorer_name": props.get("ExplorerName"),
-            "explorer_id": explorer_id,
-            "hierarchy": hierarchy,
-            "old_explorer_name": old_explorer_name
+            "hierarchy_name": props.get("HierarchyName"),
+            "level": props.get("HierarchyLevel"),
+            "hierarchy_filter": props.get("HierarchyFilter"),
+            "hierarchy_id": hierarchy_id
         }
 
 
 class SumoLogicMetricRules(SumoResource):
 
-    def create_metric_rule(self, metric_rule_name, match_expression, variables):
+    def create_metric_rule(self, metric_rule_name, match_expression, variables, delete=True):
         variables_to_extract = []
         if variables:
             for k, v in variables.items():
@@ -798,6 +784,9 @@ class SumoLogicMetricRules(SumoResource):
                     if error.get('code') == 'metrics:rule_name_already_exists' \
                             or error.get('code') == 'metrics:rule_already_exists':
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
+                        if delete:
+                            self.delete(metric_rule_name, metric_rule_name, True)
+                            return self.create_metric_rule(metric_rule_name, match_expression, variables, False)
                         return {"METRIC_RULES": metric_rule_name}, metric_rule_name
             raise e
 
