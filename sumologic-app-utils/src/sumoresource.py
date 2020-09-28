@@ -1231,7 +1231,7 @@ class EnterpriseOrTrialAccountCheck(SumoResource):
         is_paid = "Yes"
         if not is_enterprise:
             all_apps = self.sumologic_cli.get_apps()
-            if "apps" in all_apps and len(all_apps['apps']) <= 2:
+            if "apps" in all_apps and len(all_apps['apps']) <= 5:
                 is_paid = "No"
         return {"is_enterprise": "Yes" if is_enterprise else "No", "is_paid": is_paid}, is_enterprise
 
