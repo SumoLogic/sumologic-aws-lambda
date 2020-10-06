@@ -250,7 +250,7 @@ class SumoLogic(object):
         return self.post('/entities/hierarchies', params=content, version='v1')
 
     def delete_hierarchy(self, hierarchy_id):
-        return self.delete('/entities/hierarchies/%s' % hierarchy_id, version='v1alpha')
+        return self.delete('/entities/hierarchies/%s' % hierarchy_id, version='v1')
 
     def update_hierarchy(self, hierarchy_id, content):
         return self.put('/entities/hierarchies/%s' % hierarchy_id, params=content, version='v1')
