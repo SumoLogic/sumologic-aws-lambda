@@ -48,7 +48,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.3
+        SemanticVersion: 2.0.5
 
   SumoLogicHelperPolicy:
     Type: AWS::IAM::Policy
@@ -118,7 +118,7 @@ Resources:
     DependsOn: SumoLogicHelperPolicy
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: "sumologiclambdahelper-us-east-2"
+      Bucket: "cf-templates-1qpf3unpuo1hw-us-east-2"
       PolicyDocument:
         Statement:
           - Sid: AWSCloudTrailAclCheck
@@ -127,14 +127,14 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:GetBucketAcl
             Resource:
-              - "arn:aws:s3:::sumologiclambdahelper-us-east-2"
+              - "arn:aws:s3:::cf-templates-1qpf3unpuo1hw-us-east-2"
           - Sid: AWSCloudTrailWrite
             Effect: Allow
             Principal:
               Service: cloudtrail.amazonaws.com
             Action: s3:PutObject
             Resource:
-              - "arn:aws:s3:::sumologiclambdahelper-us-east-2/*"
+              - "arn:aws:s3:::cf-templates-1qpf3unpuo1hw-us-east-2/*"
             Condition:
               StringEquals:
                 s3:x-amz-acl: bucket-owner-full-control
@@ -144,7 +144,7 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:ListBucket
             Resource:
-              - "arn:aws:s3:::sumologiclambdahelper-us-east-2"
+              - "arn:aws:s3:::cf-templates-1qpf3unpuo1hw-us-east-2"
 
   SumoCloudTrail:
     Type: Custom::AWSTrail
@@ -153,7 +153,7 @@ Resources:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       IsLogging: true
       IsMultiRegionTrail: false
-      S3BucketName: "sumologiclambdahelper-us-east-2"
+      S3BucketName: "cf-templates-1qpf3unpuo1hw-us-east-2"
       TrailName: "Aws-Observability-onemoreupdae"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
 
@@ -225,7 +225,7 @@ Resources:
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
-      TargetBucketName: "sumologiclambdahelper-us-east-1"
+      TargetBucketName: "cf-templates-1qpf3unpuo1hw-us-east-1"
       PathExpression: "asdasd"
       DateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
       DateLocatorRegex: '.*"updatedAt":"(.*)".*'
@@ -266,10 +266,8 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
-      ExplorerName: "Test EXPLORER"
-      MetadataKeys:
-        - "account"
-        - "region"
+      HierarchyName: "Test Explorer"
+      HierarchyLevel: {"entityType":"account","nextLevelsWithConditions":[],"nextLevel":{"entityType":"region","nextLevelsWithConditions":[],"nextLevel":{"entityType":"namespace","nextLevelsWithConditions":[]}}}
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
@@ -293,7 +291,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
-      SourceApiUrl: "https://api.sumologic.com/api/v1/collectors/170503459/sources/779514196"
+      SourceApiUrl: "https://api.us2.sumologic.com/api/v1/collectors/194268335/sources/1135631121"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
@@ -353,7 +351,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       AWSResource: "vpc"
-      BucketName: "sumologiclambdahelper-us-east-1"
+      BucketName: "cf-templates-1qpf3unpuo1hw-us-east-1"
       Filter: ".*"
       BucketPrefix: "djvsdvsbdjb"
       AccountID: !Ref "AWS::AccountId"
