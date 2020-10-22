@@ -107,7 +107,7 @@ class Collector(SumoResource):
             collector_id = json.loads(resp.text)['collector']['id']
             print("created collector %s" % collector_id)
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 collector = self._get_collector_by_name(collector_name, collector_type.lower())
                 collector_id = collector['id']
                 print("fetched existing collector %s" % collector_id)
@@ -352,7 +352,7 @@ class AWSSource(BaseSource):
             print("created source %s" % source_id)
         except Exception as e:
             # Todo 100 sources in a collector is good. Same error code for duplicates in case of Collector and source.
-            if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
                         source_id = source["id"]
@@ -413,7 +413,7 @@ class HTTPSource(SumoResource):
             print("created source %s" % source_id)
         except Exception as e:
             # Todo 100 sources in a collector is good
-            if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
                         source_id = source["id"]
@@ -499,7 +499,7 @@ class App(SumoResource):
             response = self.sumologic_cli.create_folder(appdata["name"], appdata["description"][:255], parent_id)
             folder_id = response.json()["id"]
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'content:duplicate_content':
@@ -571,16 +571,16 @@ class App(SumoResource):
             folder = self.sumologic_cli.create_folder(folder_name, description, response.json()['id'])
             return folder.json()["id"]
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'content:duplicate_content':
+                        response = self.sumologic_cli.get_personal_folder()
                         if "children" in response.json():
                             for children in response.json()["children"]:
                                 if "name" in children and children["name"] == folder_name:
                                     return children["id"]
-            else:
-                raise
+            raise
 
     def create_by_import_api(self, appname, source_params, folder_name, *args, **kwargs):
         # Add  retry if folder sync fails
@@ -609,12 +609,11 @@ class App(SumoResource):
 
         folder_id = None
 
-        while not folder_id:
-            if folder_name:
-                folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
-            else:
-                response = self.sumologic_cli.get_personal_folder()
-                folder_id = response.json()['id']
+        if folder_name:
+            folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
+        else:
+            response = self.sumologic_cli.get_personal_folder()
+            folder_id = response.json()['id']
 
         content = {'name': appname + datetime.now().strftime(" %d-%b-%Y %H:%M:%S"), 'description': appname,
                    'dataSourceValues': source_params, 'destinationFolderId': folder_id}
@@ -631,7 +630,7 @@ class App(SumoResource):
             return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
         else:
             print("%s installation failed." % appname)
-            response.raise_for_status()
+            raise Exception(response.text)
 
     def create(self, appname, source_params, appid=None, folder_name=None, *args, **kwargs):
         if appid:
@@ -708,7 +707,7 @@ class SumoLogicAWSExplorer(SumoResource):
             print("Hierarchy -  creation successful with ID %s" % hierarchy_id)
             return {"Hierarchy_Name": response.json()["name"]}, hierarchy_id
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'hierarchy:duplicate':
@@ -719,7 +718,7 @@ class SumoLogicAWSExplorer(SumoResource):
                         hierarchy_id = response.json()["id"]
                         print("Hierarchy -  update successful with ID %s" % hierarchy_id)
                         return {"Hierarchy_Name": hierarchy_name}, hierarchy_id
-            raise e
+            raise
 
     def create(self, hierarchy_name, level, hierarchy_filter, *args, **kwargs):
         return self.create_hierarchy(hierarchy_name, level, hierarchy_filter)
@@ -778,7 +777,7 @@ class SumoLogicMetricRules(SumoResource):
             print("METRIC RULES -  creation successful with Name %s" % job_name)
             return {"METRIC_RULES": response.json()["name"]}, job_name
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'metrics:rule_name_already_exists' \
@@ -788,7 +787,7 @@ class SumoLogicMetricRules(SumoResource):
                             self.delete(metric_rule_name, metric_rule_name, True)
                             return self.create_metric_rule(metric_rule_name, match_expression, variables, False)
                         return {"METRIC_RULES": metric_rule_name}, metric_rule_name
-            raise e
+            raise
 
     def create(self, metric_rule_name, match_expression, variables, *args, **kwargs):
         return self.create_metric_rule(metric_rule_name, match_expression, variables)
@@ -957,7 +956,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             print("FER RULES -  creation successful with ID %s" % job_id)
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'fer:invalid_extraction_rule':
@@ -974,7 +973,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
                         if change_in_fer:
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
                         return {"FER_RULES": fer_name}, fer_details["id"]
-            raise e
+            raise
 
     def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
         """
@@ -1002,7 +1001,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             print("FER RULES -  update successful with ID %s" % job_id)
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
-            raise e
+            raise
 
     def delete(self, fer_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -1168,7 +1167,7 @@ class SumoLogicFieldsSchema(SumoResource):
             print("FIELD NAME -  creation successful with Field Id %s" % field_id)
             return {"FIELD_NAME": response["fieldName"]}, field_id
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'field:already_exists':
@@ -1176,7 +1175,7 @@ class SumoLogicFieldsSchema(SumoResource):
                         # Get the Field ID from the existing fields.
                         field_id = self.get_field_id(field_name)
                         return {"FIELD_NAME": field_name}, field_id
-            raise e
+            raise
 
     def create(self, field_name, *args, **kwargs):
         return self.add_field(field_name)
