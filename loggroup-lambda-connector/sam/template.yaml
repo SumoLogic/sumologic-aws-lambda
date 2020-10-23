@@ -24,7 +24,7 @@ Metadata:
     LicenseUrl: ./LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.3
+    SemanticVersion: 1.0.4
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
@@ -47,7 +47,8 @@ Parameters:
 
     LogGroupTags:
         Type: CommaDelimitedList
-        Description: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string "
+        Default: ""
+        Description: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string. This is optional leave it blank if tag based filtering is not needed."
 
 Resources:
 
