@@ -17,7 +17,7 @@ class SumoLogic(object):
 
     def __init__(self, accessId, accessKey, endpoint=None, cookieFile='cookies.txt'):
         self.session = requests.Session()
-        retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[502, 503, 504, 429])
+        retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504, 429])
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
         self.session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session.auth = (accessId, accessKey)
