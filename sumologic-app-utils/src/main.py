@@ -4,7 +4,7 @@ from awsresource import AWSResource
 
 from resourcefactory import ResourceFactory
 
-helper = CfnResource(json_logging=False, log_level='INFO')
+helper = CfnResource(json_logging=False, log_level='INFO', sleep_on_delete=30)
 
 
 def get_resource(event):
