@@ -785,6 +785,8 @@ class SumoLogicMetricRules(SumoResource):
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
                         if delete:
                             self.delete(metric_rule_name, metric_rule_name, True)
+                            # providing sleep for 10 seconds after delete.
+                            time.sleep(10)
                             return self.create_metric_rule(metric_rule_name, match_expression, variables, False)
                         return {"METRIC_RULES": metric_rule_name}, metric_rule_name
             raise
