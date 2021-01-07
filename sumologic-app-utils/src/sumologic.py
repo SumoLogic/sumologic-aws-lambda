@@ -3,7 +3,7 @@ import requests
 import time
 from random import uniform
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 
 try:
     import cookielib
@@ -17,9 +17,10 @@ class SumoLogic(object):
 
     def __init__(self, accessId, accessKey, endpoint=None, cookieFile='cookies.txt'):
         self.session = requests.Session()
-        retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504, 429])
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
-        self.session.mount('http://', HTTPAdapter(max_retries=retries))
+        retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 429])
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
         self.session.auth = (accessId, accessKey)
         self.session.headers = {'content-type': 'application/json', 'accept': 'application/json'}
         cj = cookielib.FileCookieJar(cookieFile)

@@ -4,6 +4,7 @@ import tempfile
 import time
 from abc import abstractmethod
 from datetime import datetime
+from random import uniform
 
 import requests
 import six
@@ -511,9 +512,11 @@ class App(SumoResource):
                 raise
         return folder_id
 
-    def _get_app_content(self, appname, source_params):
-        key_name = "ApiExported-" + re.sub(r"\s+", "-", appname) + ".json"
-        s3url = "https://app-json-store.s3.amazonaws.com/%s" % key_name
+    def _get_app_content(self, appname, source_params, s3url=None):
+        # Based on S3 URL provided download the data.
+        if not s3url:
+            key_name = "ApiExported-" + re.sub(r"\s+", "-", appname) + ".json"
+            s3url = "https://app-json-store.s3.amazonaws.com/%s" % key_name
         print("Fetching appjson %s" % s3url)
         with requests.get(s3url, stream=True) as r:
             r.raise_for_status()
@@ -582,12 +585,12 @@ class App(SumoResource):
                                     return children["id"]
             raise
 
-    def create_by_import_api(self, appname, source_params, folder_name, *args, **kwargs):
+    def create_by_import_api(self, appname, source_params, folder_name, s3url, *args, **kwargs):
         # Add  retry if folder sync fails
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
-        content = self._get_app_content(appname, source_params)
+        content = self._get_app_content(appname, source_params, s3url)
 
         if folder_name:
             folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
@@ -632,17 +635,17 @@ class App(SumoResource):
             print("%s installation failed." % appname)
             raise Exception(response.text)
 
-    def create(self, appname, source_params, appid=None, folder_name=None, *args, **kwargs):
+    def create(self, appname, source_params, appid=None, folder_name=None, s3url=None, *args, **kwargs):
         if appid:
             return self.create_by_install_api(appid, appname, source_params, folder_name, *args, **kwargs)
         else:
-            return self.create_by_import_api(appname, source_params, folder_name, *args, **kwargs)
+            return self.create_by_import_api(appname, source_params, folder_name, s3url, *args, **kwargs)
 
-    def update(self, app_folder_id, appname, source_params, appid=None, folder_name=None, retain_old_app=False, *args,
-               **kwargs):
+    def update(self, app_folder_id, appname, source_params, appid=None, folder_name=None, retain_old_app=False,
+               s3url=None, *args, **kwargs):
         # Delete is called by CF itself on Old Resource if we create a new resource. So, no need to delete the resource here.
         # self.delete(app_folder_id, remove_on_delete_stack=True)
-        data, new_app_folder_id = self.create(appname, source_params, appid, folder_name)
+        data, new_app_folder_id = self.create(appname, source_params, appid, folder_name, s3url)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
             # get the parent folder from new app folder. Create a OLD APPS folder in it.
@@ -681,7 +684,8 @@ class App(SumoResource):
             "source_params": props.get("AppSources"),
             "folder_name": props.get("FolderName"),
             "retain_old_app": props.get("RetainOldAppOnUpdate"),
-            "app_folder_id": app_folder_id
+            "app_folder_id": app_folder_id,
+            "s3url": props.get("AppJsonS3Url")
         }
 
 
@@ -786,7 +790,7 @@ class SumoLogicMetricRules(SumoResource):
                         if delete:
                             self.delete(metric_rule_name, metric_rule_name, True)
                             # providing sleep for 10 seconds after delete.
-                            time.sleep(10)
+                            time.sleep(uniform(2, 10))
                             return self.create_metric_rule(metric_rule_name, match_expression, variables, False)
                         return {"METRIC_RULES": metric_rule_name}, metric_rule_name
             raise
