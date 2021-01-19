@@ -306,13 +306,13 @@ class SumoLogic(object):
         response = self.post('/monitors/%s/import' % folder_id, params=content)
         return json.loads(response.text)
 
+    def export_monitors(self, folder_id):
+        response = self.get('/monitors/%s/export' % folder_id)
+        return json.loads(response.text)
+
     def get_root_folder(self):
         response = self.get('/monitors/root')
         return json.loads(response.text)
 
     def delete_monitor_folder(self, folder_id):
         return self.delete('/monitors/%s' % folder_id)
-
-    def search_monitor(self, query):
-        response = self.get('/monitors/search?query=%s' % query)
-        return json.loads(response.text)

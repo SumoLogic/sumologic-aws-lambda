@@ -683,7 +683,7 @@ class App(SumoResource):
             "appname": props.get("AppName"),
             "source_params": props.get("AppSources"),
             "folder_name": props.get("FolderName"),
-            "retain_old_app": props.get("RetainOldAppOnUpdate"),
+            "retain_old_app": props.get("RetainOldAppOnUpdate") == 'true',
             "app_folder_id": app_folder_id,
             "s3url": props.get("AppJsonS3Url")
         }
@@ -1282,46 +1282,29 @@ class AlertsMonitor(SumoResource):
         response = self.sumologic_cli.get_root_folder()
         return response["id"]
 
-    def _get_existing_folder_id(self, folder_name, parent_id):
-        response = self.sumologic_cli.search_monitor("type: folder %s" % folder_name)
-        for index in range(len(response)):
-            folder = response[index]
-            if "item" in folder:
-                if folder["item"]["name"] == folder_name and folder["item"]["parentId"] == parent_id:
-                    return folder["item"]["id"]
-        raise Exception("Duplicate not found with the folder name %s and parent id as %s" % (folder_name, parent_id))
-
-    def import_monitor(self, folder_name, monitors3url, variables, delete=True):
+    def import_monitor(self, folder_name, monitors3url, variables, suffix_date_time):
+        date_format = "%Y-%m-%d"
         root_folder_id = self._get_root_folder_id()
         content = self._get_content_from_s3(monitors3url, variables)
-        content["name"] = folder_name
-        try:
-            response = self.sumologic_cli.import_monitors(root_folder_id, content)
-            import_id = response["id"]
-            print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
-            return {"ALERTS MONITORS": response["name"]}, import_id
-        except Exception as e:
-            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
-                errors = e.response.json()["errors"]
-                for error in errors:
-                    if error.get('code') == 'content:already_exists':
-                        print("ALERTS MONITORS - Duplicate Exists for Name %s." % folder_name)
-                        existing_folder_id = self._get_existing_folder_id(folder_name, root_folder_id)
-                        if delete:
-                            self.delete(existing_folder_id, True)
-                            # providing sleep for 10 seconds after delete.
-                            time.sleep(uniform(2, 10))
-                            return self.import_monitor(folder_name, monitors3url, variables, False)
-            raise
+        content["name"] = folder_name + " " + datetime.utcnow().strftime(date_format) if suffix_date_time \
+            else folder_name
+        response = self.sumologic_cli.import_monitors(root_folder_id, content)
+        import_id = response["id"]
+        print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
+        return {"ALERTS MONITORS": response["name"]}, import_id
 
-    def create(self, folder_name, monitors3url, variables, *args, **kwargs):
-        return self.import_monitor(folder_name, monitors3url, variables)
+    def create(self, folder_name, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
+        return self.import_monitor(folder_name, monitors3url, variables, suffix_date_time)
 
-    def update(self, folder_id, folder_name, monitors3url, variables, *args, **kwargs):
-        self.delete(folder_id, True)
-        data, folder_id = self.create(folder_name, monitors3url, variables)
-        print("ALERTS MONITORS - Update successful with ID %s." % folder_id)
-        return data, folder_id
+    def update(self, folder_id, folder_name, monitors3url, variables, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
+        data, new_folder_id = self.create(folder_name, monitors3url, variables, suffix_date_time)
+        if retain_old_alerts:
+            # Retaining old folder in the new folder as backup.
+            old_folder = self.sumologic_cli.export_monitors(folder_id)
+            old_folder["name"] = "Back Up " + old_folder["name"]
+            self.sumologic_cli.import_monitors(new_folder_id, old_folder)
+        print("ALERTS MONITORS - Update successful with ID %s." % new_folder_id)
+        return data, new_folder_id
 
     def delete(self, folder_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -1344,6 +1327,8 @@ class AlertsMonitor(SumoResource):
             "folder_name": props.get("FolderName"),
             "monitors3url": props.get("MonitorsS3Url"),
             "variables": props.get("Variables"),
+            "suffix_date_time": props.get("SuffixDateTime") == 'true',
+            "retain_old_alerts": props.get("RetainOldAlerts") == 'true',
             "folder_id": folder_id,
         }
 
