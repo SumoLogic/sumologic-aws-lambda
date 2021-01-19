@@ -286,14 +286,14 @@ class BaseSource(SumoResource):
             source_json['useAutolineMatching'] = props['useAutolineMatching']
 
         # Adding Cutofftimestamp 24 hours.
-        source_json['cutoffTimestamp'] = int(round(time.time() * 1000)) - 24*60*60*1000
+        source_json['cutoffTimestamp'] = int(round(time.time() * 1000)) - 24 * 60 * 60 * 1000
 
         return source_json
 
 
 class AWSSource(BaseSource):
 
-    def build_source_params(self, props, source_json = None):
+    def build_source_params(self, props, source_json=None):
         # https://help.sumologic.com/03Send-Data/Sources/03Use-JSON-to-Configure-Sources/JSON-Parameters-for-Hosted-Sources#aws-log-sources
 
         source_json = source_json if source_json else {}
@@ -1252,6 +1252,100 @@ class EnterpriseOrTrialAccountCheck(SumoResource):
     def extract_params(self, event):
         props = event.get("ResourceProperties")
         return props
+
+
+class AlertsMonitor(SumoResource):
+
+    def _replace_variables(self, appjson_filepath, variables):
+        with open(appjson_filepath, 'r') as old_file:
+            text = old_file.read()
+            if variables:
+                for k, v in variables.items():
+                    text = text.replace("${%s}" % k, v)
+            appjson = json.loads(text)
+
+        return appjson
+
+    def _get_content_from_s3(self, s3url, variables):
+        with requests.get(s3url, stream=True) as r:
+            r.raise_for_status()
+            with tempfile.NamedTemporaryFile() as fp:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        fp.write(chunk)
+                fp.flush()
+                fp.seek(0)
+                appjson = self._replace_variables(fp.name, variables)
+        return appjson
+
+    def _get_root_folder_id(self):
+        response = self.sumologic_cli.get_root_folder()
+        return response["id"]
+
+    def _get_existing_folder_id(self, folder_name, parent_id):
+        response = self.sumologic_cli.search_monitor("type: folder %s" % folder_name)
+        for index in range(len(response)):
+            folder = response[index]
+            if "item" in folder:
+                if folder["item"]["name"] == folder_name and folder["item"]["parentId"] == parent_id:
+                    return folder["item"]["id"]
+        raise Exception("Duplicate not found with the folder name %s and parent id as %s" % (folder_name, parent_id))
+
+    def import_monitor(self, folder_name, monitors3url, variables, delete=True):
+        root_folder_id = self._get_root_folder_id()
+        content = self._get_content_from_s3(monitors3url, variables)
+        content["name"] = folder_name
+        try:
+            response = self.sumologic_cli.import_monitors(root_folder_id, content)
+            import_id = response["id"]
+            print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
+            return {"ALERTS MONITORS": response["name"]}, import_id
+        except Exception as e:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
+                errors = e.response.json()["errors"]
+                for error in errors:
+                    if error.get('code') == 'content:already_exists':
+                        print("ALERTS MONITORS - Duplicate Exists for Name %s." % folder_name)
+                        existing_folder_id = self._get_existing_folder_id(folder_name, root_folder_id)
+                        if delete:
+                            self.delete(existing_folder_id, True)
+                            # providing sleep for 10 seconds after delete.
+                            time.sleep(uniform(2, 10))
+                            return self.import_monitor(folder_name, monitors3url, variables, False)
+            raise
+
+    def create(self, folder_name, monitors3url, variables, *args, **kwargs):
+        return self.import_monitor(folder_name, monitors3url, variables)
+
+    def update(self, folder_id, folder_name, monitors3url, variables, *args, **kwargs):
+        self.delete(folder_id, True)
+        data, folder_id = self.create(folder_name, monitors3url, variables)
+        print("ALERTS MONITORS - Update successful with ID %s." % folder_id)
+        return data, folder_id
+
+    def delete(self, folder_id, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            try:
+                self.sumologic_cli.delete_monitor_folder(folder_id)
+                print("ALERTS MONITORS - Completed the Deletion for Monitors Folder with ID " + str(folder_id))
+            except Exception as e:
+                print("ALERTS MONITORS - Exception while deleting the Monitors Folder %s," % e)
+        else:
+            print("ALERTS MONITORS - Skipping the Monitor Folder deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        folder_id = None
+        if event.get('PhysicalResourceId'):
+            _, folder_id = event['PhysicalResourceId'].split("/")
+
+        return {
+            "folder_name": props.get("FolderName"),
+            "monitors3url": props.get("MonitorsS3Url"),
+            "variables": props.get("Variables"),
+            "folder_id": folder_id,
+        }
 
 
 if __name__ == '__main__':

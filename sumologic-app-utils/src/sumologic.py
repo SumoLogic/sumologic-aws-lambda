@@ -301,3 +301,18 @@ class SumoLogic(object):
 
     def delete_existing_field(self, field_id):
         return self.delete('/fields/%s' % field_id)
+
+    def import_monitors(self, folder_id, content):
+        response = self.post('/monitors/%s/import' % folder_id, params=content)
+        return json.loads(response.text)
+
+    def get_root_folder(self):
+        response = self.get('/monitors/root')
+        return json.loads(response.text)
+
+    def delete_monitor_folder(self, folder_id):
+        return self.delete('/monitors/%s' % folder_id)
+
+    def search_monitor(self, query):
+        response = self.get('/monitors/search?query=%s' % query)
+        return json.loads(response.text)
