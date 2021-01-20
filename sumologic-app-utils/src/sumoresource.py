@@ -566,6 +566,23 @@ class App(SumoResource):
         print("job status: %s" % response.text)
         return response
 
+    def _create_backup_folder(self, new_app_folder_id, old_app_folder_id):
+        new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id)
+        parent_folder_id = new_folder_details["parentId"]
+
+        old_folder_details = self.sumologic_cli.get_folder_by_id(old_app_folder_id)
+        old_parent_folder_details = self.sumologic_cli.get_folder_by_id(old_folder_details["parentId"])
+
+        if old_parent_folder_details.get("parentId") == "0000000000000000":
+            back_up = "Back Up Old App"
+        else:
+            back_up = "Back Up " + old_parent_folder_details["name"]
+
+        backup_folder_id = self._get_app_folder({"name": back_up,
+                                                 "description": "The folder contains back up of all the apps that are updated using CloudFormation template."},
+                                                parent_folder_id)
+        return backup_folder_id
+
     def _create_or_fetch_apps_parent_folder(self, folder_prefix):
         response = self.sumologic_cli.get_personal_folder()
         folder_name = folder_prefix + str(datetime.now().strftime(" %d-%b-%Y"))
@@ -648,12 +665,7 @@ class App(SumoResource):
         data, new_app_folder_id = self.create(appname, source_params, appid, folder_name, s3url)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
-            # get the parent folder from new app folder. Create a OLD APPS folder in it.
-            # Copy the app_folder_id to OLD APPS.
-            new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id)
-            parent_folder_id = new_folder_details["parentId"]
-            backup_folder_id = self._get_app_folder({"name": "BackUpOldApps", "description": "The folder contains back up of all the apps that are updated using CloudFormation template."},
-                                                    parent_folder_id)
+            backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id)
             # Starting Folder Copy
             response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id)
             job_id = response.json()["id"]
@@ -664,6 +676,7 @@ class App(SumoResource):
             copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)", "- BackUp_" + datetime.now().strftime("%H:%M:%S")),
                                      "description": copied_folder_details["description"][:255]}
             self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details)
+            print("Back Up done for the APP: %s." % backup_folder_id)
         return data, new_app_folder_id
 
     def delete(self, app_folder_id, remove_on_delete_stack, *args, **kwargs):
