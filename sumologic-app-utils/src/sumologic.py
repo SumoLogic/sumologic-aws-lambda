@@ -3,7 +3,7 @@ import requests
 import time
 from random import uniform
 from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from requests.packages.urllib3.util.retry import Retry
 
 try:
     import cookielib

@@ -1296,7 +1296,7 @@ class AlertsMonitor(SumoResource):
         return response["id"]
 
     def import_monitor(self, folder_name, monitors3url, variables, suffix_date_time):
-        date_format = "%d-%b-%Y"
+        date_format = "%d-%b-%Y %H:%M:%S"
         root_folder_id = self._get_root_folder_id()
         content = self._get_content_from_s3(monitors3url, variables)
         content["name"] = folder_name + " " + datetime.utcnow().strftime(date_format) if suffix_date_time \
