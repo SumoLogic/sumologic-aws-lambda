@@ -83,7 +83,10 @@ function createRecords(config, events, awslogsData) {
             log.logStream = awslogsData.logStream;
             log.logGroup = awslogsData.logGroup;
         }
-        records.push(log);
+        if (log.message) {
+            // ignoring null & undefined messages
+            records.push(log);
+        }
     });
     return records;
 }
