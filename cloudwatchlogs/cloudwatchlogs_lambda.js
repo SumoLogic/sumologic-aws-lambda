@@ -216,11 +216,15 @@ exports.handler = function (event, context, callback) {
 
             var metadataKey = sumoMetaKey(awslogsData, log.message);
 
-            if (metadataKey in messageList) {
-                messageList[metadataKey].push(log);
-            } else {
-                messageList[metadataKey] = [log];
+            if (log.message) {
+                // ignoring null & undefined messages
+                if (metadataKey in messageList) {
+                    messageList[metadataKey].push(log);
+                } else {
+                    messageList[metadataKey] = [log];
+                }
             }
+
         });
 
         // Push messages to Sumo
