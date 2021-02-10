@@ -17,9 +17,10 @@ class SumoLogic(object):
 
     def __init__(self, accessId, accessKey, endpoint=None, cookieFile='cookies.txt'):
         self.session = requests.Session()
-        retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[502, 503, 504, 429])
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
-        self.session.mount('http://', HTTPAdapter(max_retries=retries))
+        retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 429])
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
         self.session.auth = (accessId, accessKey)
         self.session.headers = {'content-type': 'application/json', 'accept': 'application/json'}
         cj = cookielib.FileCookieJar(cookieFile)
@@ -300,3 +301,18 @@ class SumoLogic(object):
 
     def delete_existing_field(self, field_id):
         return self.delete('/fields/%s' % field_id)
+
+    def import_monitors(self, folder_id, content):
+        response = self.post('/monitors/%s/import' % folder_id, params=content)
+        return json.loads(response.text)
+
+    def export_monitors(self, folder_id):
+        response = self.get('/monitors/%s/export' % folder_id)
+        return json.loads(response.text)
+
+    def get_root_folder(self):
+        response = self.get('/monitors/root')
+        return json.loads(response.text)
+
+    def delete_monitor_folder(self, folder_id):
+        return self.delete('/monitors/%s' % folder_id)

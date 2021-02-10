@@ -4,6 +4,7 @@ import tempfile
 import time
 from abc import abstractmethod
 from datetime import datetime
+from random import uniform
 
 import requests
 import six
@@ -107,7 +108,7 @@ class Collector(SumoResource):
             collector_id = json.loads(resp.text)['collector']['id']
             print("created collector %s" % collector_id)
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 collector = self._get_collector_by_name(collector_name, collector_type.lower())
                 collector_id = collector['id']
                 print("fetched existing collector %s" % collector_id)
@@ -285,14 +286,14 @@ class BaseSource(SumoResource):
             source_json['useAutolineMatching'] = props['useAutolineMatching']
 
         # Adding Cutofftimestamp 24 hours.
-        source_json['cutoffTimestamp'] = int(round(time.time() * 1000)) - 24*60*60*1000
+        source_json['cutoffTimestamp'] = int(round(time.time() * 1000)) - 24 * 60 * 60 * 1000
 
         return source_json
 
 
 class AWSSource(BaseSource):
 
-    def build_source_params(self, props, source_json = None):
+    def build_source_params(self, props, source_json=None):
         # https://help.sumologic.com/03Send-Data/Sources/03Use-JSON-to-Configure-Sources/JSON-Parameters-for-Hosted-Sources#aws-log-sources
 
         source_json = source_json if source_json else {}
@@ -352,7 +353,7 @@ class AWSSource(BaseSource):
             print("created source %s" % source_id)
         except Exception as e:
             # Todo 100 sources in a collector is good. Same error code for duplicates in case of Collector and source.
-            if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
                         source_id = source["id"]
@@ -413,7 +414,7 @@ class HTTPSource(SumoResource):
             print("created source %s" % source_id)
         except Exception as e:
             # Todo 100 sources in a collector is good
-            if hasattr(e, 'response') and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
                         source_id = source["id"]
@@ -499,7 +500,7 @@ class App(SumoResource):
             response = self.sumologic_cli.create_folder(appdata["name"], appdata["description"][:255], parent_id)
             folder_id = response.json()["id"]
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'content:duplicate_content':
@@ -511,9 +512,11 @@ class App(SumoResource):
                 raise
         return folder_id
 
-    def _get_app_content(self, appname, source_params):
-        key_name = "ApiExported-" + re.sub(r"\s+", "-", appname) + ".json"
-        s3url = "https://app-json-store.s3.amazonaws.com/%s" % key_name
+    def _get_app_content(self, appname, source_params, s3url=None):
+        # Based on S3 URL provided download the data.
+        if not s3url:
+            key_name = "ApiExported-" + re.sub(r"\s+", "-", appname) + ".json"
+            s3url = "https://app-json-store.s3.amazonaws.com/%s" % key_name
         print("Fetching appjson %s" % s3url)
         with requests.get(s3url, stream=True) as r:
             r.raise_for_status()
@@ -563,6 +566,23 @@ class App(SumoResource):
         print("job status: %s" % response.text)
         return response
 
+    def _create_backup_folder(self, new_app_folder_id, old_app_folder_id):
+        new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id)
+        parent_folder_id = new_folder_details["parentId"]
+
+        old_folder_details = self.sumologic_cli.get_folder_by_id(old_app_folder_id)
+        old_parent_folder_details = self.sumologic_cli.get_folder_by_id(old_folder_details["parentId"])
+
+        if old_parent_folder_details.get("parentId") == "0000000000000000":
+            back_up = "Back Up Old App"
+        else:
+            back_up = "Back Up " + old_parent_folder_details["name"]
+
+        backup_folder_id = self._get_app_folder({"name": back_up,
+                                                 "description": "The folder contains back up of all the apps that are updated using CloudFormation template."},
+                                                parent_folder_id)
+        return backup_folder_id
+
     def _create_or_fetch_apps_parent_folder(self, folder_prefix):
         response = self.sumologic_cli.get_personal_folder()
         folder_name = folder_prefix + str(datetime.now().strftime(" %d-%b-%Y"))
@@ -571,23 +591,23 @@ class App(SumoResource):
             folder = self.sumologic_cli.create_folder(folder_name, description, response.json()['id'])
             return folder.json()["id"]
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'content:duplicate_content':
+                        response = self.sumologic_cli.get_personal_folder()
                         if "children" in response.json():
                             for children in response.json()["children"]:
                                 if "name" in children and children["name"] == folder_name:
                                     return children["id"]
-            else:
-                raise
+            raise
 
-    def create_by_import_api(self, appname, source_params, folder_name, *args, **kwargs):
+    def create_by_import_api(self, appname, source_params, folder_name, s3url, *args, **kwargs):
         # Add  retry if folder sync fails
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
-        content = self._get_app_content(appname, source_params)
+        content = self._get_app_content(appname, source_params, s3url)
 
         if folder_name:
             folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
@@ -609,12 +629,11 @@ class App(SumoResource):
 
         folder_id = None
 
-        while not folder_id:
-            if folder_name:
-                folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
-            else:
-                response = self.sumologic_cli.get_personal_folder()
-                folder_id = response.json()['id']
+        if folder_name:
+            folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
+        else:
+            response = self.sumologic_cli.get_personal_folder()
+            folder_id = response.json()['id']
 
         content = {'name': appname + datetime.now().strftime(" %d-%b-%Y %H:%M:%S"), 'description': appname,
                    'dataSourceValues': source_params, 'destinationFolderId': folder_id}
@@ -631,27 +650,22 @@ class App(SumoResource):
             return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
         else:
             print("%s installation failed." % appname)
-            response.raise_for_status()
+            raise Exception(response.text)
 
-    def create(self, appname, source_params, appid=None, folder_name=None, *args, **kwargs):
+    def create(self, appname, source_params, appid=None, folder_name=None, s3url=None, *args, **kwargs):
         if appid:
             return self.create_by_install_api(appid, appname, source_params, folder_name, *args, **kwargs)
         else:
-            return self.create_by_import_api(appname, source_params, folder_name, *args, **kwargs)
+            return self.create_by_import_api(appname, source_params, folder_name, s3url, *args, **kwargs)
 
-    def update(self, app_folder_id, appname, source_params, appid=None, folder_name=None, retain_old_app=False, *args,
-               **kwargs):
+    def update(self, app_folder_id, appname, source_params, appid=None, folder_name=None, retain_old_app=False,
+               s3url=None, *args, **kwargs):
         # Delete is called by CF itself on Old Resource if we create a new resource. So, no need to delete the resource here.
         # self.delete(app_folder_id, remove_on_delete_stack=True)
-        data, new_app_folder_id = self.create(appname, source_params, appid, folder_name)
+        data, new_app_folder_id = self.create(appname, source_params, appid, folder_name, s3url)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
-            # get the parent folder from new app folder. Create a OLD APPS folder in it.
-            # Copy the app_folder_id to OLD APPS.
-            new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id)
-            parent_folder_id = new_folder_details["parentId"]
-            backup_folder_id = self._get_app_folder({"name": "BackUpOldApps", "description": "The folder contains back up of all the apps that are updated using CloudFormation template."},
-                                                    parent_folder_id)
+            backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id)
             # Starting Folder Copy
             response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id)
             job_id = response.json()["id"]
@@ -662,6 +676,7 @@ class App(SumoResource):
             copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)", "- BackUp_" + datetime.now().strftime("%H:%M:%S")),
                                      "description": copied_folder_details["description"][:255]}
             self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details)
+            print("Back Up done for the APP: %s." % backup_folder_id)
         return data, new_app_folder_id
 
     def delete(self, app_folder_id, remove_on_delete_stack, *args, **kwargs):
@@ -681,8 +696,9 @@ class App(SumoResource):
             "appname": props.get("AppName"),
             "source_params": props.get("AppSources"),
             "folder_name": props.get("FolderName"),
-            "retain_old_app": props.get("RetainOldAppOnUpdate"),
-            "app_folder_id": app_folder_id
+            "retain_old_app": props.get("RetainOldAppOnUpdate") == 'true',
+            "app_folder_id": app_folder_id,
+            "s3url": props.get("AppJsonS3Url")
         }
 
 
@@ -708,7 +724,7 @@ class SumoLogicAWSExplorer(SumoResource):
             print("Hierarchy -  creation successful with ID %s" % hierarchy_id)
             return {"Hierarchy_Name": response.json()["name"]}, hierarchy_id
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'hierarchy:duplicate':
@@ -719,7 +735,7 @@ class SumoLogicAWSExplorer(SumoResource):
                         hierarchy_id = response.json()["id"]
                         print("Hierarchy -  update successful with ID %s" % hierarchy_id)
                         return {"Hierarchy_Name": hierarchy_name}, hierarchy_id
-            raise e
+            raise
 
     def create(self, hierarchy_name, level, hierarchy_filter, *args, **kwargs):
         return self.create_hierarchy(hierarchy_name, level, hierarchy_filter)
@@ -778,7 +794,7 @@ class SumoLogicMetricRules(SumoResource):
             print("METRIC RULES -  creation successful with Name %s" % job_name)
             return {"METRIC_RULES": response.json()["name"]}, job_name
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'metrics:rule_name_already_exists' \
@@ -786,9 +802,11 @@ class SumoLogicMetricRules(SumoResource):
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
                         if delete:
                             self.delete(metric_rule_name, metric_rule_name, True)
+                            # providing sleep for 10 seconds after delete.
+                            time.sleep(uniform(2, 10))
                             return self.create_metric_rule(metric_rule_name, match_expression, variables, False)
                         return {"METRIC_RULES": metric_rule_name}, metric_rule_name
-            raise e
+            raise
 
     def create(self, metric_rule_name, match_expression, variables, *args, **kwargs):
         return self.create_metric_rule(metric_rule_name, match_expression, variables)
@@ -957,7 +975,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             print("FER RULES -  creation successful with ID %s" % job_id)
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'fer:invalid_extraction_rule':
@@ -974,7 +992,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
                         if change_in_fer:
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
                         return {"FER_RULES": fer_name}, fer_details["id"]
-            raise e
+            raise
 
     def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
         """
@@ -1002,7 +1020,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             print("FER RULES -  update successful with ID %s" % job_id)
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
-            raise e
+            raise
 
     def delete(self, fer_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -1168,7 +1186,7 @@ class SumoLogicFieldsSchema(SumoResource):
             print("FIELD NAME -  creation successful with Field Id %s" % field_id)
             return {"FIELD_NAME": response["fieldName"]}, field_id
         except Exception as e:
-            if hasattr(e, 'response') and e.response.json()["errors"]:
+            if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'field:already_exists':
@@ -1176,7 +1194,7 @@ class SumoLogicFieldsSchema(SumoResource):
                         # Get the Field ID from the existing fields.
                         field_id = self.get_field_id(field_name)
                         return {"FIELD_NAME": field_name}, field_id
-            raise e
+            raise
 
     def create(self, field_name, *args, **kwargs):
         return self.add_field(field_name)
@@ -1247,6 +1265,85 @@ class EnterpriseOrTrialAccountCheck(SumoResource):
     def extract_params(self, event):
         props = event.get("ResourceProperties")
         return props
+
+
+class AlertsMonitor(SumoResource):
+
+    def _replace_variables(self, appjson_filepath, variables):
+        with open(appjson_filepath, 'r') as old_file:
+            text = old_file.read()
+            if variables:
+                for k, v in variables.items():
+                    text = text.replace("${%s}" % k, v)
+            appjson = json.loads(text)
+
+        return appjson
+
+    def _get_content_from_s3(self, s3url, variables):
+        with requests.get(s3url, stream=True) as r:
+            r.raise_for_status()
+            with tempfile.NamedTemporaryFile() as fp:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        fp.write(chunk)
+                fp.flush()
+                fp.seek(0)
+                appjson = self._replace_variables(fp.name, variables)
+        return appjson
+
+    def _get_root_folder_id(self):
+        response = self.sumologic_cli.get_root_folder()
+        return response["id"]
+
+    def import_monitor(self, folder_name, monitors3url, variables, suffix_date_time):
+        date_format = "%d-%b-%Y %H:%M:%S"
+        root_folder_id = self._get_root_folder_id()
+        content = self._get_content_from_s3(monitors3url, variables)
+        content["name"] = folder_name + " " + datetime.utcnow().strftime(date_format) if suffix_date_time \
+            else folder_name
+        response = self.sumologic_cli.import_monitors(root_folder_id, content)
+        import_id = response["id"]
+        print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
+        return {"ALERTS MONITORS": response["name"]}, import_id
+
+    def create(self, folder_name, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
+        return self.import_monitor(folder_name, monitors3url, variables, suffix_date_time)
+
+    def update(self, folder_id, folder_name, monitors3url, variables, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
+        data, new_folder_id = self.create(folder_name, monitors3url, variables, suffix_date_time)
+        if retain_old_alerts:
+            # Retaining old folder in the new folder as backup.
+            old_folder = self.sumologic_cli.export_monitors(folder_id)
+            old_folder["name"] = "Back Up " + old_folder["name"]
+            self.sumologic_cli.import_monitors(new_folder_id, old_folder)
+        print("ALERTS MONITORS - Update successful with ID %s." % new_folder_id)
+        return data, new_folder_id
+
+    def delete(self, folder_id, remove_on_delete_stack, *args, **kwargs):
+        if remove_on_delete_stack:
+            try:
+                self.sumologic_cli.delete_monitor_folder(folder_id)
+                print("ALERTS MONITORS - Completed the Deletion for Monitors Folder with ID " + str(folder_id))
+            except Exception as e:
+                print("ALERTS MONITORS - Exception while deleting the Monitors Folder %s," % e)
+        else:
+            print("ALERTS MONITORS - Skipping the Monitor Folder deletion")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+
+        folder_id = None
+        if event.get('PhysicalResourceId'):
+            _, folder_id = event['PhysicalResourceId'].split("/")
+
+        return {
+            "folder_name": props.get("FolderName"),
+            "monitors3url": props.get("MonitorsS3Url"),
+            "variables": props.get("Variables"),
+            "suffix_date_time": props.get("SuffixDateTime") == 'true',
+            "retain_old_alerts": props.get("RetainOldAlerts") == 'true',
+            "folder_id": folder_id,
+        }
 
 
 if __name__ == '__main__':
