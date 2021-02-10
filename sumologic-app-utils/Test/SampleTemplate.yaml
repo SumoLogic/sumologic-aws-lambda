@@ -48,7 +48,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.5
+        SemanticVersion: 2.0.6
 
   SumoLogicHelperPolicy:
     Type: AWS::IAM::Policy
@@ -245,6 +245,19 @@ Resources:
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
+  sumoAppWithCustomURL:
+    Type: Custom::App
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      AppName: "AWS Observability Api Gateway App"
+      FolderName: "My App with custom URL"
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+      AppJsonS3Url: "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.1.0/appjson/Alb-App.json"
+
   sumoAppwithUID:
     Type: Custom::App
     DependsOn: sumoApp
@@ -356,6 +369,20 @@ Resources:
       BucketPrefix: "djvsdvsbdjb"
       AccountID: !Ref "AWS::AccountId"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+
+  sumoMonitorAlerts:
+    Type: Custom::AlertsMonitor
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      FolderName: !Sub "Test Monitors"
+      MonitorsS3Url: !Sub "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.1.0/appjson/Alerts-App.json"
+      SuffixDateTime: true
+      RetainOldAlerts: true
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
 
 Outputs:
   EnterpriseCheck:
