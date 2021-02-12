@@ -1,0 +1,226 @@
+---
+Global:
+  TemplatePath: "../kinesisfirehose.template.yaml"
+  TestProjectName: BasicTestProject
+  ParallelTestsRun: 7
+  GlobalParameters:
+    Section1aCollectLogs: 'No'
+    Section2aCollectMetrics: 'No'
+    Section3aCreateS3Bucket: 'No'
+    # We are providing dummy values here, as we are testing expected resources and outputs and not functionality with test cases.
+    Section1bSumoLogicKinesisLogsURL: "https://localhost.com"
+    Section2bSumoLogicKinesisMetricsURL: "https://localhost.com"
+    Section3bFailedDataS3Bucket: "cf-templates-1teub4jja8pis-us-east-1"
+Tests:
+  - TestName: installnothing
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section3bFailedDataS3Bucket: "dummy"
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+  - TestName: installlogswithexistingbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section1aCollectLogs: 'Yes'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisLogsLogGroup
+            - KinesisLogsLogStream
+            - KinesisLogsLogStreamS3
+            - KinesisLogsRole
+            - KinesisLogsRolePolicy
+            - KinesisLogsDeliveryStream
+            - KinesisLogsFirehoseRolePolicy
+            - SubscriptionFilter
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - KinesisLogsDeliveryStreamARN
+            - KinesisLogsRoleARN
+            - KinesisLogsLogGroupARN
+  - TestName: installlogswithnewbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section1aCollectLogs: 'Yes'
+        Section3aCreateS3Bucket: 'Yes'
+        Section3bFailedDataS3Bucket: 'kinesis-firehose-testing-23173612910'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FailedDataBucket
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisLogsLogGroup
+            - KinesisLogsLogStream
+            - KinesisLogsLogStreamS3
+            - KinesisLogsRole
+            - KinesisLogsRolePolicy
+            - KinesisLogsDeliveryStream
+            - KinesisLogsFirehoseRolePolicy
+            - SubscriptionFilter
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - FailedDataBucketArn
+            - KinesisLogsDeliveryStreamARN
+            - KinesisLogsRoleARN
+            - KinesisLogsLogGroupARN
+  - TestName: installMetricswithexistingbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section2aCollectMetrics: 'Yes'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisMetricsLogGroup
+            - KinesisMetricsLogStream
+            - KinesisMetricsLogStreamS3
+            - KinesisMetricsRole
+            - KinesisMetricsRolePolicy
+            - KinesisMetricsDeliveryStream
+            - KinesisMetricsFirehoseRolePolicy
+            - KinesisMetricsCloudWatchMetricsStream
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - KinesisMetricsDeliveryStreamARN
+            - KinesisMetricsRoleARN
+            - KinesisMetricsLogGroupARN
+  - TestName: installmetricswithnewbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section2aCollectMetrics: 'Yes'
+        Section3aCreateS3Bucket: 'Yes'
+        Section3bFailedDataS3Bucket: 'kinesis-firehose-testing-792073615729'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FailedDataBucket
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisMetricsLogGroup
+            - KinesisMetricsLogStream
+            - KinesisMetricsLogStreamS3
+            - KinesisMetricsRole
+            - KinesisMetricsRolePolicy
+            - KinesisMetricsDeliveryStream
+            - KinesisMetricsFirehoseRolePolicy
+            - KinesisMetricsCloudWatchMetricsStream
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - FailedDataBucketArn
+            - KinesisMetricsDeliveryStreamARN
+            - KinesisMetricsRoleARN
+            - KinesisMetricsLogGroupARN
+  - TestName: installbothwithexistingbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section1aCollectLogs: 'Yes'
+        Section2aCollectMetrics: 'Yes'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisLogsLogGroup
+            - KinesisLogsLogStream
+            - KinesisLogsLogStreamS3
+            - KinesisLogsRole
+            - KinesisLogsRolePolicy
+            - KinesisLogsDeliveryStream
+            - KinesisLogsFirehoseRolePolicy
+            - SubscriptionFilter
+            - KinesisMetricsLogGroup
+            - KinesisMetricsLogStream
+            - KinesisMetricsLogStreamS3
+            - KinesisMetricsRole
+            - KinesisMetricsRolePolicy
+            - KinesisMetricsDeliveryStream
+            - KinesisMetricsFirehoseRolePolicy
+            - KinesisMetricsCloudWatchMetricsStream
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - KinesisLogsDeliveryStreamARN
+            - KinesisLogsRoleARN
+            - KinesisLogsLogGroupARN
+            - KinesisMetricsDeliveryStreamARN
+            - KinesisMetricsRoleARN
+            - KinesisMetricsLogGroupARN
+  - TestName: installbothwithnewbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section1aCollectLogs: 'Yes'
+        Section2aCollectMetrics: 'Yes'
+        Section3aCreateS3Bucket: 'Yes'
+        Section3bFailedDataS3Bucket: 'kinesis-firehose-testing-927329173612'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FailedDataBucket
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisLogsLogGroup
+            - KinesisLogsLogStream
+            - KinesisLogsLogStreamS3
+            - KinesisLogsRole
+            - KinesisLogsRolePolicy
+            - KinesisLogsDeliveryStream
+            - KinesisLogsFirehoseRolePolicy
+            - SubscriptionFilter
+            - KinesisMetricsLogGroup
+            - KinesisMetricsLogStream
+            - KinesisMetricsLogStreamS3
+            - KinesisMetricsRole
+            - KinesisMetricsRolePolicy
+            - KinesisMetricsDeliveryStream
+            - KinesisMetricsFirehoseRolePolicy
+            - KinesisMetricsCloudWatchMetricsStream
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - FailedDataBucketArn
+            - KinesisLogsDeliveryStreamARN
+            - KinesisLogsRoleARN
+            - KinesisLogsLogGroupARN
+            - KinesisMetricsDeliveryStreamARN
+            - KinesisMetricsRoleARN
+            - KinesisMetricsLogGroupARN

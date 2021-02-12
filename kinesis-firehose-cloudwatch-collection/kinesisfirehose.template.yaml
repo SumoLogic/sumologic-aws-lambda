@@ -1,0 +1,552 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Template to setup the AWS CloudWatch Logs and Metrics collection using Amazon Kinesis Firehose and send the data to provided Sumo Logic URLs."
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: "1. Sumo Logic Kinesis Firehose Logs Configuration"
+        Parameters:
+          - Section1aCollectLogs
+          - Section1bSumoLogicKinesisLogsURL
+
+      - Label:
+          default: "2. Sumo Logic Kinesis Firehose Metrics Configuration"
+        Parameters:
+          - Section2aCollectMetrics
+          - Section2bSumoLogicKinesisMetricsURL
+
+      - Label:
+          default: "3. Failed Data AWS S3 Bucket Configuration"
+        Parameters:
+          - Section3aCreateS3Bucket
+          - Section3bFailedDataS3Bucket
+
+    ParameterLabels:
+      Section1aCollectLogs:
+        default: "Collect AWS CloudWatch Logs using Kinesis Firehose"
+      Section1bSumoLogicKinesisLogsURL:
+        default: "Sumo Logic AWS Kinesis Firehose for Logs Source URL"
+
+      Section2aCollectMetrics:
+        default: "Collect AWS CloudWatch Metrics using Kinesis Firehose"
+      Section2bSumoLogicKinesisMetricsURL:
+        default: "Sumo Logic AWS Kinesis Firehose for Metrics Source URL"
+
+      Section3aCreateS3Bucket:
+        default: "Create AWS S3 Bucket"
+      Section3bFailedDataS3Bucket:
+        default: "AWS S3 Bucket Name for Failed Data"
+
+Parameters:
+  Section1aCollectLogs:
+    Type: String
+    Default: 'Yes'
+    Description: "Yes - Install all AWS resources to collect AWS Cloudwatch logs using kinesis Firehose.'.
+                  No - Skips the collection of AWS Cloudwatch logs."
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  Section1bSumoLogicKinesisLogsURL:
+    Type: String
+    Description: "Required when collecting AWS Cloudwatch Logs using Kinesis firehose. Provide HTTP Source Address from AWS Kinesis Firehose for Logs source created on your Sumo Logic account."
+    Default: ""
+
+  Section2aCollectMetrics:
+    Type: String
+    Default: 'Yes'
+    Description: "Yes - Install all AWS resources to collect AWS Cloudwatch Metrics using kinesis Firehose.'.
+                  No - Skips the collection of AWS Cloudwatch Metrics."
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  Section2bSumoLogicKinesisMetricsURL:
+    Type: String
+    Description: "Required when collecting AWS Cloudwatch Metrics using Kinesis firehose. Provide HTTP Source Address from AWS Kinesis Firehose for Metrics source created on your Sumo Logic account."
+    Default: ""
+
+  Section3aCreateS3Bucket:
+    Type: String
+    Default: 'Yes'
+    Description: "Yes - Create a new AWS S3 Bucket to store failed data.'.
+                  No - Use an existing AWS S3 Bucket to store failed data."
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  Section3bFailedDataS3Bucket:
+    Type: String
+    Description: "Provide a unique name of AWS S3 bucket where you would like to store Failed logs. For Logs, prefix is SumoLogic-Kinesis-Failed-Logs. For Metrics, prefix is SumoLogic-Kinesis-Failed-Metrics"
+    AllowedPattern: ".+"
+
+Conditions:
+  collect_logs: !Equals [ !Ref Section1aCollectLogs, 'Yes' ]
+  collect_metrics: !Equals [ !Ref Section2aCollectMetrics, 'Yes' ]
+
+  collect_any: !Or
+    - !Condition collect_logs
+    - !Condition collect_metrics
+
+  create_bucket: !And
+    - !Equals [ !Ref Section3aCreateS3Bucket, 'Yes' ]
+    - !Condition collect_any
+
+Rules:
+  testInstanceType:
+    RuleCondition: !Equals
+      - !Ref Section1aCollectLogs
+      - 'Yes'
+    Assertions:
+      - Assert: !Not
+          - !Equals
+            - !Ref Section1bSumoLogicKinesisLogsURL
+            - ''
+        AssertDescription: 'Sumo Logic AWS Kinesis Firehose for Logs Source URL can not be empty if you are collecting AWS Cloudwatch logs.'
+  prodInstanceType:
+    RuleCondition: !Equals
+      - !Ref Section2aCollectMetrics
+      - 'Yes'
+    Assertions:
+      - Assert: !Not
+          - !Equals
+            - !Ref Section2bSumoLogicKinesisMetricsURL
+            - ''
+        AssertDescription: 'Sumo Logic AWS Kinesis Firehose for Metrics Source URL can not be empty if you are collecting AWS Cloudwatch Metrics.'
+
+Mappings:
+  ArnValue:
+    us-east-1:
+      ArnValue: "aws"
+    us-east-2:
+      ArnValue: "aws"
+    us-west-1:
+      ArnValue: "aws"
+    us-west-2:
+      ArnValue: "aws"
+    af-south-1:
+      ArnValue: "aws"
+    ca-central-1:
+      ArnValue: "aws"
+    eu-central-1:
+      ArnValue: "aws"
+    eu-west-1:
+      ArnValue: "aws"
+    eu-west-2:
+      ArnValue: "aws"
+    eu-south-1:
+      ArnValue: "aws"
+    eu-west-3:
+      ArnValue: "aws"
+    eu-north-1:
+      ArnValue: "aws"
+    ap-east-1:
+      ArnValue: "aws"
+    ap-northeast-1:
+      ArnValue: "aws"
+    ap-northeast-2:
+      ArnValue: "aws"
+    ap-northeast-3:
+      ArnValue: "aws"
+    ap-southeast-1:
+      ArnValue: "aws"
+    ap-southeast-2:
+      ArnValue: "aws"
+    ap-south-1:
+      ArnValue: "aws"
+    me-south-1:
+      ArnValue: "aws"
+    sa-east-1:
+      ArnValue: "aws"
+    us-gov-west-1:
+      ArnValue: "aws-us-gov"
+    us-gov-east-1:
+      ArnValue: "aws-us-gov"
+    cn-north-1:
+      ArnValue: "aws"
+    cn-northwest-1:
+      ArnValue: "aws"
+
+Resources:
+  # Common Resources including creating bucket, create logs role and attach bucket policy.
+  FailedDataBucket:
+    Type: AWS::S3::Bucket
+    Condition: create_bucket
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W51
+            reason: "Role has been assigned permission to put logs in AWS S3 bucket."
+          - id: W35
+            reason: "Access logging not required for AWS S3 Bucket."
+          - id: W41
+            reason: "Encryption not required for AWS S3 Bucket."
+    Properties:
+      BucketName: !Ref Section3bFailedDataS3Bucket
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  FirehoseLogsRole:
+    Type: AWS::IAM::Role
+    Condition: collect_any
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'FirehoseAssumeRole'
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref "AWS::AccountId"
+
+  AttachBucketPolicyToFirehoseLogsRole:
+    Type: AWS::IAM::Policy
+    Condition: collect_any
+    Properties:
+      PolicyName: "S3BucketPermissionPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Resource:
+              - !Sub "arn:aws:s3:::${Section3bFailedDataS3Bucket}/*"
+              - !Sub "arn:aws:s3:::${Section3bFailedDataS3Bucket}"
+      Roles:
+        - Ref: FirehoseLogsRole
+
+  # Resources for AWS Kinesis Logs including log group, stream, delivery stream, subscription filter, policy and role.
+  KinesisLogsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: collect_logs
+    Properties:
+      LogGroupName: !Sub
+        - "/aws/kinesisfirehose/Kinesis-Logs-${StackID}"
+        - StackID: !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      RetentionInDays: 7
+
+  KinesisLogsLogStream:
+    Type: AWS::Logs::LogStream
+    Condition: collect_logs
+    Properties:
+      LogGroupName: !Ref KinesisLogsLogGroup
+      LogStreamName: "HttpEndpointDelivery"
+
+  KinesisLogsLogStreamS3:
+    Type: AWS::Logs::LogStream
+    Condition: collect_logs
+    Properties:
+      LogGroupName: !Ref KinesisLogsLogGroup
+      LogStreamName: "S3Delivery"
+
+  KinesisLogsRole:
+    Type: AWS::IAM::Role
+    Condition: collect_logs
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'LogsAssumeRole'
+            Effect: Allow
+            Principal:
+              Service: !Sub "logs.${AWS::Region}.amazonaws.com"
+            Action: sts:AssumeRole
+
+  KinesisLogsRolePolicy:
+    Type: AWS::IAM::Policy
+    Condition: collect_logs
+    Properties:
+      PolicyName: "KinesisFirehoseLogsPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - firehose:PutRecord
+              - firehose:PutRecordBatch
+              - kinesis:PutRecord
+              - kinesis:PutRecordBatch
+            Resource: !Sub
+              - "arn:${arn}:firehose:${Region}:${AccountId}:*"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                Region: !Ref "AWS::Region"
+                AccountId: !Ref "AWS::AccountId"
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !Sub
+              - "arn:${arn}:iam::${AccountId}:role/${KinesisLogsRole}"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                AccountId: !Ref "AWS::AccountId"
+                KinesisLogsRole: !Ref KinesisLogsRole
+      Roles:
+        - Ref: KinesisLogsRole
+
+  KinesisLogsDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Condition: collect_logs
+    Properties:
+      DeliveryStreamName: !Sub
+        - "Kinesis-Logs-${StackID}"
+        - StackID: !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      DeliveryStreamType: DirectPut
+      HttpEndpointDestinationConfiguration:
+        RoleARN: !GetAtt FirehoseLogsRole.Arn
+        EndpointConfiguration:
+          Url: !Ref Section1bSumoLogicKinesisLogsURL
+          Name: !Sub "${AWS::StackName}-sumologic-logs-endpoint"
+        RequestConfiguration:
+          ContentEncoding: GZIP
+        CloudWatchLoggingOptions:
+          Enabled: true
+          LogGroupName: !Ref KinesisLogsLogGroup
+          LogStreamName: !Ref KinesisLogsLogStream
+        BufferingHints:
+          IntervalInSeconds: 60
+          SizeInMBs: 4
+        RetryOptions:
+          DurationInSeconds: 60
+        S3BackupMode: FailedDataOnly
+        S3Configuration:
+          BucketARN: !If [create_bucket, !GetAtt FailedDataBucket.Arn, !Sub "arn:aws:s3:::${Section3bFailedDataS3Bucket}"]
+          CompressionFormat: UNCOMPRESSED
+          ErrorOutputPrefix: "SumoLogic-Kinesis-Failed-Logs/"
+          RoleARN: !GetAtt FirehoseLogsRole.Arn
+          CloudWatchLoggingOptions:
+            Enabled: true
+            LogGroupName: !Ref KinesisLogsLogGroup
+            LogStreamName: !Ref KinesisLogsLogStreamS3
+
+  KinesisLogsFirehoseRolePolicy:
+    Type: AWS::IAM::Policy
+    Condition: collect_logs
+    Properties:
+      PolicyName: "KinesisLogsLogStreamPermissionPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:PutLogEvents
+            Resource:
+              - !GetAtt KinesisLogsLogGroup.Arn
+              - !Sub "${KinesisLogsLogGroup.Arn}:log-stream:*"
+          - Effect: Allow
+            Action:
+              - kinesis:DescribeStream
+              - kinesis:GetShardIterator
+              - kinesis:GetRecords
+              - kinesis:ListShards
+            Resource:
+              - !GetAtt KinesisLogsDeliveryStream.Arn
+      Roles:
+        - Ref: FirehoseLogsRole
+
+  SubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: collect_logs
+    Properties:
+      RoleArn: !GetAtt KinesisLogsRole.Arn
+      LogGroupName: !Ref KinesisLogsLogGroup
+      FilterPattern: ''
+      DestinationArn: !GetAtt KinesisLogsDeliveryStream.Arn
+
+  # Resources for AWS Kinesis Metrics including log group, stream, delivery stream, subscription filter, policy and role.
+  KinesisMetricsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: collect_metrics
+    Properties:
+      LogGroupName: !Sub
+        - "/aws/kinesisfirehose/Kinesis-Metrics-${StackID}"
+        - StackID: !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      RetentionInDays: 7
+
+  KinesisMetricsLogStream:
+    Type: AWS::Logs::LogStream
+    Condition: collect_metrics
+    Properties:
+      LogGroupName: !Ref KinesisMetricsLogGroup
+      LogStreamName: "HttpEndpointDelivery"
+
+  KinesisMetricsLogStreamS3:
+    Type: AWS::Logs::LogStream
+    Condition: collect_metrics
+    Properties:
+      LogGroupName: !Ref KinesisMetricsLogGroup
+      LogStreamName: "S3Delivery"
+
+  KinesisMetricsRole:
+    Type: AWS::IAM::Role
+    Condition: collect_metrics
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'MetricsAssumeRole'
+            Effect: Allow
+            Principal:
+              Service: "streams.metrics.cloudwatch.amazonaws.com"
+            Action: sts:AssumeRole
+
+  KinesisMetricsRolePolicy:
+    Type: AWS::IAM::Policy
+    Condition: collect_metrics
+    Properties:
+      PolicyName: "KinesisFirehoseMetricsPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - firehose:PutRecord
+              - firehose:PutRecordBatch
+            Resource: !Sub
+              - "arn:${arn}:firehose:${Region}:${AccountId}:*"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                Region: !Ref "AWS::Region"
+                AccountId: !Ref "AWS::AccountId"
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !Sub
+              - "arn:${arn}:iam::${AccountId}:role/${KinesisMetricsRole}"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                AccountId: !Ref "AWS::AccountId"
+                KinesisMetricsRole: !Ref KinesisMetricsRole
+      Roles:
+        - Ref: KinesisMetricsRole
+
+  KinesisMetricsDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Condition: collect_metrics
+    Properties:
+      DeliveryStreamName: !Sub
+        - "Kinesis-Metrics-${StackID}"
+        - StackID: !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      DeliveryStreamType: DirectPut
+      HttpEndpointDestinationConfiguration:
+        RoleARN: !GetAtt FirehoseLogsRole.Arn
+        EndpointConfiguration:
+          Url: !Ref Section2bSumoLogicKinesisMetricsURL
+          Name: !Sub "${AWS::StackName}-sumologic-metrics-endpoint"
+        RequestConfiguration:
+          ContentEncoding: GZIP
+        CloudWatchLoggingOptions:
+          Enabled: true
+          LogGroupName: !Ref KinesisMetricsLogGroup
+          LogStreamName: !Ref KinesisMetricsLogStream
+        BufferingHints:
+          IntervalInSeconds: 60
+          SizeInMBs: 1
+        RetryOptions:
+          DurationInSeconds: 60
+        S3BackupMode: FailedDataOnly
+        S3Configuration:
+          BucketARN: !If [create_bucket, !GetAtt FailedDataBucket.Arn, !Sub "arn:aws:s3:::${Section3bFailedDataS3Bucket}"]
+          CompressionFormat: UNCOMPRESSED
+          ErrorOutputPrefix: "SumoLogic-Kinesis-Failed-Metrics/"
+          RoleARN: !GetAtt FirehoseLogsRole.Arn
+          CloudWatchLoggingOptions:
+            Enabled: true
+            LogGroupName: !Ref KinesisMetricsLogGroup
+            LogStreamName: !Ref KinesisMetricsLogStreamS3
+
+  KinesisMetricsFirehoseRolePolicy:
+    Type: AWS::IAM::Policy
+    Condition: collect_metrics
+    Properties:
+      PolicyName: "KinesisMetricsLogStreamPermissionPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:PutLogEvents
+            Resource:
+              - !GetAtt KinesisMetricsLogGroup.Arn
+              - !Sub "${KinesisMetricsLogGroup.Arn}:log-stream:*"
+          - Effect: Allow
+            Action:
+              - kinesis:DescribeStream
+              - kinesis:GetShardIterator
+              - kinesis:GetRecords
+              - kinesis:ListShards
+            Resource:
+              - !GetAtt KinesisMetricsDeliveryStream.Arn
+      Roles:
+        - Ref: FirehoseLogsRole
+
+  KinesisMetricsCloudWatchMetricsStream:
+    Type: AWS::CloudWatch::MetricStream
+    Condition: collect_metrics
+    Properties:
+      Name: !Ref "AWS::StackName"
+      FirehoseArn: !GetAtt KinesisMetricsDeliveryStream.Arn
+      RoleArn: !GetAtt KinesisMetricsRole.Arn
+
+Outputs:
+  FailedDataBucketArn:
+    Description: "S3 Bucket Arn where failed deliveries will be saved"
+    Condition: create_bucket
+    Value: !GetAtt FailedDataBucket.Arn
+
+  KinesisLogsDeliveryStreamARN:
+    Description: "The ARN for your Kinesis Firehose Delivery Stream, use this as the destination when adding CloudWatch Logs subscription filters."
+    Condition: collect_logs
+    Value: !GetAtt KinesisLogsDeliveryStream.Arn
+  KinesisLogsRoleARN:
+    Description: "The ARN for your CloudWatch Logs role to write to your delivery stream, use this as the role-arn when adding CloudWatch Logs subscription filters."
+    Condition: collect_logs
+    Value: !GetAtt KinesisLogsRole.Arn
+  KinesisLogsLogGroupARN:
+    Description: "The CloudWatch log group name where kinesis stream logs will be sent."
+    Condition: collect_logs
+    Value: !Ref KinesisLogsLogGroup
+
+  KinesisMetricsDeliveryStreamARN:
+    Description: "The ARN for your Kinesis Firehose Delivery Stream, use this as the destination when adding CloudWatch Metrics subscription filters."
+    Condition: collect_metrics
+    Value: !GetAtt KinesisMetricsDeliveryStream.Arn
+  KinesisMetricsRoleARN:
+    Description: "The ARN for your CloudWatch Logs role to write to your delivery stream, use this as the role-arn when adding CloudWatch Logs subscription filters."
+    Condition: collect_metrics
+    Value: !GetAtt KinesisMetricsRole.Arn
+  KinesisMetricsLogGroupARN:
+    Description: "The CloudWatch log group name where kinesis stream logs will be sent."
+    Condition: collect_metrics
+    Value: !Ref KinesisMetricsLogGroup
