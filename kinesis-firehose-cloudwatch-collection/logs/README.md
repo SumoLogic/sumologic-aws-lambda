@@ -17,16 +17,10 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
         Section1bSumoLogicKinesisLogsURL: "Required when collecting AWS Cloudwatch Logs using Kinesis firehose. 
                                            Provide HTTP Source Address from AWS Kinesis Firehose for Logs source created on your Sumo Logic account."
         
-        Section2aCollectMetrics: "Collect AWS CloudWatch Metrics using Kinesis Firehose."
-                               1. Yes - Install all AWS resources to collect AWS Cloudwatch Metrics using kinesis Firehose.
-                               2. No - Skips the collection of AWS Cloudwatch Metrics.
-        Section2bSumoLogicKinesisMetricsURL: "Required when collecting AWS Cloudwatch Metrics using Kinesis firehose. 
-                                              Provide HTTP Source Address from AWS Kinesis Firehose for Metrics source created on your Sumo Logic account."
-                                              
-        Section3aCreateS3Bucket: "Create AWS S3 Bucket"
+        Section2aCreateS3Bucket: "Create AWS S3 Bucket"
                                1. Yes - Create a new AWS S3 Bucket to store failed data.
                                2. No - Use an existing AWS S3 Bucket to store failed data.
-        Section3bFailedDataS3Bucket: "Provide a unique name of AWS S3 bucket where you would like to store Failed logs. 
+        Section2bFailedDataS3Bucket: "Provide a unique name of AWS S3 bucket where you would like to store Failed logs. 
                                       For Logs, prefix is SumoLogic-Kinesis-Failed-Logs. For Metrics, prefix is SumoLogic-Kinesis-Failed-Metrics"         
                        
     6. Click Deploy.
