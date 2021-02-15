@@ -1,6 +1,6 @@
-# sumologic-kinesis-firehose-collection
+# sumologic-kinesis-cloudwatch-logs
 
-This Server Less application is used to setup aws resources required to send cloudwatch logs and metrics to Sumo Logic using Amazon Kinesis Firehose.
+This Server Less application is used to setup aws resources required to send cloudwatch logs to Sumo Logic using Amazon Kinesis Firehose.
 
 Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
@@ -8,8 +8,8 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
 
     1. Open a browser window and enter the following URL: https://serverlessrepo.aws.amazon.com/applications
     2. Select Show apps that create custom IAM roles or resource policies check box.
-    3. In the Serverless Application Repository, search for sumologic-kinesis-firehose-collection.
-    4. Click the sumologic-kinesis-firehose-collection link, and then click Deploy.
+    3. In the Serverless Application Repository, search for sumologic-kinesis-cloudwatch-logs.
+    4. Click the sumologic-kinesis-cloudwatch-logs link, and then click Deploy.
     5. In the Configure application parameters panel,
         Section1aCollectLogs: "Collect AWS CloudWatch Logs using Kinesis Firehose."
                                1. Yes - Install all AWS resources to collect AWS Cloudwatch logs using kinesis Firehose.

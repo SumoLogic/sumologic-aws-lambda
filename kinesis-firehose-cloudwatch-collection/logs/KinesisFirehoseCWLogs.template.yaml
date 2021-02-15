@@ -1,7 +1,27 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: "Template to setup the AWS CloudWatch Logs collection using Amazon Kinesis Firehose and send the data to provided Sumo Logic URLs."
+Transform: AWS::Serverless-2016-10-31
+Description: "Template to setup the AWS CloudWatch Logs collection using Amazon Kinesis Firehose and send the data to provided Sumo Logic URL."
 
 Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This solution helps to setup the AWS CloudWatch Logs collection using Amazon Kinesis Firehose and send the data to provided Sumo Logic URL.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+      - lambda
+      - sumologic
+      - serverless
+      - kinesis
+      - firehose
+      - cloudwatch
+      - logs
+    Name: sumologic-kinesis-cloudwatch-logs
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/kinesis-firehose-cloudwatch-collection/logs
+    LicenseUrl: ./LICENSE
+    ReadmeUrl: ./README.md
+    SpdxLicenseId: Apache-2.0
+
   'AWS::CloudFormation::Interface':
     ParameterGroups:
       - Label:
