@@ -200,8 +200,14 @@ Resources:
               - s3:ListBucketMultipartUploads
               - s3:PutObject
             Resource:
-              - !Sub "arn:aws:s3:::${Section2bFailedDataS3Bucket}/*"
-              - !Sub "arn:aws:s3:::${Section2bFailedDataS3Bucket}"
+              - !Sub
+                - "arn:${arn}:s3:::${S3Bucket}/*"
+                - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                  S3Bucket: !Ref Section2bFailedDataS3Bucket
+              - !Sub
+                - "arn:${arn}:s3:::${S3Bucket}"
+                - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                  S3Bucket: !Ref Section2bFailedDataS3Bucket
       Roles:
         - Ref: FirehoseLogsRole
 
@@ -310,7 +316,13 @@ Resources:
           DurationInSeconds: 60
         S3BackupMode: FailedDataOnly
         S3Configuration:
-          BucketARN: !If [create_bucket, !GetAtt FailedDataBucket.Arn, !Sub "arn:aws:s3:::${Section2bFailedDataS3Bucket}"]
+          BucketARN: !If
+            - create_bucket
+            - !GetAtt FailedDataBucket.Arn
+            - !Sub
+              - "arn:${arn}:s3:::${S3Bucket}"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                S3Bucket: !Ref Section2bFailedDataS3Bucket
           CompressionFormat: UNCOMPRESSED
           ErrorOutputPrefix: "SumoLogic-Kinesis-Failed-Logs/"
           RoleARN: !GetAtt FirehoseLogsRole.Arn
