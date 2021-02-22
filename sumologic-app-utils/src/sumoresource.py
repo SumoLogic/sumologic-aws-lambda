@@ -385,29 +385,39 @@ class AWSSource(BaseSource):
             print("skipping source deletion")
 
 
-class HTTPSource(SumoResource):
-    # Todo refactor this to use basesource class
+class HTTPSource(BaseSource):
 
-    def create(self, collector_id, source_name, source_category, fields, message_per_request,
-               date_format=None, date_locator="\"timestamp\": (.*),", *args, **kwargs):
+    def build_source_params(self, props, source_json=None):
 
+        source_json = self.build_common_source_params(props, source_json)
+
+        source_json["messagePerRequest"] = props.get("MessagePerRequest") == 'true'
+        source_json["multilineProcessingEnabled"] = False if source_json["messagePerRequest"] else True
+        source_json["sourceType"] = "HTTP"
+
+        if props.get("SourceType"):
+            source_json.update({
+                "contentType": props.get("SourceType"),
+                "thirdPartyRef": {
+                    "resources": [{
+                        "serviceType": props.get("SourceType"),
+                        "path": {
+                            "type": props.get("SourceType") + "Path",
+                        },
+                        "authentication": {
+                            "type": "AWSRoleBasedAuthentication",
+                            "roleARN": props.get("RoleArn")
+                        }
+                    }]
+                }
+            })
+        return source_json
+
+    def create(self, collector_id, source_name, props, *args, **kwargs):
         endpoint = source_id = None
-        params = {
-            "sourceType": "HTTP",
-            "name": source_name,
-            "messagePerRequest": message_per_request,
-            "multilineProcessingEnabled": False if message_per_request else True,
-            "category": source_category
-        }
-        if date_format:
-            params["defaultDateFormats"] = [{"format": date_format, "locator": date_locator}]
-
-        # Fields condition
-        if fields:
-            params['fields'] = fields
-
+        source_json = {"source": self.build_source_params(props)}
         try:
-            resp = self.sumologic_cli.create_source(collector_id, {"source": params})
+            resp = self.sumologic_cli.create_source(collector_id, source_json)
             data = resp.json()['source']
             source_id = data["id"]
             endpoint = data["url"]
@@ -424,18 +434,10 @@ class HTTPSource(SumoResource):
                 raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
-    def update(self, collector_id, source_id, source_name, source_category, fields, date_format=None, date_locator=None, *args,
+    def update(self, collector_id, source_id, source_name, props, *args,
                **kwargs):
         sv, etag = self.sumologic_cli.source(collector_id, source_id)
-        sv['source']['category'] = source_category
-        sv['source']['name'] = source_name
-        if date_format:
-            sv['source']["defaultDateFormats"] = [{"format": date_format, "locator": date_locator}]
-        # Fields condition
-        existing_fields = sv['source']['fields']
-        if fields:
-            existing_fields.update(fields)
-            sv['source']['fields'] = existing_fields
+        sv['source'] = self.build_source_params(props, sv['source'])
 
         resp = self.sumologic_cli.update_source(collector_id, sv, etag)
         data = resp.json()['source']
@@ -455,19 +457,11 @@ class HTTPSource(SumoResource):
         if event.get('PhysicalResourceId'):
             _, source_id = event['PhysicalResourceId'].split("/")
 
-        fields = {}
-        if 'Fields' in props:
-            fields = props.get("Fields")
-
         return {
             "collector_id": props.get("CollectorId"),
             "source_name": props.get("SourceName"),
-            "source_category": props.get("SourceCategory"),
-            "date_format": props.get("DateFormat"),
-            "date_locator": props.get("DateLocatorRegex"),
-            "message_per_request": props.get("MessagePerRequest") == 'true',
             "source_id": source_id,
-            "fields": fields
+            "props": props,
         }
 
 
