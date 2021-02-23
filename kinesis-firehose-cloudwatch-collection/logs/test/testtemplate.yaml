@@ -2,34 +2,19 @@
 Global:
   TemplatePath: "../KinesisFirehoseCWLogs.template.yaml"
   TestProjectName: BasicTestProject
-  ParallelTestsRun: 7
+  ParallelTestsRun: 2
   GlobalParameters:
-    Section1aCollectLogs: 'No'
     Section2aCreateS3Bucket: 'No'
     # We are providing dummy values here, as we are testing expected resources and outputs and not functionality with test cases.
-    Section1bSumoLogicKinesisLogsURL: "https://localhost.com"
+    Section1aSumoLogicKinesisLogsURL: "https://localhost.com"
     Section2bFailedDataS3Bucket: "cf-templates-1teub4jja8pis-us-east-1"
 Tests:
-  - TestName: installnothing
-    Regions:
-      - us-east-1
-    Parameters:
-      Values:
-        Section2bFailedDataS3Bucket: "dummy"
-    Skip: false
-    Assertions:
-      - AssertType: ResourceExistence
-        Assert:
-          Resources:
-      - AssertType: OutputsCheck
-        Assert:
-          Outputs:
   - TestName: installlogswithexistingbucket
     Regions:
       - us-east-1
     Parameters:
       Values:
-        Section1aCollectLogs: 'Yes'
+        Section2aCreateS3Bucket: 'No'
     Skip: false
     Assertions:
       - AssertType: ResourceExistence
@@ -56,7 +41,6 @@ Tests:
       - us-east-1
     Parameters:
       Values:
-        Section1aCollectLogs: 'Yes'
         Section2aCreateS3Bucket: 'Yes'
         Section2bFailedDataS3Bucket: 'kinesis-firehose-testing-23173612910'
     Skip: false

@@ -1,9 +1,10 @@
 #!/bin/bash
 
 export AWS_REGION="us-east-1"
+# IMPORTANT - Update the profile where you would like to deploy SAM app.
 export AWS_PROFILE="personal"
 
-# Update the bucket value based on aws account you are deploying SAM app in.
+# IMPORTANT - Update the bucket value based on aws account you are deploying SAM app in.
 if [[ "${AWS_PROFILE}" == "personal" ]]
 then
     SAM_S3_BUCKET="sumologic-aws-observability-templates"

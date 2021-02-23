@@ -27,8 +27,7 @@ Metadata:
       - Label:
           default: "1. Sumo Logic Kinesis Firehose Metrics Configuration"
         Parameters:
-          - Section1aCollectMetrics
-          - Section1bSumoLogicKinesisMetricsURL
+          - Section1aSumoLogicKinesisMetricsURL
 
       - Label:
           default: "2. Failed Data AWS S3 Bucket Configuration"
@@ -37,9 +36,7 @@ Metadata:
           - Section2bFailedDataS3Bucket
 
     ParameterLabels:
-      Section1aCollectMetrics:
-        default: "Collect AWS CloudWatch Metrics using Kinesis Firehose"
-      Section1bSumoLogicKinesisMetricsURL:
+      Section1aSumoLogicKinesisMetricsURL:
         default: "Sumo Logic AWS Kinesis Firehose for Metrics Source URL"
 
       Section2aCreateS3Bucket:
@@ -48,18 +45,11 @@ Metadata:
         default: "AWS S3 Bucket Name for Failed Data"
 
 Parameters:
-  Section1aCollectMetrics:
+  Section1aSumoLogicKinesisMetricsURL:
     Type: String
-    Default: 'Yes'
-    Description: "Yes - Install all AWS resources to collect AWS Cloudwatch Metrics using kinesis Firehose.'.
-                  No - Skips the collection of AWS Cloudwatch Metrics."
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section1bSumoLogicKinesisMetricsURL:
-    Type: String
-    Description: "Required when collecting AWS Cloudwatch Metrics using Kinesis firehose. Provide HTTP Source Address from AWS Kinesis Firehose for Metrics source created on your Sumo Logic account."
-    Default: ""
+    Description: "Provide HTTP Source Address from AWS Kinesis Firehose for Metrics source created on your Sumo Logic account."
+    AllowedPattern: ".+"
+    ConstraintDescription: "Sumo Logic AWS Kinesis Firehose for Metrics Source URL can not be empty."
 
   Section2aCreateS3Bucket:
     Type: String
@@ -73,23 +63,10 @@ Parameters:
     Type: String
     Description: "Provide a unique name of AWS S3 bucket where you would like to store Failed logs. For Logs, prefix is SumoLogic-Kinesis-Failed-Logs. For Metrics, prefix is SumoLogic-Kinesis-Failed-Metrics"
     AllowedPattern: ".+"
+    ConstraintDescription: "AWS S3 Bucket Name can not be kept empty."
 
 Conditions:
-  collect_metrics: !Equals [ !Ref Section1aCollectMetrics, 'Yes' ]
-
   create_bucket: !Equals [ !Ref Section2aCreateS3Bucket, 'Yes' ]
-
-Rules:
-  testMetricsURL:
-    RuleCondition: !Equals
-      - !Ref Section1aCollectMetrics
-      - 'Yes'
-    Assertions:
-      - Assert: !Not
-          - !Equals
-            - !Ref Section1bSumoLogicKinesisMetricsURL
-            - ''
-        AssertDescription: 'Sumo Logic AWS Kinesis Firehose for Metrics Source URL can not be empty if you are collecting AWS Cloudwatch Metrics.'
 
 Mappings:
   ArnValue:
@@ -169,7 +146,6 @@ Resources:
 
   FirehoseLogsRole:
     Type: AWS::IAM::Role
-    Condition: collect_metrics
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -185,7 +161,6 @@ Resources:
 
   AttachBucketPolicyToFirehoseLogsRole:
     Type: AWS::IAM::Policy
-    Condition: collect_metrics
     Properties:
       PolicyName: "S3BucketPermissionPolicy"
       PolicyDocument:
@@ -214,7 +189,6 @@ Resources:
   # Resources for AWS Kinesis Metrics including log group, stream, delivery stream, subscription filter, policy and role.
   KinesisMetricsLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: collect_metrics
     Properties:
       LogGroupName: !Sub
         - "/aws/kinesisfirehose/Kinesis-Metrics-${StackID}"
@@ -229,21 +203,18 @@ Resources:
 
   KinesisMetricsLogStream:
     Type: AWS::Logs::LogStream
-    Condition: collect_metrics
     Properties:
       LogGroupName: !Ref KinesisMetricsLogGroup
       LogStreamName: "HttpEndpointDelivery"
 
   KinesisMetricsLogStreamS3:
     Type: AWS::Logs::LogStream
-    Condition: collect_metrics
     Properties:
       LogGroupName: !Ref KinesisMetricsLogGroup
       LogStreamName: "S3Delivery"
 
   KinesisMetricsRole:
     Type: AWS::IAM::Role
-    Condition: collect_metrics
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -256,7 +227,6 @@ Resources:
 
   KinesisMetricsRolePolicy:
     Type: AWS::IAM::Policy
-    Condition: collect_metrics
     Properties:
       PolicyName: "KinesisFirehoseMetricsPolicy"
       PolicyDocument:
@@ -284,7 +254,6 @@ Resources:
 
   KinesisMetricsDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
-    Condition: collect_metrics
     Properties:
       DeliveryStreamName: !Sub
         - "Kinesis-Metrics-${StackID}"
@@ -299,7 +268,7 @@ Resources:
       HttpEndpointDestinationConfiguration:
         RoleARN: !GetAtt FirehoseLogsRole.Arn
         EndpointConfiguration:
-          Url: !Ref Section1bSumoLogicKinesisMetricsURL
+          Url: !Ref Section1aSumoLogicKinesisMetricsURL
           Name: !Sub "${AWS::StackName}-sumologic-metrics-endpoint"
         RequestConfiguration:
           ContentEncoding: GZIP
@@ -331,7 +300,6 @@ Resources:
 
   KinesisMetricsFirehoseRolePolicy:
     Type: AWS::IAM::Policy
-    Condition: collect_metrics
     Properties:
       PolicyName: "KinesisMetricsLogStreamPermissionPolicy"
       PolicyDocument:
@@ -356,7 +324,6 @@ Resources:
 
   KinesisMetricsCloudWatchMetricsStream:
     Type: AWS::CloudWatch::MetricStream
-    Condition: collect_metrics
     Properties:
       Name: !Ref "AWS::StackName"
       FirehoseArn: !GetAtt KinesisMetricsDeliveryStream.Arn
@@ -370,13 +337,10 @@ Outputs:
 
   KinesisMetricsDeliveryStreamARN:
     Description: "The ARN for your Kinesis Firehose Delivery Stream, use this as the destination when adding CloudWatch Metrics subscription filters."
-    Condition: collect_metrics
     Value: !GetAtt KinesisMetricsDeliveryStream.Arn
   KinesisMetricsRoleARN:
     Description: "The ARN for your CloudWatch Logs role to write to your delivery stream, use this as the role-arn when adding CloudWatch Logs subscription filters."
-    Condition: collect_metrics
     Value: !GetAtt KinesisMetricsRole.Arn
   KinesisMetricsLogGroupARN:
     Description: "The CloudWatch log group name where kinesis stream logs will be sent."
-    Condition: collect_metrics
     Value: !Ref KinesisMetricsLogGroup

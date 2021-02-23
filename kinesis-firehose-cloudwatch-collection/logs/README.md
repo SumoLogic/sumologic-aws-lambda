@@ -11,11 +11,7 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
     3. In the Serverless Application Repository, search for sumologic-kinesis-cloudwatch-logs.
     4. Click the sumologic-kinesis-cloudwatch-logs link, and then click Deploy.
     5. In the Configure application parameters panel,
-        Section1aCollectLogs: "Collect AWS CloudWatch Logs using Kinesis Firehose."
-                               1. Yes - Install all AWS resources to collect AWS Cloudwatch logs using kinesis Firehose.
-                               2. No - Skips the collection of AWS Cloudwatch logs.
-        Section1bSumoLogicKinesisLogsURL: "Required when collecting AWS Cloudwatch Logs using Kinesis firehose. 
-                                           Provide HTTP Source Address from AWS Kinesis Firehose for Logs source created on your Sumo Logic account."
+        Section1aSumoLogicKinesisLogsURL: "Provide HTTP Source Address from AWS Kinesis Firehose for Logs source created on your Sumo Logic account."
         
         Section2aCreateS3Bucket: "Create AWS S3 Bucket"
                                1. Yes - Create a new AWS S3 Bucket to store failed data.

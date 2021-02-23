@@ -27,8 +27,7 @@ Metadata:
       - Label:
           default: "1. Sumo Logic Kinesis Firehose Logs Configuration"
         Parameters:
-          - Section1aCollectLogs
-          - Section1bSumoLogicKinesisLogsURL
+          - Section1aSumoLogicKinesisLogsURL
 
       - Label:
           default: "2. Failed Data AWS S3 Bucket Configuration"
@@ -37,9 +36,7 @@ Metadata:
           - Section2bFailedDataS3Bucket
 
     ParameterLabels:
-      Section1aCollectLogs:
-        default: "Collect AWS CloudWatch Logs using Kinesis Firehose"
-      Section1bSumoLogicKinesisLogsURL:
+      Section1aSumoLogicKinesisLogsURL:
         default: "Sumo Logic AWS Kinesis Firehose for Logs Source URL"
 
       Section2aCreateS3Bucket:
@@ -48,18 +45,11 @@ Metadata:
         default: "AWS S3 Bucket Name for Failed Data"
 
 Parameters:
-  Section1aCollectLogs:
+  Section1aSumoLogicKinesisLogsURL:
     Type: String
-    Default: 'Yes'
-    Description: "Yes - Install all AWS resources to collect AWS Cloudwatch logs using kinesis Firehose.'.
-                  No - Skips the collection of AWS Cloudwatch logs."
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-  Section1bSumoLogicKinesisLogsURL:
-    Type: String
-    Description: "Required when collecting AWS Cloudwatch Logs using Kinesis firehose. Provide HTTP Source Address from AWS Kinesis Firehose for Logs source created on your Sumo Logic account."
-    Default: ""
+    Description: "Provide HTTP Source Address from AWS Kinesis Firehose for Logs source created on your Sumo Logic account."
+    AllowedPattern: ".+"
+    ConstraintDescription: "Sumo Logic AWS Kinesis Firehose for Logs Source URL can not be empty."
 
   Section2aCreateS3Bucket:
     Type: String
@@ -73,23 +63,10 @@ Parameters:
     Type: String
     Description: "Provide a unique name of AWS S3 bucket where you would like to store Failed logs. For Logs, prefix is SumoLogic-Kinesis-Failed-Logs. For Metrics, prefix is SumoLogic-Kinesis-Failed-Metrics"
     AllowedPattern: ".+"
+    ConstraintDescription: "AWS S3 Bucket Name can not be kept empty."
 
 Conditions:
-  collect_logs: !Equals [ !Ref Section1aCollectLogs, 'Yes' ]
-
   create_bucket: !Equals [ !Ref Section2aCreateS3Bucket, 'Yes' ]
-
-Rules:
-  testLogsURL:
-    RuleCondition: !Equals
-      - !Ref Section1aCollectLogs
-      - 'Yes'
-    Assertions:
-      - Assert: !Not
-          - !Equals
-            - !Ref Section1bSumoLogicKinesisLogsURL
-            - ''
-        AssertDescription: 'Sumo Logic AWS Kinesis Firehose for Logs Source URL can not be empty if you are collecting AWS Cloudwatch logs.'
 
 Mappings:
   ArnValue:
@@ -169,7 +146,6 @@ Resources:
 
   FirehoseLogsRole:
     Type: AWS::IAM::Role
-    Condition: collect_logs
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -185,7 +161,6 @@ Resources:
 
   AttachBucketPolicyToFirehoseLogsRole:
     Type: AWS::IAM::Policy
-    Condition: collect_logs
     Properties:
       PolicyName: "S3BucketPermissionPolicy"
       PolicyDocument:
@@ -214,7 +189,6 @@ Resources:
   # Resources for AWS Kinesis Logs including log group, stream, delivery stream, subscription filter, policy and role.
   KinesisLogsLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: collect_logs
     Properties:
       LogGroupName: !Sub
         - "/aws/kinesisfirehose/Kinesis-Logs-${StackID}"
@@ -229,21 +203,18 @@ Resources:
 
   KinesisLogsLogStream:
     Type: AWS::Logs::LogStream
-    Condition: collect_logs
     Properties:
       LogGroupName: !Ref KinesisLogsLogGroup
       LogStreamName: "HttpEndpointDelivery"
 
   KinesisLogsLogStreamS3:
     Type: AWS::Logs::LogStream
-    Condition: collect_logs
     Properties:
       LogGroupName: !Ref KinesisLogsLogGroup
       LogStreamName: "S3Delivery"
 
   KinesisLogsRole:
     Type: AWS::IAM::Role
-    Condition: collect_logs
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -256,7 +227,6 @@ Resources:
 
   KinesisLogsRolePolicy:
     Type: AWS::IAM::Policy
-    Condition: collect_logs
     Properties:
       PolicyName: "KinesisFirehoseLogsPolicy"
       PolicyDocument:
@@ -286,7 +256,6 @@ Resources:
 
   KinesisLogsDeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
-    Condition: collect_logs
     Properties:
       DeliveryStreamName: !Sub
         - "Kinesis-Logs-${StackID}"
@@ -301,7 +270,7 @@ Resources:
       HttpEndpointDestinationConfiguration:
         RoleARN: !GetAtt FirehoseLogsRole.Arn
         EndpointConfiguration:
-          Url: !Ref Section1bSumoLogicKinesisLogsURL
+          Url: !Ref Section1aSumoLogicKinesisLogsURL
           Name: !Sub "${AWS::StackName}-sumologic-logs-endpoint"
         RequestConfiguration:
           ContentEncoding: GZIP
@@ -333,7 +302,6 @@ Resources:
 
   KinesisLogsFirehoseRolePolicy:
     Type: AWS::IAM::Policy
-    Condition: collect_logs
     Properties:
       PolicyName: "KinesisLogsLogStreamPermissionPolicy"
       PolicyDocument:
@@ -358,7 +326,6 @@ Resources:
 
   SubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: collect_logs
     Properties:
       RoleArn: !GetAtt KinesisLogsRole.Arn
       LogGroupName: !Ref KinesisLogsLogGroup
@@ -373,13 +340,10 @@ Outputs:
 
   KinesisLogsDeliveryStreamARN:
     Description: "The ARN for your Kinesis Firehose Delivery Stream, use this as the destination when adding CloudWatch Logs subscription filters."
-    Condition: collect_logs
     Value: !GetAtt KinesisLogsDeliveryStream.Arn
   KinesisLogsRoleARN:
     Description: "The ARN for your CloudWatch Logs role to write to your delivery stream, use this as the role-arn when adding CloudWatch Logs subscription filters."
-    Condition: collect_logs
     Value: !GetAtt KinesisLogsRole.Arn
   KinesisLogsLogGroupARN:
     Description: "The CloudWatch log group name where kinesis stream logs will be sent."
-    Condition: collect_logs
     Value: !Ref KinesisLogsLogGroup
