@@ -21,7 +21,7 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: ./LICENSE
+    LicenseUrl: ../LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../README.md
     SemanticVersion: 1.0.4
@@ -29,10 +29,10 @@ Metadata:
     SpdxLicenseId: Apache-2.0
 
 Parameters:
-    LambdaARN:
+    DestinationARN:
         Type : String
         Default: "arn:aws:lambda:us-east-1:123456789000:function:TestLambda"
-        Description: "Enter ARN for target lambda function"
+        Description: "Enter Destination ARN like Lambda function, Kinesis stream. For more information, visit - https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html"
 
     LogGroupPattern:
         Type : String
@@ -50,6 +50,15 @@ Parameters:
         Default: ""
         Description: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string. This is optional leave it blank if tag based filtering is not needed."
 
+    RoleArn:
+      Type: String
+      Default: ""
+      Description: "Enter AWS IAM Role arn in case the destination is Kinesis Firehose stream."
+
+Conditions:
+  create_invoke_permission: !Equals [ !Ref RoleArn, '' ]
+  create_pass_role: !Not [ !Condition create_invoke_permission ]
+
 Resources:
 
     SumoLogGroupLambdaConnector:
@@ -60,10 +69,11 @@ Resources:
         Runtime: nodejs10.x
         Environment:
           Variables:
-            LAMBDA_ARN: !Ref "LambdaARN"
+            DESTINATION_ARN: !Ref "DestinationARN"
             LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
             USE_EXISTING_LOG_GROUPS: !Ref "UseExistingLogs"
             LOG_GROUP_TAGS: !Join [",", {"Ref": "LogGroupTags"} ]
+            ROLE_ARN: !Ref "RoleArn"
         Policies:
           - Statement:
             - Sid: ReadWriteFilterPolicy
@@ -86,11 +96,28 @@ Resources:
                     - logs.amazonaws.com
                   eventName:
                     - CreateLogGroup
+
+    sumoIAMPassRolePolicy:
+        Type: AWS::IAM::Policy
+        Condition: create_pass_role
+        Properties:
+          PolicyName: "KinesisFirehoseLogsPolicy"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !Ref RoleArn
+          Roles:
+            - Ref: SumoLogGroupLambdaConnectorRole
+
     SumoCWLambdaInvokePermission:
         Type: AWS::Lambda::Permission
+        Condition: create_invoke_permission
         Properties:
           Action: lambda:InvokeFunction
-          FunctionName: !Ref "LambdaARN"
+          FunctionName: !Ref "DestinationARN"
           Principal: !Sub 'logs.${AWS::Region}.amazonaws.com'
           SourceAccount: !Ref AWS::AccountId
           SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
