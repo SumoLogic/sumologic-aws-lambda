@@ -16,8 +16,9 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
         Section2aCreateS3Bucket: "Create AWS S3 Bucket"
                                1. Yes - Create a new AWS S3 Bucket to store failed data.
                                2. No - Use an existing AWS S3 Bucket to store failed data.
-        Section2bFailedDataS3Bucket: "Provide a unique name of AWS S3 bucket where you would like to store Failed logs. 
-                                      For Logs, prefix is SumoLogic-Kinesis-Failed-Logs. For Metrics, prefix is SumoLogic-Kinesis-Failed-Metrics"         
+        Section2bFailedDataS3Bucket: "Provide a unique name of AWS S3 bucket where you would like to store Failed data.
+                                      In case of existing AWS S3 bucket, provide the bucket from the current AWS Account. 
+                                      For Metrics, failed data will be stored in folder prefix as SumoLogic-Kinesis-Failed-Metrics."         
                        
     6. Click Deploy.
 
