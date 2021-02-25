@@ -61,9 +61,9 @@ Parameters:
       - 'No'
   Section2bFailedDataS3Bucket:
     Type: String
-    Description: "Provide a unique name of AWS S3 bucket where you would like to store Failed logs. For Logs, prefix is SumoLogic-Kinesis-Failed-Logs. For Metrics, prefix is SumoLogic-Kinesis-Failed-Metrics"
-    AllowedPattern: ".+"
-    ConstraintDescription: "AWS S3 Bucket Name can not be kept empty."
+    Description: "Provide a unique name of AWS S3 bucket where you would like to store Failed data. In case of existing AWS S3 bucket, provide the bucket from the current AWS Account. For Logs, failed data will be stored in folder prefix as SumoLogic-Kinesis-Failed-Logs."
+    AllowedPattern: "[a-z0-9-.]{3,63}$"
+    ConstraintDescription: "3-63 characters; must contain only lowercase letters, numbers, hyphen or period. For more details - https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html"
 
 Conditions:
   create_bucket: !Equals [ !Ref Section2aCreateS3Bucket, 'Yes' ]
