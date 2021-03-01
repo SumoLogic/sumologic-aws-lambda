@@ -70,7 +70,7 @@ Conditions:
   create_pass_role: !Equals [ !Ref DestinationType, 'Kinesis' ]
 
 Rules:
-  testRoleArn:
+  testRoleArnWithLambda:
     RuleCondition: !Equals
       - !Ref DestinationType
       - Lambda
@@ -79,6 +79,16 @@ Rules:
           - !Ref RoleArn
           - ''
         AssertDescription: 'If Destination Type is Lambda, than the role ARN should be empty.'
+  testRoleArnWithKinesis:
+    RuleCondition: !Equals
+      - !Ref DestinationType
+      - Kinesis
+    Assertions:
+      - Assert: !Not
+          - !Equals
+            - !Ref RoleArn
+            - ''
+        AssertDescription: 'If Destination Type is Kinesis, than the role ARN can not be kept empty.'
 
 Resources:
 

@@ -1,4 +1,5 @@
 import subprocess
+import time
 import unittest
 import boto3
 from time import sleep
@@ -25,6 +26,7 @@ class TestLambda(unittest.TestCase):
         # Set Up AWS Clients
         self.log_group_client = boto3.client('logs', AWS_REGION)
         self.cf = boto3.client('cloudformation', AWS_REGION)
+        self.lambda_cl = boto3.client('lambda', AWS_REGION)
 
         # AWS Resource Names
         self.log_group_name = 'testloggroup-%s' % (datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"))
@@ -48,10 +50,11 @@ class TestLambda(unittest.TestCase):
         self.assert_subscription_filter("SumoLGLBDFilter")
 
     def test_2_existing_logs(self):
+        self.create_log_group()
         self.create_stack(self.stack_name, self.template_data, self.create_stack_parameters("Lambda", "true"))
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
-        self.create_log_group()
+        self.invoke_lambda()
         self.assert_subscription_filter("SumoLGLBDFilter")
 
     def test_3_kinesis(self):
@@ -62,10 +65,11 @@ class TestLambda(unittest.TestCase):
         self.assert_subscription_filter("SumoLGKinesisFilter")
 
     def test_4_existing_kinesis(self):
+        self.create_log_group()
         self.create_stack(self.stack_name, self.template_data, self.create_stack_parameters("Kinesis", "true"))
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
-        self.create_log_group()
+        self.invoke_lambda()
         self.assert_subscription_filter("SumoLGKinesisFilter")
 
     def create_stack_parameters(self, destination, existing, pattern='test'):
@@ -155,6 +159,18 @@ class TestLambda(unittest.TestCase):
         self.cf.validate_template(TemplateBody=template_data)
         return template_data
 
+    def invoke_lambda(self):
+        lambda_arn = self.outputs["LambdaARN"]
+        output = self.lambda_cl.invoke(
+            FunctionName=lambda_arn,
+            InvocationType='Event',
+            LogType='None',
+            Payload=bytes(json.dumps({"value": "test"}), "utf-8")
+        )
+        if output["StatusCode"] != 202:
+            raise Exception("Failed to invoke Lambda")
+        time.sleep(60)
+
 
 def read_file(file_path):
     file_path = os.path.join(os.path.dirname(os.getcwd()), file_path)
@@ -162,54 +178,8 @@ def read_file(file_path):
         return f.read().strip()
 
 
-def upload_code_in_multiple_regions():
-    regions = [
-        "us-east-2",
-        "us-east-1",
-        "us-west-1",
-        "us-west-2",
-        "ap-south-1",
-        "ap-northeast-2",
-        "ap-southeast-1",
-        "ap-southeast-2",
-        "ap-northeast-1",
-        "ca-central-1",
-        # "cn-north-1",
-        "eu-central-1",
-        "eu-west-1",
-        "eu-west-2",
-        "eu-west-3",
-        "sa-east-1"
-    ]
-
-    # for region in regions:
-    #     create_bucket(region)
-
-    for region in regions:
-        upload_to_s3(region)
-
-
 def get_bucket_name():
     return '%s-%s' % (BUCKET_PREFIX, AWS_REGION)
-
-
-def get_account_id():
-    client = boto3.client("sts", AWS_REGION)
-    account_id = client.get_caller_identity()["Account"]
-    return account_id
-
-
-def create_bucket(region):
-    s3 = boto3.client('s3', region)
-    bucket_name = get_bucket_name()
-    if region == "us-east-1":
-        response = s3.create_bucket(Bucket=bucket_name)
-    else:
-        response = s3.create_bucket(Bucket=bucket_name,
-                                    CreateBucketConfiguration={
-                                        'LocationConstraint': region
-                                    })
-    print("Creating bucket", region, response)
 
 
 def upload_to_s3(file_path):
@@ -219,20 +189,6 @@ def upload_to_s3(file_path):
     key = os.path.basename(file_path)
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), file_path)
     s3.upload_file(os.path.join(__file__, filename), bucket_name, key, ExtraArgs={'ACL': 'public-read'})
-
-
-def prod_deploy():
-    global BUCKET_PREFIX
-    BUCKET_PREFIX = 'appdevzipfiles'
-    upload_code_in_multiple_regions()
-    print("Uploading template file in S3")
-    s3 = boto3.client('s3', "us-east-1")
-    filename = os.path.join('test', 'loggroup-lambda-cft.json')
-    bucket_name = "appdev-cloudformation-templates"
-    key = os.path.basename(filename)
-    s3.upload_file(filename, bucket_name, key,
-                   ExtraArgs={'ACL': 'public-read'})
-    print("Deployment Successfull: ALL files copied to Sumocontent")
 
 
 def create_sam_package_and_upload():

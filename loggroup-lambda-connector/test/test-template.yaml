@@ -226,3 +226,7 @@ Outputs:
     Description: "Role ARN"
     Condition: create_pass_role
     Value: !GetAtt KinesisLogsRole.Arn
+
+  LambdaARN:
+    Description: "Role ARN"
+    Value: !GetAtt LogGroupConnector.Outputs.SumoLogGroupLambdaConnector
