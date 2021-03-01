@@ -326,6 +326,7 @@ Resources:
     Type: AWS::CloudWatch::MetricStream
     Properties:
       Name: !Ref "AWS::StackName"
+      OutputFormat: 'opentelemetry0.7'
       FirehoseArn: !GetAtt KinesisMetricsDeliveryStream.Arn
       RoleArn: !GetAtt KinesisMetricsRole.Arn
 
