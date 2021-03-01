@@ -33,7 +33,7 @@ Parameters:
   DestinationType:
     Type: String
     Description: "Lambda - When the destination ARN for subscription filter is an AWS Lambda Function.
-                    Kinesis - When the destination ARN for subscription filter is an Kinesis or Amazon Kinesis data firehose stream."
+                  Kinesis - When the destination ARN for subscription filter is an Kinesis or Amazon Kinesis data firehose stream."
     Default: 'Lambda'
     AllowedValues:
       - 'Lambda'

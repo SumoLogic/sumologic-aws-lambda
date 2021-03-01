@@ -9,10 +9,13 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
     3. Select Show apps that create custom IAM roles or resource policies check box.
     4. Click the sumologic-loggroup-connector,link, and then click Deploy.
     5. In the Configure application parameters panel,
-        LambdaARN: "Enter ARN for target lambda function" All loggroups matching the pattern are subscribed to this function
+        DestinationType: Lambda - When the destination ARN for subscription filter is an AWS Lambda Function.
+                         Kinesis - When the destination ARN for subscription filter is an Kinesis or Amazon Kinesis data firehose stream.
+        DestinationARN: "Enter Destination ARN like Lambda function, Kinesis stream. For more information, visit - https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html
         LogGroupPattern: "Enter regex for matching logGroups"
         UseExistingLogs: "Select true for subscribing existing logs"
-        LogGroupTags: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string. Supported only when UseExistingLogs is set to false."
+        LogGroupTags: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string. Supported only when UseExistingLogs is set to false.
+        RoleArn: Enter AWS IAM Role arn in case the destination is Kinesis Firehose stream."
     6. Click Deploy.
 
 
@@ -25,7 +28,9 @@ It has two environment variables
     Test - will match testlogroup, logtestgroup and LogGroupTest
 ```
 
-**LAMBDA_ARN**: This specifies ARN of the lambda functions. Also you have to specify FunctionName attribute in your lambda function so that AWS does not generate random function name. This is to avoid making changes to the lambda function configuration in case your lambda function gets created again.
+**DESTINATION_ARN**: This specifies ARN of the Destination to Subscribe the log group. 
+
+Lambda Destination ARN :- This specifies ARN of the Lambda function. Also you have to specify FunctionName attribute in your lambda function so that AWS does not generate random function name. This is to avoid making changes to the lambda function configuration in case your lambda function gets created again.
 
 ```
     {
@@ -42,22 +47,17 @@ It has two environment variables
     }
 ```
 
+Kinesis Destination ARN :- This specifies the ARN of the kinesis Stream.
+
 **USE_EXISTING_LOGS**: This is used for subscribing existing log groups. By setting this parameter to true and invoking the function manually, all the existing log groups matching the pattern will be subscribed to lambda function with `LAMBDA_ARN` as arn
 
-**LogGroupTags**: This is used for filtering out loggroups based on tags.Only loggroups which match any one of the key value pairs will be subscribed to the lambda function. This works only for new loggroups not existing loggroups.
+**LOG_GROUP_TAGS**: This is used for filtering out loggroups based on tags.Only loggroups which match any one of the key value pairs will be subscribed to the lambda function. This works only for new loggroups not existing loggroups.
+
+**ROLE_ARN** : This is used when subscription destination ARN is kinesis firehose stream.
 
 ### For Developers
 
-Installing Dependencies
-```
-  npm install
-```
-
-Building zip file
-```
-  npm run build
-```
-Upload the generated loggroup-lambda-connector.zip in S3 bucket(don't forget to change bucket name and key in cloudformation template)
+Installing Dependencies. Test cases requires [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html), [BOTO3](https://pypi.org/project/boto3/), [CFN FLIP](https://pypi.org/project/cfn-flip/) and Requests python packages.
 
 Running the test cases
 
