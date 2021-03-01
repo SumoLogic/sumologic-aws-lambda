@@ -10,7 +10,7 @@ import datetime
 import cfn_flip
 
 # Modify the name of the bucket prefix for testing
-BUCKET_PREFIX = "cf-templates-1qpf3unpuo1hw"
+BUCKET_PREFIX = "appdevstore"
 AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 
 
@@ -53,6 +53,20 @@ class TestLambda(unittest.TestCase):
         self.assertTrue(self.stack_exists(self.stack_name))
         self.create_log_group()
         self.assert_subscription_filter("SumoLGLBDFilter")
+
+    def test_3_kinesis(self):
+        self.create_stack(self.stack_name, self.template_data, self.create_stack_parameters("Kinesis", "false"))
+        print("Testing Stack Creation")
+        self.assertTrue(self.stack_exists(self.stack_name))
+        self.create_log_group()
+        self.assert_subscription_filter("SumoLGKinesisFilter")
+
+    def test_4_existing_kinesis(self):
+        self.create_stack(self.stack_name, self.template_data, self.create_stack_parameters("Kinesis", "true"))
+        print("Testing Stack Creation")
+        self.assertTrue(self.stack_exists(self.stack_name))
+        self.create_log_group()
+        self.assert_subscription_filter("SumoLGKinesisFilter")
 
     def create_stack_parameters(self, destination, existing, pattern='test'):
         return [
