@@ -5,7 +5,7 @@ async function sleep(waitTimeInMs) {
     return new Promise((resolve) => setTimeout(resolve, waitTimeInMs));
 }
 
-function subscribeToLambda(lambdaLogGroupName, destinationArn, roleArn, errorHandler) {
+function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn, errorHandler) {
     if (destinationArn.startsWith("arn:aws:lambda")){
         var params = {
             destinationArn: destinationArn,
@@ -62,7 +62,7 @@ async function subscribeExistingLogGroups(logGroups) {
             // sleep time between calls
             await sleep(1000*(process.env.SUBSCRIBE_DELAY_SECONDS || 2)); // 5 seconds
 
-            subscribeToLambda(logGroupName, destinationArn, roleArn, (function(inner_logGroupName) { return function (err, data) {
+            createSubscriptionFilter(logGroupName, destinationArn, roleArn, (function(inner_logGroupName) { return function (err, data) {
                 if (err) {
                     console.log("Error in subscribing", inner_logGroupName, err);
                 } else {
@@ -111,7 +111,7 @@ function processEvents(env, event, errorHandler) {
     var logGroupName = event.detail.requestParameters.logGroupName;
     if (filterLogGroups(event, env.LOG_GROUP_PATTERN)) {
         console.log("Subscribing: ", logGroupName, env.DESTINATION_ARN);
-        subscribeToLambda(logGroupName, env.DESTINATION_ARN, env.ROLE_ARN, errorHandler);
+        createSubscriptionFilter(logGroupName, env.DESTINATION_ARN, env.ROLE_ARN, errorHandler);
     } else {
         console.log("Unmatched: ", logGroupName, env.DESTINATION_ARN);
     }
