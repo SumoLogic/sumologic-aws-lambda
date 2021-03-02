@@ -9,9 +9,9 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
     3. Select Show apps that create custom IAM roles or resource policies check box.
     4. Click the sumologic-loggroup-connector,link, and then click Deploy.
     5. In the Configure application parameters panel,
-        DestinationType: Lambda - When the destination ARN for subscription filter is an AWS Lambda Function.
+        DestinationArnType: Lambda - When the destination ARN for subscription filter is an AWS Lambda Function.
                          Kinesis - When the destination ARN for subscription filter is an Kinesis or Amazon Kinesis data firehose stream.
-        DestinationARN: "Enter Destination ARN like Lambda function, Kinesis stream. For more information, visit - https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html
+        DestinationArnValue: "Enter Destination ARN like Lambda function, Kinesis stream. For more information, visit - https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html
         LogGroupPattern: "Enter regex for matching logGroups"
         UseExistingLogs: "Select true for subscribing existing logs"
         LogGroupTags: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string. Supported only when UseExistingLogs is set to false.

@@ -24,13 +24,13 @@ Metadata:
     LicenseUrl: ../LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.4
+    SemanticVersion: 1.0.5
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
 Parameters:
 
-  DestinationType:
+  DestinationArnType:
     Type: String
     Description: "Lambda - When the destination ARN for subscription filter is an AWS Lambda Function.
                   Kinesis - When the destination ARN for subscription filter is an Kinesis or Amazon Kinesis data firehose stream."
@@ -39,7 +39,7 @@ Parameters:
       - 'Lambda'
       - 'Kinesis'
 
-  DestinationARN:
+  DestinationArnValue:
     Type: String
     Default: "arn:aws:lambda:us-east-1:123456789000:function:TestLambda"
     Description: "Enter Destination ARN like Lambda function, Kinesis stream. For more information, visit - https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html"
@@ -66,13 +66,13 @@ Parameters:
     Description: "Enter AWS IAM Role arn in case the destination is Kinesis Firehose stream."
 
 Conditions:
-  create_invoke_permission: !Equals [ !Ref DestinationType, 'Lambda' ]
-  create_pass_role: !Equals [ !Ref DestinationType, 'Kinesis' ]
+  create_invoke_permission: !Equals [ !Ref DestinationArnType, 'Lambda' ]
+  create_pass_role: !Equals [ !Ref DestinationArnType, 'Kinesis' ]
 
 Rules:
   testRoleArnWithLambda:
     RuleCondition: !Equals
-      - !Ref DestinationType
+      - !Ref DestinationArnType
       - Lambda
     Assertions:
       - Assert: !Equals
@@ -81,7 +81,7 @@ Rules:
         AssertDescription: 'If Destination Type is Lambda, than the role ARN should be empty.'
   testRoleArnWithKinesis:
     RuleCondition: !Equals
-      - !Ref DestinationType
+      - !Ref DestinationArnType
       - Kinesis
     Assertions:
       - Assert: !Not
@@ -100,7 +100,7 @@ Resources:
       Runtime: nodejs10.x
       Environment:
         Variables:
-          DESTINATION_ARN: !Ref "DestinationARN"
+          DESTINATION_ARN: !Ref "DestinationArnValue"
           LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
           USE_EXISTING_LOG_GROUPS: !Ref "UseExistingLogs"
           LOG_GROUP_TAGS: !Join [ ",", { "Ref": "LogGroupTags" } ]
@@ -148,7 +148,7 @@ Resources:
     Condition: create_invoke_permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref "DestinationARN"
+      FunctionName: !Ref "DestinationArnValue"
       Principal: !Sub 'logs.${AWS::Region}.amazonaws.com'
       SourceAccount: !Ref AWS::AccountId
       SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'

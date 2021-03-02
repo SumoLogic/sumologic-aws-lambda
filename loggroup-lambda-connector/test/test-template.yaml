@@ -210,8 +210,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${BucketName}.s3.amazonaws.com/packaged.yaml"
       Parameters:
-        DestinationType: !Ref DestinationType
-        DestinationARN: !If [ create_invoke_permission, !GetAtt DummyLambda.Arn, !GetAtt KinesisLogsDeliveryStream.Arn ]
+        DestinationArnType: !Ref DestinationType
+        DestinationArnValue: !If [ create_invoke_permission, !GetAtt DummyLambda.Arn, !GetAtt KinesisLogsDeliveryStream.Arn ]
         LogGroupPattern: !Ref LogGroupPattern
         UseExistingLogs: !Ref UseExistingLogs
         RoleArn: !If [ create_invoke_permission, "", !GetAtt KinesisLogsRole.Arn ]
