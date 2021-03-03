@@ -97,7 +97,7 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: "loggroup-lambda-connector.handler"
-      Runtime: nodejs10.x
+      Runtime: nodejs14.x
       Environment:
         Variables:
           DESTINATION_ARN: !Ref "DestinationArnValue"
