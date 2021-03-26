@@ -207,6 +207,8 @@ Resources:
     Type: AWS::CloudFormation::CustomResource
     Version: "1.0"
     Condition: invoke_existing
+    DeletionPolicy : "Retain"
+    UpdateReplacePolicy: "Retain"
     Properties:
       ServiceToken: !GetAtt SumoLogGroupExistingLambdaConnector.Arn
       DESTINATION_ARN: !Ref "DestinationArnValue"
