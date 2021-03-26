@@ -54,7 +54,7 @@ class TestLambda(unittest.TestCase):
         self.create_stack(self.stack_name, self.template_data, self.create_stack_parameters("Lambda", "true"))
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
-        self.invoke_lambda()
+        #self.invoke_lambda()
         self.assert_subscription_filter("SumoLGLBDFilter")
 
     def test_3_kinesis(self):
@@ -62,15 +62,15 @@ class TestLambda(unittest.TestCase):
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
         self.create_log_group()
-        self.assert_subscription_filter("SumoLGKinesisFilter")
+        self.assert_subscription_filter("SumoLGLBDFilter")
 
     def test_4_existing_kinesis(self):
         self.create_log_group()
         self.create_stack(self.stack_name, self.template_data, self.create_stack_parameters("Kinesis", "true"))
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
-        self.invoke_lambda()
-        self.assert_subscription_filter("SumoLGKinesisFilter")
+        #self.invoke_lambda()
+        self.assert_subscription_filter("SumoLGLBDFilter")
 
     def create_stack_parameters(self, destination, existing, pattern='test'):
         return [

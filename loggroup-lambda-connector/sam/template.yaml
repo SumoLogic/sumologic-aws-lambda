@@ -6,7 +6,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 300
+    Timeout: 900
     MemorySize: 128
 
 Metadata:
@@ -69,6 +69,8 @@ Conditions:
   create_invoke_permission: !Equals [ !Ref DestinationArnType, 'Lambda' ]
   create_pass_role: !Equals [ !Ref DestinationArnType, 'Kinesis' ]
 
+  invoke_existing: !Equals [ !Ref UseExistingLogs, 'true' ]
+
 Rules:
   testRoleArnWithLambda:
     RuleCondition: !Equals
@@ -97,12 +99,11 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: "loggroup-lambda-connector.handler"
-      Runtime: nodejs14.x
+      Runtime: nodejs12.x
       Environment:
         Variables:
           DESTINATION_ARN: !Ref "DestinationArnValue"
           LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
-          USE_EXISTING_LOG_GROUPS: !Ref "UseExistingLogs"
           LOG_GROUP_TAGS: !Join [ ",", { "Ref": "LogGroupTags" } ]
           ROLE_ARN: !Ref "RoleArn"
       Policies:
@@ -115,6 +116,12 @@ Resources:
                 - logs:PutSubscriptionFilter
               Resource:
                 - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+            - Sid: InvokePolicy
+              Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
       Events:
         LambdaTrigger:
           Type: CloudWatchEvent
@@ -152,6 +159,59 @@ Resources:
       Principal: !Sub 'logs.${AWS::Region}.amazonaws.com'
       SourceAccount: !Ref AWS::AccountId
       SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+
+  SumoLogGroupExistingLambdaConnector:
+    Type: AWS::Serverless::Function
+    Condition: invoke_existing
+    Properties:
+      InlineCode: |
+        var aws = require('aws-sdk');
+        var response = require('cfn-response');
+
+        exports.handler = function(event, context) {
+            var lambda = new aws.Lambda();
+            var payload = {"existingLogs": "true", "token": ""};
+            var responseStatus = "FAILED";
+            var responseData = {};
+            lambda.invoke(
+                {
+                  InvocationType: 'Event',
+                  FunctionName: process.env.FUNCTION_NAME,
+                  Payload: JSON.stringify(payload),
+                }, function(err, invokeResult) {
+                  if (err) {
+                      responseData = {Error: "Invoke call failed"};
+                      console.log(responseData.Error + ":\n", err);
+                  }
+                  else {
+                    responseStatus = "SUCCESS";
+                  }
+                  response.send(event, context, responseStatus, responseData);
+            });
+        };
+      Handler: "index.handler"
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          FUNCTION_NAME: !Ref SumoLogGroupLambdaConnector
+      Policies:
+        - Statement:
+            - Sid: InvokePolicy
+              Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}'
+
+  primerinvoke:
+    Type: AWS::CloudFormation::CustomResource
+    Version: "1.0"
+    Condition: invoke_existing
+    Properties:
+      ServiceToken: !GetAtt SumoLogGroupExistingLambdaConnector.Arn
+      DESTINATION_ARN: !Ref "DestinationArnValue"
+      LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
+      ROLE_ARN: !Ref "RoleArn"
 
 Outputs:
 
