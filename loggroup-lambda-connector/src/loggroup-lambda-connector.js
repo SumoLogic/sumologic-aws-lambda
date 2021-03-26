@@ -94,7 +94,7 @@ function processExistingLogGroups(token, context, errorHandler) {
             invoke_lambda(context, data.nextToken, errorHandler);
             console.log("Lambda invoke complete with token " + data.nextToken);
         } else {
-            console.log("ALl Log Groups are subscribed to Destination Type " + process.env.DESTINATION_ARN);
+            console.log("All Log Groups are subscribed to Destination Type " + process.env.DESTINATION_ARN);
             errorHandler(null, "Success");
         }
     };
