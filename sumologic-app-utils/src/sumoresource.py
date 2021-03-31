@@ -396,8 +396,9 @@ class HTTPSource(BaseSource):
         source_json["sourceType"] = "HTTP"
 
         if props.get("SourceType"):
+            source_json["contentType"] = props.get("SourceType")
+        if "RoleArn" in props and props.get("RoleArn"):
             source_json.update({
-                "contentType": props.get("SourceType"),
                 "thirdPartyRef": {
                     "resources": [{
                         "serviceType": props.get("SourceType"),
