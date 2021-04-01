@@ -49,8 +49,6 @@ Lambda Destination ARN :- This specifies ARN of the Lambda function. Also you ha
 
 Kinesis Destination ARN :- This specifies the ARN of the kinesis Stream.
 
-**USE_EXISTING_LOGS**: This is used for subscribing existing log groups. By setting this parameter to true and invoking the function manually, all the existing log groups matching the pattern will be subscribed to lambda function with `LAMBDA_ARN` as arn
-
 **LOG_GROUP_TAGS**: This is used for filtering out loggroups based on tags.Only loggroups which match any one of the key value pairs will be subscribed to the lambda function. This works only for new loggroups not existing loggroups.
 
 **ROLE_ARN** : This is used when subscription destination ARN is kinesis firehose stream.
@@ -64,7 +62,6 @@ Running the test cases
 ```
   python test_loggroup_lambda_connector.py
 ```
-Run the above command after building the zip file
 
 ## License
 
