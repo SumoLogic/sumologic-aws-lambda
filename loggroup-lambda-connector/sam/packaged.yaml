@@ -21,9 +21,9 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://cf-templates-1qpf3unpuo1hw-us-east-1/test-log-group-lambda-connector/6092dd6c323e33634657102f570628e0
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.5/6092dd6c323e33634657102f570628e0
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://cf-templates-1qpf3unpuo1hw-us-east-1/test-log-group-lambda-connector/946832fcaabeea8d4fa5580eb13fd90c
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.5/5a9a6e956be7449cbd5f8653e4475071
     SemanticVersion: 1.0.5
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
@@ -107,7 +107,7 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://cf-templates-1qpf3unpuo1hw-us-east-1/test-log-group-lambda-connector/0d12ca7b2219c4fc3fe3cd29d6ba56d0
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.5/8cd9d2fd91333ef1c32307ccb5f6bbd3
       Handler: loggroup-lambda-connector.handler
       Runtime: nodejs12.x
       Environment:
@@ -207,10 +207,12 @@ Resources:
           - lambda:InvokeFunction
           Resource:
           - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}
-  primerinvoke:
+  InvokeLambdaConnector:
     Type: AWS::CloudFormation::CustomResource
     Version: '1.0'
     Condition: invoke_existing
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       ServiceToken:
         Fn::GetAtt:
