@@ -1,6 +1,7 @@
 var AWS = require("aws-sdk");
 const util = require("util");
 var cwl = new AWS.CloudWatchLogs({apiVersion: '2014-03-28'});
+var maxRetryCounter = 3;
 
 async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn) {
     if (destinationArn.startsWith("arn:aws:lambda")){
@@ -53,7 +54,7 @@ function filterLogGroups(event, logGroupRegex) {
     return false;
 }
 
-async function subscribeExistingLogGroups(logGroups, counter) {
+async function subscribeExistingLogGroups(logGroups, retryCounter) {
     var logGroupRegex = new RegExp(process.env.LOG_GROUP_PATTERN, "i");
     var destinationArn = process.env.DESTINATION_ARN;
     var roleArn = process.env.ROLE_ARN;
@@ -73,9 +74,9 @@ async function subscribeExistingLogGroups(logGroups, counter) {
         }
     }, Promise.resolve());
 
-    if (counter < 4 && failedLogGroupNames.length > 0) {
-        console.log("Retrying Subscription for Failed Log Groups due to throttling with counter number as " + counter);
-        await subscribeExistingLogGroups(failedLogGroupNames, counter + 1);
+    if (retryCounter <= maxRetryCounter && failedLogGroupNames.length > 0) {
+        console.log("Retrying Subscription for Failed Log Groups due to throttling with counter number as " + retryCounter);
+        await subscribeExistingLogGroups(failedLogGroupNames, retryCounter + 1);
     }
 }
 
@@ -100,7 +101,7 @@ function processExistingLogGroups(token, context, errorHandler) {
         });
     });
     var cb = async function (data) {
-        await subscribeExistingLogGroups(data.logGroups, 0);
+        await subscribeExistingLogGroups(data.logGroups, 1);
         if (data.nextToken) {// if next set of log groups exists, invoke next instance of lambda
             console.log("Log Groups remaining...Calling the lambda again with token " + data.nextToken);
             invoke_lambda(context, data.nextToken, errorHandler);

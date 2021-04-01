@@ -203,7 +203,7 @@ Resources:
               Resource:
                 - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}'
 
-  primerinvoke:
+  InvokeLambdaConnector:
     Type: AWS::CloudFormation::CustomResource
     Version: "1.0"
     Condition: invoke_existing
