@@ -6,7 +6,7 @@ Description: '"Lambda Function for automatic subscription of any Sumo Logic lamb
   '
 Globals:
   Function:
-    Timeout: 300
+    Timeout: 900
     MemorySize: 128
 Metadata:
   AWS::ServerlessRepo::Application:
@@ -21,17 +21,27 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.4/5122657d5b9a0d3713e24d3a33eae431
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.5/6092dd6c323e33634657102f570628e0
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.4/c98f2c0d986a3f55fbea539688ee6a2e
-    SemanticVersion: 1.0.4
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.5/5a9a6e956be7449cbd5f8653e4475071
+    SemanticVersion: 1.0.5
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 Parameters:
-  LambdaARN:
+  DestinationArnType:
+    Type: String
+    Description: Lambda - When the destination ARN for subscription filter is an AWS
+      Lambda Function. Kinesis - When the destination ARN for subscription filter
+      is an Kinesis or Amazon Kinesis data firehose stream.
+    Default: Lambda
+    AllowedValues:
+    - Lambda
+    - Kinesis
+  DestinationArnValue:
     Type: String
     Default: arn:aws:lambda:us-east-1:123456789000:function:TestLambda
-    Description: Enter ARN for target lambda function
+    Description: Enter Destination ARN like Lambda function, Kinesis stream. For more
+      information, visit - https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html
   LogGroupPattern:
     Type: String
     Default: Test
@@ -49,25 +59,69 @@ Parameters:
     Description: Enter comma separated keyvalue pairs for filtering logGroups using
       tags. Ex KeyName1=string,KeyName2=string. This is optional leave it blank if
       tag based filtering is not needed.
+  RoleArn:
+    Type: String
+    Default: ''
+    Description: Enter AWS IAM Role arn in case the destination is Kinesis Firehose
+      stream.
+Conditions:
+  create_invoke_permission:
+    Fn::Equals:
+    - Ref: DestinationArnType
+    - Lambda
+  create_pass_role:
+    Fn::Equals:
+    - Ref: DestinationArnType
+    - Kinesis
+  invoke_existing:
+    Fn::Equals:
+    - Ref: UseExistingLogs
+    - 'true'
+Rules:
+  testRoleArnWithLambda:
+    RuleCondition:
+      Fn::Equals:
+      - Ref: DestinationArnType
+      - Lambda
+    Assertions:
+    - Assert:
+        Fn::Equals:
+        - Ref: RoleArn
+        - ''
+      AssertDescription: If Destination Type is Lambda, than the role ARN should be
+        empty.
+  testRoleArnWithKinesis:
+    RuleCondition:
+      Fn::Equals:
+      - Ref: DestinationArnType
+      - Kinesis
+    Assertions:
+    - Assert:
+        Fn::Not:
+        - Fn::Equals:
+          - Ref: RoleArn
+          - ''
+      AssertDescription: If Destination Type is Kinesis, than the role ARN can not
+        be kept empty.
 Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.4/8822c7aea452b5df042a0d22e4ecd99d
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.5/8cd9d2fd91333ef1c32307ccb5f6bbd3
       Handler: loggroup-lambda-connector.handler
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Environment:
         Variables:
-          LAMBDA_ARN:
-            Ref: LambdaARN
+          DESTINATION_ARN:
+            Ref: DestinationArnValue
           LOG_GROUP_PATTERN:
             Ref: LogGroupPattern
-          USE_EXISTING_LOG_GROUPS:
-            Ref: UseExistingLogs
           LOG_GROUP_TAGS:
             Fn::Join:
             - ','
             - Ref: LogGroupTags
+          ROLE_ARN:
+            Ref: RoleArn
       Policies:
       - Statement:
         - Sid: ReadWriteFilterPolicy
@@ -78,6 +132,12 @@ Resources:
           - logs:PutSubscriptionFilter
           Resource:
           - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
+        - Sid: InvokePolicy
+          Effect: Allow
+          Action:
+          - lambda:InvokeFunction
+          Resource:
+          - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
       Events:
         LambdaTrigger:
           Type: CloudWatchEvent
@@ -90,18 +150,80 @@ Resources:
                 - logs.amazonaws.com
                 eventName:
                 - CreateLogGroup
+  sumoIAMPassRolePolicy:
+    Type: AWS::IAM::Policy
+    Condition: create_pass_role
+    Properties:
+      PolicyName: KinesisFirehoseLogsPolicy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - iam:PassRole
+          Resource:
+            Ref: RoleArn
+      Roles:
+      - Ref: SumoLogGroupLambdaConnectorRole
   SumoCWLambdaInvokePermission:
     Type: AWS::Lambda::Permission
+    Condition: create_invoke_permission
     Properties:
       Action: lambda:InvokeFunction
       FunctionName:
-        Ref: LambdaARN
+        Ref: DestinationArnValue
       Principal:
         Fn::Sub: logs.${AWS::Region}.amazonaws.com
       SourceAccount:
         Ref: AWS::AccountId
       SourceArn:
         Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*
+  SumoLogGroupExistingLambdaConnector:
+    Type: AWS::Serverless::Function
+    Condition: invoke_existing
+    Properties:
+      InlineCode: "var aws = require('aws-sdk');\nvar response = require('cfn-response');\n\
+        \nexports.handler = function(event, context) {\n    var lambda = new aws.Lambda();\n\
+        \    var payload = {\"existingLogs\": \"true\", \"token\": \"\"};\n    var\
+        \ responseStatus = \"FAILED\";\n    var responseData = {};\n    lambda.invoke(\n\
+        \        {\n          InvocationType: 'Event',\n          FunctionName: process.env.FUNCTION_NAME,\n\
+        \          Payload: JSON.stringify(payload),\n        }, function(err, invokeResult)\
+        \ {\n          if (err) {\n              responseData = {Error: \"Invoke call\
+        \ failed\"};\n              console.log(responseData.Error + \":\\n\", err);\n\
+        \          }\n          else {\n            responseStatus = \"SUCCESS\";\n\
+        \          }\n          response.send(event, context, responseStatus, responseData);\n\
+        \    });\n};\n"
+      Handler: index.handler
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          FUNCTION_NAME:
+            Ref: SumoLogGroupLambdaConnector
+      Policies:
+      - Statement:
+        - Sid: InvokePolicy
+          Effect: Allow
+          Action:
+          - lambda:InvokeFunction
+          Resource:
+          - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}
+  InvokeLambdaConnector:
+    Type: AWS::CloudFormation::CustomResource
+    Version: '1.0'
+    Condition: invoke_existing
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - SumoLogGroupExistingLambdaConnector
+        - Arn
+      DESTINATION_ARN:
+        Ref: DestinationArnValue
+      LOG_GROUP_PATTERN:
+        Ref: LogGroupPattern
+      ROLE_ARN:
+        Ref: RoleArn
 Outputs:
   SumoLogGroupLambdaConnector:
     Description: SumoLogGroupLambdaConnector Function ARN
