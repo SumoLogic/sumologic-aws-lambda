@@ -54,10 +54,11 @@ Metadata:
     - benchmark
     - guardduty
     Name: sumologic-guardduty-benchmark
-    LicenseUrl: ./LICENSE
+    LicenseUrl: ../LICENSE
     ReadmeUrl: ./README.md
     SemanticVersion: 1.0.10
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
+    SpdxLicenseId: Apache-2.0
 
 Parameters:
   CollectorName:
@@ -85,7 +86,7 @@ Parameters:
       - us1
       - in
       - fed
-    Description: "Enter au, ca, de, eu, jp, us2, or us1"
+    Description: "Enter in, fed, au, ca, de, eu, jp, us2, or us1"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -109,7 +110,7 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
     Type: AWS::Serverless::Function
 
   SumoAppUtils:
@@ -117,7 +118,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.24
+        SemanticVersion: 2.0.6
 
   SumoHostedCollector:
     Type: Custom::Collector
@@ -151,7 +152,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
-      AppName: "Amazon GuardDuty Benchmark"
+      AppName: "Global Intelligence for Amazon GuardDuty"
       AppId: "8e7efcb3-040a-4a92-9f8d-922fafb24afb"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       AppSources:
