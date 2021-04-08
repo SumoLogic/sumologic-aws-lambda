@@ -1,13 +1,16 @@
+import copy
 import datetime
+import json
 import os
 import subprocess
 import sys
+import time
 import unittest
 
 import boto3
+from sumologic import SumoLogic
 
 # Update the below values in case the template locations are changed.
-from sumologic import SumoLogic
 
 GUARD_DUTY_BENCHMARK_TEMPLATE = "guarddutybenchmark/template_v2.yaml"
 GUARD_DUTY_BENCHMARK_SAM_TEMPLATE = "guarddutybenchmark/packaged_v2.yaml"
@@ -18,6 +21,7 @@ GUARD_DUTY_SAM_TEMPLATE = "guardduty/packaged.yaml"
 # Update the below values with preferred bucket name and aws region.
 BUCKET_NAME = ""
 AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+
 # Update the below values with preferred access id, access key and deployment
 SUMO_ACCESS_ID = ""
 SUMO_ACCESS_KEY = ""
@@ -31,6 +35,7 @@ def read_file(file_path):
 
 
 def create_sam_package_and_upload(template, packaged_template, bucket_prefix):
+    print("Generating SAM package for the template %s at location %s." % (template, packaged_template))
     template_file_path = os.path.join(os.path.dirname(os.getcwd()), template)
     packaged_template_path = os.path.join(os.path.dirname(os.getcwd()), packaged_template)
 
@@ -38,16 +43,8 @@ def create_sam_package_and_upload(template, packaged_template, bucket_prefix):
     run_command(["sam", "package", "--template-file", template_file_path,
                  "--output-template-file", packaged_template_path, "--s3-bucket", BUCKET_NAME,
                  "--s3-prefix", bucket_prefix])
-    # Upload the packaged template to S3
-    upload_to_s3(packaged_template_path)
-
-
-def upload_to_s3(file_path):
-    print("Uploading %s file in S3 region: %s" % (file_path, AWS_REGION))
-    s3 = boto3.client('s3', AWS_REGION)
-    key = os.path.basename(file_path)
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), file_path)
-    s3.upload_file(os.path.join(__file__, filename), BUCKET_NAME, key, ExtraArgs={'ACL': 'public-read'})
+    print("Generation complete for SAM template %s with files uploaded to Bucket %s, Prefix %s." % (
+        packaged_template, BUCKET_NAME, bucket_prefix))
 
 
 def _run(command, input=None, check=False, **kwargs):
@@ -82,9 +79,15 @@ def run_command(cmdargs):
 
 class SumoLogicResource(object):
 
-    def __init__(self):
+    def __init__(self, source_category, finding_types, delay):
+        print("Initializing SumoLogicResource Object.")
         self.sumo = SumoLogic(SUMO_ACCESS_ID, SUMO_ACCESS_KEY, self.api_endpoint)
         self.verificationErrors = []
+        self.delay = delay
+        self.source_category = source_category
+        self.findings = copy.deepcopy(finding_types)
+        self.findings.append("CreateSampleFindings")
+        print("Initialization complete for SumoLogicResource Object.")
 
     @property
     def api_endpoint(self):
@@ -95,22 +98,62 @@ class SumoLogicResource(object):
         else:
             return 'https://%s-api.sumologic.net/api' % SUMO_DEPLOYMENT
 
+    def fetch_logs(self):
+        raw_messages = []
+        # fetch Last 10 Minutes logs
+        to_time = int(time.time()) * 1000
+        from_time = to_time - self.delay * 60 * 1000
+        search_query = '_sourceCategory=%s' % self.source_category
+        search_job_response = self.sumo.search_job(search_query, fromTime=from_time, toTime=to_time, timeZone="IST")
+        print("Search Jobs API success with JOB ID as %s." % search_job_response["id"])
+        state = "GATHERING RESULTS"
+        message_count = 0
+        while state == "GATHERING RESULTS":
+            response = self.sumo.search_job_status(search_job_response)
+            if response and "state" in response:
+                state = response["state"]
+                if state == "DONE GATHERING RESULTS":
+                    message_count = response["messageCount"]
+                elif state != "GATHERING RESULTS":
+                    state = "EXIT"
+                else:
+                    time.sleep(2)
+        if message_count != 0:
+            messages = self.sumo.search_job_messages(search_job_response, message_count, 0)
+            if messages and "messages" in messages:
+                messages = messages["messages"]
+                for message in messages:
+                    if "map" in message and "_raw" in message["map"]:
+                        raw_messages.append(json.loads(message["map"]["_raw"]))
+        print("Received message count as %s." % len(raw_messages))
+        return raw_messages
+
+    # Validate the specific findings generated
+    def assert_logs(self):
+        messages = self.fetch_logs()
+        for finding_type in self.findings:
+            try:
+                assert any((("type" in d and d["type"] == finding_type)
+                            or ("eventName" in d and d["eventName"] == finding_type)) for d in messages)
+            except AssertionError as e:
+                self.verificationErrors.append(str(e))
+
     def assert_collector(self, collector_id, assertions):
-        collector_details = self.sumo.collector(collector_id)
-        assertions(collector_details, assertions)
+        collector_details, etag = self.sumo.collector(collector_id)
+        self.assertions(collector_details['collector'], assertions)
 
     def assert_httpsource(self, collector_id, source_id, assertions):
-        source_details = self.sumo.source(collector_id, source_id)
-        assertions(source_details, assertions)
+        source_details, etag = self.sumo.source(collector_id, source_id)
+        self.assertions(source_details['source'], assertions)
 
     def assert_app(self, folder_id, assertions):
         folder_details = self.sumo.get_folder(folder_id)
-        assertions(folder_details, assertions)
+        self.assertions(json.loads(folder_details.text), assertions)
 
     def assertions(self, data, assertions):
         for key, value in assertions.items():
             try:
-                assert value == data[key]
+                assert value == data[key] or value in data[key]
             except AssertionError as e:
                 self.verificationErrors.append(str(e))
 
@@ -130,12 +173,14 @@ class CloudFormation(object):
             if stack['StackStatus'] == 'DELETE_COMPLETE':
                 continue
             if self.stack_name == stack['StackName'] and stack['StackStatus'] == 'CREATE_COMPLETE':
-                print("%s stack exists" % self.stack_name)
+                print("%s stack exists." % self.stack_name)
                 stack_data = self.cf.describe_stacks(StackName=self.stack_name)
                 outputs_stacks = stack_data["Stacks"][0]["Outputs"]
                 for output in outputs_stacks:
                     self.outputs[output["OutputKey"]] = output["OutputValue"]
+                print("Fetched Outputs from Stack.")
                 self._fetch_resources()
+                print("Fetched Resources from Stack.")
                 return True
         return False
 
@@ -159,7 +204,7 @@ class CloudFormation(object):
             'Parameters': self.create_stack_parameters(parameters)
         }
         stack_result = self.cf.create_stack(**params)
-        print('Creating {}'.format(self.stack_name), stack_result)
+        print('Creating {}.'.format(self.stack_name), stack_result)
         waiter = self.cf.get_waiter('stack_create_complete')
         print("...waiting for stack to be ready...")
         waiter.wait(StackName=self.stack_name)
@@ -169,7 +214,7 @@ class CloudFormation(object):
             'StackName': self.stack_name
         }
         stack_result = self.cf.delete_stack(**params)
-        print('Deleting {}'.format(self.stack_name), stack_result)
+        print('Deleting {}.'.format(self.stack_name), stack_result)
         waiter = self.cf.get_waiter('stack_delete_complete')
         print("...waiting for stack to be removed...")
         waiter.wait(StackName=self.stack_name)
@@ -177,7 +222,7 @@ class CloudFormation(object):
     @staticmethod
     def create_stack_parameters(parameters_dict):
         parameters = []
-        for key, value in parameters_dict:
+        for key, value in parameters_dict.items():
             parameters.append({
                 'ParameterKey': key,
                 'ParameterValue': value
@@ -187,11 +232,20 @@ class CloudFormation(object):
 
 class TestGuardDutyBenchmark(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestGuardDutyBenchmark, cls).setUpClass()
+        create_sam_package_and_upload(GUARD_DUTY_BENCHMARK_TEMPLATE, GUARD_DUTY_BENCHMARK_SAM_TEMPLATE,
+                                      "guarddutybenchmark")
+        print("Completed SetUp for All test Cases.")
+
     def setUp(self):
         # Parameters
         self.collector_name = "Test GuardDuty Benchmark Lambda"
         self.source_name = "GuardDuty Benchmark"
         self.source_category = "Labs/test/guard/duty/benchmark"
+        self.finding_types = ["Policy:S3/AccountBlockPublicAccessDisabled", "Policy:S3/BucketPublicAccessGranted"]
+        self.delay = 7
 
         # Get GuardDuty details
         self.guard_duty = boto3.client('guardduty', AWS_REGION)
@@ -200,7 +254,7 @@ class TestGuardDutyBenchmark(unittest.TestCase):
             self.detector_id = response["DetectorIds"][0]
 
         # Get CloudFormation client
-        self.cf = CloudFormation("TestGuardDutyBenchmark", GUARD_DUTY_BENCHMARK_TEMPLATE)
+        self.cf = CloudFormation("TestGuardDutyBenchmark", GUARD_DUTY_BENCHMARK_SAM_TEMPLATE)
         self.parameters = {
             "SumoDeployment": SUMO_DEPLOYMENT,
             "SumoAccessID": SUMO_ACCESS_ID,
@@ -211,7 +265,7 @@ class TestGuardDutyBenchmark(unittest.TestCase):
             "RemoveSumoResourcesOnDeleteStack": "true"
         }
         # Get Sumo Logic Client
-        self.sumo_resource = SumoLogicResource()
+        self.sumo_resource = SumoLogicResource(self.source_category, self.finding_types, self.delay)
 
     def tearDown(self):
         if self.cf.stack_exists():
@@ -219,11 +273,13 @@ class TestGuardDutyBenchmark(unittest.TestCase):
 
     def test_guard_duty_benchmark(self):
         self.cf.create_stack(self.parameters)
-        print("Testing Stack Creation")
+        print("Testing Stack Creation.")
         self.assertTrue(self.cf.stack_exists())
-        # Generate some sample findings
-        self.guard_duty.create_sample_findings(DetectorId=self.detector_id)
+        # Generate some specific sample findings
+        print("Generating sample GuardDuty findings.")
+        self.guard_duty.create_sample_findings(DetectorId=self.detector_id, FindingTypes=self.finding_types)
         # Check if the app, collector and source is installed
+        print("Validate Collector, source and app.")
         resources = sorted(self.cf.resources, key=lambda i: i['Type'])
         collector_id = ""
         for resource in resources:
@@ -244,8 +300,16 @@ class TestGuardDutyBenchmark(unittest.TestCase):
                     "name": "Global Intelligence for Amazon GuardDuty",
                     "itemType": "Folder"
                 })
+        print("Waiting for %s minutes for logs to appear in Sumo Logic." % self.delay)
+        time.sleep(self.delay * 60)
         # Go to SumoLogic and check if you received the logs
         # Assert one of the log for JSON format to check correctness
+        print("Validate Logs in Sumo Logic.")
+        self.sumo_resource.assert_logs()
+
+        if len(self.sumo_resource.verificationErrors) > 0:
+            print("Assertions failures are:- %s." % '\n'.join(self.sumo_resource.verificationErrors))
+            assert len(self.sumo_resource.verificationErrors) == 0
 
 
 if __name__ == '__main__':
