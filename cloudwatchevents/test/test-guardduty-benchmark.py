@@ -87,6 +87,7 @@ class SumoLogicResource(object):
         self.source_category = source_category
         self.findings = copy.deepcopy(finding_types)
         self.findings.append("CreateSampleFindings")
+        self.findings.append("Exfiltration:IAMUser/AnomalousBehavior")
         print("Initialization complete for SumoLogicResource Object.")
 
     @property
@@ -136,7 +137,8 @@ class SumoLogicResource(object):
                 assert any((("type" in d and d["type"] == finding_type)
                             or ("eventName" in d and d["eventName"] == finding_type)) for d in messages)
             except AssertionError as e:
-                self.verificationErrors.append(str(e))
+                self.verificationErrors.append(
+                    "Finding Type \" %s \" not found in the Logs fetched from Sumo Logic." % finding_type)
 
     def assert_collector(self, collector_id, assertions):
         collector_details, etag = self.sumo.collector(collector_id)
@@ -155,7 +157,9 @@ class SumoLogicResource(object):
             try:
                 assert value == data[key] or value in data[key]
             except AssertionError as e:
-                self.verificationErrors.append(str(e))
+                self.verificationErrors.append(
+                    "Expected Value \" %s \" does not match the current value \" %s \" for the Key "
+                    "as \" %s \"." % (value, data[key], key))
 
 
 class CloudFormation(object):
