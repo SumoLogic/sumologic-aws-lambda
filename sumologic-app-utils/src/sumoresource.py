@@ -945,7 +945,7 @@ class SumoLogicUpdateFields(SumoResource):
 
 
 class SumoLogicFieldExtractionRule(SumoResource):
-    def get_fer_by_name(self, fer_name):
+    def _get_fer_by_name(self, fer_name):
         token = ""
         page_limit = 100
         response = self.sumologic_cli.get_all_field_extraction_rules(limit=page_limit, token=token)
@@ -1348,52 +1348,55 @@ class AlertsMonitor(SumoResource):
 
 if __name__ == '__main__':
     props = {
-        "SumoAccessID": "suU2PzuEzdacyE",
-        "SumoAccessKey": "dZks62YfZ8n3pPXzLFpNrJOMlxyJ5soUEHcKL7nOCOFJCGmefwreHaP6UUC7IAIp",
+        "SumoAccessID": "",
+        "SumoAccessKey": "",
         "SumoDeployment": "us1",
     }
+    app_prefix = "CloudTrail"
+    # app_prefix = "GuardDuty"
+    collector_id = None
+    collector_type = "Hosted"
+    collector_name = "%sCollector" % app_prefix
+    source_name = "%sEvents" % app_prefix
+    source_category = "Labs/AWS/%s" % app_prefix
+    # appname = "Global Intelligence for Amazon GuardDuty"
+    appname = "Global Intelligence for AWS CloudTrail"
+    appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
+    # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
+    # appid = None
+    # source_params = {
+    #     "logsrc": "_sourceCategory=%s" % source_category
+    # }
+    source_params = {
+        "cloudtraillogsource": "_sourceCategory=%s" % source_category,
+        "indexname": '%rnd%',
+        "incrementalindex": "%rnd%"
+    }
+    # col = Collector(**params)
+    # src = HTTPSource(**params)
+    app = App(props)
 
-    # Delete the FER
-    fer_names = ["AwsObservabilityAlbAccessLogsFER", "AwsObservabilityApiGatewayCloudTrailLogsFER",
-                 "AwsObservabilityDynamoDBCloudTrailLogsFER", "AwsObservabilityECSCloudTrailLogsFER",
-                 "AwsObservabilityElastiCacheCloudTrailLogsFER", "AwsObservabilityFieldExtractionRule",
-                 "AwsObservabilityLambdaCloudWatchLogsFER", "AwsObservabilityNlbAccessLogsFER",
-                 "AwsObservabilityRdsCloudTrailLogsFER"]
-    fer_resource = SumoLogicFieldExtractionRule(props)
-    for fer_name in fer_names:
-        try:
-            fer_details = fer_resource.get_fer_by_name(fer_name)
-            fer_resource.delete(fer_details["id"], True)
-        except Exception as e:
-            print("FER Not Found")
+    # create
+    # _, collector_id = col.create(collector_type, collector_name, source_category)
+    # _, source_id = src.create(collector_id, source_name, source_category)
 
-    # Delete the Metric Rules
-    metric_rule_names = ["AwsObservabilityALBMetricsEntityRule", "AwsObservabilityApiGatewayMetricsEntityRule",
-                         "AwsObservabilityDynamoDBMetricsEntityRule", "AwsObservabilityEC2MetricsEntityRule",
-                         "AwsObservabilityECSMetricsEntityRule", "AwsObservabilityElastiCacheMetricsEntityRule",
-                         "AwsObservabilityLambdaMetricsEntityRule", "AwsObservabilityNLBMetricsEntityRule",
-                         "AwsObservabilityRDSClusterMetricsEntityRule", "AwsObservabilityRDSInstanceMetricsEntityRule"]
-    metric_resource = SumoLogicMetricRules(props)
-    for metric_rule_name in metric_rule_names:
-        metric_resource.delete(metric_rule_name, metric_rule_name, True)
+    _, app_folder_id = app.create(appname, source_params, appid)
+    app.delete(app_folder_id, True)
 
-    # Delete the Hierarchy
-    explorer_resource = SumoLogicAWSExplorer(props)
-    try:
-        id = explorer_resource.get_explorer_id("AWS Observability")
-        explorer_resource.delete(id, "AWS Observability", True)
-    except Exception as e:
-        print("Explorer Not Found")
+    # update
+    # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
+    # assert(collector_id == new_collector_id)
+    # _, new_source_id = src.update(collector_id, source_id, "%sEventsNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, date_format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", date_locator='\"createTime\":(.*),')
+    # assert(source_id == new_source_id)
+    # new_source_params = {
+    #     "logsrc": "_sourceCategory=%s" % ("Labs/AWS/%sNew" % app_prefix)
+    # }
 
-    # Delete the Fields
-    fields = ["loadbalancer", "apiname", "account", "region", "namespace", "tablename", "instanceid", "clustername",
-              "cacheclusterid", "functionname", "networkloadbalancer", "dbidentifier", "dbinstanceidentifier",
-              "dbclusteridentifier"]
-    field_resource = SumoLogicFieldsSchema(props)
-    for field in fields:
-        try:
-            id = field_resource.get_field_id(field)
-            field_resource.delete(id, field, True)
-        except Exception as e:
-            print("Field Not Found")
+    # _, new_app_folder_id = app.update(app_folder_id, appname, new_source_params, appid)
+    # assert(app_folder_id != new_app_folder_id)
+
+    # delete
+    # src.delete(collector_id, source_id, True)
+    # col.delete(collector_id, True)
+    # app.delete(new_app_folder_id, True)
 
