@@ -19,7 +19,7 @@ Resources:
         Properties:
             CodeUri: ../src/
             Handler: cloudwatchevents.handler
-            Runtime: nodejs10.x
+            Runtime: nodejs12.x
             Environment:
               Variables:
                 SUMO_ENDPOINT: !Ref SumoEndpointUrl

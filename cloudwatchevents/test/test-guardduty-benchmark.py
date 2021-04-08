@@ -18,6 +18,8 @@ GUARD_DUTY_BENCHMARK_SAM_TEMPLATE = "guarddutybenchmark/packaged_v2.yaml"
 GUARD_DUTY_TEMPLATE = "guardduty/template.yaml"
 GUARD_DUTY_SAM_TEMPLATE = "guardduty/packaged.yaml"
 
+CLOUDWATCH_TEMPLATE = "guardduty/cloudwatchevents.json"
+
 # Update the below values with preferred bucket name and aws region.
 BUCKET_NAME = ""
 AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
@@ -379,7 +381,7 @@ class TestGuardDuty(unittest.TestCase):
         self.collector_name = "Test GuardDuty Lambda"
         self.source_name = "GuardDuty"
         self.source_category = "Labs/test/guard/duty"
-        self.finding_types = ["Policy:S3/AccountBlockPublicAccessDisabled", "Policy:S3/BucketPublicAccessGranted"]
+        self.finding_types = ["DefenseEvasion:IAMUser/AnomalousBehavior", "Backdoor:EC2/Spambot"]
         self.delay = 7
 
         # Get GuardDuty details
@@ -414,6 +416,61 @@ class TestGuardDuty(unittest.TestCase):
         self.assertTrue(self.cf.stack_exists())
         # Generate some specific sample findings
         print("Generating sample GuardDuty findings.")
+        self.guard_duty.create_sample_findings(DetectorId=self.detector_id, FindingTypes=self.finding_types)
+        print("Waiting for %s minutes for logs to appear in Sumo Logic." % self.delay)
+        time.sleep(self.delay * 60)
+        # Go to SumoLogic and check if you received the logs
+        # Assert one of the log for JSON format to check correctness
+        print("Validate Logs in Sumo Logic.")
+        self.sumo_resource.assert_logs()
+
+        if len(self.sumo_resource.verificationErrors) > 0:
+            print("Assertions failures are:- %s." % '\n'.join(self.sumo_resource.verificationErrors))
+            assert len(self.sumo_resource.verificationErrors) == 0
+
+
+class TestCloudWatchEvents(unittest.TestCase):
+
+    def setUp(self):
+        # Parameters
+        self.collector_name = "Test CloudWatch Events Lambda"
+        self.source_name = "CloudWatch Events"
+        self.source_category = "Labs/test/cloudwatch/events"
+        self.finding_types = ["Recon:IAMUser/MaliciousIPCaller.Custom", "Discovery:S3/TorIPCaller"]
+        self.delay = 7
+
+        # Get GuardDuty details
+        self.guard_duty = boto3.client('guardduty', AWS_REGION)
+        response = self.guard_duty.list_detectors()
+        if "DetectorIds" in response:
+            self.detector_id = response["DetectorIds"][0]
+
+        # Get Sumo Logic Client
+        self.sumo_resource = SumoLogicResource(self.source_category, self.finding_types, self.delay)
+        # Create a collector and http source for testing
+        self.collector = self.sumo_resource.create_collector(self.collector_name)
+        self.collector_id = self.collector['collector']['id']
+        self.source = self.sumo_resource.create_source(self.collector_id, self.source_name)
+        self.source_id = self.source['source']['id']
+
+        # Get CloudFormation client
+        self.cf = CloudFormation("TestCloudWatchEvents", CLOUDWATCH_TEMPLATE)
+        self.parameters = {
+            "SumoEndpointUrl": self.source['source']['url'],
+        }
+
+    def tearDown(self):
+        if self.cf.stack_exists():
+            self.cf.delete_stack()
+        self.sumo_resource.delete_source(self.collector_id, self.source)
+        self.sumo_resource.delete_collector(self.collector)
+
+    def test_cloudwatch_event(self):
+        self.cf.create_stack(self.parameters)
+        print("Testing Stack Creation.")
+        self.assertTrue(self.cf.stack_exists())
+        # Generate some specific sample findings
+        print("Generating sample CloudWatch Events.")
         self.guard_duty.create_sample_findings(DetectorId=self.detector_id, FindingTypes=self.finding_types)
         print("Waiting for %s minutes for logs to appear in Sumo Logic." % self.delay)
         time.sleep(self.delay * 60)
