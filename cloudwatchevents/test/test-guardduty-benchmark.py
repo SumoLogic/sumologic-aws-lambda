@@ -71,7 +71,7 @@ def _run(command, input=None, check=False, **kwargs):
 
 def run_command(cmdargs):
     resp = _run(cmdargs)
-    if len(resp.stderr.decode()) > 0:
+    if resp.returncode != 0:
         # traceback.print_exc()
         raise Exception("Error in run command %s cmd: %s" % (resp, cmdargs))
     return resp.stdout
@@ -97,6 +97,56 @@ class SumoLogicResource(object):
             return "https://api.%s.sumologic.com/api" % SUMO_DEPLOYMENT
         else:
             return 'https://%s-api.sumologic.net/api' % SUMO_DEPLOYMENT
+
+    def create_collector(self, collector_name):
+        collector = {
+            'collector': {
+                'collectorType': "Hosted",
+                'name': collector_name,
+                'description': "This is a test collector."
+            }
+        }
+        response_collector = self.sumo.create_collector(collector, headers=None)
+        return json.loads(response_collector.text)
+
+    def create_source(self, collector_id, source_name):
+        source_json = {
+            "source":
+                {
+                    "name": source_name,
+                    "category": self.source_category,
+                    "automaticDateParsing": True,
+                    "multilineProcessingEnabled": True,
+                    "useAutolineMatching": True,
+                    "forceTimeZone": False,
+                    "defaultDateFormats": [{
+                        "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                        "locator": ".*\"updatedAt\":\"(.*)\".*"
+                    }],
+                    "filters": [],
+                    "cutoffTimestamp": 0,
+                    "encoding": "UTF-8",
+                    "fields": {
+
+                    },
+                    "messagePerRequest": False,
+                    "sourceType": "HTTP"
+                }
+        }
+        response_source = self.sumo.create_source(collector_id, source_json)
+        return json.loads(response_source.text)
+
+    def delete_collector(self, collector):
+        try:
+            self.sumo.delete_collector(collector)
+        except Exception as e:
+            print(e)
+
+    def delete_source(self, collector_id, source):
+        try:
+            self.sumo.delete_source(collector_id, source)
+        except Exception as e:
+            print(e)
 
     def fetch_logs(self):
         raw_messages = []
@@ -303,6 +353,68 @@ class TestGuardDutyBenchmark(unittest.TestCase):
                     "name": "Global Intelligence for Amazon GuardDuty",
                     "itemType": "Folder"
                 })
+        print("Waiting for %s minutes for logs to appear in Sumo Logic." % self.delay)
+        time.sleep(self.delay * 60)
+        # Go to SumoLogic and check if you received the logs
+        # Assert one of the log for JSON format to check correctness
+        print("Validate Logs in Sumo Logic.")
+        self.sumo_resource.assert_logs()
+
+        if len(self.sumo_resource.verificationErrors) > 0:
+            print("Assertions failures are:- %s." % '\n'.join(self.sumo_resource.verificationErrors))
+            assert len(self.sumo_resource.verificationErrors) == 0
+
+
+class TestGuardDuty(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestGuardDuty, cls).setUpClass()
+        create_sam_package_and_upload(GUARD_DUTY_TEMPLATE, GUARD_DUTY_SAM_TEMPLATE,
+                                      "guardduty")
+        print("Completed SetUp for All test Cases.")
+
+    def setUp(self):
+        # Parameters
+        self.collector_name = "Test GuardDuty Lambda"
+        self.source_name = "GuardDuty"
+        self.source_category = "Labs/test/guard/duty"
+        self.finding_types = ["Policy:S3/AccountBlockPublicAccessDisabled", "Policy:S3/BucketPublicAccessGranted"]
+        self.delay = 7
+
+        # Get GuardDuty details
+        self.guard_duty = boto3.client('guardduty', AWS_REGION)
+        response = self.guard_duty.list_detectors()
+        if "DetectorIds" in response:
+            self.detector_id = response["DetectorIds"][0]
+
+        # Get Sumo Logic Client
+        self.sumo_resource = SumoLogicResource(self.source_category, self.finding_types, self.delay)
+        # Create a collector and http source for testing
+        self.collector = self.sumo_resource.create_collector(self.collector_name)
+        self.collector_id = self.collector['collector']['id']
+        self.source = self.sumo_resource.create_source(self.collector_id, self.source_name)
+        self.source_id = self.source['source']['id']
+
+        # Get CloudFormation client
+        self.cf = CloudFormation("TestGuardDuty", GUARD_DUTY_SAM_TEMPLATE)
+        self.parameters = {
+            "SumoEndpointUrl": self.source['source']['url'],
+        }
+
+    def tearDown(self):
+        if self.cf.stack_exists():
+            self.cf.delete_stack()
+        self.sumo_resource.delete_source(self.collector_id, self.source)
+        self.sumo_resource.delete_collector(self.collector)
+
+    def test_guard_duty(self):
+        self.cf.create_stack(self.parameters)
+        print("Testing Stack Creation.")
+        self.assertTrue(self.cf.stack_exists())
+        # Generate some specific sample findings
+        print("Generating sample GuardDuty findings.")
+        self.guard_duty.create_sample_findings(DetectorId=self.detector_id, FindingTypes=self.finding_types)
         print("Waiting for %s minutes for logs to appear in Sumo Logic." % self.delay)
         time.sleep(self.delay * 60)
         # Go to SumoLogic and check if you received the logs
