@@ -13,7 +13,7 @@ from sumologic import SumoLogic
 # Update the below values in case the template locations are changed.
 
 GUARD_DUTY_BENCHMARK_TEMPLATE = "guarddutybenchmark/template_v2.yaml"
-GUARD_DUTY_BENCHMARK_SAM_TEMPLATE = "guarddutybenchmark/packaged_v2.yaml"
+GUARD_DUTY_BENCHMARK_SAM_TEMPLATE = "guarddutybenchmark/packaged.yaml"
 
 GUARD_DUTY_TEMPLATE = "guardduty/template.yaml"
 GUARD_DUTY_SAM_TEMPLATE = "guardduty/packaged.yaml"
@@ -363,7 +363,9 @@ class TestGuardDutyBenchmark(unittest.TestCase):
         self.sumo_resource.assert_logs()
 
         if len(self.sumo_resource.verificationErrors) > 0:
+            print("****************** Assertions Failures ******************")
             print("Assertions failures are:- %s." % '\n'.join(self.sumo_resource.verificationErrors))
+            print("****************** Assertions Failures ******************")
             assert len(self.sumo_resource.verificationErrors) == 0
 
 
@@ -425,7 +427,9 @@ class TestGuardDuty(unittest.TestCase):
         self.sumo_resource.assert_logs()
 
         if len(self.sumo_resource.verificationErrors) > 0:
+            print("****************** Assertions Failures ******************")
             print("Assertions failures are:- %s." % '\n'.join(self.sumo_resource.verificationErrors))
+            print("****************** Assertions Failures ******************")
             assert len(self.sumo_resource.verificationErrors) == 0
 
 
@@ -480,7 +484,9 @@ class TestCloudWatchEvents(unittest.TestCase):
         self.sumo_resource.assert_logs()
 
         if len(self.sumo_resource.verificationErrors) > 0:
+            print("****************** Assertions Failures ******************")
             print("Assertions failures are:- %s." % '\n'.join(self.sumo_resource.verificationErrors))
+            print("****************** Assertions Failures ******************")
             assert len(self.sumo_resource.verificationErrors) == 0
 
 
