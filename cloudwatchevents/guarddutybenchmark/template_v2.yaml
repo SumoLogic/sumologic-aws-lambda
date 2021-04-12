@@ -56,7 +56,7 @@ Metadata:
     Name: sumologic-guardduty-benchmark
     LicenseUrl: ../LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.10
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
     SpdxLicenseId: Apache-2.0
 
