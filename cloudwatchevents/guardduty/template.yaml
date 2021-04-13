@@ -1,37 +1,56 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-    This function is invoked by AWS CloudWatch events in response to state change in your AWS resources which matches a event target definition. The event payload received is then forwarded to Sumo Logic HTTP source endpoint.
+  This function is invoked by AWS CloudWatch events in response to state change in your AWS resources which matches a event target definition. The event payload received is then forwarded to Sumo Logic HTTP source endpoint.
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
-    Function:
-        Timeout: 300
+  Function:
+    Timeout: 300
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This function is invoked by AWS CloudWatch events in response to state change in your AWS resources which matches a event target definition. The event payload received is then forwarded to Sumo Logic HTTP source endpoint.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+      - sumologic
+      - serverless
+      - guardduty
+      - security
+      - cloudwatchevents
+      - guardduty
+    Name: sumologic-guardduty-events-processor
+    LicenseUrl: ../LICENSE
+    ReadmeUrl: ./README.md
+    SemanticVersion: 1.0.3
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guardduty
+    SpdxLicenseId: Apache-2.0
 
 Parameters:
-    SumoEndpointUrl:
-        Type: String
+  SumoEndpointUrl:
+    Type: String
 
 Resources:
 
-    CloudWatchEventFunction:
-        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-        Properties:
-            CodeUri: ../src/
-            Handler: cloudwatchevents.handler
-            Runtime: nodejs10.x
-            Environment:
-              Variables:
-                SUMO_ENDPOINT: !Ref SumoEndpointUrl
-            Events:
-                CloudWatchEventTrigger:
-                    Type: CloudWatchEvent
-                    Properties:
-                      Pattern:
-                        source:
-                          - aws.guardduty
+  CloudWatchEventFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: ../src/
+      Handler: cloudwatchevents.handler
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          SUMO_ENDPOINT: !Ref SumoEndpointUrl
+      Events:
+        CloudWatchEventTrigger:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+                - aws.guardduty
 Outputs:
 
-    CloudWatchEventFunction:
-      Description: "CloudWatchEvent Processor Function ARN"
-      Value: !GetAtt CloudWatchEventFunction.Arn
+  CloudWatchEventFunction:
+    Description: "CloudWatchEvent Processor Function ARN"
+    Value: !GetAtt CloudWatchEventFunction.Arn
