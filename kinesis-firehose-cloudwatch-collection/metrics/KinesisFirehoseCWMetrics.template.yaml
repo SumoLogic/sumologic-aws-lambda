@@ -39,7 +39,7 @@ Metadata:
       Section1aSumoLogicKinesisMetricsURL:
         default: "Sumo Logic AWS Kinesis Firehose for Metrics Source URL"
       Section1bNamespaceFilter:
-        default: "AWS Metrics Namespaces List"
+        default: "Select Namespaces to collect AWS CloudWatch Metrics from"
 
       Section2aCreateS3Bucket:
         default: "Create AWS S3 Bucket"
@@ -54,7 +54,7 @@ Parameters:
     ConstraintDescription: "Sumo Logic AWS Kinesis Firehose for Metrics Source URL can not be empty."
   Section1bNamespaceFilter:
     Default: ""
-    Description: "Provide Comma delimited list of the namespaces which will be used for including namespaces. Default will be empty to collect all namespaces."
+    Description: "Enter in a comma-delimited list of namespaces which you want to collect AWS CloudWatch metrics from. Example: AWS/ELB, AWS/DynamoDB .... (give a list of all the ones we support). To collect all namespaces simply leave this field blank; this is the default value."
     Type: String
 
   Section2aCreateS3Bucket:
