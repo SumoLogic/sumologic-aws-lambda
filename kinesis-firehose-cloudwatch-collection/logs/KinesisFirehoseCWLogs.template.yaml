@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
 Description: "Template to setup the AWS CloudWatch Logs collection using Amazon Kinesis Firehose and send the data to provided Sumo Logic URL."
 
 Metadata:

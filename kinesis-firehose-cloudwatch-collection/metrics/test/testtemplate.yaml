@@ -30,6 +30,8 @@ Tests:
             - KinesisMetricsDeliveryStream
             - KinesisMetricsFirehoseRolePolicy
             - KinesisMetricsCloudWatchMetricsStream
+            - KinesisMetricsCloudWatchMetricsStreamLambdaRole
+            - KinesisMetricsCloudWatchMetricsStreamLambda
       - AssertType: OutputsCheck
         Assert:
           Outputs:
@@ -59,6 +61,8 @@ Tests:
             - KinesisMetricsDeliveryStream
             - KinesisMetricsFirehoseRolePolicy
             - KinesisMetricsCloudWatchMetricsStream
+            - KinesisMetricsCloudWatchMetricsStreamLambdaRole
+            - KinesisMetricsCloudWatchMetricsStreamLambda
       - AssertType: OutputsCheck
         Assert:
           Outputs:
