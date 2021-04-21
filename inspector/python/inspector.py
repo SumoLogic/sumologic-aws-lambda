@@ -1,8 +1,8 @@
 
 import json
-import httplib
+import http.client
 import base64,zlib
-import urlparse
+import urllib.parse
 import boto3
 import datetime
 import logging
@@ -19,7 +19,7 @@ contextLookup = True
 ##################################################################
 # Main Code                                                      #
 ##################################################################
-up = urlparse.urlparse(sumoEndpoint)
+up = urllib.parse.urlparse(sumoEndpoint)
 options = { 'hostname': up.hostname,
                 'path': up.path,
                 'method': 'POST'
@@ -33,7 +33,7 @@ logger.setLevel(logging.INFO)
 
 # main function to send data to a Sumo HTTP source
 def sendSumo(msg, toCompress = False):
-    conn = httplib.HTTPSConnection(options['hostname'])
+    conn = http.client.HTTPSConnection(options['hostname'])
     if (toCompress):
         headers = {"Content-Encoding": "gzip"}
         finalData = compress(msg)
@@ -50,7 +50,7 @@ def sendSumo(msg, toCompress = False):
 # Simple function to compress data
 def compress(data, compresslevel=9):
     compress = zlib.compressobj(compresslevel, zlib.DEFLATED, 16 + zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0)
-    compressedData = compress.compress(data)
+    compressedData = compress.compress(data.encode())
     compressedData += compress.flush()
     return compressedData
 
