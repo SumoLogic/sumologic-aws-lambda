@@ -5,9 +5,12 @@ python:
 - '2.7'
 jobs:
   include:
-  - stage: Node 10
-    node_js: '10.17'
-    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="10.x"
+  - stage: Node 14
+    node_js: '14'
+    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="14.x"
+  - stage: Node 12
+    node_js: '12'
+    env: FUNCTION_DIR=cloudwatchlogs-with-dlq TEST_DIR=cloudwatchlogs-with-dlq TEST_FILE=test_cwl_lambda.py NODE_VERSION="12.x"
   - stage: Node 10
     node_js: '10.17'
     env: FUNCTION_DIR=loggroup-lambda-connector TEST_DIR=loggroup-lambda-connector/test TEST_FILE=test_loggroup_lambda_connector.py NODE_VERSION="10.x"

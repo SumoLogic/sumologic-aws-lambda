@@ -236,10 +236,14 @@ def prod_deploy():
     global BUCKET_PREFIX
     BUCKET_PREFIX = 'appdevzipfiles'
     upload_code_in_multiple_regions()
-    print("Uploading template file in S3")
     s3 = boto3.client('s3', "us-east-1")
     filename = 'DLQLambdaCloudFormation.json'
+    print("Uploading template file: %s in S3" % filename)
     bucket_name = "appdev-cloudformation-templates"
+    s3.upload_file(filename, bucket_name, filename,
+                   ExtraArgs={'ACL': 'public-read'})
+    filename = 'DLQLambdaCloudFormationWithSecuredEndpoint.json'
+    print("Uploading template file: %s in S3" % filename)
     s3.upload_file(filename, bucket_name, filename,
                    ExtraArgs={'ACL': 'public-read'})
     print("Deployment Successfull: ALL files copied to Sumocontent")
