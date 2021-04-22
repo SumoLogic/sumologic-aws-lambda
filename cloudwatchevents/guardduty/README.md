@@ -17,10 +17,10 @@ Made with ❤️ by Sumo Logic AppDev Team. Available on the [AWS Serverless App
 ## Lambda Environment Variables
 The following AWS Lambda environment variables are supported
 
-SUMO_ENDPOINT (REQUIRED) - SumoLogic HTTP Collector endpoint URL.
-SOURCE_CATEGORY_OVERRIDE (OPTIONAL) - Override _sourceCategory metadata field within SumoLogic. If none will not be overridden
-SOURCE_HOST_OVERRIDE (OPTIONAL) - Override _sourceHost metadata field within SumoLogic. If none will not be overridden
-SOURCE_NAME_OVERRIDE (OPTIONAL) - Override _sourceName metadata field within SumoLogic. If none will not be overridden
+- SUMO_ENDPOINT (REQUIRED) - SumoLogic HTTP Collector endpoint URL. 
+- SOURCE_CATEGORY_OVERRIDE (OPTIONAL) - Override _sourceCategory metadata field within SumoLogic. If none will not be overridden 
+- SOURCE_HOST_OVERRIDE (OPTIONAL) - Override _sourceHost metadata field within SumoLogic. If none will not be overridden 
+- SOURCE_NAME_OVERRIDE (OPTIONAL) - Override _sourceName metadata field within SumoLogic. If none will not be overridden
 
 ## Excluding Outer Event Fields
 
