@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export AWS_REGION="us-east-1"
-export AWS_PROFILE="personal"
+export AWS_PROFILE="default"
 
 if [[ "${AWS_PROFILE}" == "personal" ]]
 then
@@ -18,7 +18,7 @@ app_names=(
 
 sam --version
 # Regex to deploy only expected templates.
-match_case=""
+match_case="guarddutybenchmark"
 
 for app_name in "${app_names[@]}"
 do
@@ -35,7 +35,7 @@ do
         sam package --profile ${AWS_PROFILE} --template-file ../"${KEY}/${VALUE}" --s3-bucket ${SAM_S3_BUCKET}  --output-template-file ../"${KEY}"/packaged.yaml \
         --s3-prefix "${KEY}/v${version}"
 
-        sam publish --template ../"${KEY}"/packaged.yaml --region ${AWS_REGION} --semantic-version "${version}"
+        sam publish --profile ${AWS_PROFILE} --template ../"${KEY}"/packaged.yaml --region ${AWS_REGION} --semantic-version "${version}"
         echo "Publish done"
     fi
 done

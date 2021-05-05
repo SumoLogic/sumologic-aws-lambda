@@ -8,6 +8,26 @@ Description: 'This function is invoked by AWS CloudWatch events in response to s
 Globals:
   Function:
     Timeout: 300
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This function is invoked by AWS CloudWatch events in response to
+      state change in your AWS resources which matches a event target definition.
+      The event payload received is then forwarded to Sumo Logic HTTP source endpoint.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+    - sumologic
+    - serverless
+    - guardduty
+    - security
+    - cloudwatchevents
+    - guardduty
+    Name: sumologic-guardduty-events-processor
+    LicenseUrl: s3://appdevstore/GuardDuty/v1.0.3/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/GuardDuty/v1.0.3/9d217c45b3ababadef584aee27d4d607
+    SemanticVersion: 1.0.3
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guardduty
+    SpdxLicenseId: Apache-2.0
 Parameters:
   SumoEndpointUrl:
     Type: String
@@ -15,9 +35,9 @@ Resources:
   CloudWatchEventFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/GuardDuty/v1.0.2/0d13904d1fbd69ecd879992058f1aa41
+      CodeUri: s3://appdevstore/GuardDuty/v1.0.3/58c7f17decc811a6e8904a19a9f844a1
       Handler: cloudwatchevents.handler
-      Runtime: nodejs10.x
+      Runtime: nodejs14.x
       Environment:
         Variables:
           SUMO_ENDPOINT:

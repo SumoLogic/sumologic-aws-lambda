@@ -53,10 +53,11 @@ Metadata:
     - benchmark
     - guardduty
     Name: sumologic-guardduty-benchmark
-    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.10/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.10/cab012d7fb7887671b751e6f5c0d2062
-    SemanticVersion: 1.0.10
+    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.11/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.11/cab012d7fb7887671b751e6f5c0d2062
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
+    SpdxLicenseId: Apache-2.0
 Parameters:
   CollectorName:
     Type: String
@@ -83,7 +84,7 @@ Parameters:
     - us1
     - in
     - fed
-    Description: Enter au, ca, de, eu, jp, us2, or us1
+    Description: Enter in, fed, au, ca, de, eu, jp, us2, or us1
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
     - true
@@ -95,7 +96,7 @@ Parameters:
 Resources:
   CloudWatchEventFunction:
     Properties:
-      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.10/0d13904d1fbd69ecd879992058f1aa41
+      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.11/58c7f17decc811a6e8904a19a9f844a1
       Environment:
         Variables:
           SUMO_ENDPOINT:
@@ -110,14 +111,14 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs10.x
+      Runtime: nodejs14.x
     Type: AWS::Serverless::Function
   SumoAppUtils:
     Type: AWS::Serverless::Application
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 1.0.24
+        SemanticVersion: 2.0.6
   SumoHostedCollector:
     Type: Custom::Collector
     Properties:
@@ -174,7 +175,7 @@ Resources:
         - Outputs.SumoAppUtilsFunction
       Region:
         Ref: AWS::Region
-      AppName: Amazon GuardDuty Benchmark
+      AppName: Global Intelligence for Amazon GuardDuty
       AppId: 8e7efcb3-040a-4a92-9f8d-922fafb24afb
       RemoveOnDeleteStack:
         Ref: RemoveSumoResourcesOnDeleteStack
