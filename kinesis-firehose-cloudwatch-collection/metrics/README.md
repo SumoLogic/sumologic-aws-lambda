@@ -12,7 +12,9 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
     4. Click the sumologic-kinesis-cloudwatch-metrics link, and then click Deploy.
     5. In the Configure application parameters panel,
         Section1aSumoLogicKinesisMetricsURL: "Provide HTTP Source Address from AWS Kinesis Firehose for Metrics source created on your Sumo Logic account."
-                                              
+        Section1bNamespaceFilter: "Enter in a comma-delimited list of namespaces which you want to collect AWS CloudWatch metrics from. Example: AWS/ELB, AWS/DynamoDB .... (give a list of all the ones we support). 
+                                   To collect all namespaces simply leave this field blank; this is the default value."
+
         Section2aCreateS3Bucket: "Create AWS S3 Bucket"
                                1. Yes - Create a new AWS S3 Bucket to store failed data.
                                2. No - Use an existing AWS S3 Bucket to store failed data.

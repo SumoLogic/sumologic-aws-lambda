@@ -2,8 +2,8 @@
 
 if [ "$AWS_PROFILE" != "prod" ]
 then
-SAM_S3_BUCKET="appdevstore"
-AWS_REGION="us-east-1"
+    SAM_S3_BUCKET="appdevstore"
+    AWS_REGION="us-east-1"
 else
     SAM_S3_BUCKET="cf-templates-5d0x5unchag-us-east-2"
     AWS_REGION="us-east-2"
