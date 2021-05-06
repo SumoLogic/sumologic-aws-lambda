@@ -4,7 +4,7 @@ This CloudFormation template is used to setup aws resources required to send clo
 
 Made with ❤️ by Sumo Logic.
 
-### Deploying the SAM Application
+### Deploying the CloudFormation Template
 
     1. Sign on to the AWS Management console.
     2. Click this [URL](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateURL=https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/KinesisFirehoseCWLogs.template.yaml) to invoke the latest AWS CloudFormation template.
