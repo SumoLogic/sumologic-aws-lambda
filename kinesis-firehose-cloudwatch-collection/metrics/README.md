@@ -1,16 +1,14 @@
 # sumologic-kinesis-cloudwatch-metrics
 
-This Server Less application is used to setup aws resources required to send cloudwatch metrics to Sumo Logic using Amazon Kinesis Firehose.
+This CloudFormation template is used to setup aws resources required to send cloudwatch metrics to Sumo Logic using Amazon Kinesis Firehose.
 
-Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
+Made with ❤️ by Sumo Logic.
 
 ### Deploying the SAM Application
 
-    1. Open a browser window and enter the following URL: https://serverlessrepo.aws.amazon.com/applications
-    2. Select Show apps that create custom IAM roles or resource policies check box.
-    3. In the Serverless Application Repository, search for sumologic-kinesis-cloudwatch-metrics.
-    4. Click the sumologic-kinesis-cloudwatch-metrics link, and then click Deploy.
-    5. In the Configure application parameters panel,
+    1. Sign on to the AWS Management console.
+    2. Click this [URL](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateURL=https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/KinesisFirehoseCWMetrics.template.yaml) to invoke the latest AWS CloudFormation template.
+    3. In the parameters panel,
         Section1aSumoLogicKinesisMetricsURL: "Provide HTTP Source Address from AWS Kinesis Firehose for Metrics source created on your Sumo Logic account."
         Section1bNamespaceFilter: "Enter in a comma-delimited list of namespaces which you want to collect AWS CloudWatch metrics from. Example: AWS/ELB, AWS/DynamoDB .... (give a list of all the ones we support). 
                                    To collect all namespaces simply leave this field blank; this is the default value."
