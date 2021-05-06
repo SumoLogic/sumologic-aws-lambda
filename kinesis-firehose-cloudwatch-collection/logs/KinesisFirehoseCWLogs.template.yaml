@@ -1,0 +1,348 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Template to setup the AWS CloudWatch Logs collection using Amazon Kinesis Firehose and send the data to provided Sumo Logic URL."
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This solution helps to setup the AWS CloudWatch Logs collection using Amazon Kinesis Firehose and send the data to provided Sumo Logic URL.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+      - lambda
+      - sumologic
+      - serverless
+      - kinesis
+      - firehose
+      - cloudwatch
+      - logs
+    Name: sumologic-kinesis-cloudwatch-logs
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/kinesis-firehose-cloudwatch-collection/logs
+    LicenseUrl: ./LICENSE
+    ReadmeUrl: ./README.md
+    SpdxLicenseId: Apache-2.0
+
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: "1. Sumo Logic Kinesis Firehose Logs Configuration"
+        Parameters:
+          - Section1aSumoLogicKinesisLogsURL
+
+      - Label:
+          default: "2. Failed Data AWS S3 Bucket Configuration"
+        Parameters:
+          - Section2aCreateS3Bucket
+          - Section2bFailedDataS3Bucket
+
+    ParameterLabels:
+      Section1aSumoLogicKinesisLogsURL:
+        default: "Sumo Logic AWS Kinesis Firehose for Logs Source URL"
+
+      Section2aCreateS3Bucket:
+        default: "Create AWS S3 Bucket"
+      Section2bFailedDataS3Bucket:
+        default: "AWS S3 Bucket Name for Failed Data"
+
+Parameters:
+  Section1aSumoLogicKinesisLogsURL:
+    Type: String
+    Description: "Provide HTTP Source Address from AWS Kinesis Firehose for Logs source created on your Sumo Logic account."
+    AllowedPattern: ".+"
+    ConstraintDescription: "Sumo Logic AWS Kinesis Firehose for Logs Source URL can not be empty."
+
+  Section2aCreateS3Bucket:
+    Type: String
+    Default: 'Yes'
+    Description: "Yes - Create a new AWS S3 Bucket to store failed data.'.
+                  No - Use an existing AWS S3 Bucket to store failed data."
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+  Section2bFailedDataS3Bucket:
+    Type: String
+    Description: "Provide a unique name of AWS S3 bucket where you would like to store Failed data. In case of existing AWS S3 bucket, provide the bucket from the current AWS Account. For Logs, failed data will be stored in folder prefix as SumoLogic-Kinesis-Failed-Logs."
+    AllowedPattern: "[a-z0-9-.]{3,63}$"
+    ConstraintDescription: "3-63 characters; must contain only lowercase letters, numbers, hyphen or period. For more details - https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html"
+
+Conditions:
+  create_bucket: !Equals [ !Ref Section2aCreateS3Bucket, 'Yes' ]
+
+Mappings:
+  ArnValue:
+    us-east-1:
+      ArnValue: "aws"
+    us-east-2:
+      ArnValue: "aws"
+    us-west-1:
+      ArnValue: "aws"
+    us-west-2:
+      ArnValue: "aws"
+    af-south-1:
+      ArnValue: "aws"
+    ca-central-1:
+      ArnValue: "aws"
+    eu-central-1:
+      ArnValue: "aws"
+    eu-west-1:
+      ArnValue: "aws"
+    eu-west-2:
+      ArnValue: "aws"
+    eu-south-1:
+      ArnValue: "aws"
+    eu-west-3:
+      ArnValue: "aws"
+    eu-north-1:
+      ArnValue: "aws"
+    ap-east-1:
+      ArnValue: "aws"
+    ap-northeast-1:
+      ArnValue: "aws"
+    ap-northeast-2:
+      ArnValue: "aws"
+    ap-northeast-3:
+      ArnValue: "aws"
+    ap-southeast-1:
+      ArnValue: "aws"
+    ap-southeast-2:
+      ArnValue: "aws"
+    ap-south-1:
+      ArnValue: "aws"
+    me-south-1:
+      ArnValue: "aws"
+    sa-east-1:
+      ArnValue: "aws"
+    us-gov-west-1:
+      ArnValue: "aws-us-gov"
+    us-gov-east-1:
+      ArnValue: "aws-us-gov"
+    cn-north-1:
+      ArnValue: "aws"
+    cn-northwest-1:
+      ArnValue: "aws"
+
+Resources:
+  # Common Resources including creating bucket, create logs role and attach bucket policy.
+  FailedDataBucket:
+    Type: AWS::S3::Bucket
+    Condition: create_bucket
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W51
+            reason: "Role has been assigned permission to put logs in AWS S3 bucket."
+          - id: W35
+            reason: "Access logging not required for AWS S3 Bucket."
+          - id: W41
+            reason: "Encryption not required for AWS S3 Bucket."
+    Properties:
+      BucketName: !Ref Section2bFailedDataS3Bucket
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  FirehoseLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'FirehoseAssumeRole'
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref "AWS::AccountId"
+
+  AttachBucketPolicyToFirehoseLogsRole:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: "S3BucketPermissionPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:AbortMultipartUpload
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+            Resource:
+              - !Sub
+                - "arn:${arn}:s3:::${S3Bucket}/*"
+                - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                  S3Bucket: !Ref Section2bFailedDataS3Bucket
+              - !Sub
+                - "arn:${arn}:s3:::${S3Bucket}"
+                - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                  S3Bucket: !Ref Section2bFailedDataS3Bucket
+      Roles:
+        - Ref: FirehoseLogsRole
+
+  # Resources for AWS Kinesis Logs including log group, stream, delivery stream, subscription filter, policy and role.
+  KinesisLogsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub
+        - "/aws/kinesisfirehose/Kinesis-Logs-${StackID}"
+        - StackID: !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      RetentionInDays: 7
+
+  KinesisLogsLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref KinesisLogsLogGroup
+      LogStreamName: "HttpEndpointDelivery"
+
+  KinesisLogsLogStreamS3:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref KinesisLogsLogGroup
+      LogStreamName: "S3Delivery"
+
+  KinesisLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'LogsAssumeRole'
+            Effect: Allow
+            Principal:
+              Service: !Sub "logs.${AWS::Region}.amazonaws.com"
+            Action: sts:AssumeRole
+
+  KinesisLogsRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: "KinesisFirehoseLogsPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - firehose:PutRecord
+              - firehose:PutRecordBatch
+              - kinesis:PutRecord
+              - kinesis:PutRecordBatch
+            Resource: !Sub
+              - "arn:${arn}:firehose:${Region}:${AccountId}:*"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                Region: !Ref "AWS::Region"
+                AccountId: !Ref "AWS::AccountId"
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !Sub
+              - "arn:${arn}:iam::${AccountId}:role/${KinesisLogsRole}"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                AccountId: !Ref "AWS::AccountId"
+                KinesisLogsRole: !Ref KinesisLogsRole
+      Roles:
+        - Ref: KinesisLogsRole
+
+  KinesisLogsDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      DeliveryStreamName: !Sub
+        - "Kinesis-Logs-${StackID}"
+        - StackID: !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      DeliveryStreamType: DirectPut
+      HttpEndpointDestinationConfiguration:
+        RoleARN: !GetAtt FirehoseLogsRole.Arn
+        EndpointConfiguration:
+          Url: !Ref Section1aSumoLogicKinesisLogsURL
+          Name: !Sub "${AWS::StackName}-sumologic-logs-endpoint"
+        RequestConfiguration:
+          ContentEncoding: GZIP
+        CloudWatchLoggingOptions:
+          Enabled: true
+          LogGroupName: !Ref KinesisLogsLogGroup
+          LogStreamName: !Ref KinesisLogsLogStream
+        BufferingHints:
+          IntervalInSeconds: 60
+          SizeInMBs: 4
+        RetryOptions:
+          DurationInSeconds: 60
+        S3BackupMode: FailedDataOnly
+        S3Configuration:
+          BucketARN: !If
+            - create_bucket
+            - !GetAtt FailedDataBucket.Arn
+            - !Sub
+              - "arn:${arn}:s3:::${S3Bucket}"
+              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
+                S3Bucket: !Ref Section2bFailedDataS3Bucket
+          CompressionFormat: UNCOMPRESSED
+          ErrorOutputPrefix: "SumoLogic-Kinesis-Failed-Logs/"
+          RoleARN: !GetAtt FirehoseLogsRole.Arn
+          CloudWatchLoggingOptions:
+            Enabled: true
+            LogGroupName: !Ref KinesisLogsLogGroup
+            LogStreamName: !Ref KinesisLogsLogStreamS3
+
+  KinesisLogsFirehoseRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: "KinesisLogsLogStreamPermissionPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:PutLogEvents
+            Resource:
+              - !GetAtt KinesisLogsLogGroup.Arn
+              - !Sub "${KinesisLogsLogGroup.Arn}:log-stream:*"
+          - Effect: Allow
+            Action:
+              - kinesis:DescribeStream
+              - kinesis:GetShardIterator
+              - kinesis:GetRecords
+              - kinesis:ListShards
+            Resource:
+              - !GetAtt KinesisLogsDeliveryStream.Arn
+      Roles:
+        - Ref: FirehoseLogsRole
+
+  SubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      RoleArn: !GetAtt KinesisLogsRole.Arn
+      LogGroupName: !Ref KinesisLogsLogGroup
+      FilterPattern: ''
+      DestinationArn: !GetAtt KinesisLogsDeliveryStream.Arn
+
+Outputs:
+  FailedDataBucketArn:
+    Description: "S3 Bucket Arn where failed deliveries will be saved"
+    Condition: create_bucket
+    Value: !GetAtt FailedDataBucket.Arn
+
+  KinesisLogsDeliveryStreamARN:
+    Description: "The ARN for your Kinesis Firehose Delivery Stream, use this as the destination when adding CloudWatch Logs subscription filters."
+    Value: !GetAtt KinesisLogsDeliveryStream.Arn
+  KinesisLogsRoleARN:
+    Description: "The ARN for your CloudWatch Logs role to write to your delivery stream, use this as the role-arn when adding CloudWatch Logs subscription filters."
+    Value: !GetAtt KinesisLogsRole.Arn
+  KinesisLogsLogGroupARN:
+    Description: "The CloudWatch log group name where kinesis stream logs will be sent."
+    Value: !Ref KinesisLogsLogGroup

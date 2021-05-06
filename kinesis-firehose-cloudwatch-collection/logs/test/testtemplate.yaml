@@ -1,0 +1,68 @@
+---
+Global:
+  TemplatePath: "../KinesisFirehoseCWLogs.template.yaml"
+  TestProjectName: BasicTestProject
+  ParallelTestsRun: 2
+  GlobalParameters:
+    Section2aCreateS3Bucket: 'No'
+    # We are providing dummy values here, as we are testing expected resources and outputs and not functionality with test cases.
+    Section1aSumoLogicKinesisLogsURL: "https://localhost.com"
+    Section2bFailedDataS3Bucket: "cf-templates-1teub4jja8pis-us-east-1"
+Tests:
+  - TestName: installlogswithexistingbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section2aCreateS3Bucket: 'No'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisLogsLogGroup
+            - KinesisLogsLogStream
+            - KinesisLogsLogStreamS3
+            - KinesisLogsRole
+            - KinesisLogsRolePolicy
+            - KinesisLogsDeliveryStream
+            - KinesisLogsFirehoseRolePolicy
+            - SubscriptionFilter
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - KinesisLogsDeliveryStreamARN
+            - KinesisLogsRoleARN
+            - KinesisLogsLogGroupARN
+  - TestName: installlogswithnewbucket
+    Regions:
+      - us-east-1
+    Parameters:
+      Values:
+        Section2aCreateS3Bucket: 'Yes'
+        Section2bFailedDataS3Bucket: 'kinesis-firehose-testing-23173612910'
+    Skip: false
+    Assertions:
+      - AssertType: ResourceExistence
+        Assert:
+          Resources:
+            - FailedDataBucket
+            - FirehoseLogsRole
+            - AttachBucketPolicyToFirehoseLogsRole
+            - KinesisLogsLogGroup
+            - KinesisLogsLogStream
+            - KinesisLogsLogStreamS3
+            - KinesisLogsRole
+            - KinesisLogsRolePolicy
+            - KinesisLogsDeliveryStream
+            - KinesisLogsFirehoseRolePolicy
+            - SubscriptionFilter
+      - AssertType: OutputsCheck
+        Assert:
+          Outputs:
+            - FailedDataBucketArn
+            - KinesisLogsDeliveryStreamARN
+            - KinesisLogsRoleARN
+            - KinesisLogsLogGroupARN

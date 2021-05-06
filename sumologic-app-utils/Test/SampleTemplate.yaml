@@ -48,7 +48,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.6
+        SemanticVersion: 2.0.7
 
   SumoLogicHelperPolicy:
     Type: AWS::IAM::Policy
@@ -184,6 +184,38 @@ Resources:
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
 
+  KinesisFirehoseMetricsSource:
+    Type: Custom::HTTPSource
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      SourceType: "KinesisMetric"
+      SourceName: "SourabhtestingKinesisFirehoseMetricsSource"
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      SourceCategory: "TestingCategory"
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+      RoleArn: !GetAtt SumoRole.Arn
+
+  KinesisFirehoseLogsSource:
+    Type: Custom::HTTPSource
+    Properties:
+      ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
+      Region: !Ref "AWS::Region"
+      SourceType: "KinesisLog"
+      SourceName: "SourabhtestingKinesisFirehoseLogsSource"
+      RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
+      SourceCategory: "TestingCategory"
+      CollectorId: !GetAtt SumoHostedCollector.COLLECTOR_ID
+      SumoAccessID: !Ref Section1bSumoAccessID
+      SumoAccessKey: !Ref Section1cSumoAccessKey
+      SumoDeployment: !Ref Section1aSumoDeployment
+      Fields:
+        namespace: "aws/lambda"
+        region: !Ref "AWS::Region"
+
   SumoRole:
     Type: AWS::IAM::Role
     Properties:
@@ -209,6 +241,9 @@ Resources:
                   - s3:GetObjectVersion
                   - s3:ListBucketVersions
                   - s3:ListBucket
+                  - tag:GetResources
+                  - cloudwatch:ListMetrics
+                  - cloudwatch:GetMetricStatistics
                 Resource:
                   "*"
 
@@ -375,8 +410,8 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
-      FolderName: !Sub "Test Monitors"
-      MonitorsS3Url: !Sub "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.1.0/appjson/Alerts-App.json"
+      FolderName: "Test Monitors"
+      MonitorsS3Url: "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.1.0/appjson/Alerts-App.json"
       SuffixDateTime: true
       RetainOldAlerts: true
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
