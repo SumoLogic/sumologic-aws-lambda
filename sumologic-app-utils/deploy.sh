@@ -2,8 +2,8 @@
 
 if [ "$AWS_PROFILE" != "prod" ]
 then
-    SAM_S3_BUCKET="appdevstore"
-    AWS_REGION="us-east-1"
+SAM_S3_BUCKET="appdevstore"
+AWS_REGION="us-east-1"
 else
     SAM_S3_BUCKET="cf-templates-5d0x5unchag-us-east-2"
     AWS_REGION="us-east-2"
@@ -26,7 +26,7 @@ if [ ! -f sumo_app_utils.zip ]; then
     rm -r python
 fi
 
-version="2.0.6"
+version="2.0.7"
 
 aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
 
