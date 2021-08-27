@@ -2,6 +2,7 @@ import json
 import re
 import tempfile
 import time
+import csv
 from abc import abstractmethod
 from datetime import datetime
 from random import uniform
@@ -1261,6 +1262,55 @@ class EnterpriseOrTrialAccountCheck(SumoResource):
         props = event.get("ResourceProperties")
         return props
 
+class AccountAlias(SumoResource):
+
+    def get_account_alias(self, account_id, accountaliasmappings3url, accountalias):
+        if accountaliasmappings3url:
+            try:
+                with requests.get(accountaliasmappings3url, stream=True) as r:
+                    with tempfile.NamedTemporaryFile() as fp:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                fp.write(chunk)
+                        fp.flush()
+                        fp.seek(0)
+                        with open(fp.name, 'r') as csv_file:
+                            csv_reader = csv.reader(csv_file, delimiter=',')
+                            for row in csv_reader:
+                                if row[0] == account_id and row[1] is not None:
+                                    if len(str(row[1])) <= 30 and re.search(re.compile(r'[a-z0-9]+$'), row[1]):
+                                        return {"ACCOUNT_ALIAS": row[1]}, row[1]
+            except Exception as e:
+                print("Exception while trying to read the csv file")
+                print(e)
+                if accountalias:
+                    return {"ACCOUNT_ALIAS": accountalias}, accountalias
+                else:
+                    return {"ACCOUNT_ALIAS": account_id}, account_id
+        else:
+            if accountalias:
+                return {"ACCOUNT_ALIAS": accountalias}, accountalias
+            else:
+                return {"ACCOUNT_ALIAS": account_id}, account_id
+
+        return {"ACCOUNT_ALIAS": account_id}, account_id
+
+    def create(self, account_id, accountaliasmappings3url, accountalias, *args, **kwargs):
+        return self.get_account_alias(account_id, accountaliasmappings3url, accountalias)
+
+    def update(self, account_id, accountaliasmappings3url, accountalias, *args, **kwargs):
+        return self.get_account_alias( account_id, accountaliasmappings3url, accountalias)
+
+    def delete(self, account_id, accountaliasmappings3url, accountalias, *args, **kwargs):
+        print("In Delete method for Account Alias")
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        return {
+            "account_id": props.get("AccountID"),
+            "accountaliasmappings3url": props.get("AccountAliasMappingS3Url"),
+            "accountalias": props.get("AccountAlias")
+        }
 
 class AlertsMonitor(SumoResource):
 
