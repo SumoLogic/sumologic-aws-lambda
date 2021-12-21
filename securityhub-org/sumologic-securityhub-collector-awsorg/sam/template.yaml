@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: >
+    This solution consists of a lambda function which which gets triggered by CloudWatch events with findings as payload which are then ingested to Sumo Logic
+
+Globals:
+    Function:
+        Timeout: 300
+
+Parameters:
+  SumoEndpoint:
+    Description: "SumoLogic Endpoint to post logs"
+    Type: "String" 
+
+Resources:
+
+  SecurityHubCollectorAwsOrg:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: securityhub_collector_org.lambda_handler
+        Runtime: python3.7
+        CodeUri: ../src/
+        MemorySize: 128
+        Timeout: 300
+        ReservedConcurrentExecutions: 100
+        Environment:
+          Variables:
+            SUMO_ENDPOINT: !Ref SumoEndpoint
+        Events:
+          CloudWatchEventTrigger:
+              Type: CloudWatchEvent
+              Properties:
+                Pattern:
+                  source:
+                    - aws.securityhub
+
+Outputs:
+    SecurityHubCollectorAwsOrg:
+      Description: "SecurityHubCollectorAwsOrg Function ARN"
+      Value: !GetAtt SecurityHubCollectorAwsOrg.Arn
