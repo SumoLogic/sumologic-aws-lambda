@@ -5,7 +5,7 @@ This solution consists of a lambda function which which gets triggered by CloudW
 
 Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
-![Sumo to Security Hub Collection AWS Org Flow](https://s3.amazonaws.com/appdev-cloudformation-templates/sumologic-securityhub-collector.png)
+![Sumo to Security Hub Collection AWS Org Flow](/images/sumologic-securityhub-collector-org.png)
 
 ## Setup
 
