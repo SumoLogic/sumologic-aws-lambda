@@ -1,4 +1,4 @@
-# sumologic-securityhub-collector
+# sumologic-securityhub-collector-aws-org
 
 This solution consists of a lambda function which which gets triggered by CloudWatch events with findings as payload which are then ingested to Sumo Logic
 
