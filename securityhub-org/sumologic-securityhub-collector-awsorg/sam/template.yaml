@@ -15,24 +15,29 @@ Parameters:
 Resources:
 
   SecurityHubCollectorAwsOrg:
-      Type: 'AWS::Serverless::Function'
-      Properties:
-        Handler: securityhub_collector_org.lambda_handler
-        Runtime: python3.7
-        CodeUri: ../src/
-        MemorySize: 128
-        Timeout: 300
-        ReservedConcurrentExecutions: 100
-        Environment:
-          Variables:
-            SUMO_ENDPOINT: !Ref SumoEndpoint
-        Events:
-          CloudWatchEventTrigger:
-              Type: CloudWatchEvent
-              Properties:
-                Pattern:
-                  source:
-                    - aws.securityhub
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "Lambda functions should be deployed inside a VPC"  
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: securityhub_collector_org.lambda_handler
+      Runtime: python3.7
+      CodeUri: ../src/
+      MemorySize: 128
+      Timeout: 300
+      ReservedConcurrentExecutions: 100
+      Environment:
+        Variables:
+          SUMO_ENDPOINT: !Ref SumoEndpoint
+      Events:
+        CloudWatchEventTrigger:
+            Type: CloudWatchEvent
+            Properties:
+              Pattern:
+                source:
+                  - aws.securityhub
 
 Outputs:
     SecurityHubCollectorAwsOrg:
