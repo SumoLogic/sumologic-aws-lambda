@@ -17,7 +17,7 @@ Resources:
     Properties:
       Handler: securityhub_collector_org.lambda_handler
       Runtime: python3.7
-      CodeUri: s3://appdevstore20211221-prod/83878662e46e47662d00b3af9d09e44b
+      CodeUri: s3://appdevstore20211221-prod/55757e09bcbcd9341582d51963ad4726
       MemorySize: 128
       Timeout: 300
       ReservedConcurrentExecutions: 100
