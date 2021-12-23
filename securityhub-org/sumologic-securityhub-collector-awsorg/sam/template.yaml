@@ -6,6 +6,23 @@ Description: >
 Globals:
     Function:
         Timeout: 300
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This solution consists of a lambda function which which gets triggered by CloudWatch events with findings as payload which are then ingested to Sumo Logic via HTTP source.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+    - sumologic
+    - serverless
+    - security
+    - cloudwatchevents
+    - securityhub
+    Name: sumologic-securityhub-connector-aws-org
+    LicenseUrl: ../LICENSE
+    ReadmeUrl: ../README.md
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-org/sumologic-securityhub-connector-aws-org
+    SpdxLicenseId: Apache-2.0
 
 Parameters:
   SumoEndpoint:
