@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Lambda Function for  auto enable s3 logs for S3 Buckets, VPCs, Subnets,
-  Network Interfaces and Application load balancer.
+  Network Interfaces, Application load balancer and Classic load balancer
 Globals:
   Function:
     Timeout: 300
@@ -24,27 +24,27 @@ Metadata:
     - s3logging
     - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.2
+    SemanticVersion: 1.0.3
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/awsautoenableS3Logging
-    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.2/978602b5b9ec16f8bab0e38fd6b3998f
-    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.2/d05d411471e0bb4db3389f2523f515f0
+    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.3/978602b5b9ec16f8bab0e38fd6b3998f
+    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.3/d05d411471e0bb4db3389f2523f515f0
     SpdxLicenseId: Apache-2.0
 Mappings:
   Region2ELBAccountId:
     us-east-1:
       AccountId: '127311923021'
     us-east-2:
-      AccountId: 033677994240
+      AccountId: '033677994240'
     us-west-1:
-      AccountId: 027434742980
+      AccountId: '027434742980'
     us-west-2:
       AccountId: '797873946194'
     af-south-1:
-      AccountId: 098369216593
+      AccountId: '098369216593'
     ca-central-1:
       AccountId: '985666609251'
     eu-central-1:
-      AccountId: 054676820928
+      AccountId: '054676820928'
     eu-west-1:
       AccountId: '156460612806'
     eu-west-2:
@@ -52,7 +52,7 @@ Mappings:
     eu-south-1:
       AccountId: '635631232127'
     eu-west-3:
-      AccountId: 009996457667
+      AccountId: '009996457667'
     eu-north-1:
       AccountId: '897822967062'
     ap-east-1:
@@ -74,7 +74,7 @@ Mappings:
     sa-east-1:
       AccountId: '507241528517'
     us-gov-west-1:
-      AccountId: 048591011584
+      AccountId: '048591011584'
     us-gov-east-1:
       AccountId: '190560391635'
     cn-north-1:
@@ -86,12 +86,14 @@ Parameters:
     Type: String
     Description: S3 - To Enable S3 Audit Logging for new S3 buckets. VPC - To Enable
       VPC flow logs for new VPC, Subnets and Network Interfaces. ALB - To Enable S3
-      Logging for new Application Load Balancer.
+      Logging for new Application Load Balancer. ELB - To Enable S3 logging for new
+      Classic Load Balancer
     AllowedPattern: .+
     AllowedValues:
     - S3
     - VPC
     - ALB
+    - ELB
   AutoEnableResourceOptions:
     Type: String
     Description: New - Automatically enables S3 logging for newly created AWS resources
@@ -135,6 +137,12 @@ Conditions:
     - Fn::Equals:
       - Ref: AutoEnableLogging
       - ALB
+    - Condition: auto_enable_new
+  enable_elb_logging:
+    Fn::And:
+    - Fn::Equals:
+      - Ref: AutoEnableLogging
+      - ELB
     - Condition: auto_enable_new
   enable_s3_buckets_logging:
     Fn::And:
@@ -213,7 +221,7 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: auto_enable_new
     Properties:
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.2/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.8/sumo_app_utils.zip
       Handler: awsresource.enable_s3_logs
       Runtime: python3.7
       Role:
@@ -379,13 +387,61 @@ Resources:
           - EnableNewAWSResourcesLambda
           - Arn
         Id: Main
+  AutoEnableElbLogEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Condition: enable_elb_logging
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: EnableNewAWSResourcesLambda
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - AutoEnableElbLogEventsRuleTrigger
+        - Arn
+  AutoEnableElbLogEventsRuleTrigger:
+    Type: AWS::Events::Rule
+    Condition: enable_elb_logging
+    Properties:
+      Description: Auto-Enable S3 logging for ELB classic resources with Lambda from
+        events
+      EventPattern:
+        source:
+        - aws.elasticloadbalancing
+        detail-type:
+        - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+          - elasticloadbalancing.amazonaws.com
+          eventName:
+          - CreateLoadBalancer
+      Name:
+        Fn::Join:
+        - ''
+        - - sumo-logic-elb-s3-
+          - Fn::Select:
+            - 0
+            - Fn::Split:
+              - '-'
+              - Fn::Select:
+                - 2
+                - Fn::Split:
+                  - /
+                  - Ref: AWS::StackId
+      State: ENABLED
+      Targets:
+      - Arn:
+          Fn::GetAtt:
+          - EnableNewAWSResourcesLambda
+          - Arn
+        Id: Main
   EnableExisitngAWSResourcesLambda:
     Type: AWS::Serverless::Function
     Condition: auto_enable_existing
     Properties:
       Handler: main.handler
       Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.2/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.8/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 900
       Role:
@@ -407,7 +463,10 @@ Resources:
         - Fn::If:
           - enable_vpc_flow_logs_logging
           - vpc
-          - elbv2
+          - Fn::If:
+            - enable_alb_logging
+            - elbv2
+            - elb
       BucketName:
         Ref: BucketName
       Filter:

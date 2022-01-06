@@ -202,7 +202,7 @@ class TagAWSResources(AWSResource):
 class EnableS3LogsResources(AWSResource):
 
     def __init__(self, props, *args, **kwargs):
-        print('Enabling S3 for ALB aws resource %s' % props.get("AWSResource"))
+        print('Enabling S3 for ALB/ELB-classic aws resource %s' % props.get("AWSResource"))
 
     def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, bucket_prefix,
                                delete_flag, filter_regex, region_account_id, account_id):
@@ -212,8 +212,10 @@ class EnableS3LogsResources(AWSResource):
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
-        filtered_resources = tag_resource.filter_resources(filter_regex, resources)
-
+        if(not aws_resource == 'elb'):
+            filtered_resources = tag_resource.filter_resources(filter_regex, resources)
+        else:
+            filtered_resources = resources
         if filtered_resources:
             # Get the ARNs for all resources
             arns = tag_resource.get_arn_list(filtered_resources)
@@ -391,22 +393,35 @@ def enable_s3_logs(event, context):
     account_id = os.environ.get("AccountID")
     filter_regex = os.environ.get("Filter")
     region_account_id = os.environ.get("RegionAccountId")
-
+    is_elbClassic = False
     if "detail" in event:
         event_detail = event.get("detail")
         event_name = event_detail.get("eventName")
+        try:
+            if(event_name=="CreateLoadBalancer" and event_detail.get("requestParameters").get("loadBalancerName")!=None):
+                is_elbClassic=True
+                event_name="ELBClassicCreate"
+        except KeyError:
+            print("Do Nothing")
         region_value = event_detail.get("awsRegion")
 
         # Get the class instance based on Cloudtrail Event Name
-        alb_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
-        event_detail = alb_resource.filter_resources(filter_regex, event_detail)
+        if(not is_elbClassic):
+            alb_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
+            event_detail = alb_resource.filter_resources(filter_regex, event_detail)
 
-        if event_detail:
-            # Get the arns from the event.
-            resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
+            if event_detail:
+                # Get the arns from the event.
+                resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
 
-            # Enable S3 logging
-            alb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix, region_account_id)
+                # Enable S3 logging
+                alb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix, region_account_id)
+        else:
+            elb_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
+            event_detail = elb_resource.filter_resources(filter_regex, event_detail)
+            if event_detail:
+                resources = elb_resource.get_arn_list_cloud_trail_event(event_detail)
+                elb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix, region_account_id)
 
     print("AWS S3 ENABLE ALB :- Completed s3 logs enable")
 
@@ -423,7 +438,8 @@ class AWSResourcesAbstract(object):
         "CreateDBCluster": "rds",
         "CreateDBInstance": "rds",
         "CreateLoadBalancer": "elbv2",
-        "CreateBucket": "s3"
+        "CreateBucket": "s3",
+        "ELBClassicCreate": "elb"
     }
 
     def __init__(self, aws_resource, region_value, account_id):
@@ -1152,6 +1168,140 @@ class VpcResource(AWSResourcesAbstract):
                     if flow_ids:
                         self.client.delete_flow_logs(FlowLogIds=flow_ids)
 
+class ElbResource(AWSResourcesAbstract):
+    def fetch_resources(self):
+        resources = []
+        next_token = None
+        while next_token != 'END':
+            if next_token:
+                response = self.client.describe_load_balancers(PageSize=400, Marker=next_token)
+            else:
+                response = self.client.describe_load_balancers(PageSize=400)
+
+            if "LoadBalancerDescriptions" in response:
+                resources.extend(response['LoadBalancerDescriptions'])
+
+            next_token = response["NextMarker"] if "NextMarker" in response else None
+
+            if not next_token:
+                next_token = 'END'
+
+        return resources
+    #there are no arn's associated with Classic elb
+    def get_arn_list(self, resources):
+        
+        names = []
+        if resources:
+            for resource in resources:
+                names.append(resource['LoadBalancerName'])
+        return names
+
+    def process_tags(self, tags):
+        tags_key_value = []
+        for k, v in tags.items():
+            tags_key_value.append({'Key': k, 'Value': v})
+
+        return tags_key_value
+
+    def get_arn_list_cloud_trail_event(self, event_detail):
+        lb_name = []
+        request_parameters = event_detail.get("requestParameters")
+        if request_parameters and "loadBalancerName" in request_parameters:
+            lb_name.append(request_parameters.get("loadBalancerName"))
+            return lb_name
+        return None
+
+    @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
+           wait_exponential_multiplier=2000, wait_exponential_max=10000)
+    def tag_resources_cloud_trail_event(self, names, tags):
+        self.client.add_tags(LoadBalancerNames=names, Tags=tags)
+
+    def enable_s3_logs(self, names, s3_bucket, s3_prefix, elb_region_account_id):
+        for name in names:
+            print("Enable S3 logging for ALB " + name)
+            response = self.client.describe_load_balancer_attributes(LoadBalancerName=name)
+            if "LoadBalancerAttributes" in response:
+                access_logs = response.get("LoadBalancerAttributes").get("AccessLog")
+                if(access_logs["Enabled"]==False):
+                    access_logs["Enabled"]=True
+                    access_logs["S3BucketName"]=s3_bucket
+                    access_logs["S3BucketPrefix"]=s3_prefix
+                    try:
+                        self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
+                        time.sleep(10)
+                    except ClientError as e:
+                        if "Error" in e.response and "Message" in e.response["Error"] \
+                            and "Access Denied for bucket" in e.response['Error']['Message']:
+                            self.add_bucket_policy(s3_bucket, elb_region_account_id)
+                            time.sleep(10)
+                            self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response)
+                        else:
+                            raise e
+
+    def add_bucket_policy(self, bucket_name, elb_region_account_id):
+        print("Adding policy to the bucket " + bucket_name)
+        s3 = boto3.client('s3')
+        try:
+            response = s3.get_bucket_policy(Bucket=bucket_name)
+            existing_policy = json.loads(response["Policy"])
+        except ClientError as e:
+            if "Error" in e.response and "Code" in e.response["Error"] \
+                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                existing_policy = {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                    ]
+                }
+            else:
+                raise e
+
+        bucket_policy = [{
+                'Sid': 'AwsElbLogs',
+                'Effect': 'Allow',
+                'Principal': {
+                    "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"
+                },
+                'Action': ['s3:PutObject'],
+                'Resource': f'arn:aws:s3:::{bucket_name}/*'
+            },
+            {
+                "Sid": "AWSLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "delivery.logs.amazonaws.com"
+                },
+                "Action": "s3:GetBucketAcl",
+                "Resource": "arn:aws:s3:::" + bucket_name
+            },
+            {
+                "Sid": "AWSLogDeliveryWrite",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "delivery.logs.amazonaws.com"
+                },
+                "Action": "s3:PutObject",
+                "Resource": "arn:aws:s3:::" + bucket_name + "/*",
+                "Condition": {
+                    "StringEquals": {
+                        "s3:x-amz-acl": "bucket-owner-full-control"
+                    }
+                }
+            }]
+        existing_policy["Statement"].extend(bucket_policy)
+
+        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+
+    def disable_s3_logs(self, names, s3_bucket):
+        attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'false'}]
+
+        for name in names:
+            response = self.client.describe_load_balancer_attributes(LoadBalancerName=name)
+            if "LoadBalancerAttributes" in response:
+                access_logs = response.get("LoadBalancerAttributes").get("AccessLog")
+                if(access_logs["Enabled"]==True):
+                    access_logs["Enabled"]=False
+                    self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
+                    time.sleep()(1)
 
 class AWSResourcesProvider(object):
     provider_map = {
@@ -1173,7 +1323,9 @@ class AWSResourcesProvider(object):
         "s3": S3Resource,
         "CreateBucket": S3Resource,
         "vpc": VpcResource,
-        "CreateVpc": VpcResource
+        "CreateVpc": VpcResource,
+        "ELBClassicCreate": ElbResource,
+        "elb": ElbResource,
     }
 
     @classmethod
