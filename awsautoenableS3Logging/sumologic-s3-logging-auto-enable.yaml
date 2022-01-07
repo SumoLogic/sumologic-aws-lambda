@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: "Lambda Function for  auto enable s3 logs for S3 Buckets, VPCs, Subnets, Network Interfaces and Application load balancer."
+Description: "Lambda Function for  auto enable s3 logs for S3 Buckets, VPCs, Subnets, Network Interfaces, Application load balancer and Classic load balancer"
 
 Globals:
   Function:
@@ -24,7 +24,7 @@ Metadata:
       - s3logging
       - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.2
+    SemanticVersion: 1.0.3
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/awsautoenableS3Logging
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
@@ -88,12 +88,14 @@ Parameters:
     Type: String
     Description: "S3 - To Enable S3 Audit Logging for new S3 buckets.
                   VPC - To Enable VPC flow logs for new VPC, Subnets and Network Interfaces.
-                  ALB - To Enable S3 Logging for new Application Load Balancer."
+                  ALB - To Enable S3 Logging for new Application Load Balancer.
+                  ELB - To Enable S3 logging for new Classic Load Balancer"
     AllowedPattern: ".+"
     AllowedValues:
       - 'S3'
       - 'VPC'
       - 'ALB'
+      - 'ELB'
 
   AutoEnableResourceOptions:
     Type: String
@@ -126,7 +128,7 @@ Parameters:
   RemoveOnDeleteStack:
     AllowedValues:
       - true
-      - false
+      - false 
     Default: true
     Description: "True - To remove S3 logging or Vpc flow logs.
                   False - To keep the S3 logging."
@@ -135,6 +137,9 @@ Parameters:
 Conditions:
   enable_alb_logging: !And
     - !Equals [!Ref AutoEnableLogging, 'ALB']
+    - !Condition auto_enable_new
+  enable_elb_logging: !And
+    - !Equals [!Ref AutoEnableLogging, 'ELB']
     - !Condition auto_enable_new
   enable_s3_buckets_logging: !And
     - !Equals [!Ref AutoEnableLogging, 'S3']
@@ -201,7 +206,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Condition: auto_enable_new
     Properties:
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.2/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.8/sumo_app_utils.zip
       Handler: "awsresource.enable_s3_logs"
       Runtime: python3.7
       Role: !GetAtt SumoLambdaRole.Arn
@@ -333,13 +338,52 @@ Resources:
         - Arn: !GetAtt EnableNewAWSResourcesLambda.Arn
           Id: Main
 
+  AutoEnableElbLogEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Condition: enable_elb_logging
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref EnableNewAWSResourcesLambda
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt AutoEnableElbLogEventsRuleTrigger.Arn
+
+  AutoEnableElbLogEventsRuleTrigger:
+    Type: 'AWS::Events::Rule'
+    Condition: enable_elb_logging
+    Properties:
+      Description: Auto-Enable S3 logging for ELB classic resources with Lambda from events
+      EventPattern:
+        source:
+          - aws.elasticloadbalancing
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - elasticloadbalancing.amazonaws.com
+          eventName:
+            - CreateLoadBalancer
+      Name: !Join
+        - ""
+        - - "sumo-logic-elb-s3-"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split ["/", !Ref "AWS::StackId"]
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt EnableNewAWSResourcesLambda.Arn
+          Id: Main
+
   EnableExisitngAWSResourcesLambda:
     Type: 'AWS::Serverless::Function'
     Condition: auto_enable_existing
     Properties:
       Handler: main.handler
       Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.2/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.8/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 900
       Role:
@@ -352,7 +396,7 @@ Resources:
     Condition: auto_enable_existing
     Properties:
       ServiceToken: !GetAtt EnableExisitngAWSResourcesLambda.Arn
-      AWSResource: !If [enable_s3_buckets_logging, "s3", !If [enable_vpc_flow_logs_logging, "vpc", "elbv2"] ]
+      AWSResource: !If [enable_s3_buckets_logging, "s3", !If [enable_vpc_flow_logs_logging, "vpc", !If [enable_alb_logging, "elbv2","elb"]] ]
       BucketName: !Ref BucketName
       Filter: !Ref FilterExpression
       BucketPrefix: !Ref BucketPrefix
