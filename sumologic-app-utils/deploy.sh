@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$AWS_PROFILE" != "prod" ]
+if [ "$AWS_PROFILE" == "prod" ]
 then
     SAM_S3_BUCKET="appdevstore"
     AWS_REGION="us-east-1"
@@ -26,12 +26,13 @@ if [ ! -f sumo_app_utils.zip ]; then
     rm -r python
 fi
 
-version="2.0.7"
+version="2.0.9"
 
 aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
 
-sam package --template-file sumo_app_utils.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_sumo_app_utils.yaml --s3-prefix "sumo_app_utils/v"$version
+sam package --template-file sumo_app_utils.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_sumo_app_utils.yaml --s3-prefix "sumo_app_utils/v"$version --region $AWS_REGION --profile $AWS_PROFILE
 
 sam publish --template packaged_sumo_app_utils.yaml --region $AWS_REGION --semantic-version $version
+
 # sam deploy --template-file packaged_sumo_app_utils.yaml --stack-name testingsumoapputils --capabilities CAPABILITY_IAM --region $AWS_REGION
 
