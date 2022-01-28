@@ -729,14 +729,11 @@ class App(SumoResource):
 
         # Delete is called by CF itself on Old Resource if we create a new resource. So, no need to delete the resource here.
         # self.delete(app_folder_id, remove_on_delete_stack=True)
-        #
-        # app.create(appname=appname, source_params=source_params,folder_name="abc" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='adm') #import
-        #data, new_app_folder_id = self.create(appname=appname, source_params=source_params, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
+        
         isAdmin = False
         if location == "admin":
             isAdmin=True
         data, new_app_folder_id = self.create(appname=appname, source_params=source_params, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
-        #data, new_app_folder_id = self.create(appname, source_params, appid, folder_name, s3url)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
             backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, isAdmin)
@@ -1519,13 +1516,9 @@ if __name__ == '__main__':
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
     # _, source_id = src.create(collector_id, source_name, source_category)
-    # App installation loacation - admin or folder depends on "location" variable (location='admin' or anything)
-    # New params - orgID, share , location
     #_, app_folder_id = app.create(appname=appname, source_params=source_params,folder_name="abc" ,appid=appid,orgID="0000000000BC5DF9",share=True,location='adm') #install
     #_, app_folder_id = app.update(app_folder_id='0000000001A70848', appname=appname, source_params=source_params,folder_name="abcd" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='admin',retain_old_app=True) #import
-    #app.delete(app_folder_id, True)
-    #print(app_folder_id)
-    app.delete('0000000001A81619', True, location='admin')
+    #app.delete(app_folder_id, True, location='admin')
 
     # monitor=AlertsMonitor(props)
     # _, app_folder_id = monitor.update('1234','abc',monitors3,"",retain_old_alerts=True)
