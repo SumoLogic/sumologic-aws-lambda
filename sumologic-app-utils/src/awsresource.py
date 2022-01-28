@@ -1301,7 +1301,7 @@ class ElbResource(AWSResourcesAbstract):
                 if(access_logs["Enabled"]==True):
                     access_logs["Enabled"]=False
                     self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
-                    time.sleep()(1)
+                    time.sleep(1)
 
 class AWSResourcesProvider(object):
     provider_map = {
