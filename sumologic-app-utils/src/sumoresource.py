@@ -490,10 +490,10 @@ class App(SumoResource):
         appjson['name'] = appjson['name'] + "-" + datetime.utcnow().strftime(date_format)
         return appjson
 
-    def _get_app_folder(self, appdata, parent_id):
+    def _get_app_folder(self, appdata, parent_id, userMode=False):
         folder_id = None
         try:
-            response = self.sumologic_cli.create_folder(appdata["name"], appdata["description"][:255], parent_id)
+            response = self.sumologic_cli.create_folder(appdata["name"], appdata["description"][:255], parent_id, userMode)
             folder_id = response.json()["id"]
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
@@ -562,7 +562,7 @@ class App(SumoResource):
         print("job status: %s" % response.text)
         return response
 
-    def _create_backup_folder(self, new_app_folder_id, old_app_folder_id):
+    def _create_backup_folder(self, new_app_folder_id, old_app_folder_id, isAdmin):
         new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id)
         parent_folder_id = new_folder_details["parentId"]
 
@@ -576,29 +576,91 @@ class App(SumoResource):
 
         backup_folder_id = self._get_app_folder({"name": back_up,
                                                  "description": "The folder contains back up of all the apps that are updated using CloudFormation template."},
-                                                parent_folder_id)
+                                                parent_folder_id, isAdmin)
         return backup_folder_id
 
-    def _create_or_fetch_apps_parent_folder(self, folder_prefix):
-        response = self.sumologic_cli.get_personal_folder()
+    def get_admin_recommended_id(self, isAdminMode):
+        """ Sync call to  get the Admin Recommended folder Id """
+        return self.get_admin_recommended(isAdminMode)["id"]
+
+    def get_admin_recommended(self, isAdminMode):
+        """ Sync call to  get the Admin Recommended folder content """
+        headers = {"isAdminMode": "true"} if isAdminMode else None
+    
+        job_response = self.sumologic_cli.get(
+            "/content/folders/adminRecommended", version="v2")
+        job_id = json.loads(job_response.text)["id"]
+
+        print("Got Admin Recommended job "+job_id+" , now checking for status")
+        while True:
+            status_response = self.sumologic_cli.get(f"/content/folders/adminRecommended/{job_id}/status", version="v2")
+            if (json.loads(status_response.text)["status"] == "InProgress"):
+                print('Admin Recommended job in progress')
+                time.sleep(1)
+            else:
+                if (json.loads(status_response.text)["status"] == "Failed"):
+                    raise Exception("Not able to fetch Admin Recommended Folder")
+                else:
+                    status_response = self.sumologic_cli.get(f"/content/folders/adminRecommended/{job_id}/result", version="v2")
+                    return status_response
+
+    def share_content_with_org(self, content_id, org_id, isAdminMode):
+        """ Share a given content item """
+        payload = {"contentPermissionAssignments": [
+            {
+                "permissionName": "View",
+                "sourceType": "org",
+                "sourceId": org_id,
+                "contentId": content_id
+            }],
+            "notifyRecipients": False,
+            "notificationMessage": ""
+        }
+        headers = {'isAdminMode': 'true'} if isAdminMode else {}
+        response = self.sumologic_cli.put(f"/content/{content_id}/permissions/add", params=payload,headers=headers, version="v2")
+        if response.status_code==200:
+            return response
+        else:
+            raise Exception(f"Unable to share {content_id} in org: {org_id}")
+
+    def share_app_by_id(self, app_folder_id, org_id, isAdminMode):
+        """ This shares an app identified by its Id under the Admin Recommended folder """
+        response = self.share_content_with_org(app_folder_id, org_id, isAdminMode)
+        if response.status_code==200:
+            print('Shared '+ app_folder_id +' in org '+ org_id)
+        else:
+            raise Exception(f"Folder Sharing Failed for folder id: {app_folder_id} in {org_id} response: {response.text}")
+
+    def _create_or_fetch_apps_parent_folder(self, folder_prefix,orgID,share=False,location=None):
+        userMode = False
+        folder_id=""
+        if location == 'admin':
+            response = self.get_admin_recommended(isAdminMode=True)
+            folder_id=response.json()["id"]
+            userMode=True
+        else:
+            response = self.sumologic_cli.get_personal_folder()
+            folder_id=response.json()['id']
         folder_name = folder_prefix + str(datetime.now().strftime(" %d-%b-%Y"))
         description = "This folder contains all the apps created as a part of Sumo Logic Solutions."
         try:
-            folder = self.sumologic_cli.create_folder(folder_name, description, response.json()['id'])
+            folder = self.sumologic_cli.create_folder(folder_name, description, folder_id, userMode)
+            if share:
+                share_response = self.share_app_by_id(folder.json()["id"],orgID,userMode)
             return folder.json()["id"]
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'content:duplicate_content':
-                        response = self.sumologic_cli.get_personal_folder()
+                        #response = self.sumologic_cli.get_personal_folder()
                         if "children" in response.json():
                             for children in response.json()["children"]:
                                 if "name" in children and children["name"] == folder_name:
                                     return children["id"]
             raise
 
-    def create_by_import_api(self, appname, source_params, folder_name, s3url, *args, **kwargs):
+    def create_by_import_api(self, appname, source_params, folder_name, s3url, orgID, location, share, *args, **kwargs):
         # Add  retry if folder sync fails
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
@@ -606,27 +668,32 @@ class App(SumoResource):
         content = self._get_app_content(appname, source_params, s3url)
 
         if folder_name:
-            folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
+            folder_id = self._create_or_fetch_apps_parent_folder(folder_name,orgID,share,location)
         else:
             response = self.sumologic_cli.get_personal_folder()
             folder_id = response.json()['id']
-        app_folder_id = self._get_app_folder(content, folder_id)
-        time.sleep(5)
-        response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true")
+        if location == "admin":
+            app_folder_id = self._get_app_folder(content, folder_id, True)
+            time.sleep(5)
+            response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true", isAdmin=True)
+        else:
+            app_folder_id = self._get_app_folder(content, folder_id)
+            time.sleep(5)
+            response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true")
         job_id = response.json()["id"]
-        print("installed app %s: appFolderId: %s personalFolderId: %s jobId: %s" % (
+        print("Imported app %s: appFolderId: %s FolderId: %s jobId: %s" % (
             appname, app_folder_id, folder_id, job_id))
         self._wait_for_folder_creation(folder_id, job_id)
         return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
 
-    def create_by_install_api(self, appid, appname, source_params, folder_name, *args, **kwargs):
+    def create_by_install_api(self, appid, appname, source_params, folder_name,orgID,location, share, *args, **kwargs):
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
         folder_id = None
 
         if folder_name:
-            folder_id = self._create_or_fetch_apps_parent_folder(folder_name)
+            folder_id = self._create_or_fetch_apps_parent_folder(folder_name,orgID,share,location)
         else:
             response = self.sumologic_cli.get_personal_folder()
             folder_id = response.json()['id']
@@ -634,7 +701,10 @@ class App(SumoResource):
         content = {'name': appname + datetime.now().strftime(" %d-%b-%Y %H:%M:%S"), 'description': appname,
                    'dataSourceValues': source_params, 'destinationFolderId': folder_id}
 
-        response = self.sumologic_cli.install_app(appid, content)
+        if location=="admin":
+            response = self.sumologic_cli.install_app(appid, content, True)
+        else:
+            response = self.sumologic_cli.install_app(appid, content)
         job_id = response.json()["id"]
         response = self._wait_for_app_install(job_id)
 
@@ -647,23 +717,32 @@ class App(SumoResource):
         else:
             print("%s installation failed." % appname)
             raise Exception(response.text)
-
-    def create(self, appname, source_params, appid=None, folder_name=None, s3url=None, *args, **kwargs):
+    
+    def create(self, appname, source_params, orgID, share=True, location=None, appid=None, folder_name=None, s3url=None,*args, **kwargs):
         if appid:
-            return self.create_by_install_api(appid, appname, source_params, folder_name, *args, **kwargs)
+            return self.create_by_install_api(appid, appname, source_params, folder_name,orgID,location, share, *args, **kwargs)
         else:
-            return self.create_by_import_api(appname, source_params, folder_name, s3url, *args, **kwargs)
+            return self.create_by_import_api(appname, source_params, folder_name, s3url,orgID,location, share, *args, **kwargs)
 
-    def update(self, app_folder_id, appname, source_params, appid=None, folder_name=None, retain_old_app=False,
-               s3url=None, *args, **kwargs):
+    def update(self, app_folder_id, appname, source_params, orgID, share=True, location=None, appid=None, folder_name=None, retain_old_app=False,
+               s3url=None,  *args, **kwargs):
+
         # Delete is called by CF itself on Old Resource if we create a new resource. So, no need to delete the resource here.
         # self.delete(app_folder_id, remove_on_delete_stack=True)
-        data, new_app_folder_id = self.create(appname, source_params, appid, folder_name, s3url)
+        #
+        # app.create(appname=appname, source_params=source_params,folder_name="abc" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='adm') #import
+        #data, new_app_folder_id = self.create(appname=appname, source_params=source_params, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
+        isAdmin = False
+        if location == "admin":
+            isAdmin=True
+        data, new_app_folder_id = self.create(appname=appname, source_params=source_params, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
+        #data, new_app_folder_id = self.create(appname, source_params, appid, folder_name, s3url)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
-            backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id)
+            backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, isAdmin)
+            print("backup folder created")
             # Starting Folder Copy
-            response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id)
+            response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id, isAdmin)
             job_id = response.json()["id"]
             print("Copy Completed parentFolderId: %s jobId: %s" % (backup_folder_id, job_id))
             copied_folder_id = self._wait_for_folder_copy(app_folder_id, job_id)
@@ -671,14 +750,20 @@ class App(SumoResource):
             copied_folder_details = self.sumologic_cli.get_folder_by_id(copied_folder_id)
             copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)", "- BackUp_" + datetime.now().strftime("%H:%M:%S")),
                                      "description": copied_folder_details["description"][:255]}
-            self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details)
+            self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details, isAdmin)
             print("Back Up done for the APP: %s." % backup_folder_id)
         return data, new_app_folder_id
 
-    def delete(self, app_folder_id, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, app_folder_id, remove_on_delete_stack, location=None, *args, **kwargs):
+        isAdmin = False
+        if location == "admin":
+            isAdmin=True
         if remove_on_delete_stack:
-            response = self.sumologic_cli.delete_folder(app_folder_id)
-            print("deleting app folder %s : %s" % (app_folder_id, response.text))
+            try:
+                response = self.sumologic_cli.delete_folder(app_folder_id, isAdmin)
+                print("deleting app folder %s : %s" % (app_folder_id, response.text))
+            except Exception as e:
+                print("App - Exception while deleting the App folder %s," % e)
         else:
             print("skipping app folder deletion")
 
@@ -694,7 +779,10 @@ class App(SumoResource):
             "folder_name": props.get("FolderName"),
             "retain_old_app": props.get("RetainOldAppOnUpdate") == 'true',
             "app_folder_id": app_folder_id,
-            "s3url": props.get("AppJsonS3Url")
+            "s3url": props.get("AppJsonS3Url"),
+            "location": props.get("location"),
+            "share": props.get("share"),
+            "orgID": props.get("orgid")
         }
 
 
@@ -1358,9 +1446,14 @@ class AlertsMonitor(SumoResource):
         data, new_folder_id = self.create(folder_name, monitors3url, variables, suffix_date_time)
         if retain_old_alerts:
             # Retaining old folder in the new folder as backup.
-            old_folder = self.sumologic_cli.export_monitors(folder_id)
-            old_folder["name"] = "Back Up " + old_folder["name"]
-            self.sumologic_cli.import_monitors(new_folder_id, old_folder)
+            try:
+                old_folder = self.sumologic_cli.export_monitors(folder_id)
+                old_folder["name"] = "Back Up " + old_folder["name"]
+                self.sumologic_cli.import_monitors(new_folder_id, old_folder)
+            except Exception as e:
+                print("Error while importing Monitors folder")
+                print(e)
+
         print("ALERTS MONITORS - Update successful with ID %s." % new_folder_id)
         return data, new_folder_id
 
@@ -1395,9 +1488,9 @@ if __name__ == '__main__':
     props = {
         "SumoAccessID": "",
         "SumoAccessKey": "",
-        "SumoDeployment": "us1",
+        "SumoDeployment": "",
     }
-    app_prefix = "CloudTrail"
+    app_prefix = "ALB"
     # app_prefix = "GuardDuty"
     collector_id = None
     collector_type = "Hosted"
@@ -1405,8 +1498,10 @@ if __name__ == '__main__':
     source_name = "%sEvents" % app_prefix
     source_category = "Labs/AWS/%s" % app_prefix
     # appname = "Global Intelligence for Amazon GuardDuty"
-    appname = "Global Intelligence for AWS CloudTrail"
-    appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
+    appname = "AWS Application LB"
+    appid="ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
+    #appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
+    s3url = ""
     # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
     # appid = None
     # source_params = {
@@ -1424,9 +1519,16 @@ if __name__ == '__main__':
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
     # _, source_id = src.create(collector_id, source_name, source_category)
+    # App installation loacation - admin or folder depends on "location" variable (location='admin' or anything)
+    # New params - orgID, share , location
+    #_, app_folder_id = app.create(appname=appname, source_params=source_params,folder_name="abc" ,appid=appid,orgID="0000000000BC5DF9",share=True,location='adm') #install
+    #_, app_folder_id = app.update(app_folder_id='0000000001A70848', appname=appname, source_params=source_params,folder_name="abcd" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='admin',retain_old_app=True) #import
+    #app.delete(app_folder_id, True)
+    #print(app_folder_id)
+    app.delete('0000000001A81619', True, location='admin')
 
-    _, app_folder_id = app.create(appname, source_params, appid)
-    app.delete(app_folder_id, True)
+    # monitor=AlertsMonitor(props)
+    # _, app_folder_id = monitor.update('1234','abc',monitors3,"",retain_old_alerts=True)
 
     # update
     # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
