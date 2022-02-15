@@ -645,7 +645,7 @@ class App(SumoResource):
         description = "This folder contains all the apps created as a part of Sumo Logic Solutions."
         try:
             folder = self.sumologic_cli.create_folder(folder_name, description, folder_id, userMode)
-            if share:
+            if share == 'True':
                 share_response = self.share_app_by_id(folder.json()["id"],orgID,userMode)
             return folder.json()["id"]
         except Exception as e:
@@ -760,7 +760,7 @@ class App(SumoResource):
                 response = self.sumologic_cli.delete_folder(app_folder_id, isAdmin)
                 print("deleting app folder %s : %s" % (app_folder_id, response.text))
             except Exception as e:
-                print("App - Exception while deleting the App folder %s," % e)
+                print("App - Exception while deleting the App folder ID %s, error: %s " %(app_folder_id, e))
         else:
             print("skipping app folder deletion")
 
@@ -777,7 +777,7 @@ class App(SumoResource):
             "retain_old_app": props.get("RetainOldAppOnUpdate") == 'true',
             "app_folder_id": app_folder_id,
             "s3url": props.get("AppJsonS3Url"),
-            "location": props.get("location"),
+            "location": 'admin' if props.get("location")=='Admin Recommended Folder' else 'personal',
             "share": props.get("share"),
             "orgID": props.get("orgid")
         }
@@ -1448,7 +1448,7 @@ class AlertsMonitor(SumoResource):
                 old_folder["name"] = "Back Up " + old_folder["name"]
                 self.sumologic_cli.import_monitors(new_folder_id, old_folder)
             except Exception as e:
-                print("Error while importing Monitors folder")
+                print("Error while taking backup of Monitors folder")
                 print(e)
 
         print("ALERTS MONITORS - Update successful with ID %s." % new_folder_id)
