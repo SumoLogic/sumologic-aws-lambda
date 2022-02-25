@@ -24,7 +24,7 @@ Metadata:
     - s3logging
     - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.3
+    SemanticVersion: 1.0.4
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/awsautoenableS3Logging
     LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.3/978602b5b9ec16f8bab0e38fd6b3998f
     ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.3/d05d411471e0bb4db3389f2523f515f0

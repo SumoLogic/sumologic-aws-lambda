@@ -733,7 +733,7 @@ class App(SumoResource):
         isAdmin = False
         if location == "admin":
             isAdmin=True
-        data, new_app_folder_id = self.create(appname=appname, source_params=source_params, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
+        data, new_app_folder_id = self.create(appname=appname, source_params=source_params, appid=appid, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
             backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, isAdmin)
