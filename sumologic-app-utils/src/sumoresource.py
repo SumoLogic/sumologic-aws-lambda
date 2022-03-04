@@ -736,19 +736,23 @@ class App(SumoResource):
         data, new_app_folder_id = self.create(appname=appname, source_params=source_params, appid=appid, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
-            backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, isAdmin)
-            print("backup folder created")
-            # Starting Folder Copy
-            response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id, isAdmin)
-            job_id = response.json()["id"]
-            print("Copy Completed parentFolderId: %s jobId: %s" % (backup_folder_id, job_id))
-            copied_folder_id = self._wait_for_folder_copy(app_folder_id, job_id)
-            # Updating copied folder name with suffix BackUp.
-            copied_folder_details = self.sumologic_cli.get_folder_by_id(copied_folder_id)
-            copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)", "- BackUp_" + datetime.now().strftime("%H:%M:%S")),
-                                     "description": copied_folder_details["description"][:255]}
-            self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details, isAdmin)
-            print("Back Up done for the APP: %s." % backup_folder_id)
+            try:
+                backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, isAdmin)
+                print("backup folder created")
+                # Starting Folder Copy
+                response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id, isAdmin)
+                job_id = response.json()["id"]
+                print("Copy Completed parentFolderId: %s jobId: %s" % (backup_folder_id, job_id))
+                copied_folder_id = self._wait_for_folder_copy(app_folder_id, job_id)
+                # Updating copied folder name with suffix BackUp.
+                copied_folder_details = self.sumologic_cli.get_folder_by_id(copied_folder_id)
+                copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)", "- BackUp_" + datetime.now().strftime("%H:%M:%S")),
+                                        "description": copied_folder_details["description"][:255]}
+                self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details, isAdmin)
+                print("Back Up done for the APP: %s." % backup_folder_id)
+            except Exception as e:
+                print("App - Exception while taking backup of App folder ID %s, error: %s " %(app_folder_id, e))
+
         return data, new_app_folder_id
 
     def delete(self, app_folder_id, remove_on_delete_stack, location=None, *args, **kwargs):
