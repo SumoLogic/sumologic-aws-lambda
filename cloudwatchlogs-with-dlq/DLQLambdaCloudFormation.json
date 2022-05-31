@@ -2,15 +2,9 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description" : "Sumo Logic CloudWatch log collector",
     "Parameters" : {
-      "SumoEndPointURL" : {
-        "Type" : "String",
-        "Default" : "<Enter URL Here>",
-        "Description" : "Enter SUMO_ENDPOINT created while configuring HTTP Source"
-      },
-      "EmailID": {
+      "EnvironmentName" : {
         "Type": "String",
-        "Default": "test@gmail.com",
-        "Description": "Enter your email for receiving alerts.You will receive confirmation email after the deployment is complete, confirm it to subscribe for alerts."
+        "Description": "The environment name"
       },
       "NumOfWorkers": {
         "Type": "Number",
@@ -25,7 +19,7 @@
       },
       "IncludeLogGroupInfo": {
         "Type": "String",
-        "Default": "false",
+        "Default": "true",
         "AllowedValues" : ["true" ,"false"],
         "Description": "Select true to get loggroup/logstream values in logs"
       },
@@ -63,7 +57,7 @@
         "SumoCWLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-                "LogGroupName": { "Fn::Join": [ "-", [ "SumoCWLogGroup", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "LogGroupName": { "Fn::Sub": "SumoCWLogGroup-${EnvironmentName}"},
                 "RetentionInDays": 7
             }
         },
@@ -109,7 +103,7 @@
         "SumoCWDeadLetterQueue": {
             "Type": "AWS::SQS::Queue",
             "Properties": {
-                "QueueName": { "Fn::Join": [ "-", [ "SumoCWDeadLetterQueue", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] }
+                "QueueName": { "Fn::Sub": "SumoCWDeadLetterQueue-${EnvironmentName}"}
             }
         },
         "SumoCWLambdaExecutionRole": {
@@ -126,7 +120,7 @@
                 "Path": "/",
                 "Policies": [
                     {
-                        "PolicyName": { "Fn::Join": [ "-", [ "SQSCreateLogsRolePolicy", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                        "PolicyName": { "Fn::Sub": "SQSCreateLogsRolePolicy-${EnvironmentName}"},
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [{
@@ -161,7 +155,7 @@
                         }
                     },
                     {
-                        "PolicyName": { "Fn::Join": [ "-", [ "CloudWatchCreateLogsRolePolicy", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                        "PolicyName": { "Fn::Sub": "CloudWatchCreateLogsRolePolicy-${EnvironmentName}"},
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [{
@@ -203,7 +197,7 @@
                 "SumoCWDeadLetterQueue"
             ],
             "Properties": {
-                "FunctionName": { "Fn::Join": [ "-", [ "SumoCWLogsLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "FunctionName": { "Fn::Sub": "SumoCWLogsLambda-${EnvironmentName}"},
                 "Code": {
                     "S3Bucket": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "bucketname"]},
                     "S3Key": "cloudwatchlogs-with-dlq.zip"
@@ -228,7 +222,7 @@
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
-                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
+                        "SUMO_ENDPOINT": {"Fn::Sub": "{{resolve:secretsmanager:/${EnvironmentName}/sumologic:SecretString:lambdaEndpoint}}"},
                         "LOG_FORMAT": {"Ref": "LogFormat"},
                         "INCLUDE_LOG_INFO": {"Ref": "IncludeLogGroupInfo"},
                         "LOG_STREAM_PREFIX": {"Ref": "LogStreamPrefix"}
@@ -265,7 +259,7 @@
                 "SumoCWDeadLetterQueue"
             ],
             "Properties": {
-                "FunctionName": { "Fn::Join": [ "-", [ "SumoCWProcessDLQLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
+                "FunctionName": { "Fn::Sub": "SumoCWProcessDLQLambda-${EnvironmentName}"},
                 "Code": {
                     "S3Bucket": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "bucketname"]},
                     "S3Key": "cloudwatchlogs-with-dlq.zip"
@@ -290,7 +284,7 @@
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
-                        "SUMO_ENDPOINT": {"Ref": "SumoEndPointURL"},
+                        "SUMO_ENDPOINT": {"Fn::Sub": "{{resolve:secretsmanager:/${EnvironmentName}/sumologic:SecretString:lambdaEndpoint}}"},
                         "TASK_QUEUE_URL": {
                             "Fn::Join": [
                                 "",
@@ -311,40 +305,6 @@
                     }
                 }
             }
-        },
-        "SumoCWEmailSNSTopic": {
-            "Type":"AWS::SNS::Topic",
-            "Properties":{
-                "Subscription":[ {
-                    "Endpoint" : {"Ref": "EmailID"},
-                    "Protocol" : "email"
-                }]
-            }
-        },
-        "SumoCWSpilloverAlarm":{
-            "Type":"AWS::CloudWatch::Alarm",
-            "Properties":{
-                "AlarmActions":[
-                    {
-                        "Ref":"SumoCWEmailSNSTopic"
-                    }
-                ],
-                "AlarmDescription":"Notify via email if number of messages in DeadLetterQueue exceeds threshold",
-                "ComparisonOperator":"GreaterThanThreshold",
-                "Dimensions":[
-                    {
-                        "Name": "QueueName",
-                        "Value": {"Fn::GetAtt": ["SumoCWDeadLetterQueue", "QueueName"]}
-                    }
-                ],
-                "EvaluationPeriods":"1",
-                "MetricName":"ApproximateNumberOfMessagesVisible",
-                "Namespace":"AWS/SQS",
-                "Period":"3600",
-                "Statistic":"Sum",
-                "Threshold":"100000"
-            },
-            "DependsOn": ["SumoCWEmailSNSTopic"]
         }
     },
     "Outputs": {
@@ -352,7 +312,7 @@
             "Description": "The ARN of the sumologic cloudwatch logs lambda",
             "Value" : { "Fn::GetAtt" : ["SumoCWLogsLambda", "Arn"] },
             "Export" : {
-                "Name" : { "Fn::Join": [ "-", [ "SumoCWLogsLambdaArn", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] }
+                "Name" : { "Fn::Sub": "SumoCWLogsLambdaArn-${EnvironmentName}"}
 
             }
         }
