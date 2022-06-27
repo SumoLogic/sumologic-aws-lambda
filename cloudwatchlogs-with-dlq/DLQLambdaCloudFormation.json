@@ -81,6 +81,24 @@
                 "SumoCWLogsLambda"
             ]
         },
+        "RDSCWLogSubscriptionFilter": {
+            "Type": "AWS::Logs::SubscriptionFilter",
+            "Properties": {
+                "LogGroupName": { "Fn::Sub": "/aws/rds/instance/rds-${EnvironmentName}/postgresql"},
+                "DestinationArn": {
+                    "Fn::GetAtt": [
+                        "SumoCWLogsLambda",
+                        "Arn"
+                    ]
+                },
+                "FilterPattern": ""
+            },
+            "DependsOn": [
+                "SumoCWLogGroup",
+                "SumoCWLambdaPermission",
+                "SumoCWLogsLambda"
+            ]
+        },
         "SumoCWLambdaPermission": {
 
             "Type": "AWS::Lambda::Permission",
