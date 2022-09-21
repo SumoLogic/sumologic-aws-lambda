@@ -21,10 +21,10 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.5/6092dd6c323e33634657102f570628e0
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.6/6092dd6c323e33634657102f570628e0
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.5/5a9a6e956be7449cbd5f8653e4475071
-    SemanticVersion: 1.0.5
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.6/5a9a6e956be7449cbd5f8653e4475071
+    SemanticVersion: 1.0.6
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -107,9 +107,9 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.5/8cd9d2fd91333ef1c32307ccb5f6bbd3
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.6/d8e8545bf4f818fdb41a52d27024bbcd
       Handler: loggroup-lambda-connector.handler
-      Runtime: nodejs12.x
+      Runtime: nodejs16.x
       Environment:
         Variables:
           DESTINATION_ARN:
@@ -150,6 +150,8 @@ Resources:
                 - logs.amazonaws.com
                 eventName:
                 - CreateLogGroup
+    Metadata:
+      SamResourceId: SumoLogGroupLambdaConnector
   sumoIAMPassRolePolicy:
     Type: AWS::IAM::Policy
     Condition: create_pass_role
@@ -165,6 +167,8 @@ Resources:
             Ref: RoleArn
       Roles:
       - Ref: SumoLogGroupLambdaConnectorRole
+    Metadata:
+      SamResourceId: sumoIAMPassRolePolicy
   SumoCWLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Condition: create_invoke_permission
@@ -178,6 +182,8 @@ Resources:
         Ref: AWS::AccountId
       SourceArn:
         Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*
+    Metadata:
+      SamResourceId: SumoCWLambdaInvokePermission
   SumoLogGroupExistingLambdaConnector:
     Type: AWS::Serverless::Function
     Condition: invoke_existing
@@ -194,7 +200,7 @@ Resources:
         \          }\n          response.send(event, context, responseStatus, responseData);\n\
         \    });\n};\n"
       Handler: index.handler
-      Runtime: nodejs12.x
+      Runtime: nodejs16.x
       Environment:
         Variables:
           FUNCTION_NAME:
@@ -207,6 +213,8 @@ Resources:
           - lambda:InvokeFunction
           Resource:
           - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}
+    Metadata:
+      SamResourceId: SumoLogGroupExistingLambdaConnector
   InvokeLambdaConnector:
     Type: AWS::CloudFormation::CustomResource
     Version: '1.0'
@@ -224,6 +232,8 @@ Resources:
         Ref: LogGroupPattern
       ROLE_ARN:
         Ref: RoleArn
+    Metadata:
+      SamResourceId: InvokeLambdaConnector
 Outputs:
   SumoLogGroupLambdaConnector:
     Description: SumoLogGroupLambdaConnector Function ARN

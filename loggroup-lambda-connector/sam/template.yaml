@@ -23,8 +23,8 @@ Metadata:
       - cloudwatch
     LicenseUrl: ../LICENSE
     Name: sumologic-loggroup-connector
-    ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.5
+    ReadmeUrl: ../Readme.md
+    SemanticVersion: 1.0.6
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
@@ -99,7 +99,7 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: "loggroup-lambda-connector.handler"
-      Runtime: nodejs12.x
+      Runtime: nodejs16.x
       Environment:
         Variables:
           DESTINATION_ARN: !Ref "DestinationArnValue"
@@ -190,7 +190,7 @@ Resources:
             });
         };
       Handler: "index.handler"
-      Runtime: nodejs12.x
+      Runtime: nodejs16.x
       Environment:
         Variables:
           FUNCTION_NAME: !Ref SumoLogGroupLambdaConnector
