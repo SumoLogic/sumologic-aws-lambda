@@ -1,6 +1,10 @@
-===========================================
-Kinesis to Sumo Logic
-===========================================
+
+# Kinesis to Sumo Logic
+
+## Warning: This Lambda Function is no longer recommended solution. Recommended solution is to use [AWS Kinesis Firehose for Logs](https://help-opensource.sumologic.com/docs/send-data/hosted-collectors/amazon-aws/aws-kinesis-firehose-logs-source/) 
+
+
+
 This function is invoked by AWS Lambda after it detects new records in Kinesis stream. The received collection of events are decompressed, transformed and send to Sumo Logic HTTP source endpoint.
 
 Files
