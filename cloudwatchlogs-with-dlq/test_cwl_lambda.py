@@ -217,8 +217,8 @@ region_map = {
     "eu-south-1":"appdevzipfiles-eu-south-1",
     "me-south-1":"appdevzipfiles-me-south-1s",
     "me-central-1": "appdevzipfiles-me-central-1",
-    "eu-central-2":"appdevzipfiles-eu-central-2",
-    "ap-northeast-3" :"appdevzipfiles-ap-northeast-3",
+    "eu-central-2":"appdevzipfiles-eu-central-2ss",
+    "ap-northeast-3" :"appdevzipfiles-ap-northeast-3s",
     "ap-southeast-3": "appdevzipfiles-ap-southeast-3"
 }
 

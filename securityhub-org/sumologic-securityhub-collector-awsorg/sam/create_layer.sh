@@ -11,7 +11,16 @@ fi
 
 declare -a regions=("us-east-2" "us-east-1" "us-west-1" "us-west-2" "ap-south-1" "ap-northeast-2" "ap-southeast-1" "ap-southeast-2" "ap-northeast-1" "ca-central-1" "eu-central-1" "eu-west-1" "eu-west-2" "eu-west-3" "sa-east-1")
 
-# Buckets names that are different from region name (e.g appdevzipfiles-eu-north-1s) - eu-north-1 , ap-east-1, af-south-1, me-south-1
+# Some buckets names have 's' or 'ss' in the region suffix. It is kept intentional as bucket names were not available.
+# Buckets names which are intentional -
+# 1. appdevzipfiles-eu-north-1s
+# 2. appdevzipfiles-ap-east-1s
+# 3. appdevzipfiles-af-south-1s
+# 4. appdevzipfiles-me-south-1s
+# 5. appdevzipfiles-me-central-1
+# 6. appdevzipfiles-eu-central-2ss
+# 7. appdevzipfiles-ap-northeast-3s
+# 8. appdevzipfiles-ap-southeast-3"
 
 for i in "${regions[@]}"
 do
