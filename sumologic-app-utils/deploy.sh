@@ -21,18 +21,18 @@ if [ ! -f sumo_app_utils.zip ]; then
     pip3 install requests -t .
     pip3 install retrying -t .
     cp -v ../src/*.py .
-    zip -r ../sumo_app_utils1.zip .
+    zip -r ../sumo_app_utils.zip .
     cd ..
     rm -r python
 fi
 
 version="2.0.15"
 
-# aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
+aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
 
-# sam package --template-file sumo_app_utils.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_sumo_app_utils.yaml --s3-prefix "sumo_app_utils/v"$version --region $AWS_REGION --profile $AWS_PROFILE
+sam package --template-file sumo_app_utils.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged_sumo_app_utils.yaml --s3-prefix "sumo_app_utils/v"$version --region $AWS_REGION --profile $AWS_PROFILE
 
-# sam publish --template packaged_sumo_app_utils.yaml --region $AWS_REGION --semantic-version $version
+sam publish --template packaged_sumo_app_utils.yaml --region $AWS_REGION --semantic-version $version
 
 # sam deploy --template-file packaged_sumo_app_utils.yaml --stack-name testingsumoapputils --capabilities CAPABILITY_IAM --region $AWS_REGION
 
