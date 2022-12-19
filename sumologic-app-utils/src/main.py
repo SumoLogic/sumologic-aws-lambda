@@ -30,7 +30,7 @@ def create(event, context):
         data, resource_id = resource.create(**params)
     except Exception as e:
         raise e
-    print(data)
+    #print(data)
     print(resource_id)
     helper.Data.update(data)
     helper.Status = "SUCCESS"
@@ -42,7 +42,7 @@ def create(event, context):
 def update(event, context):
     resource, resource_type, params = get_resource(event)
     data, resource_id = resource.update(**params)
-    print(data)
+    #print(data)
     print(resource_id)
     helper.Data.update(data)
     helper.Status = "SUCCESS"

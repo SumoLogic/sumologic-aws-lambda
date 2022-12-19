@@ -17,16 +17,16 @@ if [ ! -f sumo_app_utils.zip ]; then
     echo "creating zip file"
     mkdir python
     cd python
-    pip install  crhelper -t .
-    pip install requests -t .
-    pip install retrying -t .
+    pip3 install  crhelper -t .
+    pip3 install requests -t .
+    pip3 install retrying -t .
     cp -v ../src/*.py .
     zip -r ../sumo_app_utils.zip .
     cd ..
     rm -r python
 fi
 
-version="2.0.9"
+version="2.0.15"
 
 aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
 
