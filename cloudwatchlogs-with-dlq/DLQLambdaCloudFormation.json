@@ -56,7 +56,11 @@
             "eu-north-1": {"bucketname": "appdevzipfiles-eu-north-1s"},
             "eu-south-1": {"bucketname": "appdevzipfiles-eu-south-1"},
             "me-south-1": {"bucketname": "appdevzipfiles-me-south-1s"},
-            "sa-east-1": {"bucketname": "appdevzipfiles-sa-east-1"}
+            "sa-east-1": {"bucketname": "appdevzipfiles-sa-east-1"},
+            "me-central-1": {"bucketname": "appdevzipfiles-me-central-1"},
+            "eu-central-2": {"bucketname": "appdevzipfiles-eu-central-2ss"},
+            "ap-northeast-3": {"bucketname": "appdevzipfiles-ap-northeast-3s"},
+            "ap-southeast-3": {"bucketname": "appdevzipfiles-ap-southeast-3"}
         }
     },
     "Resources": {
@@ -224,7 +228,7 @@
                     }
                 },
                 "Handler": "cloudwatchlogs_lambda.handler",
-                "Runtime": "nodejs14.x",
+                "Runtime": "nodejs16.x",
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
@@ -286,7 +290,7 @@
                         ]
                     }
                 },
-                "Runtime": "nodejs14.x",
+                "Runtime": "nodejs16.x",
                 "MemorySize": 128,
                 "Environment": {
                     "Variables": {
