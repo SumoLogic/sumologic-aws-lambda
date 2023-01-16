@@ -53,9 +53,9 @@ Metadata:
     - benchmark
     - guardduty
     Name: sumologic-guardduty-benchmark
-    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.11/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.11/cab012d7fb7887671b751e6f5c0d2062
-    SemanticVersion: 1.0.11
+    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.12/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.12/cab012d7fb7887671b751e6f5c0d2062
+    SemanticVersion: 1.0.12
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -96,7 +96,7 @@ Parameters:
 Resources:
   CloudWatchEventFunction:
     Properties:
-      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.11/58c7f17decc811a6e8904a19a9f844a1
+      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.12/22b7b226ca9ec3b9dbb28b94c0e5f824
       Environment:
         Variables:
           SUMO_ENDPOINT:
@@ -111,14 +111,18 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs14.x
+      Runtime: nodejs18.x
     Type: AWS::Serverless::Function
+    Metadata:
+      SamResourceId: CloudWatchEventFunction
   SumoAppUtils:
     Type: AWS::Serverless::Application
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
         SemanticVersion: 2.0.6
+    Metadata:
+      SamResourceId: SumoAppUtils
   SumoHostedCollector:
     Type: Custom::Collector
     Properties:
@@ -139,6 +143,8 @@ Resources:
         Ref: SumoAccessKey
       SumoDeployment:
         Ref: SumoDeployment
+    Metadata:
+      SamResourceId: SumoHostedCollector
   SumoHTTPSource:
     Type: Custom::HTTPSource
     Properties:
@@ -166,6 +172,8 @@ Resources:
         Ref: SumoDeployment
       DateFormat: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
       DateLocatorRegex: .*"updatedAt":"(.*)".*
+    Metadata:
+      SamResourceId: SumoHTTPSource
   SumoGuardDutyBenchmarkApp:
     Type: Custom::App
     Properties:
@@ -188,6 +196,8 @@ Resources:
         Ref: SumoAccessKey
       SumoDeployment:
         Ref: SumoDeployment
+    Metadata:
+      SamResourceId: SumoGuardDutyBenchmarkApp
 Outputs:
   CloudWatchEventFunction:
     Description: CloudWatchEvent Processor Function ARN
