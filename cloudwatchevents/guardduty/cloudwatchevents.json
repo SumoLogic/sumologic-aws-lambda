@@ -85,7 +85,7 @@
                         ]
                     },
                     "Timeout": 300,
-                    "Runtime": "nodejs14.x"
+                    "Runtime": "nodejs18.x"
                 }
             },
             "CloudWatchEventFunctionCloudWatchEventTriggerPermission": {
