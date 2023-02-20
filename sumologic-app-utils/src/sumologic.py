@@ -312,6 +312,10 @@ class SumoLogic(object):
         response = self.post('/monitors/%s/import' % folder_id, params=content)
         return json.loads(response.text)
 
+    def set_monitors_permissions(self, content):
+        response = self.put('/monitors/permissions/set', params=content)
+        return json.loads(response.text)
+
     def export_monitors(self, folder_id):
         response = self.get('/monitors/%s/export' % folder_id)
         return json.loads(response.text)
