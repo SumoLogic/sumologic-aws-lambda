@@ -1429,7 +1429,7 @@ class AlertsMonitor(SumoResource):
         response = self.sumologic_cli.get_root_folder()
         return response["id"]
 
-    def import_monitor(self, folder_name, monitors3url, variables, suffix_date_time):
+    def import_monitor(self, folder_name, orgID, monitors3url, variables, suffix_date_time):
         date_format = "%d-%b-%Y %H:%M:%S"
         root_folder_id = self._get_root_folder_id()
         content = self._get_content_from_s3(monitors3url, variables)
@@ -1437,14 +1437,16 @@ class AlertsMonitor(SumoResource):
             else folder_name
         response = self.sumologic_cli.import_monitors(root_folder_id, content)
         import_id = response["id"]
+        monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
+        self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
         print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
         return {"ALERTS MONITORS": response["name"]}, import_id
 
-    def create(self, folder_name, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
-        return self.import_monitor(folder_name, monitors3url, variables, suffix_date_time)
+    def create(self, folder_name, orgID, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
+        return self.import_monitor(folder_name, orgID, monitors3url, variables, suffix_date_time)
 
-    def update(self, folder_id, folder_name, monitors3url, variables, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
-        data, new_folder_id = self.create(folder_name, monitors3url, variables, suffix_date_time)
+    def update(self, folder_id, folder_name, orgID, monitors3url, variables, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
+        data, new_folder_id = self.create(folder_name, orgID, monitors3url, variables, suffix_date_time)
         if retain_old_alerts:
             # Retaining old folder in the new folder as backup.
             try:
@@ -1482,6 +1484,7 @@ class AlertsMonitor(SumoResource):
             "suffix_date_time": props.get("SuffixDateTime") == 'true',
             "retain_old_alerts": props.get("RetainOldAlerts") == 'true',
             "folder_id": folder_id,
+            "orgID": props.get("orgid")
         }
 
 
@@ -1515,7 +1518,7 @@ if __name__ == '__main__':
     }
     # col = Collector(**params)
     # src = HTTPSource(**params)
-    app = App(props)
+    # app = App(props)
 
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
@@ -1524,8 +1527,10 @@ if __name__ == '__main__':
     #_, app_folder_id = app.update(app_folder_id='0000000001A70848', appname=appname, source_params=source_params,folder_name="abcd" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='admin',retain_old_app=True) #import
     #app.delete(app_folder_id, True, location='admin')
 
-    # monitor=AlertsMonitor(props)
-    # _, app_folder_id = monitor.update('1234','abc',monitors3,"",retain_old_alerts=True)
+    monitor=AlertsMonitor(props)
+    monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.5.2/appjson/Alerts-App.json"
+    # _, app_folder_id = monitor.create('abc','0000000000285A74',monitors3,"",retain_old_alerts=False)
+    # _, app_folder_id = monitor.update('000000000002796B','abc1','0000000000285A74',monitors3,"",retain_old_alerts=True)
 
     # update
     # _, new_collector_id = col.update(collector_id, collector_type, "%sCollectorNew" % app_prefix, "Labs/AWS/%sNew" % app_prefix, description="%s Collector" % app_prefix)
