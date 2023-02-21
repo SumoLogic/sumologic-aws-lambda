@@ -1452,10 +1452,7 @@ class AlertsMonitor(SumoResource):
             try:
                 old_folder = self.sumologic_cli.export_monitors(folder_id)
                 old_folder["name"] = "Back Up " + old_folder["name"]
-                response = self.sumologic_cli.import_monitors(new_folder_id, old_folder)
-                import_id = response["id"]
-                monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
-                self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
+                self.sumologic_cli.import_monitors(new_folder_id, old_folder)
             except Exception as e:
                 print("Error while taking backup of Monitors folder")
                 print(e)
