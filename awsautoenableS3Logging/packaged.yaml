@@ -24,10 +24,10 @@ Metadata:
     - s3logging
     - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.4
+    SemanticVersion: 1.0.5
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/awsautoenableS3Logging
-    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.3/978602b5b9ec16f8bab0e38fd6b3998f
-    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.3/d05d411471e0bb4db3389f2523f515f0
+    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.5/978602b5b9ec16f8bab0e38fd6b3998f
+    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.5/d05d411471e0bb4db3389f2523f515f0
     SpdxLicenseId: Apache-2.0
 Mappings:
   Region2ELBAccountId:
@@ -193,8 +193,6 @@ Resources:
             Action:
             - elasticloadbalancing:DescribeLoadBalancerAttributes
             - elasticloadbalancing:DescribeLoadBalancers
-            - elasticloadbalancing:AddTags
-            - elasticloadbalancing:RemoveTags
             - elasticloadbalancing:ModifyLoadBalancerAttributes
             - logs:CreateLogGroup
             - logs:CreateLogStream
@@ -217,11 +215,13 @@ Resources:
             - s3:GetBucketLogging
             - s3:PutBucketLogging
             Resource: '*'
+    Metadata:
+      SamResourceId: SumoLambdaRole
   EnableNewAWSResourcesLambda:
     Type: AWS::Serverless::Function
     Condition: auto_enable_new
     Properties:
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.8/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.10/sumo_app_utils.zip
       Handler: awsresource.enable_s3_logs
       Runtime: python3.7
       Role:
@@ -246,6 +246,8 @@ Resources:
             - Region2ELBAccountId
             - Ref: AWS::Region
             - AccountId
+    Metadata:
+      SamResourceId: EnableNewAWSResourcesLambda
   AutoEnableS3LogEventsInvokePermission:
     Type: AWS::Lambda::Permission
     Condition: enable_s3_buckets_logging
@@ -258,6 +260,8 @@ Resources:
         Fn::GetAtt:
         - AutoEnableS3LogEventsRuleTrigger
         - Arn
+    Metadata:
+      SamResourceId: AutoEnableS3LogEventsInvokePermission
   AutoEnableS3LogEventsRuleTrigger:
     Type: AWS::Events::Rule
     Condition: enable_s3_buckets_logging
@@ -293,6 +297,8 @@ Resources:
           - EnableNewAWSResourcesLambda
           - Arn
         Id: Main
+    Metadata:
+      SamResourceId: AutoEnableS3LogEventsRuleTrigger
   AutoEnableVPCEventsInvokePermission:
     Type: AWS::Lambda::Permission
     Condition: enable_vpc_flow_logs_logging
@@ -305,6 +311,8 @@ Resources:
         Fn::GetAtt:
         - AutoEnableVPCEventsRuleTrigger
         - Arn
+    Metadata:
+      SamResourceId: AutoEnableVPCEventsInvokePermission
   AutoEnableVPCEventsRuleTrigger:
     Type: AWS::Events::Rule
     Condition: enable_vpc_flow_logs_logging
@@ -340,6 +348,8 @@ Resources:
           - EnableNewAWSResourcesLambda
           - Arn
         Id: Main
+    Metadata:
+      SamResourceId: AutoEnableVPCEventsRuleTrigger
   AutoEnableAlbLogEventsInvokePermission:
     Type: AWS::Lambda::Permission
     Condition: enable_alb_logging
@@ -352,6 +362,8 @@ Resources:
         Fn::GetAtt:
         - AutoEnableAlbLogEventsRuleTrigger
         - Arn
+    Metadata:
+      SamResourceId: AutoEnableAlbLogEventsInvokePermission
   AutoEnableAlbLogEventsRuleTrigger:
     Type: AWS::Events::Rule
     Condition: enable_alb_logging
@@ -387,6 +399,8 @@ Resources:
           - EnableNewAWSResourcesLambda
           - Arn
         Id: Main
+    Metadata:
+      SamResourceId: AutoEnableAlbLogEventsRuleTrigger
   AutoEnableElbLogEventsInvokePermission:
     Type: AWS::Lambda::Permission
     Condition: enable_elb_logging
@@ -399,6 +413,8 @@ Resources:
         Fn::GetAtt:
         - AutoEnableElbLogEventsRuleTrigger
         - Arn
+    Metadata:
+      SamResourceId: AutoEnableElbLogEventsInvokePermission
   AutoEnableElbLogEventsRuleTrigger:
     Type: AWS::Events::Rule
     Condition: enable_elb_logging
@@ -435,19 +451,23 @@ Resources:
           - EnableNewAWSResourcesLambda
           - Arn
         Id: Main
+    Metadata:
+      SamResourceId: AutoEnableElbLogEventsRuleTrigger
   EnableExisitngAWSResourcesLambda:
     Type: AWS::Serverless::Function
     Condition: auto_enable_existing
     Properties:
       Handler: main.handler
       Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.8/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.10/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 900
       Role:
         Fn::GetAtt:
         - SumoLambdaRole
         - Arn
+    Metadata:
+      SamResourceId: EnableExisitngAWSResourcesLambda
   ExistingAWSResources:
     Type: Custom::EnableS3LogsResources
     Condition: auto_enable_existing
@@ -482,6 +502,8 @@ Resources:
         - AccountId
       RemoveOnDeleteStack:
         Ref: RemoveOnDeleteStack
+    Metadata:
+      SamResourceId: ExistingAWSResources
 Outputs:
   EnableNewAWSResourcesLambda:
     Description: Lambda Function ARN for New AWS Resources
