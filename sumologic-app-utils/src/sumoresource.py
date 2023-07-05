@@ -1437,8 +1437,10 @@ class AlertsMonitor(SumoResource):
             else folder_name
         response = self.sumologic_cli.import_monitors(root_folder_id, content)
         import_id = response["id"]
-        monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
-        self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
+        # Start Uncomment following when FGP feature for monitors is live
+        # monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
+        # self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
+        # End Uncomment above when FGP feature for monitors is live
         print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
         return {"ALERTS MONITORS": response["name"]}, import_id
 
