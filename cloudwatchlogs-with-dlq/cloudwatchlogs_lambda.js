@@ -19,29 +19,25 @@ var url = require('url');
 var vpcutils = require('./vpcutils');
 var SumoLogsClient = require('./sumo-dlq-function-utils').SumoLogsClient;
 var Utils = require('./sumo-dlq-function-utils').Utils;
-const AWS = require('aws-sdk');
-const ssm = new AWS.SSM();
+
+const { SSMClient, GetParameterCommand } = require("@aws-sdk/client-ssm");
 
 exports.getEndpointURL = async function() {
-  console.log('Getting SUMO_ENDPOINT from AWS SSM Parameter Store');
-  return new Promise((resolve, reject) => {
-    ssm.getParameter(
-      {
-        Name: 'SUMO_ENDPOINT',
-        WithDecryption: true
-      },
-      (err, data) => {
-        if (err) {
-          console.log(err, err.stack);
-          reject(new Error('Unable to get EndpointURL from SSM: ' + err));
-        } else {
-          // console.log(data);
-          resolve(data.Parameter.Value);
-        }
-      }
-    );
-  });
-}
+    console.log('Getting SUMO_ENDPOINT from AWS SSM Parameter Store');
+    const ssmClient = new SSMClient();
+    try {
+      const data = await ssmClient.send(
+        new GetParameterCommand({
+          Name: 'SUMO_ENDPOINT',
+          WithDecryption: true
+        })
+      );
+      return data.Parameter.Value;
+    } catch (error) {
+      console.error('Unable to get EndpointURL from SSM:', error);
+      throw new Error('Unable to get EndpointURL from SSM: ' + error);
+    }
+  }
 
 function createRecords(config, events, awslogsData) {
     var records = [];

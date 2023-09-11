@@ -1,7 +1,10 @@
-var find = require('lodash').find;
-var EC2 = require('aws-sdk/clients/ec2');
+// Import the required AWS SDK modules
+const { EC2Client, DescribeNetworkInterfacesCommand } = require('@aws-sdk/client-ec2');
 var jmespath = require('jmespath');
-var ec2 = null;
+var find = require('lodash').find;
+// Create an instance of the EC2 client
+const ec2Client = new EC2Client({ region: process.env.AWS_REGION });
+
 /*
 VPC Log Format
 version         The VPC Flow Logs version.
@@ -50,19 +53,25 @@ function discardInternalTraffic(vpcCIDRPrefix, records) {
  *
  * @return `Promise` for async processing
  */
-function listNetworkInterfaces(allIPaddresses) {
-    if (!ec2) {
-        ec2 = new EC2({region: process.env.AWS_REGION});
-    }
-    var params = {
-        Filters: [
-            {
-              Name: 'private-ip-address',
-              Values: allIPaddresses
-            }
-        ]
-    }
-    return ec2.describeNetworkInterfaces(params).promise();
+async function listNetworkInterfaces(allIPaddresses) {
+  const params = {
+    Filters: [
+      {
+        Name: 'private-ip-address',
+        Values: allIPaddresses,
+      },
+    ],
+  };
+
+  const command = new DescribeNetworkInterfacesCommand(params);
+
+  try {
+    const response = await ec2Client.send(command);
+    return response;
+  } catch (err) {
+    console.log('Error in listNetworkInterfaces', err);
+    throw err;
+  }
 }
 
 /**
