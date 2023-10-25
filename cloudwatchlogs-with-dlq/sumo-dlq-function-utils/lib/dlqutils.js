@@ -1,46 +1,54 @@
-var AWS = require("aws-sdk");
+const { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } = require("@aws-sdk/client-sqs");
+const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
 
-function Messages(env) {
-    this.sqs = new AWS.SQS({region: env.AWS_REGION});
+class Messages {
+  constructor(env) {
+    this.sqs = new SQSClient({ region: env.AWS_REGION });
     this.env = env;
+  }
+
+  async receiveMessages(messageCount) {
+    const params = {
+      QueueUrl: this.env.TASK_QUEUE_URL,
+      MaxNumberOfMessages: messageCount,
+    };
+
+    const command = new ReceiveMessageCommand(params);
+    const response = await this.sqs.send(command);
+    return response.Messages || [];
+  }
+
+  async deleteMessage(receiptHandle) {
+    const params = {
+      ReceiptHandle: receiptHandle,
+      QueueUrl: this.env.TASK_QUEUE_URL,
+    };
+
+    const command = new DeleteMessageCommand(params);
+    await this.sqs.send(command);
+  }
 }
 
-Messages.prototype.receiveMessages = function (messageCount, callback) {
-    var params = {
-        QueueUrl: this.env.TASK_QUEUE_URL,
-        MaxNumberOfMessages: messageCount
-    };
-    this.sqs.receiveMessage(params, callback);
-};
+async function invokeLambdas(awsRegion, numOfWorkers, functionName, payload, context) {
+  const lambda = new LambdaClient({ region: awsRegion });
 
-Messages.prototype.deleteMessage = function (receiptHandle, callback) {
-    this.sqs.deleteMessage({
-        ReceiptHandle: receiptHandle,
-        QueueUrl: this.env.TASK_QUEUE_URL
-    }, callback);
-};
+  for (let i = 0; i < numOfWorkers; i++) {
+    const command = new InvokeCommand({
+      InvocationType: 'Event',
+      FunctionName: functionName,
+      Payload: payload,
+    });
 
-function invokeLambdas(awsRegion, numOfWorkers, functionName, payload, context) {
-
-    for (var i = 0; i < numOfWorkers; i++) {
-        var lambda = new AWS.Lambda({
-          region: awsRegion
-        });
-        lambda.invoke({
-            InvocationType: 'Event',
-            FunctionName: functionName,
-            Payload: payload
-        }, function(err, data) {
-           if (err) {
-               context.fail(err);
-           } else {
-               context.succeed('success');
-           }
-        });
+    try {
+      await lambda.send(command);
+      context.succeed('success');
+    } catch (err) {
+      context.fail(err);
     }
+  }
 }
 
 module.exports = {
-    Messages: Messages,
-    invokeLambdas: invokeLambdas
+  Messages,
+  invokeLambdas,
 };

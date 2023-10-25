@@ -24,7 +24,7 @@ Metadata:
     LicenseUrl: ../LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../Readme.md
-    SemanticVersion: 1.0.7
+    SemanticVersion: 1.0.9
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
@@ -99,7 +99,7 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: "loggroup-lambda-connector.handler"
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Environment:
         Variables:
           DESTINATION_ARN: !Ref "DestinationArnValue"
@@ -121,7 +121,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
               Resource:
-                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambdaConnector*'
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambda*'
       Events:
         LambdaTrigger:
           Type: CloudWatchEvent
@@ -165,32 +165,34 @@ Resources:
     Condition: invoke_existing
     Properties:
       InlineCode: |
-        var aws = require('aws-sdk');
+        const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
         var response = require('cfn-response');
 
-        exports.handler = function(event, context) {
-            var lambda = new aws.Lambda();
-            var payload = {"existingLogs": "true", "token": ""};
-            var responseStatus = "FAILED";
-            var responseData = {};
-            lambda.invoke(
-                {
-                  InvocationType: 'Event',
-                  FunctionName: process.env.FUNCTION_NAME,
-                  Payload: JSON.stringify(payload),
-                }, function(err, invokeResult) {
-                  if (err) {
-                      responseData = {Error: "Invoke call failed"};
-                      console.log(responseData.Error + ":\n", err);
-                  }
-                  else {
-                    responseStatus = "SUCCESS";
-                  }
-                  response.send(event, context, responseStatus, responseData);
-            });
+        const lambda = new LambdaClient({ apiVersion: '2015-03-31' });
+
+        exports.handler = async function (event, context) {
+          const payload = { "existingLogs": "true", "token": "" };
+          const responseData = {};
+          let responseStatus = "FAILED";
+
+          try {
+            const invokeInput = new InvokeCommand({
+                InvocationType: 'Event',
+                FunctionName: process.env.FUNCTION_NAME,
+                Payload: JSON.stringify(payload), // Convert to DynamoDB Marshaler format
+              });
+            await lambda.send(invokeInput);
+
+            responseStatus = "SUCCESS";
+          } catch (err) {
+            responseData.Error = "Invoke call failed";
+            console.log(responseData.Error + ":\n", err);
+          }
+          
+          await response.send(event, context, responseStatus, responseData);
         };
       Handler: "index.handler"
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Environment:
         Variables:
           FUNCTION_NAME: !Ref SumoLogGroupLambdaConnector

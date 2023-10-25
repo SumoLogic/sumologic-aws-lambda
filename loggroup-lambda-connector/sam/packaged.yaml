@@ -21,10 +21,10 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.7/6092dd6c323e33634657102f570628e0
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.9/6092dd6c323e33634657102f570628e0
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.7/5a9a6e956be7449cbd5f8653e4475071
-    SemanticVersion: 1.0.7
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.9/5a9a6e956be7449cbd5f8653e4475071
+    SemanticVersion: 1.0.9
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -107,9 +107,9 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.7/d8e8545bf4f818fdb41a52d27024bbcd
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.9/cce618f8c5a615a33b63966712edaf2e
       Handler: loggroup-lambda-connector.handler
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Environment:
         Variables:
           DESTINATION_ARN:
@@ -137,7 +137,7 @@ Resources:
           Action:
           - lambda:InvokeFunction
           Resource:
-          - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambdaConnector*
+          - Fn::Sub: arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambda*
       Events:
         LambdaTrigger:
           Type: CloudWatchEvent
@@ -188,19 +188,20 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: invoke_existing
     Properties:
-      InlineCode: "var aws = require('aws-sdk');\nvar response = require('cfn-response');\n\
-        \nexports.handler = function(event, context) {\n    var lambda = new aws.Lambda();\n\
-        \    var payload = {\"existingLogs\": \"true\", \"token\": \"\"};\n    var\
-        \ responseStatus = \"FAILED\";\n    var responseData = {};\n    lambda.invoke(\n\
-        \        {\n          InvocationType: 'Event',\n          FunctionName: process.env.FUNCTION_NAME,\n\
-        \          Payload: JSON.stringify(payload),\n        }, function(err, invokeResult)\
-        \ {\n          if (err) {\n              responseData = {Error: \"Invoke call\
-        \ failed\"};\n              console.log(responseData.Error + \":\\n\", err);\n\
-        \          }\n          else {\n            responseStatus = \"SUCCESS\";\n\
-        \          }\n          response.send(event, context, responseStatus, responseData);\n\
-        \    });\n};\n"
+      InlineCode: "const { LambdaClient, InvokeCommand } = require(\"@aws-sdk/client-lambda\"\
+        );\nvar response = require('cfn-response');\n\nconst lambda = new LambdaClient({\
+        \ apiVersion: '2015-03-31' });\n\nexports.handler = async function (event,\
+        \ context) {\n  const payload = { \"existingLogs\": \"true\", \"token\": \"\
+        \" };\n  const responseData = {};\n  let responseStatus = \"FAILED\";\n\n\
+        \  try {\n    const invokeInput = new InvokeCommand({\n        InvocationType:\
+        \ 'Event',\n        FunctionName: process.env.FUNCTION_NAME,\n        Payload:\
+        \ JSON.stringify(payload), // Convert to DynamoDB Marshaler format\n     \
+        \ });\n    await lambda.send(invokeInput);\n\n    responseStatus = \"SUCCESS\"\
+        ;\n  } catch (err) {\n    responseData.Error = \"Invoke call failed\";\n \
+        \   console.log(responseData.Error + \":\\n\", err);\n  }\n  \n  await response.send(event,\
+        \ context, responseStatus, responseData);\n};\n"
       Handler: index.handler
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Environment:
         Variables:
           FUNCTION_NAME:
