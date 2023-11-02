@@ -3,7 +3,7 @@ then
     SAM_S3_BUCKET="appdevstore"
     AWS_REGION="us-east-1"
 else
-    SAM_S3_BUCKET="appdevstore20211221-prod"
+    SAM_S3_BUCKET="appstore-20231030-securityhub-collector-awsorg"
     AWS_REGION="us-east-1"
 fi
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml
