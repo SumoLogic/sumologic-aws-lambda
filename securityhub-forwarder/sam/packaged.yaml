@@ -1,28 +1,28 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
 Description: 'This function is invoked by Sumo Logic(via Scheduled Search) through
   API Gateway. The event payload received is then forwarded to AWS Security Hub.
 
   '
+Outputs:
+  SecurityHubForwarderApiUrl:
+    Description: URL of your API endpoint
+    Value:
+      Fn::Sub: https://${SecurityHubForwarderApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/findings
+  SecurityHubForwarderFunction:
+    Description: SecurityHubForwarder Function ARN
+    Value:
+      Fn::GetAtt:
+      - SecurityHubForwarderFunction
+      - Arn
 Resources:
   SecurityHubForwarderApiGateway:
-    Type: AWS::Serverless::Api
     Properties:
-      StageName: prod
-      EndpointConfiguration: EDGE
       DefinitionBody:
-        swagger: '2.0'
         info:
+          description: API endpoint for invoking SecurityHubForwarderFunction
           title:
             Ref: AWS::StackName
-          description: API endpoint for invoking SecurityHubForwarderFunction
           version: 1.0.0
-        securityDefinitions:
-          sigv4:
-            type: apiKey
-            name: Authorization
-            in: header
-            x-amazon-apigateway-authtype: awsSigv4
         paths:
           /findings:
             post:
@@ -34,50 +34,46 @@ Resources:
               security:
               - sigv4: []
               x-amazon-apigateway-integration:
+                httpMethod: POST
+                passthroughBehavior: when_no_match
+                requestParameters:
+                  integration.request.header.X-Amz-Invocation-Type: '''RequestResponse'''
                 type: aws_proxy
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SecurityHubForwarderFunction.Arn}/invocations
-                passthroughBehavior: when_no_match
-                httpMethod: POST
-                requestParameters:
-                  integration.request.header.X-Amz-Invocation-Type: '''RequestResponse'''
-    Metadata:
-      SamResourceId: SecurityHubForwarderApiGateway
+        securityDefinitions:
+          sigv4:
+            in: header
+            name: Authorization
+            type: apiKey
+            x-amazon-apigateway-authtype: awsSigv4
+        swagger: '2.0'
+      EndpointConfiguration: EDGE
+      StageName: prod
+    Type: AWS::Serverless::Api
   SecurityHubForwarderFunction:
-    Type: AWS::Serverless::Function
     Properties:
-      Handler: securityhub_forwarder.lambda_handler
-      Runtime: python3.11
-      Layers:
-      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
-      CodeUri: s3://appstore-20231030-securityhub-forwarder/af851614ad2fc36aba60c30ca700505a
-      MemorySize: 128
-      Timeout: 300
-      Policies:
-      - Statement:
-        - Sid: SecurityHubImportFindingsPolicy
-          Effect: Allow
-          Action:
-          - securityhub:BatchImportFindings
-          Resource: arn:aws:securityhub:*:*:*
+      CodeUri: s3://appdevstore/98ee274ed4543bd1e1344fec701211df
       Events:
         Api1:
-          Type: Api
           Properties:
-            Path: /findings
             Method: POST
+            Path: /findings
             RestApiId:
               Ref: SecurityHubForwarderApiGateway
-    Metadata:
-      SamResourceId: SecurityHubForwarderFunction
-Outputs:
-  SecurityHubForwarderFunction:
-    Description: SecurityHubForwarder Function ARN
-    Value:
-      Fn::GetAtt:
-      - SecurityHubForwarderFunction
-      - Arn
-  SecurityHubForwarderApiUrl:
-    Description: URL of your API endpoint
-    Value:
-      Fn::Sub: https://${SecurityHubForwarderApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/findings
+          Type: Api
+      Handler: securityhub_forwarder.lambda_handler
+      Layers:
+      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
+      MemorySize: 128
+      Policies:
+      - Statement:
+        - Action:
+          - securityhub:BatchImportFindings
+          Effect: Allow
+          Resource: arn:aws:securityhub:*:*:*
+          Sid: SecurityHubImportFindingsPolicy
+      Runtime: python3.7
+      Timeout: 300
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31
