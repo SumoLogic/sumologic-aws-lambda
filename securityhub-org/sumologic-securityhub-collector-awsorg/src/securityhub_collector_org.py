@@ -50,7 +50,7 @@ def lambda_handler(event, context):
 
 if __name__ == '__main__':
 
-    event = json.load(open('../sam/event.json'))
+    event = json.load(open('../test/testevent.json'))
     BUCKET_NAME = "securityhubfindings"
 
     class context:

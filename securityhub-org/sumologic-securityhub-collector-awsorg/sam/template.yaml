@@ -20,7 +20,7 @@ Metadata:
     Name: sumologic-securityhub-connector-aws-org
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.0
+    SemanticVersion: 1.0.3
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-org/sumologic-securityhub-connector-aws-org
     SpdxLicenseId: Apache-2.0
 
@@ -39,6 +39,8 @@ Resources:
             reason: "Lambda functions should be deployed inside a VPC"  
     Type: 'AWS::Serverless::Function'
     Properties:
+      Layers:
+        - !Sub 'arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1'
       Handler: securityhub_collector_org.lambda_handler
       Runtime: python3.7
       CodeUri: ../src/

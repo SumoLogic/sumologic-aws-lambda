@@ -2,6 +2,23 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: >
     This function is invoked by Sumo Logic(via Scheduled Search) through API Gateway. The event payload received is then forwarded to AWS Security Hub.
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This lambda function is used for importing findings from Sumo Logic to AWS Security Hub. The function is invoked by Sumo Logic(via Scheduled Search) through API Gateway. The event payload received is then forwarded to AWS Security Hub.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+    - sumologic
+    - serverless
+    - security
+    - cloudwatchevents
+    - securityhub
+    Name: sumologic-securityhub-forwarder
+    LicenseUrl: ../LICENSE
+    ReadmeUrl: ../README.md
+    SemanticVersion: 1.0.9
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-forwarder
+    SpdxLicenseId: Apache-2.0
 
 Resources:
   SecurityHubForwarderApiGateway:
