@@ -21,9 +21,9 @@ Metadata:
     - cloudwatchevents
     - securityhub
     Name: sumologic-securityhub-connector-aws-org
-    LicenseUrl: s3://appdevstore/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/eb911876461845db8f3113dbace6d454
-    SemanticVersion: 1.0.0
+    LicenseUrl: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.3/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.3/eb911876461845db8f3113dbace6d454
+    SemanticVersion: 1.0.3
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-org/sumologic-securityhub-connector-aws-org
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -37,11 +37,14 @@ Resources:
         rules_to_suppress:
         - id: W89
           reason: Lambda functions should be deployed inside a VPC
+      SamResourceId: SecurityHubCollectorAwsOrg
     Type: AWS::Serverless::Function
     Properties:
+      Layers:
+      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
       Handler: securityhub_collector_org.lambda_handler
       Runtime: python3.7
-      CodeUri: s3://appdevstore/c2ebca31013ee83ec84396c7df8c50a0
+      CodeUri: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.3/b247f4f0bdd1aa0aca27ac7092c138ee
       MemorySize: 128
       Timeout: 300
       ReservedConcurrentExecutions: 100
