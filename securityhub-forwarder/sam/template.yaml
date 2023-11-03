@@ -45,7 +45,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: securityhub_forwarder.lambda_handler
-      Runtime: python3.11
+      Runtime: python3.7
       Layers:
         - !Sub 'arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1'
       CodeUri: ../src/
