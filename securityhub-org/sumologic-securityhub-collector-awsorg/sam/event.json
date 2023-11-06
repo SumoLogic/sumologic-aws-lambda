@@ -1,0 +1,54 @@
+{
+    "account": "956882702234",
+    "detail": {
+        "findings": [
+            {
+                "AwsAccountId": "956882702234",
+                "Compliance": {
+                    "Status": "FAILED"
+                },
+                "CreatedAt": "2019-04-18T14:51:55.000000Z",
+                "Description": "This search gives top 10 resources which are accessed in last 15 minutes",
+                "FirstObservedAt": "2019-04-18T14:51:55.000000Z",
+                "GeneratorId": "InsertFindingsScheduledSearch",
+                "Id": "sumologic:us-east-2:956882702234:InsertFindingsScheduledSearch/finding/eb083fb9-03aa-4840-af0e-eb3ae4adebe9",
+                "ProductArn": "arn:aws:securityhub:us-east-2:956882702234:product/sumologicinc/sumologic-mda",
+                "ProductFields": {
+                    "aws/securityhub/CompanyName": "Sumo Logic",
+                    "aws/securityhub/FindingId": "arn:aws:securityhub:us-east-2:956882702234:product/sumologicinc/sumologic-mda/sumologic:us-east-2:956882702234:InsertFindingsScheduledSearch/finding/eb083fb9-03aa-4840-af0e-eb3ae4adebe9",
+                    "aws/securityhub/ProductName": "Machine Data Analytics",
+                    "aws/securityhub/SeverityLabel": "LOW"
+                },
+                "RecordState": "ACTIVE",
+                "Resources": [
+                    {
+                        "Id": "10.178.11.43",
+                        "Type": "Other"
+                    }
+                ],
+                "SchemaVersion": "2018-10-08",
+                "Severity": {
+                    "Normalized": 30
+                },
+                "SourceUrl": "https://service.sumologic.com/ui/#/search/RmC8kAUGZbXrkj2rOFmUxmHtzINUgfJnFplh3QWY",
+                "Title": "Vulnerability: Apple iTunes m3u Playlist File Title Parsing Buffer Overflow Vulnerability(34886) found on 207.235.176.3",
+                "Types": [
+                    "Software and Configuration Checks/Industry and Regulatory Standards/HIPAA Controls"
+                ],
+                "UpdatedAt": "2019-04-18T14:51:55.000000Z",
+                "WorkflowState": "NEW",
+                "approximateArrivalTimestamp": 1555599782.881,
+                "updatedAt": "2019-04-18T14:51:55.000000Z"
+            }
+        ]
+    },
+    "detail-type": "Security Hub Findings",
+    "id": "f06f61e9-b099-8321-e446-5a20583bd791",
+    "region": "us-east-2",
+    "resources": [
+        "arn:aws:securityhub:us-east-2:956882702234:product/sumologicinc/sumologic-mda/sumologic:us-east-2:956882702234:InsertFindingsScheduledSearch/finding/eb083fb9-03aa-4840-af0e-eb3ae4adebe9"
+    ],
+    "source": "aws.securityhub",
+    "time": "2019-04-18T15:03:04Z",
+    "version": "0"
+}

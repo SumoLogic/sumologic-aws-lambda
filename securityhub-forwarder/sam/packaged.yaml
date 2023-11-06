@@ -4,26 +4,6 @@ Description: 'This function is invoked by Sumo Logic(via Scheduled Search) throu
   API Gateway. The event payload received is then forwarded to AWS Security Hub.
 
   '
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Author: Sumo Logic
-    Description: This lambda function is used for importing findings from Sumo Logic
-      to AWS Security Hub. The function is invoked by Sumo Logic(via Scheduled Search)
-      through API Gateway. The event payload received is then forwarded to AWS Security
-      Hub.
-    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
-    Labels:
-    - sumologic
-    - serverless
-    - security
-    - cloudwatchevents
-    - securityhub
-    Name: sumologic-securityhub-forwarder
-    LicenseUrl: s3://appdevstore/SecurityHubForwarder/v1.0.9/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/SecurityHubForwarder/v1.0.9/56f774fe371f787c17ec137a47c93138
-    SemanticVersion: 1.0.9
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-forwarder
-    SpdxLicenseId: Apache-2.0
 Resources:
   SecurityHubForwarderApiGateway:
     Type: AWS::Serverless::Api
@@ -67,10 +47,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: securityhub_forwarder.lambda_handler
-      Runtime: python3.7
-      Layers:
-      - Fn::Sub: arn:aws:lambda:${AWS::Region}:956882708938:layer:securityhub_deps:1
-      CodeUri: s3://appdevstore/SecurityHubForwarder/v1.0.9/3589bbeb5907b695780f650d5374a74d
+      Runtime: python3.11
+      CodeUri: s3://appstore-20231030-securityhub-forwarder/af851614ad2fc36aba60c30ca700505a
       MemorySize: 128
       Timeout: 300
       Policies:
