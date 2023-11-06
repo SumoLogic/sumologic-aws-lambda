@@ -22,4 +22,3 @@ echo "Published sumologic-securityhub-forwarder "$version
 #aws cloudformation describe-stack-events --stack-name testingsecurityhublambda --region $AWS_REGION
 #aws cloudformation get-template --stack-name testingsecurityhublambda  --region $AWS_REGION
 # aws serverlessrepo create-application-version --region us-east-1 --application-id arn:aws:serverlessrepo:us-east-1:$AWS_ACCOUNT_ID:applications/sumologic-securityhub-forwarder --semantic-version 1.0.1 --template-body file://packaged.yaml
-
