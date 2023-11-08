@@ -16,8 +16,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: securityhub_collector.lambda_handler
-      Runtime: python3.7
-      CodeUri: s3://appdevstore/3821fd9c5288ebaca71e4ea0b26629ab
+      Runtime: python3.11
+      CodeUri: s3://appstore-20231108-securityhub-collector/c1de163095d3fb80a21e487e1b29f114
       MemorySize: 128
       Timeout: 300
       Policies:
@@ -40,6 +40,8 @@ Resources:
             Pattern:
               source:
               - aws.securityhub
+    Metadata:
+      SamResourceId: SecurityHubCollectorFunction
 Outputs:
   SecurityHubCollectorFunction:
     Description: SecurityHubCollector Function ARN

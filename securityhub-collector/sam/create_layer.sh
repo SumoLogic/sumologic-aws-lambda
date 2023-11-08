@@ -17,7 +17,7 @@ do
     bucket_name="appdevzipfiles-$i"
     aws s3 cp securityhub_deps.zip s3://$bucket_name/ --region $i
 
-    aws lambda publish-layer-version --layer-name securityhub_deps --description "contains securityhub solution dependencies" --license-info "MIT" --content S3Bucket=$bucket_name,S3Key=securityhub_deps.zip --compatible-runtimes python3.7 python3.6 --region $i
+    aws lambda publish-layer-version --layer-name securityhub_deps --description "contains securityhub solution dependencies" --license-info "MIT" --content S3Bucket=$bucket_name,S3Key=securityhub_deps.zip --compatible-runtimes python3.7 python3.6 python3.11 --region $i
 
     aws lambda add-layer-version-permission --layer-name securityhub_deps  --statement-id securityhub-deps --version-number 1 --principal '*' --action lambda:GetLayerVersion --region $i
 done
