@@ -13,6 +13,14 @@ version="1.0.10"
 echo "Creating package.yaml"
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "SecurityHubForwarder/v"$version --region $AWS_REGION --profile $AWS_PROFILE
 
+if [ $? -ne 0 ]
+then
+    echo "Creating package command failed!"
+    exit 1
+else
+    echo "package.yaml created"
+fi
+
 echo "Publishing sumologic-securityhub-forwarder "$version
 sam publish --template packaged.yaml --region $AWS_REGION --semantic-version $version
 
