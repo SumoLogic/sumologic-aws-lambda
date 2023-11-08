@@ -18,7 +18,7 @@ Metadata:
     - security
     - cloudwatchevents
     - securityhub
-    Name: sumologic-securityhub-connector
+    Name: sumologic-securityhub-collector
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
     SemanticVersion: 1.0.9
