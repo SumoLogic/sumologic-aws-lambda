@@ -21,9 +21,9 @@ else
 fi
 
 echo "Publishing sumologic-securityhub-connector "$version
-# sam publish --template packaged.yaml --region $AWS_REGION --semantic-version $version
+sam publish --template packaged.yaml --region $AWS_REGION --semantic-version $version
 
-sam deploy --template-file packaged.yaml --stack-name testingsechubcollector --capabilities CAPABILITY_IAM --region $AWS_REGION --parameter-overrides S3SourceBucketName=securityhubfindings
+# sam deploy --template-file packaged.yaml --stack-name testingsechubcollector --capabilities CAPABILITY_IAM --region $AWS_REGION --parameter-overrides S3SourceBucketName=securityhubfindings
 
 echo "Published sumologic-securityhub-connector "$version
 
