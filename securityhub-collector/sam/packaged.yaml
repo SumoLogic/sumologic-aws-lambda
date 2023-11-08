@@ -8,6 +8,25 @@ Description: 'This solution consists of a lambda function which which gets trigg
 Globals:
   Function:
     Timeout: 300
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Author: Sumo Logic
+    Description: This solution consists of a lambda function which which gets triggered
+      by CloudWatch events with findings as payload which are then ingested to Sumo
+      Logic via S3 source.
+    HomePageUrl: https://github.com/SumoLogic/sumologic-aws-lambda
+    Labels:
+    - sumologic
+    - serverless
+    - security
+    - cloudwatchevents
+    - securityhub
+    Name: sumologic-securityhub-collector
+    LicenseUrl: s3://appdevstore/SecurityHubCollector/v1.0.9/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/SecurityHubCollector/v1.0.9/3edeb049c0e4202e9588e43b957090ed
+    SemanticVersion: 1.0.9
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-collector
+    SpdxLicenseId: Apache-2.0
 Parameters:
   S3SourceBucketName:
     Type: String
@@ -17,7 +36,7 @@ Resources:
     Properties:
       Handler: securityhub_collector.lambda_handler
       Runtime: python3.11
-      CodeUri: s3://appstore-20231108-securityhub-collector/c1de163095d3fb80a21e487e1b29f114
+      CodeUri: s3://appdevstore/SecurityHubCollector/v1.0.9/3c2bc2da7576810682419519fdc578bb
       MemorySize: 128
       Timeout: 300
       Policies:
