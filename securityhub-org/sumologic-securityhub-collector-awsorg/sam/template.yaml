@@ -20,7 +20,7 @@ Metadata:
     Name: sumologic-securityhub-connector-aws-org
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.4
+    SemanticVersion: 1.0.5
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-org/sumologic-securityhub-connector-aws-org
     SpdxLicenseId: Apache-2.0
 
@@ -45,7 +45,6 @@ Resources:
       CodeUri: ../src/src.zip
       MemorySize: 128
       Timeout: 300
-      ReservedConcurrentExecutions: 100
       Environment:
         Variables:
           SUMO_ENDPOINT: !Ref SumoEndpoint
