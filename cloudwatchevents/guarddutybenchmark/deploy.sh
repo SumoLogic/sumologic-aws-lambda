@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export AWS_PROFILE="prod"
+export AWS_REGION="us-east-1"
 if [ "$AWS_PROFILE" == "prod" ]
 then
     SAM_S3_BUCKET="appdevstore"
@@ -10,7 +11,7 @@ else
     AWS_REGION="us-east-2"
 fi
 
-version="1.0.12"
+version="1.0.13"
 
 echo "Creating package.yaml"
 sam package --template-file template_v2.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "guarddutybenchmark/v"$version --region $AWS_REGION --profile $AWS_PROFILE

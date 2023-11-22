@@ -56,7 +56,7 @@ Metadata:
     Name: sumologic-guardduty-benchmark
     LicenseUrl: ../LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.12
+    SemanticVersion: 1.0.13
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
     SpdxLicenseId: Apache-2.0
 
@@ -118,13 +118,13 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.6
+        SemanticVersion: 2.0.11
 
   SumoHostedCollector:
     Type: Custom::Collector
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
-      Region: !Ref "AWS::Region"
+      Region: !Ref AWS::Region
       CollectorType: Hosted
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       CollectorName: !Ref CollectorName
@@ -136,7 +136,7 @@ Resources:
     Type: Custom::HTTPSource
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
-      Region: !Ref "AWS::Region"
+      Region: !Ref AWS::Region
       SourceName: !Ref SourceName
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
       SourceCategory: !Ref SourceCategoryName
@@ -151,7 +151,7 @@ Resources:
     Type: Custom::App
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
-      Region: !Ref "AWS::Region"
+      Region: !Ref AWS::Region
       AppName: "Global Intelligence for Amazon GuardDuty"
       AppId: "8e7efcb3-040a-4a92-9f8d-922fafb24afb"
       RemoveOnDeleteStack: !Ref RemoveSumoResourcesOnDeleteStack
