@@ -43,9 +43,9 @@ Metadata:
     - benchmark
     - cloudtrail
     Name: sumologic-aws-cloudtrail-benchmark
-    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.11/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.11/8a901bb4fbbe82f128fc502dd3077508
-    SemanticVersion: 1.0.11
+    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.12/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.12/8a901bb4fbbe82f128fc502dd3077508
+    SemanticVersion: 1.0.12
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
 Parameters:
   CollectorName:
@@ -127,7 +127,9 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.1
+        SemanticVersion: 2.0.11
+    Metadata:
+      SamResourceId: SumoAppUtils
   SumoRole:
     Condition: SetupSumoResources
     Type: AWS::IAM::Role
@@ -164,6 +166,8 @@ Resources:
               - arn:aws:s3:::${CloudTrailTargetS3BucketName}/*
               - S3bucketName:
                   Ref: CloudTrailTargetS3BucketName
+    Metadata:
+      SamResourceId: SumoRole
   SumoCloudTrailExportPolicy:
     Condition: SetUpCloudTrail
     Type: AWS::S3::BucketPolicy
@@ -198,6 +202,8 @@ Resources:
           - Fn::Sub: arn:aws:s3:::${CloudTrailTargetS3BucketName}
     DependsOn:
     - TargetS3Bucket
+    Metadata:
+      SamResourceId: SumoCloudTrailExportPolicy
   SumoCloudTrail:
     Condition: SetUpCloudTrail
     Type: Custom::AWSTrail
@@ -215,6 +221,8 @@ Resources:
         Ref: CloudTrailTargetS3BucketName
       TrailName:
         Fn::Sub: SumoCloudTrail-${AWS::StackName}
+    Metadata:
+      SamResourceId: SumoCloudTrail
   TargetS3Bucket:
     Condition: SetUpCloudTrail
     Type: AWS::S3::Bucket
@@ -228,12 +236,16 @@ Resources:
         - Event: s3:ObjectCreated:Put
           Topic:
             Ref: SumoSNSTopic
+    Metadata:
+      SamResourceId: TargetS3Bucket
   SumoSNSTopic:
     Condition: SetupSumoResources
     Type: AWS::SNS::Topic
     Properties:
       TopicName:
         Fn::Sub: SumoSNSTopic-${AWS::StackName}
+    Metadata:
+      SamResourceId: SumoSNSTopic
   SumoSNSSubscription:
     Condition: SetupSumoResources
     Type: AWS::SNS::Subscription
@@ -254,6 +266,8 @@ Resources:
           numMaxDelayRetries: 5
           numNoDelayRetries: 0
           backoffFunction: exponential
+    Metadata:
+      SamResourceId: SumoSNSSubscription
   SumoSNSpolicy:
     Condition: SetupSumoResources
     Type: AWS::SNS::TopicPolicy
@@ -277,6 +291,8 @@ Resources:
           - Ref: SumoSNSTopic
       Topics:
       - Ref: SumoSNSTopic
+    Metadata:
+      SamResourceId: SumoSNSpolicy
   SumoHostedCollector:
     Condition: SetupSumoResources
     Type: Custom::Collector
@@ -300,6 +316,8 @@ Resources:
         Ref: SumoDeployment
     DependsOn:
     - SumoAppUtils
+    Metadata:
+      SamResourceId: SumoHostedCollector
   SumoS3Source:
     Condition: SetupSumoResources
     Type: Custom::AWSSource
@@ -337,6 +355,8 @@ Resources:
         - Arn
     DependsOn:
     - SumoAppUtils
+    Metadata:
+      SamResourceId: SumoS3Source
   SumoCloudTrailBenchmarkApp:
     Type: Custom::App
     Properties:
@@ -363,6 +383,8 @@ Resources:
         Ref: SumoDeployment
     DependsOn:
     - SumoAppUtils
+    Metadata:
+      SamResourceId: SumoCloudTrailBenchmarkApp
   SumoGISCloudTrailDevOpsApp:
     Type: Custom::App
     Properties:
@@ -389,6 +411,8 @@ Resources:
         Ref: SumoDeployment
     DependsOn:
     - SumoAppUtils
+    Metadata:
+      SamResourceId: SumoGISCloudTrailDevOpsApp
 Outputs:
   CloudTrailBenchmarkAppFolder:
     Description: Folder Name

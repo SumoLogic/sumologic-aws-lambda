@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export AWS_PROFILE="prod"
+export AWS_REGION="us-east-1"
 if [ "$AWS_PROFILE" == "prod" ]
 then
     SAM_S3_BUCKET="appdevstore"
@@ -10,9 +12,9 @@ else
 fi
 uid=$(cat /dev/random | LC_CTYPE=C tr -dc "[:lower:]" | head -c 6)
 
-version="1.0.11"
+version="1.0.12"
 
-sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "cloudtrailbenchmark/v$version"
+sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "cloudtrailbenchmark/v$version" --region $AWS_REGION --profile $AWS_PROFILE
 
 sam publish --template packaged.yaml --region $AWS_REGION --semantic-version $version
 

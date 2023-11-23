@@ -20,17 +20,17 @@ Metadata:
     - sumologic
     - serverless
     Name: sumologic-app-utils
-    SemanticVersion: 2.0.10
+    SemanticVersion: 2.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/sumologic-app-utils
     SpdxLicenseId: Apache-2.0
-    ReadmeUrl: s3://appdevstore/sumo_app_utils/v2.0.10/4d5a92c06a7fa9d956a900e51a1f6be4
+    ReadmeUrl: s3://appdevstore/sumo_app_utils/v2.0.11/4d5a92c06a7fa9d956a900e51a1f6be4
 Resources:
   SumoAppUtilsFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: main.handler
-      Runtime: python3.7
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.10/sumo_app_utils.zip
+      Runtime: python3.11
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.11/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 300
       Policies:
