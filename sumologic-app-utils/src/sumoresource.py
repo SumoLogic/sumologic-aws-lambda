@@ -81,7 +81,12 @@ class SumoResource(object):
         r = requests.post(url, data = json.dumps(final_data), headers=headers)
 
 class Collector(SumoResource):
-    
+    '''
+    what happens if property name changes?
+    there might be a case in create that it throws duplicate but user properties are not updated so need to call update again?
+    Test with updated source category
+    Test with existing collector
+    '''
 
     def _get_collector_by_name(self, collector_name, collector_type):
         offset = 0
