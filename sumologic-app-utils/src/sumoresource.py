@@ -568,7 +568,7 @@ class App(SumoResource):
         while waiting:
             response = self.sumologic_cli.check_import_status(folder_id, job_id)
             waiting = response.json()['status'] == "InProgress"
-            time.sleep(5)
+            time.sleep(2)
 
         print("job status: %s" % response.text)
 
@@ -578,7 +578,7 @@ class App(SumoResource):
         while waiting:
             response = self.sumologic_cli.check_copy_status(folder_id, job_id)
             waiting = response.json()['status'] == "InProgress"
-            time.sleep(5)
+            time.sleep(2)
 
         print("job status: %s" % response.text)
         matched = re.search('id:\s*(.*?)\"', response.text)
@@ -593,7 +593,7 @@ class App(SumoResource):
         while waiting:
             response = self.sumologic_cli.check_app_install_status(job_id)
             waiting = response.json()['status'] == "InProgress"
-            time.sleep(5)
+            time.sleep(2)
         print("job status: %s" % response.text)
         return response
 
@@ -710,11 +710,11 @@ class App(SumoResource):
         try:
             if location == "admin":
                 app_folder_id = self._get_app_folder(content, folder_id, True)
-                time.sleep(5)
+                time.sleep(3)
                 response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true", isAdmin=True)
             else:
                 app_folder_id = self._get_app_folder(content, folder_id)
-                time.sleep(5)
+                time.sleep(3)
                 response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true")
             job_id = response.json()["id"]
             print("Imported app %s: appFolderId: %s FolderId: %s jobId: %s" % (
