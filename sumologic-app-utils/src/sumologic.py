@@ -54,7 +54,7 @@ class SumoLogic(object):
 
     def delete(self, method, params=None, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
-        time.sleep(uniform(2, 5))
+        time.sleep(uniform(2, 4))
         r = self.session.delete(endpoint + method, params=params, headers=headers)
         if 400 <= r.status_code < 600:
             r.reason = r.text
@@ -63,7 +63,7 @@ class SumoLogic(object):
 
     def get(self, method, params=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
-        time.sleep(uniform(2, 5))
+        time.sleep(uniform(2, 4))
         r = self.session.get(endpoint + method, params=params)
         if 400 <= r.status_code < 600:
             r.reason = r.text
@@ -72,7 +72,7 @@ class SumoLogic(object):
 
     def post(self, method, params, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
-        time.sleep(uniform(2, 5))
+        time.sleep(uniform(2, 4))
         r = self.session.post(endpoint + method, data=json.dumps(params), headers=headers)
         if 400 <= r.status_code < 600:
             r.reason = r.text
@@ -81,7 +81,7 @@ class SumoLogic(object):
 
     def put(self, method, params, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
-        time.sleep(uniform(2, 5))
+        time.sleep(uniform(2, 4))
         r = self.session.put(endpoint + method, data=json.dumps(params), headers=headers)
         if 400 <= r.status_code < 600:
             r.reason = r.text
