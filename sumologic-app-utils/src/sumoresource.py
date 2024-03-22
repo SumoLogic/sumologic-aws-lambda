@@ -483,14 +483,20 @@ class HTTPSource(BaseSource):
         resp = self.sumologic_cli.update_source(collector_id, sv, etag)
         data = resp.json()['source']
         print("updated source %s" % data["id"])
+        data = {'loglevel': 'INFO','eventname': 'sourceUpdate','data': {'resourceType': 'source', 'resourceName': data["id"], 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(data)
         return {"SUMO_ENDPOINT": data["url"]}, data["id"]
 
     def delete(self, collector_id, source_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
             print("deleted source %s : %s" % (source_id, response.text))
+            data = {'loglevel': 'INFO','eventname': 'sourceDelete','data': {'resourceType': 'source', 'resourceName': source_id, 'status': 'deleted', 'details': 'NULL' }}
+            self.send_telemetry(data)
         else:
             print("skipping source deletion")
+            data = {'loglevel': 'INFO','eventname': 'sourceDelete','data': {'resourceType': 'source', 'resourceName': source_id, 'status': 'skipped', 'details': 'skipping source deletion' }}
+            self.send_telemetry(data)
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -896,6 +902,8 @@ class SumoLogicAWSExplorer(SumoResource):
     # Use the new update API.
     def update(self, hierarchy_id, hierarchy_name, level, hierarchy_filter, *args, **kwargs):
         data, hierarchy_id = self.create(hierarchy_name, level, hierarchy_filter)
+        data = {'loglevel': 'INFO','eventname': 'awsHierarchyUpdate','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(data)
         print("Hierarchy -  update successful with ID %s" % hierarchy_id)
         return data, hierarchy_id
 
@@ -911,6 +919,8 @@ class SumoLogicAWSExplorer(SumoResource):
             response = self.sumologic_cli.delete_hierarchy(hierarchy_id)
             print("Hierarchy - Completed the Hierarchy deletion for Name %s, response - %s"
                   % (hierarchy_name, response.text))
+            data = {'loglevel': 'INFO','eventname': 'awsHierarchyDelete','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'status': 'deleted', 'details': 'NULL' }}
+            self.send_telemetry(data)
         else:
             print("Hierarchy - Skipping the Hierarchy deletion.")
 
@@ -979,6 +989,8 @@ class SumoLogicMetricRules(SumoResource):
         self.delete(job_name, old_metric_rule_name, True)
         data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables)
         print("METRIC RULES -  Update successful with Name %s" % job_name)
+        data = {'loglevel': 'INFO','eventname': 'metricRuleUpdate','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(data)
         return data, job_name
 
     # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
@@ -989,10 +1001,14 @@ class SumoLogicMetricRules(SumoResource):
             try:
                 response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
                 print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (metric_rule_name, response.text))
+                data = {'loglevel': 'INFO','eventname': 'metricRuleDeletion','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'deleted', 'details': 'NULL' }}
+                self.send_telemetry(data)
             except Exception as e:
                 print("AWS EXPLORER - Exception while deleting the Metric Rules %s," % e)
         else:
             print("METRIC RULES - Skipping the Metric Rule deletion")
+            data = {'loglevel': 'INFO','eventname': 'metricRuleDeletion','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'deleted', 'details': 'Skipping the Metric Rule deletion' }}
+            self.send_telemetry(data)
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -1192,6 +1208,8 @@ class SumoLogicFieldExtractionRule(SumoResource):
             response = self.sumologic_cli.update_field_extraction_rules(fer_id, content)
             job_id = response.json()["id"]
             print("FER RULES -  update successful with ID %s" % job_id)
+            data = {'loglevel': 'INFO','eventname': 'ferUpdate','data': {'resourceType': 'fer', 'resourceName': fer_name, 'status': 'updated', 'details': 'NULL' }}
+            self.send_telemetry(data)
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
             raise
@@ -1201,6 +1219,8 @@ class SumoLogicFieldExtractionRule(SumoResource):
             response = self.sumologic_cli.delete_field_extraction_rule(fer_id)
             print("FER RULES - Completed the Metric Rule deletion for ID %s, response - %s" % (
                 fer_id, response.text))
+            data = {'loglevel': 'INFO','eventname': 'ferDelete','data': {'resourceType': 'fer', 'resourceName': fer_id, 'status': 'deleted', 'details': 'NULL' }}
+            self.send_telemetry(data)
         else:
             print("FER RULES - Skipping the Metric Rule deletion")
 
@@ -1383,6 +1403,8 @@ class SumoLogicFieldsSchema(SumoResource):
     # No Update API. So, Fields will be added and deleted from the main stack.
     def update(self, field_id, field_name, old_field_name, *args, **kwargs):
         # Create a new field when field name changes. Delete will happen for old Field. No Update API, so no updates.
+        data = {'loglevel': 'INFO','eventname': 'fieldUpdate','data': {'resourceType': 'fer', 'resourceName': field_name, 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(data)
         if field_name != old_field_name:
             return self.create(field_name)
         return {"FIELD_NAME": field_name}, field_id
@@ -1399,6 +1421,8 @@ class SumoLogicFieldsSchema(SumoResource):
                     field_id = self.get_field_id(field_name)
                 response = self.sumologic_cli.delete_existing_field(field_id)
                 print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
+                data = {'loglevel': 'INFO','eventname': 'fieldDelete','data': {'resourceType': 'fer', 'resourceName': field_name, 'status': 'deleted', 'details': 'NULL' }}
+                self.send_telemetry(data)
             except Exception as e:
                 print("AWS EXPLORER - Exception while deleting the Field %s," % e)
         else:
