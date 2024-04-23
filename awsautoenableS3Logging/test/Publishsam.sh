@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export AWS_REGION="us-east-1"
-export AWS_PROFILE="sumocontent"
+export AWS_PROFILE="default"
 
 if [[ "${AWS_PROFILE}" == "personal" ]]
 then
