@@ -24,7 +24,7 @@ Metadata:
       - s3logging
       - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.6
+    SemanticVersion: 1.0.7
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/awsautoenableS3Logging
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
@@ -135,18 +135,10 @@ Parameters:
     Type: String
 
 Conditions:
-  enable_alb_logging: !And
-    - !Equals [!Ref AutoEnableLogging, 'ALB']
-    - !Condition auto_enable_new
-  enable_elb_logging: !And
-    - !Equals [!Ref AutoEnableLogging, 'ELB']
-    - !Condition auto_enable_new
-  enable_s3_buckets_logging: !And
-    - !Equals [!Ref AutoEnableLogging, 'S3']
-    - !Condition auto_enable_new
-  enable_vpc_flow_logs_logging: !And
-    - !Equals [!Ref AutoEnableLogging, 'VPC']
-    - !Condition auto_enable_new
+  enable_alb_logging: !Equals [!Ref AutoEnableLogging, 'ALB']
+  enable_elb_logging: !Equals [!Ref AutoEnableLogging, 'ELB']
+  enable_s3_buckets_logging: !Equals [!Ref AutoEnableLogging, 'S3']
+  enable_vpc_flow_logs_logging: !Equals [!Ref AutoEnableLogging, 'VPC']
 
   auto_enable_existing: !Or
     - !Equals [ !Ref AutoEnableResourceOptions, 'Existing' ]
@@ -154,6 +146,18 @@ Conditions:
   auto_enable_new: !Or
     - !Equals [ !Ref AutoEnableResourceOptions, 'New' ]
     - !Equals [ !Ref AutoEnableResourceOptions, 'Both' ]
+  enable_alb_log_events: !And
+    - !Condition auto_enable_new
+    - !Condition enable_alb_logging
+  enable_elb_log_events: !And
+    - !Condition auto_enable_new
+    - !Condition enable_elb_logging
+  enable_s3_log_events: !And
+    - !Condition auto_enable_new
+    - !Condition enable_s3_buckets_logging
+  enable_vpc_log_events: !And
+    - !Condition auto_enable_new
+    - !Condition enable_vpc_flow_logs_logging
 
 Resources:
 
@@ -221,7 +225,7 @@ Resources:
 
   AutoEnableS3LogEventsInvokePermission:
     Type: AWS::Lambda::Permission
-    Condition: enable_s3_buckets_logging
+    Condition: enable_s3_log_events
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref EnableNewAWSResourcesLambda
@@ -230,7 +234,7 @@ Resources:
 
   AutoEnableS3LogEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    Condition: enable_s3_buckets_logging
+    Condition: enable_s3_log_events
     Properties:
       Description: Auto-Enable S3 loggging for S3 Buckets with Lambda from events
       EventPattern:
@@ -260,7 +264,7 @@ Resources:
 
   AutoEnableVPCEventsInvokePermission:
     Type: AWS::Lambda::Permission
-    Condition: enable_vpc_flow_logs_logging
+    Condition: enable_vpc_log_events
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref EnableNewAWSResourcesLambda
@@ -269,7 +273,7 @@ Resources:
 
   AutoEnableVPCEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    Condition: enable_vpc_flow_logs_logging
+    Condition: enable_vpc_log_events
     Properties:
       Description: Auto-Enable VPC Flow logs for VPCs with Lambda from events
       EventPattern:
@@ -299,7 +303,7 @@ Resources:
 
   AutoEnableAlbLogEventsInvokePermission:
     Type: AWS::Lambda::Permission
-    Condition: enable_alb_logging
+    Condition: enable_alb_log_events
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref EnableNewAWSResourcesLambda
@@ -308,7 +312,7 @@ Resources:
 
   AutoEnableAlbLogEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    Condition: enable_alb_logging
+    Condition: enable_alb_log_events
     Properties:
       Description: Auto-Enable S3 logging for ALB resources with Lambda from events
       EventPattern:
@@ -338,7 +342,7 @@ Resources:
 
   AutoEnableElbLogEventsInvokePermission:
     Type: AWS::Lambda::Permission
-    Condition: enable_elb_logging
+    Condition: enable_elb_log_events
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref EnableNewAWSResourcesLambda
@@ -347,7 +351,7 @@ Resources:
 
   AutoEnableElbLogEventsRuleTrigger:
     Type: 'AWS::Events::Rule'
-    Condition: enable_elb_logging
+    Condition: enable_elb_log_events
     Properties:
       Description: Auto-Enable S3 logging for ELB classic resources with Lambda from events
       EventPattern:
@@ -375,7 +379,7 @@ Resources:
         - Arn: !GetAtt EnableNewAWSResourcesLambda.Arn
           Id: Main
 
-  EnableExisitngAWSResourcesLambda:
+  EnableExistingAWSResourcesLambda:
     Type: 'AWS::Serverless::Function'
     Condition: auto_enable_existing
     Properties:
@@ -393,8 +397,8 @@ Resources:
     Type: Custom::EnableS3LogsResources
     Condition: auto_enable_existing
     Properties:
-      ServiceToken: !GetAtt EnableExisitngAWSResourcesLambda.Arn
-      AWSResource: !If [enable_s3_buckets_logging, "s3", !If [enable_vpc_flow_logs_logging, "vpc", !If [enable_alb_logging, "elbv2","elb"]] ]
+      ServiceToken: !GetAtt EnableExistingAWSResourcesLambda.Arn
+      AWSResource: !If [enable_s3_buckets_logging, "s3", !If [enable_vpc_flow_logs_logging, "vpc", !If [enable_alb_logging, "elbv2", "elb"]] ]
       BucketName: !Ref BucketName
       Filter: !Ref FilterExpression
       BucketPrefix: !Ref BucketPrefix
@@ -409,7 +413,7 @@ Outputs:
     Value: !GetAtt EnableNewAWSResourcesLambda.Arn
     Condition: auto_enable_new
 
-  EnableExisitngAWSResourcesLambda:
+  EnableExistingAWSResourcesLambda:
     Description: "Lambda Function ARN for Existing AWS Resources"
-    Value: !GetAtt EnableExisitngAWSResourcesLambda.Arn
+    Value: !GetAtt EnableExistingAWSResourcesLambda.Arn
     Condition: auto_enable_existing
