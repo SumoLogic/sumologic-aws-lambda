@@ -21,10 +21,10 @@ Metadata:
     - cloudwatchevents
     - securityhub
     Name: sumologic-securityhub-connector-aws-org
-    LicenseUrl: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.5/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.5/eb911876461845db8f3113dbace6d454
-    SemanticVersion: 1.0.5
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-org/sumologic-securityhub-connector-aws-org
+    LicenseUrl: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.6/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.6/eb911876461845db8f3113dbace6d454
+    SemanticVersion: 1.0.6
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/securityhub-org/sumologic-securityhub-collector-awsorg/src
     SpdxLicenseId: Apache-2.0
 Parameters:
   SumoEndpoint:
@@ -43,7 +43,7 @@ Resources:
     Properties:
       Handler: securityhub_collector_org.lambda_handler
       Runtime: python3.11
-      CodeUri: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.5/777ccb7a25ea254ed6c24e40a08fa709
+      CodeUri: s3://appdevstore/SecurityHubCollectorAWSOrg/v1.0.6/d929328200cab65ee011cd8170063848
       MemorySize: 128
       Timeout: 300
       Environment:
