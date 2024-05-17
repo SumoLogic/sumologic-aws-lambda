@@ -5,17 +5,13 @@ from random import uniform
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-try:
-    import cookielib
-except ImportError:
-    import http.cookiejar as cookielib
 
 DEFAULT_VERSION = 'v1'
 
 
 class SumoLogic(object):
 
-    def __init__(self, accessId, accessKey, endpoint=None, cookieFile='cookies.txt'):
+    def __init__(self, accessId, accessKey, endpoint=None):
         self.session = requests.Session()
         retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 429])
         adapter = HTTPAdapter(max_retries=retries)
@@ -23,14 +19,19 @@ class SumoLogic(object):
         self.session.mount('http://', adapter)
         self.session.auth = (accessId, accessKey)
         self.session.headers = {'content-type': 'application/json', 'accept': 'application/json'}
-        cj = cookielib.FileCookieJar(cookieFile)
-        self.session.cookies = cj
         if endpoint is None:
             self.endpoint = self._get_endpoint()
         else:
             self.endpoint = endpoint
+            self.set_cookies()
         if self.endpoint[-1:] == "/":
             raise Exception("Endpoint should not end with a slash character")
+
+    def set_cookies(self):
+        url = f"{self.endpoint}/v1/"
+        print("Setting Cookies")
+        self.session.get(url)
+        return None
 
     def _get_endpoint(self):
         """
