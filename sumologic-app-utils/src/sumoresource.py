@@ -1445,6 +1445,7 @@ class AlertsMonitor(SumoResource):
         return {"ALERTS MONITORS": response["name"]}, import_id
 
     def create(self, folder_name, orgID, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
+        time.sleep(30)
         return self.import_monitor(folder_name, orgID, monitors3url, variables, suffix_date_time)
 
     def update(self, folder_id, folder_name, orgID, monitors3url, variables, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
