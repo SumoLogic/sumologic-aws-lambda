@@ -1403,6 +1403,8 @@ class AccountAlias(SumoResource):
 
 class AlertsMonitor(SumoResource):
 
+    awso_fields = ["account","accountid","apiid","apiname","cacheclusterid","clustername","dbclusteridentifier","dbidentifier","dbinstanceidentifier","functionname","instanceid","loadbalancer","loadbalancername","namespace","networkloadbalancer","region","tablename","topicname","queuename"]
+    
     def _replace_variables(self, appjson_filepath, variables):
         with open(appjson_filepath, 'r') as old_file:
             text = old_file.read()
@@ -1429,19 +1431,40 @@ class AlertsMonitor(SumoResource):
         response = self.sumologic_cli.get_root_folder()
         return response["id"]
 
-    def import_monitor(self, folder_name, orgID, monitors3url, variables, suffix_date_time):
+    def _fields_present(self):
+        fields_responses=self.sumologic_cli.get_all_fields()
+        field_names = [fields_response['fieldName'] for fields_response in fields_responses]
+        intersection_set = set(field_names).intersection(set(self.awso_fields))
+        intersection_set= list(intersection_set)
+        intersection_set.sort()
+        self.awso_fields.sort()
+        return intersection_set == self.awso_fields
+
+    def import_monitor(self, folder_name, orgID, monitors3url, variables, suffix_date_time, retry_counter=30):
         date_format = "%d-%b-%Y %H:%M:%S"
-        root_folder_id = self._get_root_folder_id()
-        content = self._get_content_from_s3(monitors3url, variables)
-        content["name"] = folder_name + " " + datetime.utcnow().strftime(date_format) if suffix_date_time \
-            else folder_name
-        response = self.sumologic_cli.import_monitors(root_folder_id, content)
-        import_id = response["id"]
-        # Start Uncomment following when FGP feature for monitors is live
-        # monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
-        # self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
-        # End Uncomment above when FGP feature for monitors is live
-        print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
+        if retry_counter <=0:
+            return {"ALERTS MONITORS": "Monitor Import Timed out"}, None
+        if self._fields_present():
+            try:
+                root_folder_id = self._get_root_folder_id()
+                content = self._get_content_from_s3(monitors3url, variables)
+                content["name"] = folder_name + " " + datetime.utcnow().strftime(date_format) if suffix_date_time \
+                    else folder_name
+                response = self.sumologic_cli.import_monitors(root_folder_id, content)
+                import_id = response["id"]
+                # Start Uncomment following when FGP feature for monitors is live
+                # monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
+                # self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
+                # End Uncomment above when FGP feature for monitors is live
+                print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
+            except:
+                time.sleep(10)
+                retry_counter -= 1
+                return self.import_monitor(folder_name, orgID, monitors3url, variables, suffix_date_time, retry_counter=retry_counter)
+        else:
+            time.sleep(10)
+            retry_counter -= 1
+            return self.import_monitor(folder_name, orgID, monitors3url, variables, suffix_date_time, retry_counter=retry_counter)
         return {"ALERTS MONITORS": response["name"]}, import_id
 
     def create(self, folder_name, orgID, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
@@ -1530,8 +1553,8 @@ if __name__ == '__main__':
     #app.delete(app_folder_id, True, location='admin')
 
     monitor=AlertsMonitor(props)
-    monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.5.2/appjson/Alerts-App.json"
-    # _, app_folder_id = monitor.create('abc','0000000000285A74',monitors3,"",retain_old_alerts=False)
+    monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.8.0/appjson/Alerts-App.json"
+    # _, app_folder_id = monitor.create('abc','0000000000BD3DDD',monitors3,"",retain_old_alerts=False)
     # _, app_folder_id = monitor.update('000000000002796B','abc1','0000000000285A74',monitors3,"",retain_old_alerts=True)
 
     # update
