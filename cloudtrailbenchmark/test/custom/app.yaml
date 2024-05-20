@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'This solution is used to test Sumo CloudTrail BenchmarkApp.'
+Globals:
+  Function:
+    Timeout: 300
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Sumo Logic Deployment Configuration
+      Parameters:
+      - SumoDeployment
+      - SumoAccessID
+      - SumoAccessKey
+    - Label:
+        default: Collection Configuration
+      Parameters:
+      - SourceCategoryName
+      - RemoveSumoResourcesOnDeleteStack
+Parameters:
+  SourceCategoryName:
+    Type: String
+    Default: Labs/AWS/CloudTrail
+  SumoAccessID:
+    Type: String
+  SumoAccessKey:
+    Type: String
+  SumoDeployment:
+    Type: String
+    AllowedValues:
+    - au
+    - ca
+    - de
+    - eu
+    - jp
+    - us2
+    - us1
+    - in
+    - fed
+    Description: Enter au, ca, de, eu, jp, us2, in, fed or us1
+  RemoveSumoResourcesOnDeleteStack:
+    AllowedValues:
+    - true
+    - false
+    Default: false
+    Description: To delete collector, sources and app when stack is deleted, set this
+      parameter to true. Default is false.
+    Type: String
+  SumoAppUtilsFunction:
+    Description: Arn of Lambda function
+    Type: String
+
+
+Resources:
+  SumoCloudTrailBenchmarkApp:
+    Type: Custom::App
+    Properties:
+      ServiceToken:
+        Ref: SumoAppUtilsFunction
+      Region:
+        Ref: AWS::Region
+      AppName: Global Intelligence for AWS CloudTrail
+      AppId: 570bdc0d-f824-4fcb-96b2-3230d4497180
+      RemoveOnDeleteStack:
+        Ref: RemoveSumoResourcesOnDeleteStack
+      AppSources:
+        cloudtraillogsource:
+          Fn::Sub: _sourceCategory=${SourceCategoryName}
+        indexname: '%rnd%'
+        incrementalindex: '%rnd%'
+      SumoAccessID:
+        Ref: SumoAccessID
+      SumoAccessKey:
+        Ref: SumoAccessKey
+      SumoDeployment:
+        Ref: SumoDeployment
+    Metadata:
+      SamResourceId: SumoCloudTrailBenchmarkApp
