@@ -24,8 +24,8 @@ Metadata:
       - s3logging
       - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.7
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/awsautoenableS3Logging
+    SemanticVersion: 1.0.8
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/awsautoenableS3Logging
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
     SpdxLicenseId: Apache-2.0
@@ -208,7 +208,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Condition: auto_enable_new
     Properties:
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.11/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.13/sumo_app_utils.zip
       Handler: "awsresource.enable_s3_logs"
       Runtime: python3.11
       Role: !GetAtt SumoLambdaRole.Arn
@@ -385,7 +385,7 @@ Resources:
     Properties:
       Handler: main.handler
       Runtime: python3.11
-      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.11/sumo_app_utils.zip
+      CodeUri: s3://appdevstore/sumo_app_utils/v2.0.13/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 900
       Role:
