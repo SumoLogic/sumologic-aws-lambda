@@ -50,7 +50,7 @@ Metadata:
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
     SemanticVersion: 1.0.13
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudtrailbenchmark
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudtrailbenchmark
 
 
 Parameters:

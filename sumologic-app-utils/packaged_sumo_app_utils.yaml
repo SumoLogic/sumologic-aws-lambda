@@ -21,7 +21,7 @@ Metadata:
     - serverless
     Name: sumologic-app-utils
     SemanticVersion: 2.0.13
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/sumologic-app-utils
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/sumologic-app-utils
     SpdxLicenseId: Apache-2.0
     ReadmeUrl: s3://appdevstore/sumo_app_utils/v2.0.13/4d5a92c06a7fa9d956a900e51a1f6be4
 Resources:
