@@ -3,6 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: 'This function is invoked by AWS CloudWatch events in response to state
   change in your AWS resources which matches a event target definition. The event
   payload received is then forwarded to Sumo Logic HTTP source endpoint.
+
   '
 Globals:
   Function:
@@ -52,10 +53,10 @@ Metadata:
     - benchmark
     - guardduty
     Name: sumologic-guardduty-benchmark
-    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.13/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.13/cab012d7fb7887671b751e6f5c0d2062
-    SemanticVersion: 1.0.13
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guarddutybenchmark
+    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.14/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.14/cab012d7fb7887671b751e6f5c0d2062
+    SemanticVersion: 1.0.14
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudwatchevents/guarddutybenchmark
     SpdxLicenseId: Apache-2.0
 Parameters:
   CollectorName:
@@ -95,7 +96,7 @@ Parameters:
 Resources:
   CloudWatchEventFunction:
     Properties:
-      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.13/22b7b226ca9ec3b9dbb28b94c0e5f824
+      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.14/22b7b226ca9ec3b9dbb28b94c0e5f824
       Environment:
         Variables:
           SUMO_ENDPOINT:
@@ -110,7 +111,7 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
     Type: AWS::Serverless::Function
     Metadata:
       SamResourceId: CloudWatchEventFunction
@@ -119,7 +120,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.11
+        SemanticVersion: 2.0.15
     Metadata:
       SamResourceId: SumoAppUtils
   SumoHostedCollector:
