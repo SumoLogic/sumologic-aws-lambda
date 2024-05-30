@@ -1,3 +1,6 @@
+#!/bin/bash
+
+export AWS_PROFILE="prod"
 if [ "$AWS_PROFILE" == "prod" ]
 then
     SAM_S3_BUCKET="appdevstore"
