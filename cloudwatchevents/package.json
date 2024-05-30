@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "AWS Lambda function to collect CloudWatch events and post them to SumoLogic.",
   "main": "src/cloudwatchevents.js",
-  "repository": "https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents",
+  "repository": "https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudwatchevents",
   "author": "Himanshu Pal",
   "license": "Apache-2.0",
   "dependencies": {},
