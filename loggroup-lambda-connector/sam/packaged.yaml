@@ -21,11 +21,11 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.9/6092dd6c323e33634657102f570628e0
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.11/6092dd6c323e33634657102f570628e0
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.9/5a9a6e956be7449cbd5f8653e4475071
-    SemanticVersion: 1.0.9
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.11/5a9a6e956be7449cbd5f8653e4475071
+    SemanticVersion: 1.0.11
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 Parameters:
   DestinationArnType:
@@ -107,9 +107,9 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.9/cce618f8c5a615a33b63966712edaf2e
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.11/cce618f8c5a615a33b63966712edaf2e
       Handler: loggroup-lambda-connector.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Environment:
         Variables:
           DESTINATION_ARN:
@@ -201,7 +201,7 @@ Resources:
         \   console.log(responseData.Error + \":\\n\", err);\n  }\n  \n  await response.send(event,\
         \ context, responseStatus, responseData);\n};\n"
       Handler: index.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Environment:
         Variables:
           FUNCTION_NAME:
