@@ -24,8 +24,8 @@ Metadata:
     LicenseUrl: ../LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../Readme.md
-    SemanticVersion: 1.0.9
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/loggroup-lambda-connector
+    SemanticVersion: 1.0.11
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
 Parameters:
@@ -99,7 +99,7 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: "loggroup-lambda-connector.handler"
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Environment:
         Variables:
           DESTINATION_ARN: !Ref "DestinationArnValue"
@@ -192,7 +192,7 @@ Resources:
           await response.send(event, context, responseStatus, responseData);
         };
       Handler: "index.handler"
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Environment:
         Variables:
           FUNCTION_NAME: !Ref SumoLogGroupLambdaConnector

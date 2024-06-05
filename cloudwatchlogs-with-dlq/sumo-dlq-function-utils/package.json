@@ -6,7 +6,7 @@
   "files": ["./lib"],
   "main": "./lib/mainindex",
   "dependencies": {
-    "aws-sdk": "^2.160.0"
+    "aws-sdk": "^2.1633.0"
   },
   "devDependencies": {},
   "author": "Himanshu Pal"

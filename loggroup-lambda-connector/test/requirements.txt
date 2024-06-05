@@ -1,3 +1,3 @@
-requests==2.31.0
-boto3==1.34.2
-cfn-flip>=1.3.8
+requests==2.32.2
+boto3==1.34.119
+cfn-flip>=1.3.0

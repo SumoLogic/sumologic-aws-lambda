@@ -23,8 +23,8 @@ Metadata:
     Name: sumologic-guardduty-events-processor
     LicenseUrl: ../LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.4
-    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/cloudwatchevents/guardduty
+    SemanticVersion: 1.0.5
+    SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudwatchevents/guardduty
     SpdxLicenseId: Apache-2.0
 
 Parameters:
@@ -38,7 +38,7 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: cloudwatchevents.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Environment:
         Variables:
           SUMO_ENDPOINT: !Ref SumoEndpointUrl

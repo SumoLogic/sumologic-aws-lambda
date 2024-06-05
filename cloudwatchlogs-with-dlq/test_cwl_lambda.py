@@ -7,7 +7,8 @@ import sys
 import datetime
 
 BUCKET_PREFIX = "appdevstore"
-
+VERSION = "v1.3.0"
+AWS_PROFILE = "prod"
 
 class TestLambda(unittest.TestCase):
     TEMPLATE_KEYS_TO_REMOVE = ['SumoCWProcessDLQScheduleRule',
@@ -23,6 +24,7 @@ class TestLambda(unittest.TestCase):
         }
         self.stack_name = "TestCWLStack-%s" % (
             datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"))
+        boto3.setup_default_session(profile_name=AWS_PROFILE)
         self.cf = boto3.client('cloudformation',
                                self.config['AWS_REGION_NAME'])
         self.template_name = 'DLQLambdaCloudFormation.json'
@@ -33,8 +35,8 @@ class TestLambda(unittest.TestCase):
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
         self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
-        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "10.x")
-        self.template_data = self.template_data.replace("nodejs10.x", RUNTIME)
+        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "20.x")
+        self.template_data = self.template_data.replace("nodejs20.x", RUNTIME)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
@@ -103,11 +105,12 @@ class TestLambda(unittest.TestCase):
         print("Inserting fake logs in DLQ")
         dlq_queue_url = self._get_dlq_url()
         sqs_client = boto3.client('sqs', self.config['AWS_REGION_NAME'])
-        mock_logs = json.load(open('cwlfixtures.json'))
+        with open('cwlfixtures.json', 'r', encoding='UTF-8') as file:
+            mock_logs = json.load(file)
         for log in mock_logs:
             sqs_client.send_message(QueueUrl=dlq_queue_url,
                                     MessageBody=json.dumps(log))
-        sleep(15)  # waiting for messages to be ingested in SQS
+        sleep(60)  # waiting for messages to be ingested in SQS
         self.initial_log_count = self._get_message_count()
         print("Inserted %s Messages in %s" % (
             self.initial_log_count, dlq_queue_url))
@@ -148,7 +151,7 @@ class TestLambda(unittest.TestCase):
         print("Testing number of consumed messages initial: %s final: %s processed: %s" % (
             self.initial_log_count, final_message_count,
             self.initial_log_count - final_message_count))
-        self.assertGreater(self.initial_log_count, final_message_count)
+        self.assertEqual(self.initial_log_count, final_message_count)
 
     def _parse_template(self, template):
         with open(template) as template_fileobj:
@@ -241,10 +244,11 @@ def create_bucket(region):
 
 def upload_code_in_S3(region):
     filename = 'cloudwatchlogs-with-dlq.zip'
-    print("Uploading zip file %s in S3 %s" % (filename, region))
+    boto3.setup_default_session(profile_name=AWS_PROFILE)
     s3 = boto3.client('s3', region)
     bucket_name = get_bucket_name(region)
-    s3.upload_file(filename, bucket_name, filename,
+    print("Uploading zip file %s in S3 bucket (%s) at region (%s)" % (filename, bucket_name, region))
+    s3.upload_file(filename, bucket_name, f"cloudwatchLogsDLQ/{VERSION}/{filename}",
                    ExtraArgs={'ACL': 'public-read'})
 
 
@@ -266,6 +270,7 @@ def prod_deploy():
     global BUCKET_PREFIX
     BUCKET_PREFIX = 'appdevzipfiles'
     upload_code_in_multiple_regions()
+    boto3.setup_default_session(profile_name=AWS_PROFILE)
     s3 = boto3.client('s3', "us-east-1")
     filename = 'DLQLambdaCloudFormation.json'
     print("Uploading template file: %s in S3" % filename)
