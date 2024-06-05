@@ -20,7 +20,7 @@ Metadata:
     Name: sumologic-securityhub-connector-aws-org
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.6
+    SemanticVersion: 1.0.7
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/securityhub-org/sumologic-securityhub-collector-awsorg/src
     SpdxLicenseId: Apache-2.0
 
