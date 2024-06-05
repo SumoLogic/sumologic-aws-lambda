@@ -8,7 +8,7 @@ import datetime
 
 BUCKET_PREFIX = "appdevstore"
 VERSION = "v1.3.0"
-AWS_PROFILE = "sumocontent"
+AWS_PROFILE = "prod"
 
 class TestLambda(unittest.TestCase):
     TEMPLATE_KEYS_TO_REMOVE = ['SumoCWProcessDLQScheduleRule',
