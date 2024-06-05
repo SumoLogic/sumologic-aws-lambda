@@ -1,3 +1,3 @@
 requests==2.32.2
-boto3==1.5.1
-sumologic-sdk==0.1.11
+boto3==1.34.119
+sumologic-sdk==0.1.16
