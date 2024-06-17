@@ -89,7 +89,13 @@ SumoLogsClient.prototype.postToSumo = function(messages, is_compressed) {
             if (obj.status === "SUCCESS") {
                 requestSuccessCnt += 1;
             } else {
-                var message = obj.error?obj.error.message:obj.response.statusMessage;
+                if (obj.error){
+                    var message = obj.error.message;
+                } else if(obj.response){
+                    var message = obj.response.statusMessage;
+                }else{
+                    var message = JSON.stringify(obj);
+                }
                 messageErrors.push(message);
                 failedBucketKeys.push(obj.failedBucketKey);
             }
