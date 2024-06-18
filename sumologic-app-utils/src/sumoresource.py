@@ -74,13 +74,17 @@ class SumoResource(object):
             else:
                 raise e
 
-    def send_telemetry(self,data):
+    def send_telemetry(self,data,sendTelemetry):
         url = 'https://collectors.sumologic.com/receiver/v1/http/ZaVnC4dhaV24CA_LXFO0iHFPLWH8VaEczkwtk-GZYMlTG_Dl2CPQ6YNbmKXf9K3dZQ2aAjTREC_C3TECzVQc1XN7zw5CI5lIR4O4-uYsk4bTELB1MU57AQ=='
-        headers = {'content-type': 'application/json'}
-        ct = datetime.now().timestamp() # current time
-        static_data = {'timestamp': ct,'profile':{'sumo': {'deployment': self.deployment,'orgid': self.org_id,'access_id': self.access_id },'app': {'name': 'AWSO','version': '2.8.0'}}}
-        final_data = static_data | data
-        r = requests.post(url, data = json.dumps(final_data), headers=headers)
+        if sendTelemetry =='true':
+            headers = {'content-type': 'application/json'}
+            ct = datetime.now().timestamp() # current time
+            print("Telemetry enabled")
+            static_data = {'timestamp': ct,'profile':{'sumo': {'deployment': self.deployment,'orgid': self.org_id,'access_id': self.access_id },'app': {'name': 'AWSO','version': '2.8.0'}}}
+            final_data = static_data | data
+            r = requests.post(url, data = json.dumps(final_data), headers=headers)
+        else: 
+            print("Telemetry not enabled")
 
 class Collector(SumoResource):
     '''
@@ -103,7 +107,7 @@ class Collector(SumoResource):
 
         raise Exception("Collector with name %s not found" % collector_name)
 
-    def create(self, collector_type, collector_name, uuid, source_category=None, description='', *args, **kwargs):
+    def create(self, collector_type, collector_name, props, source_category=None, description='', *args, **kwargs):
         collector_id = None
         collector = {
             'collector': {
@@ -117,24 +121,24 @@ class Collector(SumoResource):
             resp = self.sumologic_cli.create_collector(collector, headers=None)
             collector_id = json.loads(resp.text)['collector']['id']
             print("created collector %s" % collector_id)
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'collectorCreation','data': {'resourceType': 'collector', 'resourceName': collector_name, 'resourceID': collector_id, 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid': props.get("uuid"),'loglevel': 'INFO','eventname': 'collectorCreation','data': {'resourceType': 'collector', 'resourceName': collector_name, 'resourceID': collector_id, 'status': 'created', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
         except Exception as e:
             if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
                 collector = self._get_collector_by_name(collector_name, collector_type.lower())
                 collector_id = collector['id']
                 print("fetched existing collector %s" % collector_id)
-                log_data = {'uuid':uuid,'loglevel': 'ERROR','eventname': 'collectorCreation','data': {'resourceType': 'collector', 'resourceName': collector_name, 'resourceID': collector_id, 'status': 'already exists', 'details': 'NULL' }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'collectorCreation','data': {'resourceType': 'collector', 'resourceName': collector_name, 'resourceID': collector_id, 'status': 'already exists', 'details': 'NULL' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
             else:
                 print(e.response.json())
-                log_data = {'uuid':uuid,'loglevel': 'ERROR','eventname': 'collectorCreation','data': {'resourceType': 'collector', 'resourceName': collector_name, 'status': 'error', 'details': e.response.json()["message"] }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'collectorCreation','data': {'resourceType': 'collector', 'resourceName': collector_name, 'status': 'error', 'details': e.response.json()["message"] }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
                 raise
 
         return {"COLLECTOR_ID": collector_id}, collector_id
 
-    def update(self, collector_id, collector_type, collector_name, uuid, source_category=None, description=None, *args,
+    def update(self, collector_id, collector_type, collector_name, props, source_category=None, description=None, *args,
                **kwargs):
         cv, etag = self.sumologic_cli.collector(collector_id)
         cv['collector']['category'] = source_category
@@ -143,11 +147,11 @@ class Collector(SumoResource):
         resp = self.sumologic_cli.update_collector(cv, etag)
         collector_id = json.loads(resp.text)['collector']['id']
         print("updated collector %s" % collector_id)
-        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'collectorUpdate','data': {'resourceType': 'collector', 'resourceName': collector_name, 'status': 'updated', 'details': 'NULL' }}
-        self.send_telemetry(log_data)
+        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'collectorUpdate','data': {'resourceType': 'collector', 'resourceName': collector_name, 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         return {"COLLECTOR_ID": collector_id}, collector_id
 
-    def delete(self, collector_id, uuid, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, collector_id, props, remove_on_delete_stack, *args, **kwargs):
         '''
         this should not have any sources?
         '''
@@ -156,12 +160,12 @@ class Collector(SumoResource):
             if len(sources) == 0:
                 response = self.sumologic_cli.delete_collector({"collector": {"id": collector_id}})
                 print("deleted collector %s : %s" % (collector_id, response.text))
-                log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'collectorDelete','data': {'resourceType': 'collector', 'resourceID': collector_id, 'status': 'deleted', 'details': 'NULL' }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'collectorDelete','data': {'resourceType': 'collector', 'resourceID': collector_id, 'status': 'deleted', 'details': 'NULL' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
         else:
             print("skipping collector deletion")
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'collectorDelete','data': {'resourceType': 'collector', 'resourceID': collector_id, 'status': 'skipped', 'details': 'skipping collector deletion' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'collectorDelete','data': {'resourceType': 'collector', 'resourceID': collector_id, 'status': 'skipped', 'details': 'skipping collector deletion' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -174,7 +178,7 @@ class Collector(SumoResource):
             "source_category": props.get("SourceCategory"),
             "description": props.get("Description"),
             "collector_id": collector_id,
-            "uuid": props.get("uuid")
+            "props": props
         }
 
 
@@ -376,7 +380,7 @@ class AWSSource(BaseSource):
             endpoint = data["url"]
             print("created source %s" % source_id)
             log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceCreation','data': {'resourceType': 'source', 'resourceName': source_name, 'resourceID': source_id, 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
         except Exception as e:
             # Todo 100 sources in a collector is good. Same error code for duplicates in case of Collector and source.
             if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
@@ -386,11 +390,11 @@ class AWSSource(BaseSource):
                         print("fetched existing source %s" % source_id)
                         endpoint = source["url"]
                         log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'sourceCreation','data': {'resourceType': 'source', 'resourceName': source_name, 'resourceID': source_id, 'status': 'already exists', 'details': e.response.json()["message"] }}
-                        self.send_telemetry(log_data)
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
             else:
                 print(e, source_json)
                 log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'sourceCreation','data': {'resourceType': 'source', 'resourceName': source_name, 'status': 'error', 'details': e.response.json()["message"] }}
-                self.send_telemetry(log_data)
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
                 raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
@@ -403,7 +407,7 @@ class AWSSource(BaseSource):
             data = resp.json()['source']
             print("updated source %s" % data["id"])
             log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceUpdate','data': {'resourceType': 'source', 'resourceName': data["url"], 'resourceID': data["id"], 'status': 'updated', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             return {"SUMO_ENDPOINT": data["url"]}, data["id"]
         except Exception as e:
             print(e, source_json)
@@ -414,11 +418,11 @@ class AWSSource(BaseSource):
             response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
             print("deleted source %s : %s" % (source_id, response.text))
             log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceDelete','data': {'resourceType': 'source', 'resourceID': source_id, 'status': 'deleted', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
         else:
             print("skipping source deletion")
             log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceDelete','data': {'resourceType': 'source', 'resourceID': source_id, 'status': 'skipped', 'details': 'skipping source deletion' }}
-            self.send_telemetry(log_data)
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
 
 
 class HTTPSource(BaseSource):
@@ -460,7 +464,7 @@ class HTTPSource(BaseSource):
             endpoint = data["url"]
             print("created source %s" % source_id)
             log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceCreation','data': {'resourceType': 'source', 'resourceName': source_name, 'resourceID': source_id, 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
         except Exception as e:
             # Todo 100 sources in a collector is good
             if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
@@ -470,10 +474,10 @@ class HTTPSource(BaseSource):
                         print("fetched existing source %s" % source_id)
                         endpoint = source["url"]
                         log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'sourceCreation','data': {'resourceType': 'source', 'resourceName': source_name, 'resourceID': source_id, 'status': 'already exists', 'details': e.response.json()["message"] }}
-                        self.send_telemetry(log_data)
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
             else:
                 log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'sourceCreation','data': {'resourceType': 'source', 'resourceName': source_name, 'status': 'error', 'details': e.response.json()["message"]}}
-                self.send_telemetry(log_data)
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
                 raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
@@ -486,7 +490,7 @@ class HTTPSource(BaseSource):
         data = resp.json()['source']
         print("updated source %s" % data["id"])
         log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceUpdate','data': {'resourceType': 'source', 'resourceID': data["id"], 'status': 'updated', 'details': 'NULL' }}
-        self.send_telemetry(log_data)
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         return {"SUMO_ENDPOINT": data["url"]}, data["id"]
 
     def delete(self, collector_id, source_id, props, remove_on_delete_stack, *args, **kwargs):
@@ -494,11 +498,11 @@ class HTTPSource(BaseSource):
             response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
             print("deleted source %s : %s" % (source_id, response.text))
             log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceDelete','data': {'resourceType': 'source', 'resourceID': source_id, 'status': 'deleted', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
         else:
             print("skipping source deletion")
             log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'sourceDelete','data': {'resourceType': 'source', 'resourceID': source_id, 'status': 'skipped', 'details': 'skipping source deletion' }}
-            self.send_telemetry(log_data)
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -707,7 +711,7 @@ class App(SumoResource):
                                     return children["id"]
             raise
 
-    def create_by_import_api(self, appname, source_params, folder_name, s3url, orgID, uuid, location, share, *args, **kwargs):
+    def create_by_import_api(self, appname, source_params, folder_name, s3url, orgID, props, location, share, *args, **kwargs):
         # Add  retry if folder sync fails
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
@@ -732,18 +736,18 @@ class App(SumoResource):
             print("Imported app %s: appFolderId: %s FolderId: %s jobId: %s" % (
                 appname, app_folder_id, folder_id, job_id))
             self._wait_for_folder_creation(folder_id, job_id)
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'created', 'details': 'imported' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'created', 'details': 'imported' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
-                    log_data = {'uuid':uuid,'loglevel': 'ERROR','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'error', 'details': error.get('message')}}
-                    self.send_telemetry(log_data)
+                    log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'error', 'details': error.get('message')}}
+                    self.send_telemetry(log_data,props.get("sendTelemetry"))
             raise
 
-    def create_by_install_api(self, appid, appname, source_params, folder_name,orgID,uuid,location, share, *args, **kwargs):
+    def create_by_install_api(self, appid, appname, source_params, folder_name,orgID,props,location, share, *args, **kwargs):
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
@@ -770,28 +774,28 @@ class App(SumoResource):
                 app_folder_id = json_resp['statusMessage'].split(":")[1]
                 print("installed app %s: appFolderId: %s parent_folder_id: %s jobId: %s" % (
                     appname, app_folder_id, folder_id, job_id))
-                log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'created', 'details': 'installed' }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'created', 'details': 'installed' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
                 return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
             else:
                 print("%s installation failed." % appname)
-                log_data = {'uuid':uuid,'loglevel': 'ERROR','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'installation failed', 'details': response.text }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'installation failed', 'details': response.text }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
                 raise Exception(response.text)
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
-                    log_data = {'uuid':uuid,'loglevel': 'ERROR','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'error', 'details': error.get('message')}}
-                    self.send_telemetry(log_data)
+                    log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'appInstallation','data': {'resourceType': 'app', 'resourceName': appname, 'status': 'error', 'details': error.get('message')}}
+                    self.send_telemetry(log_data,props.get("sendTelemetry"))
             raise
 
     
-    def create(self, appname, source_params, orgID, uuid, share=True, location=None, appid=None, folder_name=None, s3url=None, *args, **kwargs):
+    def create(self, appname, source_params, orgID, props, share=True, location=None, appid=None, folder_name=None, s3url=None, *args, **kwargs):
         if appid:
-            return self.create_by_install_api(appid, appname, source_params, folder_name,orgID,uuid,location, share, *args, **kwargs)
+            return self.create_by_install_api(appid, appname, source_params, folder_name,orgID,props,location, share, *args, **kwargs)
         else:
-            return self.create_by_import_api(appname, source_params, folder_name, s3url,orgID,uuid,location, share, *args, **kwargs)
+            return self.create_by_import_api(appname, source_params, folder_name, s3url,orgID,props,location, share, *args, **kwargs)
 
     def update(self, app_folder_id, appname, source_params, orgID, share=True, location=None, appid=None, folder_name=None, retain_old_app=False,
                s3url=None,  *args, **kwargs):
@@ -852,8 +856,8 @@ class App(SumoResource):
             "s3url": props.get("AppJsonS3Url"),
             "location": 'admin' if props.get("location")=='Admin Recommended Folder' else 'personal',
             "share": props.get("share"),
-            "orgID": props.get("orgid"),
-            "uuid": props.get("uuid")
+            "orgID": props.get("SumoOrgID"),
+            "props": props
         }
 
 
@@ -867,7 +871,7 @@ class SumoLogicAWSExplorer(SumoResource):
                     return hierarchy["id"]
         raise Exception("Hierarchy with name %s not found" % hierarchy_name)
 
-    def create_hierarchy(self, hierarchy_name, level, hierarchy_filter, uuid):
+    def create_hierarchy(self, hierarchy_name, level, hierarchy_filter, props):
         content = {
             "name": hierarchy_name,
             "filter": hierarchy_filter,
@@ -877,8 +881,8 @@ class SumoLogicAWSExplorer(SumoResource):
             response = self.sumologic_cli.create_hierarchy(content)
             hierarchy_id = response.json()["id"]
             print("Hierarchy -  creation successful with ID %s" % hierarchy_id)
-            log_data = {'uuid': uuid,'loglevel': 'INFO','eventname': 'awsHierarchyCreation','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid': props.get("uuid"),'loglevel': 'INFO','eventname': 'awsHierarchyCreation','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'created', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             return {"Hierarchy_Name": response.json()["name"]}, hierarchy_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
@@ -891,29 +895,29 @@ class SumoLogicAWSExplorer(SumoResource):
                         response = self.sumologic_cli.update_hierarchy(hierarchy_id, content)
                         hierarchy_id = response.json()["id"]
                         print("Hierarchy -  update successful with ID %s" % hierarchy_id)
-                        log_data = {'uuid': uuid,'loglevel': 'WARNING','eventname': 'awsHierarchyCreation','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'already exists', 'details': error.get('message') }}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid': props.get("uuid"),'loglevel': 'WARNING','eventname': 'awsHierarchyCreation','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'already exists', 'details': error.get('message') }}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
                         return {"Hierarchy_Name": hierarchy_name}, hierarchy_id
                     else:
-                        log_data = {'uuid': uuid,'loglevel': 'ERROR','eventname': 'awsHierarchyCreation','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'status': 'error', 'details': error.get('message')}}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid': props.get("uuid"),'loglevel': 'ERROR','eventname': 'awsHierarchyCreation','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'status': 'error', 'details': error.get('message')}}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
             raise
 
-    def create(self, hierarchy_name, level, hierarchy_filter, uuid, *args, **kwargs):
-        return self.create_hierarchy(hierarchy_name, level, hierarchy_filter, uuid)
+    def create(self, hierarchy_name, level, hierarchy_filter, props, *args, **kwargs):
+        return self.create_hierarchy(hierarchy_name, level, hierarchy_filter, props)
 
     # Use the new update API.
-    def update(self, hierarchy_id, hierarchy_name, level, hierarchy_filter, uuid, *args, **kwargs):
+    def update(self, hierarchy_id, hierarchy_name, level, hierarchy_filter, props, *args, **kwargs):
         data, hierarchy_id = self.create(hierarchy_name, level, hierarchy_filter)
-        log_data = {'uuid': uuid,'loglevel': 'INFO','eventname': 'awsHierarchyUpdate','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'updated', 'details': 'NULL' }}
-        self.send_telemetry(log_data)
+        log_data = {'uuid': props.get("uuid"),'loglevel': 'INFO','eventname': 'awsHierarchyUpdate','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         print("Hierarchy -  update successful with ID %s" % hierarchy_id)
         return data, hierarchy_id
 
     # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
     # already been deleted. This is required in case of multiple installation of
     # CF template with same names for metric rule, explorer view or fields
-    def delete(self, hierarchy_id, hierarchy_name, uuid, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, hierarchy_id, hierarchy_name, props, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             # Backward Compatibility for 2.0.2 Versions.
             # If id is duplicate then get the id from explorer name and delete it.
@@ -922,8 +926,8 @@ class SumoLogicAWSExplorer(SumoResource):
             response = self.sumologic_cli.delete_hierarchy(hierarchy_id)
             print("Hierarchy - Completed the Hierarchy deletion for Name %s, response - %s"
                   % (hierarchy_name, response.text))
-            log_data = {'uuid': uuid,'loglevel': 'INFO','eventname': 'awsHierarchyDelete','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'deleted', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid': props.get("uuid"),'loglevel': 'INFO','eventname': 'awsHierarchyDelete','data': {'resourceType': 'hierarchy', 'resourceName': hierarchy_name, 'resourceID': hierarchy_id, 'status': 'deleted', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
         else:
             print("Hierarchy - Skipping the Hierarchy deletion.")
 
@@ -938,13 +942,13 @@ class SumoLogicAWSExplorer(SumoResource):
             "level": props.get("HierarchyLevel"),
             "hierarchy_filter": props.get("HierarchyFilter"),
             "hierarchy_id": hierarchy_id,
-            "uuid": props.get("uuid")
+            "props": props
         }
 
 
 class SumoLogicMetricRules(SumoResource):
 
-    def create_metric_rule(self, metric_rule_name, match_expression, variables, uuid, delete=True):
+    def create_metric_rule(self, metric_rule_name, match_expression, variables, props, delete=True):
         variables_to_extract = []
         if variables:
             for k, v in variables.items():
@@ -959,8 +963,8 @@ class SumoLogicMetricRules(SumoResource):
             response = self.sumologic_cli.create_metric_rule(content)
             job_name = response.json()["name"]
             print("METRIC RULES -  creation successful with Name %s" % job_name)
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'created', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             return {"METRIC_RULES": response.json()["name"]}, job_name
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
@@ -969,50 +973,50 @@ class SumoLogicMetricRules(SumoResource):
                     if error.get('code') == 'metrics:rule_name_already_exists' \
                             or error.get('code') == 'metrics:rule_already_exists':
                         print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
-                        log_data = {'uuid':uuid,'loglevel': 'WARNING','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'already exists', 'details': error.get('code')}}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid':props.get("uuid"),'loglevel': 'WARNING','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'already exists', 'details': error.get('code')}}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
                         if delete:
-                            self.delete(metric_rule_name, metric_rule_name, True, uuid)
+                            self.delete(metric_rule_name, metric_rule_name, True, props)
                             # providing sleep for 10 seconds after delete.
                             time.sleep(uniform(2, 10))
-                            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'created', 'details': 'NULL' }}
-                            self.send_telemetry(log_data)
-                            return self.create_metric_rule(metric_rule_name, match_expression, variables, uuid, False)
+                            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'created', 'details': 'NULL' }}
+                            self.send_telemetry(log_data,props.get("sendTelemetry"))
+                            return self.create_metric_rule(metric_rule_name, match_expression, variables, props, False)
                         return {"METRIC_RULES": metric_rule_name}, metric_rule_name
                     else:
-                        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'error', 'details': error.get('code')}}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'metricRuleCreation','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'error', 'details': error.get('code')}}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
             raise
 
-    def create(self, metric_rule_name, match_expression, variables, uuid, *args, **kwargs):
-        return self.create_metric_rule(metric_rule_name, match_expression, variables, uuid)
+    def create(self, metric_rule_name, match_expression, variables, props, *args, **kwargs):
+        return self.create_metric_rule(metric_rule_name, match_expression, variables, props)
 
     # No Update API. So, Metric rules can be updated and deleted from the main stack where it was created.
-    def update(self, old_metric_rule_name, job_name, metric_rule_name, match_expression, variables, uuid, *args, **kwargs):
+    def update(self, old_metric_rule_name, job_name, metric_rule_name, match_expression, variables, props, *args, **kwargs):
         # Need to add it because CF calls delete method if identifies change in metric rule name.
-        self.delete(job_name, old_metric_rule_name, True, uuid)
-        data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables, uuid)
+        self.delete(job_name, old_metric_rule_name, True, props)
+        data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables, props)
         print("METRIC RULES -  Update successful with Name %s" % job_name)
-        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'metricRuleUpdate','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'updated', 'details': 'NULL' }}
-        self.send_telemetry(log_data)
+        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'metricRuleUpdate','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         return data, job_name
 
     # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
     # already been deleted. This is required in case of multiple installation of
     # CF template with same names for metric rule, explorer view or fields
-    def delete(self, job_name, metric_rule_name, remove_on_delete_stack, uuid, *args, **kwargs):
+    def delete(self, job_name, metric_rule_name, remove_on_delete_stack, props, *args, **kwargs):
         if remove_on_delete_stack:
             try:
                 response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
                 print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (metric_rule_name, response.text))
-                log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'metricRuleDeletion','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'deleted', 'details': 'NULL' }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'metricRuleDeletion','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'deleted', 'details': 'NULL' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
             except Exception as e:
                 print("AWS EXPLORER - Exception while deleting the Metric Rules %s," % e)
         else:
             print("METRIC RULES - Skipping the Metric Rule deletion")
-            log_data = {'uuid':uuid,'loglevel': 'ERROR','eventname': 'metricRuleDeletion','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'error', 'details': 'Skipping the Metric Rule deletion' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'metricRuleDeletion','data': {'resourceType': 'metricRule', 'resourceName': metric_rule_name, 'status': 'error', 'details': 'Skipping the Metric Rule deletion' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -1036,7 +1040,7 @@ class SumoLogicMetricRules(SumoResource):
             "variables": variables,
             "job_name": job_name,
             "old_metric_rule_name": old_metric_rule_name,
-            "uuid": props.get("uuid")
+            "props": props
         }
 
 
@@ -1046,7 +1050,9 @@ class SumoLogicUpdateFields(SumoResource):
         Fields can also be added to new Sources using AWSSource, HTTPSources classes.
         Getting collector name, as Calling custom collector resource can update the collector name if stack is updated with different collector name.
     """
-    def add_fields_to_collector(self, collector_id, source_id, fields):
+    def add_fields_to_collector(self, collector_id, source_id, fields, props, retry_counter=5):
+        if retry_counter <=0:
+            return {"source_name": "Not updated"}, "No_Source_Id"
         if collector_id and source_id:
             sv, etag = self.sumologic_cli.source(collector_id, source_id)
 
@@ -1061,21 +1067,26 @@ class SumoLogicUpdateFields(SumoResource):
                 resp = self.sumologic_cli.update_source(collector_id, sv, etag)
                 data = resp.json()['source']
                 print("Added Fields in Source %s" % data["id"])
-                log_data = {'loglevel': 'INFO','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'tagging successful', 'details': 'NULL' }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'tagging successful', 'details': 'NULL' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
                 return {"source_name": data["name"]}, str(source_id)
             except Exception as e:
-                log_data = {'loglevel': 'ERROR','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'tagging failed', 'details': e }}
-                self.send_telemetry(log_data)
+                if e.response.status_code == 412:
+                    print("Retrying ", retry_counter)
+                    time.sleep(2)
+                    retry_counter -= 1
+                    return self.add_fields_to_collector(collector_id, source_id, fields,props,retry_counter=retry_counter)
+                else:
+                    log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'tagging failed', 'details': e.response.status_code}}
+                    self.send_telemetry(log_data,props.get("sendTelemetry"))
                 raise
         return {"source_name": "Not updated"}, "No_Source_Id"
 
-    def create(self, collector_id, source_id, fields, *args, **kwargs):
-        return self.add_fields_to_collector(collector_id, source_id, fields)
+    def create(self, collector_id, source_id, fields,props, *args, **kwargs):
+        return self.add_fields_to_collector(collector_id, source_id, fields,props)
 
     # Update the new fields to source.
-    def update(self, collector_id, source_id, fields, old_resource_properties, *args,
-               **kwargs):
+    def update(self, collector_id, source_id, fields, old_resource_properties, props, retry_counter=5, *args, **kwargs):
         # Fetch the source, get all fields. Merge the Old and New fields and the update source.
         # If Source name or collector name is changed, it is create again.
         if 'SourceApiUrl' in old_resource_properties and \
@@ -1091,12 +1102,25 @@ class SumoLogicUpdateFields(SumoResource):
             existing_source_fields.update(fields)
 
             sv['source']['fields'] = existing_source_fields
-            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-            data = resp.json()['source']
-            print("updated Fields in Source %s" % data["id"])
-            return {"source_name": data["name"]}, source_id
+            try:
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                data = resp.json()['source']
+                print("updated Fields in Source %s" % data["id"])
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'updated', 'details': 'NULL' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
+                return {"source_name": data["name"]}, source_id
+            except Exception as e:
+                if e.response.status_code == 412:
+                    print("Retrying ", retry_counter)
+                    time.sleep(2)
+                    retry_counter -= 1
+                    return self.update(collector_id, source_id, fields, old_resource_properties, props, retry_counter=retry_counter)
+                else:
+                    log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'tagging failed', 'details': e.response.status_code}}
+                    self.send_telemetry(log_data,props.get("sendTelemetry"))
+                raise
 
-    def delete(self, collector_id, source_id, fields, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, collector_id, source_id, fields, remove_on_delete_stack, props, retry_counter=5, *args, **kwargs):
         if remove_on_delete_stack:
             sv, etag = self.sumologic_cli.source(collector_id, source_id)
             existing_fields = sv['source']['fields']
@@ -1106,12 +1130,25 @@ class SumoLogicUpdateFields(SumoResource):
                     existing_fields.pop(k, None)
 
             sv['source']['fields'] = existing_fields
-            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-
-            data = resp.json()['source']
-            print("reverted Fields in Source %s" % data["id"])
+            try:
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                data = resp.json()['source']
+                print("reverted Fields in Source %s" % data["id"])
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'tagging reverted', 'details': 'NULL' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
+                return {"source_name": data["name"]}, str(source_id)
+            except Exception as e:
+                if e.response.status_code == 412:
+                    print("Retrying ", retry_counter)
+                    time.sleep(2)
+                    retry_counter -= 1
+                    return self.delete(collector_id, source_id, fields, remove_on_delete_stack, props,retry_counter=retry_counter)
+                else:
+                    log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'tagSource','data': {'resourceType': 'tag', 'resourceName': source_id, 'status': 'tagging failed', 'details': e.response.status_code}}
+                    self.send_telemetry(log_data,props.get("sendTelemetry"))
+                raise
         else:
-            print("UPDATE FIELDS - Skipping the Metric Rule deletion")
+            print("UPDATE FIELDS - Skipping the Fields deletion")
 
     def extract_params(self, event):
         props = event.get("ResourceProperties")
@@ -1128,7 +1165,8 @@ class SumoLogicUpdateFields(SumoResource):
             "fields": fields,
             "collector_id": re.search('collectors/(.*)/sources', props.get("SourceApiUrl")).group(1),
             "source_id": props.get("SourceApiUrl").rsplit('/', 1)[-1],
-            "old_resource_properties": old_resource_properties
+            "old_resource_properties": old_resource_properties,
+            "props": props
         }
 
 
@@ -1150,7 +1188,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
 
         raise Exception("FER with name %s not found" % fer_name)
 
-    def create(self, fer_name, fer_scope, fer_expression, fer_enabled, uuid, *args, **kwargs):
+    def create(self, fer_name, fer_scope, fer_expression, fer_enabled, props, *args, **kwargs):
         content = {
             "name": fer_name,
             "scope": fer_scope,
@@ -1161,8 +1199,8 @@ class SumoLogicFieldExtractionRule(SumoResource):
             response = self.sumologic_cli.create_field_extraction_rule(content)
             job_id = response.json()["id"]
             print("FER RULES -  creation successful with ID %s" % job_id)
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'ferCreation','data': {'resourceType': 'fer', 'resourceName': fer_name, 'resourceID': job_id, 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'ferCreation','data': {'resourceType': 'fer', 'resourceName': fer_name, 'resourceID': job_id, 'status': 'created', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
@@ -1181,15 +1219,15 @@ class SumoLogicFieldExtractionRule(SumoResource):
                             change_in_fer = True
                         if change_in_fer:
                             self.sumologic_cli.update_field_extraction_rules(fer_details["id"], fer_details)
-                        log_data = {'uuid':uuid,'loglevel': 'WARNING','eventname': 'ferCreation','data': {'resourceType': 'fer', 'resourceName': fer_name, 'resourceID': fer_details["id"], 'status': 'already exists', 'details': 'NULL' }}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid':props.get("uuid"),'loglevel': 'WARNING','eventname': 'ferCreation','data': {'resourceType': 'fer', 'resourceName': fer_name, 'resourceID': fer_details["id"], 'status': 'already exists', 'details': 'NULL' }}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
                         return {"FER_RULES": fer_name}, fer_details["id"]
                     else:
-                        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'ferCreation','data': {'resourceType': 'fer', 'resourceName': fer_name, 'status': 'error', 'details': error.get('code') }}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'ferCreation','data': {'resourceType': 'fer', 'resourceName': fer_name, 'status': 'error', 'details': error.get('code') }}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
             raise
 
-    def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, uuid, *args, **kwargs):
+    def update(self, fer_id, fer_name, fer_scope, fer_expression, fer_enabled, props, *args, **kwargs):
         """
             Field Extraction Rule can be updated and deleted from the main stack where it was created.
             Update will update all the details in FER which are changed.
@@ -1213,19 +1251,19 @@ class SumoLogicFieldExtractionRule(SumoResource):
             response = self.sumologic_cli.update_field_extraction_rules(fer_id, content)
             job_id = response.json()["id"]
             print("FER RULES -  update successful with ID %s" % job_id)
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'ferUpdate','data': {'resourceType': 'fer', 'resourceName': fer_name, 'resourceID': job_id, 'status': 'updated', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'ferUpdate','data': {'resourceType': 'fer', 'resourceName': fer_name, 'resourceID': job_id, 'status': 'updated', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
             raise
 
-    def delete(self, fer_id, remove_on_delete_stack, uuid, *args, **kwargs):
+    def delete(self, fer_id, remove_on_delete_stack, props, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_field_extraction_rule(fer_id)
             print("FER RULES - Completed the Metric Rule deletion for ID %s, response - %s" % (
                 fer_id, response.text))
-            log_data = {'uuid':uuid, 'loglevel': 'INFO','eventname': 'ferDelete','data': {'resourceType': 'fer', 'resourceID': fer_id, 'status': 'deleted', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"), 'loglevel': 'INFO','eventname': 'ferDelete','data': {'resourceType': 'fer', 'resourceID': fer_id, 'status': 'deleted', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
         else:
             print("FER RULES - Skipping the Metric Rule deletion")
 
@@ -1242,7 +1280,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             "fer_expression": props.get("FieldExtractionRuleParseExpression"),
             "fer_enabled": props.get("FieldExtractionRuleParseEnabled"),
             "fer_id": fer_id,
-            "uuid": props.get("uuid")
+            "props": props
         }
 
 
@@ -1376,7 +1414,7 @@ class SumoLogicFieldsSchema(SumoResource):
                     return field["fieldId"]
         raise Exception("Field Name with name %s not found" % field_name)
 
-    def add_field(self, field_name, uuid):
+    def add_field(self, field_name, props):
         content = {
             "fieldName": field_name,
         }
@@ -1384,8 +1422,8 @@ class SumoLogicFieldsSchema(SumoResource):
             response = self.sumologic_cli.create_new_field(content)
             field_id = response["fieldId"]
             print("FIELD NAME -  creation successful with Field Id %s" % field_id)
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'fieldCreation','data': {'resourceType': 'field', 'resourceName': field_name, 'resourceID': field_id, 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'fieldCreation','data': {'resourceType': 'field', 'resourceName': field_name, 'resourceID': field_id, 'status': 'created', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             return {"FIELD_NAME": response["fieldName"]}, field_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
@@ -1395,22 +1433,22 @@ class SumoLogicFieldsSchema(SumoResource):
                         print("FIELD NAME -  Duplicate Exists for Name %s" % field_name)
                         # Get the Field ID from the existing fields.
                         field_id = self.get_field_id(field_name)
-                        log_data = {'uuid':uuid,'loglevel': 'WARNING','eventname': 'fieldCreation','data': {'resourceType': 'field', 'resourceName': field_name, 'resourceID': field_id, 'status': 'already exists', 'details': error.get('code') }}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid':props.get("uuid"),'loglevel': 'WARNING','eventname': 'fieldCreation','data': {'resourceType': 'field', 'resourceName': field_name, 'resourceID': field_id, 'status': 'already exists', 'details': error.get('code') }}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
                         return {"FIELD_NAME": field_name}, field_id
                     else:
-                        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'fieldCreation','data': {'resourceType': 'field', 'resourceName': field_name, 'status': 'error', 'details': error.get('code') }}
-                        self.send_telemetry(log_data)
+                        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'fieldCreation','data': {'resourceType': 'field', 'resourceName': field_name, 'status': 'error', 'details': error.get('code') }}
+                        self.send_telemetry(log_data,props.get("sendTelemetry"))
             raise
 
-    def create(self, field_name, uuid, *args, **kwargs):
-        return self.add_field(field_name, uuid)
+    def create(self, field_name, props, *args, **kwargs):
+        return self.add_field(field_name, props)
 
     # No Update API. So, Fields will be added and deleted from the main stack.
-    def update(self, field_id, field_name, old_field_name, uuid, *args, **kwargs):
+    def update(self, field_id, field_name, old_field_name, props, *args, **kwargs):
         # Create a new field when field name changes. Delete will happen for old Field. No Update API, so no updates.
-        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'fieldUpdate','data': {'resourceType': 'fer', 'resourceName': field_name, 'resourceID': field_id, 'status': 'updated', 'details': 'NULL' }}
-        self.send_telemetry(log_data)
+        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'fieldUpdate','data': {'resourceType': 'fer', 'resourceName': field_name, 'resourceID': field_id, 'status': 'updated', 'details': 'NULL' }}
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         if field_name != old_field_name:
             return self.create(field_name)
         return {"FIELD_NAME": field_name}, field_id
@@ -1418,7 +1456,7 @@ class SumoLogicFieldsSchema(SumoResource):
     # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
     # already been deleted. This is required in case of multiple installation of
     # CF template with same names for metric rule, explorer view or fields
-    def delete(self, field_id, field_name, uuid, remove_on_delete_stack, *args, **kwargs):
+    def delete(self, field_id, field_name, props, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             # Backward Compatibility for 2.0.2 Versions.
             # Check for field_id is duplicate, then get the field ID from name and delete the field.
@@ -1427,8 +1465,8 @@ class SumoLogicFieldsSchema(SumoResource):
                     field_id = self.get_field_id(field_name)
                 response = self.sumologic_cli.delete_existing_field(field_id)
                 print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
-                log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'fieldDelete','data': {'resourceType': 'fer', 'resourceName': field_name, 'resourceID': field_id, 'status': 'deleted', 'details': 'NULL' }}
-                self.send_telemetry(log_data)
+                log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'fieldDelete','data': {'resourceType': 'fer', 'resourceName': field_name, 'resourceID': field_id, 'status': 'deleted', 'details': 'NULL' }}
+                self.send_telemetry(log_data,props.get("sendTelemetry"))
             except Exception as e:
                 print("AWS EXPLORER - Exception while deleting the Field %s," % e)
         else:
@@ -1450,7 +1488,7 @@ class SumoLogicFieldsSchema(SumoResource):
             "field_name": props.get("FieldName"),
             "field_id": field_id,
             "old_field_name": old_field_name,
-            "uuid": props.get("uuid")
+            "props": props
         }
 
 
@@ -1558,7 +1596,7 @@ class AlertsMonitor(SumoResource):
         response = self.sumologic_cli.get_root_folder()
         return response["id"]
 
-    def import_monitor(self, folder_name, orgID, monitors3url, variables, uuid, suffix_date_time):
+    def import_monitor(self, folder_name, orgID, monitors3url, variables, props, suffix_date_time):
         date_format = "%d-%b-%Y %H:%M:%S"
         content = self._get_content_from_s3(monitors3url, variables)
         content["name"] = folder_name + " " + datetime.utcnow().strftime(date_format) if suffix_date_time \
@@ -1571,23 +1609,23 @@ class AlertsMonitor(SumoResource):
             # monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
             # self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
             # End Uncomment above when FGP feature for monitors is live
-            log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'monitor','data': {'resourceType': 'monitor', 'resourceName': content["name"], 'status': 'created', 'details': 'NULL' }}
-            self.send_telemetry(log_data)
+            log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'monitor','data': {'resourceType': 'monitor', 'resourceName': content["name"], 'status': 'created', 'details': 'NULL' }}
+            self.send_telemetry(log_data,props.get("sendTelemetry"))
             print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
             return {"ALERTS MONITORS": response["name"]}, import_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
-                    log_data = {'uuid':uuid,'loglevel': 'ERROR','eventname': 'monitor','data': {'resourceType': 'monitor', 'resourceName': content["name"], 'status': 'error', 'details': error.get('code')}}
-                    self.send_telemetry(log_data)
+                    log_data = {'uuid':props.get("uuid"),'loglevel': 'ERROR','eventname': 'monitor','data': {'resourceType': 'monitor', 'resourceName': content["name"], 'status': 'error', 'details': error.get('code')}}
+                    self.send_telemetry(log_data,props.get("sendTelemetry"))
             raise
 
-    def create(self, folder_name, orgID, monitors3url, variables, uuid, suffix_date_time=False, *args, **kwargs):
-        return self.import_monitor(folder_name, orgID, monitors3url, variables, uuid, suffix_date_time)
+    def create(self, folder_name, orgID, monitors3url, variables, props, suffix_date_time=False, *args, **kwargs):
+        return self.import_monitor(folder_name, orgID, monitors3url, variables, props, suffix_date_time)
 
-    def update(self, folder_id, folder_name, orgID, monitors3url, variables, uuid, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
-        data, new_folder_id = self.create(folder_name, orgID, monitors3url, variables, uuid, suffix_date_time)
+    def update(self, folder_id, folder_name, orgID, monitors3url, variables, props, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
+        data, new_folder_id = self.create(folder_name, orgID, monitors3url, variables, props, suffix_date_time)
         if retain_old_alerts:
             # Retaining old folder in the new folder as backup.
             try:
@@ -1625,26 +1663,26 @@ class AlertsMonitor(SumoResource):
             "suffix_date_time": props.get("SuffixDateTime") == 'true',
             "retain_old_alerts": props.get("RetainOldAlerts") == 'true',
             "folder_id": folder_id,
-            "orgID": props.get("orgid"),
-            "uuid": props.get("uuid")
+            "orgID": props.get("SumoOrgID"),
+            "props": props
         }
 
 
 class Telemetry(SumoResource):
 
-    def create(self, sumo_org_id, sumo_access_id, sumo_deployment,aws_accountId,aws_alias,aws_region,parent_stack,child_stack,is_cw_metrics_source,is_kf_metric_source,create_alb_source,create_elb_source,create_cloudtrail_source,is_cw_logs_source,is_kf_logs_source,uuid, *args, **kwargs):
-        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'onboarding','aws':{'awsAccountId':aws_accountId,'awsAlias':aws_alias,'parentStack':parent_stack},'data': {'childStack':child_stack, 'resourceType': 'solution', 'resourceName': 'user_inputs', 'status': 'initiated', 'details': {'sumoOrgId':sumo_org_id,'sumoAccessID':sumo_access_id,'sumoDeployment':sumo_deployment,'awsRegion':aws_region,'isCWMetricsSource':is_cw_metrics_source,'isKfMetricSource':is_kf_metric_source,'createAlbSource':create_alb_source,'createElbSource':create_elb_source,'createCloudTrailSource':create_cloudtrail_source,'isCWLogsSource':is_cw_logs_source,'isKfLogsSource':is_kf_logs_source}}}
-        self.send_telemetry(log_data)
+    def create(self, sumo_org_id, sumo_access_id, sumo_deployment,aws_accountId,aws_alias,aws_region,parent_stack,child_stack,is_cw_metrics_source,is_kf_metric_source,create_alb_source,create_elb_source,create_cloudtrail_source,is_cw_logs_source,is_kf_logs_source,props, *args, **kwargs):
+        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'onboarding','aws':{'awsAccountId':aws_accountId,'awsAlias':aws_alias,'parentStack':parent_stack},'data': {'childStack':child_stack, 'resourceType': 'solution', 'resourceName': 'user_inputs', 'status': 'initiated', 'details': {'sumoOrgId':sumo_org_id,'sumoAccessID':sumo_access_id,'sumoDeployment':sumo_deployment,'awsRegion':aws_region,'isCWMetricsSource':is_cw_metrics_source,'isKfMetricSource':is_kf_metric_source,'createAlbSource':create_alb_source,'createElbSource':create_elb_source,'createCloudTrailSource':create_cloudtrail_source,'isCWLogsSource':is_cw_logs_source,'isKfLogsSource':is_kf_logs_source}}}
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         return {"TELEMETRY": "create_event"}, "sent"
 
-    def update(self, sumo_org_id, sumo_access_id, sumo_deployment,aws_accountId,aws_alias,aws_region,parent_stack,child_stack,is_cw_metrics_source,is_kf_metric_source,create_alb_source,create_elb_source,create_cloudtrail_source,is_cw_logs_source,is_kf_logs_source,uuid, *args, **kwargs):
-        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'update','aws':{'awsAccountId':aws_accountId,'awsAlias':aws_alias,'parentStack':parent_stack},'data': {'stackName':child_stack, 'resourceType': 'solution', 'resourceName': 'user_inputs', 'status': 'initiated', 'details': {'sumoOrgId':sumo_org_id,'sumoAccessID':sumo_access_id,'sumoDeployment':sumo_deployment,'awsAccountId':aws_accountId,'awsAlias':aws_alias,'awsRegion':aws_region,'isCWMetricsSource':is_cw_metrics_source,'isKfMetricSource':is_kf_metric_source,'createAlbSource':create_alb_source,'createElbSource':create_elb_source,'createCloudTrailSource':create_cloudtrail_source,'isCWLogsSource':is_cw_logs_source,'isKfLogsSource':is_kf_logs_source}}}
-        self.send_telemetry(log_data)
+    def update(self, sumo_org_id, sumo_access_id, sumo_deployment,aws_accountId,aws_alias,aws_region,parent_stack,child_stack,is_cw_metrics_source,is_kf_metric_source,create_alb_source,create_elb_source,create_cloudtrail_source,is_cw_logs_source,is_kf_logs_source,props, *args, **kwargs):
+        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'update','aws':{'awsAccountId':aws_accountId,'awsAlias':aws_alias,'parentStack':parent_stack},'data': {'stackName':child_stack, 'resourceType': 'solution', 'resourceName': 'user_inputs', 'status': 'initiated', 'details': {'sumoOrgId':sumo_org_id,'sumoAccessID':sumo_access_id,'sumoDeployment':sumo_deployment,'awsAccountId':aws_accountId,'awsAlias':aws_alias,'awsRegion':aws_region,'isCWMetricsSource':is_cw_metrics_source,'isKfMetricSource':is_kf_metric_source,'createAlbSource':create_alb_source,'createElbSource':create_elb_source,'createCloudTrailSource':create_cloudtrail_source,'isCWLogsSource':is_cw_logs_source,'isKfLogsSource':is_kf_logs_source}}}
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         return {"TELEMETRY": "update_event"}, "sent"
 
-    def delete(self, sumo_org_id, sumo_access_id, sumo_deployment,aws_accountId,aws_alias,aws_region,parent_stack,child_stack,is_cw_metrics_source,is_kf_metric_source,create_alb_source,create_elb_source,create_cloudtrail_source,is_cw_logs_source,is_kf_logs_source,uuid, *args, **kwargs):
-        log_data = {'uuid':uuid,'loglevel': 'INFO','eventname': 'delete','aws':{'awsAccountId':aws_accountId,'awsAlias':aws_alias,'parentStack':parent_stack},'data': {'stackName':child_stack, 'resourceType': 'solution', 'resourceName': 'user_inputs', 'status': 'initiated', 'details': {'sumoOrgId':sumo_org_id,'sumoAccessID':sumo_access_id,'sumoDeployment':sumo_deployment,'awsAccountId':aws_accountId,'awsAlias':aws_alias,'awsRegion':aws_region,'isCWMetricsSource':is_cw_metrics_source,'isKfMetricSource':is_kf_metric_source,'createAlbSource':create_alb_source,'createElbSource':create_elb_source,'createCloudTrailSource':create_cloudtrail_source,'isCWLogsSource':is_cw_logs_source,'isKfLogsSource':is_kf_logs_source}}}
-        self.send_telemetry(log_data)
+    def delete(self, sumo_org_id, sumo_access_id, sumo_deployment,aws_accountId,aws_alias,aws_region,parent_stack,child_stack,is_cw_metrics_source,is_kf_metric_source,create_alb_source,create_elb_source,create_cloudtrail_source,is_cw_logs_source,is_kf_logs_source,props, *args, **kwargs):
+        log_data = {'uuid':props.get("uuid"),'loglevel': 'INFO','eventname': 'delete','aws':{'awsAccountId':aws_accountId,'awsAlias':aws_alias,'parentStack':parent_stack},'data': {'stackName':child_stack, 'resourceType': 'solution', 'resourceName': 'user_inputs', 'status': 'initiated', 'details': {'sumoOrgId':sumo_org_id,'sumoAccessID':sumo_access_id,'sumoDeployment':sumo_deployment,'awsAccountId':aws_accountId,'awsAlias':aws_alias,'awsRegion':aws_region,'isCWMetricsSource':is_cw_metrics_source,'isKfMetricSource':is_kf_metric_source,'createAlbSource':create_alb_source,'createElbSource':create_elb_source,'createCloudTrailSource':create_cloudtrail_source,'isCWLogsSource':is_cw_logs_source,'isKfLogsSource':is_kf_logs_source}}}
+        self.send_telemetry(log_data,props.get("sendTelemetry"))
         return {"TELEMETRY": "delete_event"}, "sent"
 
     def extract_params(self, event):
@@ -1665,7 +1703,7 @@ class Telemetry(SumoResource):
             "create_cloudtrail_source": props.get("CreateCloudTrailSource"),
             "is_cw_logs_source": props.get("CloudWatchLogsSource"),
             "is_kf_logs_source": props.get("KinesisLogsSource"),
-            "uuid": props.get("uuid")
+            "props": props
         }
 
 if __name__ == '__main__':
