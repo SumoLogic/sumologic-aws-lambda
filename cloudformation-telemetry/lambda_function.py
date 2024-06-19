@@ -50,11 +50,11 @@ def lambda_handler(event, context):
     helper(event, context)
 
 def telemetryFactory(event, context):
-    if os.getenv['solutionName'] == 'AWSO':
+    if os.getenv('solutionName') == 'AWSO':
         return awsoTelemetry(event, context)
     else:
         return None
-    # elif os.environ['solutionName'] == 'CIS':
+    # elif os.environ('solutionName') == 'CIS':
     #     return cisTelemetry(event, context)
 
 # Interface
@@ -81,6 +81,7 @@ class awsoTelemetry(baseTelemetry):
         self.context = context
         self.stackID = os.getenv('stackID')
         self.cfclient = boto3.client('cloudformation')
+        self.all_resource_statuses=defaultdict(list)
     
     # This function will return True if any of the child resources are *IN_PROGRESS state.
     def __has_any_child_resources_in_progress_state(self): # test
@@ -96,17 +97,16 @@ class awsoTelemetry(baseTelemetry):
 
     def __create_telemetry_data(self):
         print("create_telemetry_data function called",self.context)
-        all_resource_statuses=defaultdict(list) # check where to declare -> if state is persisted between function calls
         log_data_list=[]
         all_stacks_events = self.cfclient.describe_stack_events(StackName= self.stackID)
         for stack_resource in all_stacks_events["StackEvents"]:
             resourceID = stack_resource["PhysicalResourceId"]
             status = stack_resource["ResourceStatus"]
             resource_status_reason = stack_resource.get('ResourceStatusReason', '')
-            if status not in all_resource_statuses.get(resourceID, []):
-                all_resource_statuses[resourceID].append(status)
+            if status not in self.all_resource_statuses.get(resourceID, []):
+                self.all_resource_statuses[resourceID].append(status)
                 log_data = {
-                    'uuid': self.context['aws_request_id'],
+                    'uuid': self.context.aws_request_id,
                     'timestamp': stack_resource['Timestamp'].isoformat(timespec='milliseconds'),
                     'profile': {
                         'sumo': {
