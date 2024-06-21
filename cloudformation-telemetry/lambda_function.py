@@ -55,7 +55,7 @@ def telemetryFactory(event, context):
     if event['ResourceProperties']['solutionName'] == 'AWSO':
         return awsoTelemetry(event, context)
     else:
-        raise NotImplementedError # OR AttributeError
+        return parentStackTelemetry(event, context) 
     # elif event['ResourceProperties']['solutionName'] == 'CIS':
     #     return cisTelemetry(event, context)
 
@@ -78,18 +78,16 @@ class baseTelemetry(ABC):
 # rename awsoTelemetry to parentStackTelemetry
 # in awsoTelemetry only implement enrich_telemetry_data()
 
-class awsoTelemetry(baseTelemetry): # parentStackTelemetry
-
+class parentStackTelemetry(baseTelemetry):
     def __init__(self, event, context):
         self.event = event
         self.context = context
         self.stackID = event['ResourceProperties']['stackID']
         self.cfclient = boto3.client('cloudformation')
         self.all_resource_statuses=defaultdict(list)
-    
+
     # This function will return True if any of the child resources are *IN_PROGRESS state.
-    def __has_any_child_resources_in_progress_state(self):
-        print("has_any_child function called")
+    def _has_any_child_resources_in_progress_state(self):
         all_stacks = self.cfclient.describe_stack_resources(StackName=self.stackID)
         # PrimeInvoke - only responsible for triggering lambda
         # Removing 'Primerinvoke' status from all_stacks status so that it is not considered during status checking else it'll result in endless loop becoz if PriveInvoke is not completed overall stack can't be completed.
@@ -99,7 +97,7 @@ class awsoTelemetry(baseTelemetry): # parentStackTelemetry
                 return True
         return False # None of the child resources are in IN_PROGRESS state
 
-    def __create_telemetry_data(self):
+    def _create_telemetry_data(self):
         log_data_list=[]
         all_stacks_events = self.cfclient.describe_stack_events(StackName= self.stackID)
         for stack_resource in all_stacks_events["StackEvents"]:
@@ -123,6 +121,34 @@ class awsoTelemetry(baseTelemetry): # parentStackTelemetry
                 log_data_list.append(log_data)
         return log_data_list
 
+    def fetch_and_send_telemetry(self):
+        resources_in_progress = True
+        while (resources_in_progress):
+            resources_in_progress = self._has_any_child_resources_in_progress_state()
+            log_data_list = self._create_telemetry_data()
+            for log_data in log_data_list:
+                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
+            # If all child resources are completed except PrimeInvoker, marking PrimeInvoker as completed
+            if not resources_in_progress: 
+                helper._cfn_response(self.event)
+            time.sleep(int(self.event['ResourceProperties']['scanInterval']))
+        # If all resources are completed, make final call to know Parent stack status
+        if not resources_in_progress :
+            log_data_list = self._create_telemetry_data()
+            for log_data in log_data_list:
+                print(log_data)
+                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
+
+
+class awsoTelemetry(parentStackTelemetry):
+
+    def __init__(self, event, context):
+        self.event = event
+        self.context = context
+        self.stackID = event['ResourceProperties']['stackID']
+        self.cfclient = boto3.client('cloudformation')
+        self.all_resource_statuses=defaultdict(list)
+    
     def enrich_telemetry_data(self, log_data_list):
         static_data = {
             'profile': {
@@ -142,10 +168,9 @@ class awsoTelemetry(baseTelemetry): # parentStackTelemetry
 
     def fetch_and_send_telemetry(self):
         resources_in_progress = True
-
         while (resources_in_progress):
-            resources_in_progress = self.__has_any_child_resources_in_progress_state()
-            log_data_list = self.__create_telemetry_data()
+            resources_in_progress = self._has_any_child_resources_in_progress_state()
+            log_data_list = self._create_telemetry_data()
             log_data_list = self.enrich_telemetry_data(log_data_list)
             for log_data in log_data_list:
                 self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
@@ -155,11 +180,11 @@ class awsoTelemetry(baseTelemetry): # parentStackTelemetry
             time.sleep(int(self.event['ResourceProperties']['scanInterval']))
         # If all resources are completed, make final call to know Parent stack status
         if not resources_in_progress :
-            log_data_list = self.__create_telemetry_data()
+            log_data_list = self._create_telemetry_data()
             log_data_list = self.enrich_telemetry_data(log_data_list)
             for log_data in log_data_list:
                 print(log_data)
-                self.send_telemetry(log_data,self.event['TelemetryEndpoint'])
+                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
 
 
 if __name__=="__main__": 
