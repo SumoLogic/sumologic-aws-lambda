@@ -66,12 +66,10 @@ class baseTelemetry(ABC):
         raise NotImplementedError
 
     # Use clientMixing func from app-client-sdk
-    def send_telemetry(self, data):
-        # Fetch it from env var
-        url = 'https://collectors.sumologic.com/receiver/v1/http/ZaVnC4dhaV24CA_LXFO0iHFPLWH8VaEczkwtk-GZYMlTG_Dl2CPQ6YNbmKXf9K3dZQ2aAjTREC_C3TECzVQc1XN7zw5CI5lIR4O4-uYsk4bTELB1MU57AQ=='
+    def send_telemetry(self, data, endpoint):
         headers = {'content-type': 'application/json'}
         print("Telemetry enabled")
-        r = requests.post(url, data = json.dumps(data), headers=headers)
+        r = requests.post(endpoint, data = json.dumps(data), headers=headers)
         
 # class cisTelemetry(baseTelemetry): # parentStackSetTelemetry
 #     def create_telemetry_data(self):
@@ -150,7 +148,7 @@ class awsoTelemetry(baseTelemetry): # parentStackTelemetry
             log_data_list = self.__create_telemetry_data()
             log_data_list = self.enrich_telemetry_data(log_data_list)
             for log_data in log_data_list:
-                self.send_telemetry(log_data)
+                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
             # If all child resources are completed except PrimeInvoker, marking PrimeInvoker as completed
             if not resources_in_progress: 
                 helper._cfn_response(self.event)
@@ -161,7 +159,7 @@ class awsoTelemetry(baseTelemetry): # parentStackTelemetry
             log_data_list = self.enrich_telemetry_data(log_data_list)
             for log_data in log_data_list:
                 print(log_data)
-                self.send_telemetry(log_data)
+                self.send_telemetry(log_data,self.event['TelemetryEndpoint'])
 
 
 if __name__=="__main__": 
