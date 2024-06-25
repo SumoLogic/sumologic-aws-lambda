@@ -1,9 +1,9 @@
 from collections import defaultdict
 import boto3
-import json
-import requests
 import time
 from crhelper import CfnResource
+from sumoappclient.sumoclient.outputhandlers import HTTPHandler
+from sumoappclient.common.utils import read_yaml_file
 from abc import ABC, abstractmethod
 
 helper = CfnResource(json_logging=False, log_level='INFO', sleep_on_delete=30)
@@ -40,7 +40,6 @@ def delete(event, context):
         T.fetch_and_send_telemetry()
         # Self Delete the Telemetry Lambda function
         if event['RequestType']=='Delete':
-            print("deleting telemetry lambda")
             response = lambda_client.delete_function(FunctionName=context.invoked_function_arn)
     except Exception as e:
         print(e)
@@ -61,30 +60,36 @@ def telemetryFactory(event, context):
 
 # Interface
 class baseTelemetry(ABC):
+
+    def __init__(self, event,context,*args, **kwargs):
+        self.event=event
+        self.context=context
+        self.config = read_yaml_file("./metadata.yaml")
+        self.config['SumoLogic']['SUMO_ENDPOINT'] = self.event['ResourceProperties']['TelemetryEndpoint']
+        self.sumoHttpHandler = HTTPHandler(self.config)
+        self.log = self.sumoHttpHandler.log
+
     @abstractmethod
     def fetch_and_send_telemetry(self):
         raise NotImplementedError
 
-    # Use clientMixing func from app-client-sdk
-    def send_telemetry(self, data, endpoint):
-        headers = {'content-type': 'application/json'}
-        print("Telemetry enabled")
-        r = requests.post(endpoint, data = json.dumps(data), headers=headers)
+    def send_telemetry(self, data):
+        self.log.debug("Telemetry enabled") # replace at all places
+        r = self.sumoHttpHandler.send(data)
         
 # class cisTelemetry(baseTelemetry): # parentStackSetTelemetry
 #     def create_telemetry_data(self):
 #         pass
 
-# rename awsoTelemetry to parentStackTelemetry
-# in awsoTelemetry only implement enrich_telemetry_data()
-
 class parentStackTelemetry(baseTelemetry):
-    def __init__(self, event, context):
-        self.event = event
-        self.context = context
+    def __init__(self, event,context,*args, **kwargs):
+        super().__init__(event,context)
         self.stackID = event['ResourceProperties']['stackID']
         self.cfclient = boto3.client('cloudformation')
         self.all_resource_statuses=defaultdict(list)
+
+    def enrich_telemetry_data(self, log_data_list):
+        return log_data_list
 
     # This function will return True if any of the child resources are *IN_PROGRESS state.
     def _has_any_child_resources_in_progress_state(self):
@@ -126,8 +131,8 @@ class parentStackTelemetry(baseTelemetry):
         while (resources_in_progress):
             resources_in_progress = self._has_any_child_resources_in_progress_state()
             log_data_list = self._create_telemetry_data()
-            for log_data in log_data_list:
-                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
+            log_data_list = self.enrich_telemetry_data(log_data_list)
+            self.send_telemetry(log_data_list)
             # If all child resources are completed except PrimeInvoker, marking PrimeInvoker as completed
             if not resources_in_progress: 
                 helper._cfn_response(self.event)
@@ -135,19 +140,13 @@ class parentStackTelemetry(baseTelemetry):
         # If all resources are completed, make final call to know Parent stack status
         if not resources_in_progress :
             log_data_list = self._create_telemetry_data()
-            for log_data in log_data_list:
-                print(log_data)
-                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
+            log_data_list = self.enrich_telemetry_data(log_data_list)
+            self.send_telemetry(log_data_list)
 
 
 class awsoTelemetry(parentStackTelemetry):
-
-    def __init__(self, event, context):
-        self.event = event
-        self.context = context
-        self.stackID = event['ResourceProperties']['stackID']
-        self.cfclient = boto3.client('cloudformation')
-        self.all_resource_statuses=defaultdict(list)
+    def __init__(self,event,context):
+        super().__init__(event,context)
     
     def enrich_telemetry_data(self, log_data_list):
         static_data = {
@@ -165,27 +164,6 @@ class awsoTelemetry(parentStackTelemetry):
         for log_data in log_data_list:
             log_data.update(static_data)
         return log_data_list   
-
-    def fetch_and_send_telemetry(self):
-        resources_in_progress = True
-        while (resources_in_progress):
-            resources_in_progress = self._has_any_child_resources_in_progress_state()
-            log_data_list = self._create_telemetry_data()
-            log_data_list = self.enrich_telemetry_data(log_data_list)
-            for log_data in log_data_list:
-                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
-            # If all child resources are completed except PrimeInvoker, marking PrimeInvoker as completed
-            if not resources_in_progress: 
-                helper._cfn_response(self.event)
-            time.sleep(int(self.event['ResourceProperties']['scanInterval']))
-        # If all resources are completed, make final call to know Parent stack status
-        if not resources_in_progress :
-            log_data_list = self._create_telemetry_data()
-            log_data_list = self.enrich_telemetry_data(log_data_list)
-            for log_data in log_data_list:
-                print(log_data)
-                self.send_telemetry(log_data,self.event['ResourceProperties']['TelemetryEndpoint'])
-
 
 if __name__=="__main__": 
     event={}
