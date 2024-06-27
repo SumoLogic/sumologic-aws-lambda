@@ -68,13 +68,13 @@ class baseTelemetry(ABC):
         self.config['SumoLogic']['SUMO_ENDPOINT'] = self.event['ResourceProperties']['TelemetryEndpoint']
         self.sumoHttpHandler = HTTPHandler(self.config)
         self.log = self.sumoHttpHandler.log
+        self.log.debug("Telemetry enabled")
 
     @abstractmethod
     def fetch_and_send_telemetry(self):
         raise NotImplementedError
 
     def send_telemetry(self, data):
-        self.log.debug("Telemetry enabled") # replace at all places
         r = self.sumoHttpHandler.send(data)
         
 # class cisTelemetry(baseTelemetry): # parentStackSetTelemetry
@@ -158,6 +158,7 @@ class awsoTelemetry(parentStackTelemetry):
                 'solution': {
                     'name': self.event['ResourceProperties']['solutionName'],
                     'version': self.event['ResourceProperties']['solutionVersion'],
+                    'deploymentSource': self.event['ResourceProperties']['deploymentSource']
                 },
             }
         }
