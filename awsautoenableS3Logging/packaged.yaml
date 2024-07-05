@@ -24,10 +24,10 @@ Metadata:
     - s3logging
     - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.10
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/awsautoenableS3Logging
-    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.10/978602b5b9ec16f8bab0e38fd6b3998f
-    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.10/d05d411471e0bb4db3389f2523f515f0
+    LicenseUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.11/978602b5b9ec16f8bab0e38fd6b3998f
+    ReadmeUrl: s3://appdevstore/AutoEnableS3Logs/v1.0.11/d05d411471e0bb4db3389f2523f515f0
     SpdxLicenseId: Apache-2.0
 Mappings:
   Region2ELBAccountId:
@@ -476,7 +476,7 @@ Resources:
         - Arn
     Metadata:
       SamResourceId: EnableExistingAWSResourcesLambda
-  ExistingAWSResources:
+  EnableAccessLogsForExistingAWSResources:
     Type: Custom::EnableS3LogsResources
     Condition: auto_enable_existing
     Properties:
@@ -511,7 +511,7 @@ Resources:
       RemoveOnDeleteStack:
         Ref: RemoveOnDeleteStack
     Metadata:
-      SamResourceId: ExistingAWSResources
+      SamResourceId: EnableAccessLogsForExistingAWSResources
 Outputs:
   EnableNewAWSResourcesLambda:
     Description: Lambda Function ARN for New AWS Resources
