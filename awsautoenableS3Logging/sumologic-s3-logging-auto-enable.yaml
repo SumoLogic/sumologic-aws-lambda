@@ -24,7 +24,7 @@ Metadata:
       - s3logging
       - flowlogs
     Name: sumologic-s3-logging-auto-enable
-    SemanticVersion: 1.0.11
+    SemanticVersion: 1.0.12
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/awsautoenableS3Logging
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
@@ -379,7 +379,7 @@ Resources:
         - Arn: !GetAtt EnableNewAWSResourcesLambda.Arn
           Id: Main
 
-  EnableExistingAWSResourcesLambda:
+  EnableExisitngAWSResourcesLambda:
     Type: 'AWS::Serverless::Function'
     Condition: auto_enable_existing
     Properties:
@@ -393,11 +393,11 @@ Resources:
           - SumoLambdaRole
           - Arn
 
-  EnableAccessLogsForExistingAWSResources:
+  ExistingAWSResources:
     Type: Custom::EnableS3LogsResources
     Condition: auto_enable_existing
     Properties:
-      ServiceToken: !GetAtt EnableExistingAWSResourcesLambda.Arn
+      ServiceToken: !GetAtt EnableExisitngAWSResourcesLambda.Arn
       AWSResource: !If [enable_s3_buckets_logging, "s3", !If [enable_vpc_flow_logs_logging, "vpc", !If [enable_alb_logging, "elbv2", "elb"]] ]
       BucketName: !Ref BucketName
       Filter: !Ref FilterExpression
@@ -413,7 +413,7 @@ Outputs:
     Value: !GetAtt EnableNewAWSResourcesLambda.Arn
     Condition: auto_enable_new
 
-  EnableExistingAWSResourcesLambda:
+  EnableExisitngAWSResourcesLambda:
     Description: "Lambda Function ARN for Existing AWS Resources"
-    Value: !GetAtt EnableExistingAWSResourcesLambda.Arn
+    Value: !GetAtt EnableExisitngAWSResourcesLambda.Arn
     Condition: auto_enable_existing
