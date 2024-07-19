@@ -6,7 +6,7 @@ then
     SAM_S3_BUCKET="appdevstore"
     AWS_REGION="us-east-1"
 else
-    SAM_S3_BUCKET="appdevstore20211221-prod"
+    SAM_S3_BUCKET="<provide your bucket name>"
     AWS_REGION="us-east-1"
 fi
 
