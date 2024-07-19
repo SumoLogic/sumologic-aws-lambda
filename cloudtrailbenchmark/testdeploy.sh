@@ -7,7 +7,7 @@ then
     SAM_S3_BUCKET="appdevstore"
     AWS_REGION="us-east-1"
 else
-    SAM_S3_BUCKET="cf-templates-5d0x5unchag-us-east-2"
+    SAM_S3_BUCKET="<provide your bucket name>"
     AWS_REGION="us-east-2"
 fi
 uid=$(cat /dev/random | LC_CTYPE=C tr -dc "[:lower:]" | head -c 6)
