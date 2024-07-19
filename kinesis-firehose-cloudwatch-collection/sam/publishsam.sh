@@ -7,7 +7,7 @@ export AWS_PROFILE="personal"
 # IMPORTANT - Update the bucket value based on aws account you are deploying SAM app in.
 if [[ "${AWS_PROFILE}" == "personal" ]]
 then
-    SAM_S3_BUCKET="sumologic-aws-observability-templates"
+    SAM_S3_BUCKET="<provide your bucket name>"
 else
     SAM_S3_BUCKET="appdevstore"
 fi
