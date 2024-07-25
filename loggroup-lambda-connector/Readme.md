@@ -1,6 +1,11 @@
 # SumoLogic LogGroup Connector
 This is used to automatically subscribe newly created and existing Cloudwatch LogGroups to a Lambda function.
 
+**Note:**
+For existing CloudWatch LogGroups, a Lambda function can subscribe to up to 65,000 LogGroups.
+If the number of LogGroups exceeds 65,000, you can request to disable Lambda recursive loop detection by [contact AWS Support](https://repost.aws/knowledge-center/aws-phone-support).
+
+
 Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
 ### Deploying the SAM Application
