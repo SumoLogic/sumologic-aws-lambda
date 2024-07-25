@@ -4,12 +4,13 @@ const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
 const cwl = new CloudWatchLogsClient();
 const lambda = new LambdaClient({ apiVersion: '2015-03-31' }); // Update to the appropriate Lambda API version you require
 const maxRetryCounter = 3;
+const timeoutThreshold = 12000;
 
-async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn) {
-    var params={}; 
+async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn, additionalArgs) {
+    var params={};
     if (destinationArn.startsWith("arn:aws:lambda")) {
         params = {
-            destinationArn: destinationArn, 
+            destinationArn: destinationArn,
             filterName: 'SumoLGLBDFilter',
             filterPattern: '',
             logGroupName: lambdaLogGroupName
@@ -28,6 +29,7 @@ async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, role
     try {
         const cmd = new PutSubscriptionFilterCommand(params);
         await cwl.send(cmd);
+        additionalArgs.subscribeCount += 1
         console.log("Successfully subscribed logGroup: ", lambdaLogGroupName);
     } catch (err) {
         console.log("Error in subscribing", lambdaLogGroupName, err);
@@ -58,7 +60,7 @@ function filterLogGroups(event, logGroupRegex) {
     return false;
 }
 
-async function subscribeExistingLogGroups(logGroups, retryCounter) {
+async function subscribeExistingLogGroups(logGroups, retryCounter, additionalArgs) {
     var logGroupRegex = new RegExp(process.env.LOG_GROUP_PATTERN, "i");
     var destinationArn = process.env.DESTINATION_ARN;
     var roleArn = process.env.ROLE_ARN;
@@ -70,8 +72,8 @@ async function subscribeExistingLogGroups(logGroups, retryCounter) {
             console.log("Unmatched logGroup: ", logGroupName);
             return Promise.resolve();
         } else {
-            return createSubscriptionFilter(logGroupName, destinationArn, roleArn).catch(function (err) {
-                if (err && err.code == "ThrottlingException") {
+            return createSubscriptionFilter(logGroupName, destinationArn, roleArn, additionalArgs).catch(function (err) {
+                if (err && err.message === "Rate exceeded") {
                     failedLogGroupNames.push({ logGroupName: logGroupName });
                 }
             });
@@ -80,11 +82,11 @@ async function subscribeExistingLogGroups(logGroups, retryCounter) {
 
     if (retryCounter <= maxRetryCounter && failedLogGroupNames.length > 0) {
         console.log("Retrying Subscription for Failed Log Groups due to throttling with counter number as " + retryCounter);
-        await subscribeExistingLogGroups(failedLogGroupNames, retryCounter + 1);
+        await subscribeExistingLogGroups(failedLogGroupNames, retryCounter + 1, additionalArgs);
     }
 }
 
-async function processExistingLogGroups(token, context, errorHandler) {
+async function processExistingLogGroups(context, token, additionalArgs, errorHandler) {
     var params = { limit: 50 };
     if (token) {
       params = {
@@ -92,68 +94,98 @@ async function processExistingLogGroups(token, context, errorHandler) {
         nextToken: token
       };
     }
-  
+
     try {
+      console.log("Previous record count " + additionalArgs.recordCount);
       const data = await cwl.send(new DescribeLogGroupsCommand(params));
-      console.log(
-        "fetched logGroups: " + data.logGroups.length + " nextToken: " + data.nextToken
-      );
-      await subscribeExistingLogGroups(data.logGroups, 1);
-  
+      additionalArgs.recordCount += data.logGroups.length;
+      console.log("Updated record count " + additionalArgs.recordCount);
+      await subscribeExistingLogGroups(data.logGroups, 1, additionalArgs);
+      console.log("Updated subscribeCount " + additionalArgs.subscribeCount);
       if (data.nextToken) {
-        console.log(
-          "Log Groups remaining...Calling the lambda again with token " + data.nextToken
-        );
-        await invoke_lambda(context, data.nextToken, errorHandler);
-        console.log("Lambda invoke complete with token " + data.nextToken);
+        const remainingTime = context.getRemainingTimeInMillis(); // 60000
+        const diffTime = remainingTime - timeoutThreshold  // 14552-12000=2792
+        if (diffTime < timeoutThreshold) {
+            additionalArgs.invokeCount += 1
+            console.log("Lambda invoke complete with token "+ data.nextToken);
+            console.log("InvokeCount " + additionalArgs.invokeCount);
+            await invoke_lambda(context, data.nextToken, additionalArgs, errorHandler);
+            return
+        }
+        console.log("Remaining time " + remainingTime);
+        console.log("Log Groups remaining...Calling the lambda again with token " + data.nextToken);
+        await processExistingLogGroups(context, data.nextToken, additionalArgs, errorHandler)
       } else {
-        console.log("All Log Groups are subscribed to Destination Type " + process.env.DESTINATION_ARN);
+        console.log("Total " + additionalArgs.subscribeCount + " out of " +  additionalArgs.recordCount
+        + " Log Groups are subscribed to Destination Type "
+        + process.env.DESTINATION_ARN);
+        console.log("Last invokeCount " + additionalArgs.invokeCount);
         errorHandler(null, "Success");
       }
     } catch (err) {
       errorHandler(err, "Error in fetching logGroups");
     }
   }
-  
-  async function invoke_lambda(context, token, errorHandler) {
-    var payload = { "existingLogs": "true", "token": token };
-    try {
-      await lambda.send(new InvokeCommand({
-        InvocationType: 'Event',
-        FunctionName: context.functionName,
-        Payload: JSON.stringify(payload)
-      }));
-    } catch (err) {
+
+async function invoke_lambda(context, token, additionalArgs, errorHandler) {
+  var payload = { "existingLogs": "true", "token": token, "additionalArgs": additionalArgs};
+  try {
+    await lambda.send(new InvokeCommand({
+      InvocationType: 'Event',
+      FunctionName: context.functionName,
+      Payload: JSON.stringify(payload)
+    }));
+  } catch (err) {
       errorHandler(err, "Error invoking Lambda");
-    }
   }
-  
-  async function processEvents(env, event, errorHandler) {
-    var logGroupName = event.detail.requestParameters.logGroupName;
-    if (filterLogGroups(event, env.LOG_GROUP_PATTERN)) {
-      console.log("Subscribing: ", logGroupName, env.DESTINATION_ARN);
-      await createSubscriptionFilter(logGroupName, env.DESTINATION_ARN, env.ROLE_ARN)
-        .catch(function (err) {
-          errorHandler(err, "Error in Subscribing.");
-        });
-    } else {
+}
+
+async function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function processEvents(env, event, additionalArgs, errorHandler, retryCounter=0) {
+  var logGroupName = event.detail.requestParameters.logGroupName;
+  if (filterLogGroups(event, env.LOG_GROUP_PATTERN)) {
+    console.log("Subscribing: ", logGroupName, env.DESTINATION_ARN);
+    try {
+        await createSubscriptionFilter(logGroupName, env.DESTINATION_ARN, env.ROLE_ARN, additionalArgs);
+    } catch (err) {
+      errorHandler(err, "Error in Subscribing.");
+      if (err && err.message === "Rate exceeded" && retryCounter <= maxRetryCounter) {
+        retryCounter += 1
+        const delayTime = Math.pow(2, retryCounter) * 1000; // Exponential backoff
+        console.log(`ThrottlingException encountered. Retrying in ${delayTime}ms...Attempt ${retryCounter}/${maxRetryCounter}`);
+        await delay(delayTime);
+        await processEvents(env, event, additionalArgs, errorHandler, retryCounter);
+      }
+    };
+  } else {
       console.log("Unmatched: ", logGroupName, env.DESTINATION_ARN);
-    }
   }
-  
-  exports.handler = async function (event, context, callback) {
-    console.log("Invoking Log Group connector function");
-    function errorHandler(err, msg) {
-      if (err) {
-        console.log(err, msg);
+}
+
+exports.handler = async function (event, context, callback) {
+  let additionalArgs = {
+    recordCount: 0,
+    subscribeCount: 0,
+    invokeCount: 0
+  };
+  if (event.additionalArgs) {
+     additionalArgs = event.additionalArgs
+  }
+  console.log("Invoking Log Group connector function");
+  function errorHandler(err, msg) {
+    if (err) {
+      console.log(err, msg);
         callback(err);
       } else {
         callback(null, "Success");
       }
     }
     if (event.existingLogs == "true") {
-      await processExistingLogGroups(event.token, context, errorHandler);
+      await processExistingLogGroups(context, event.token, additionalArgs, errorHandler);
     } else {
-      await processEvents(process.env, event, errorHandler);
+      await processEvents(process.env, event, additionalArgs, errorHandler);
     }
-  };
+};
