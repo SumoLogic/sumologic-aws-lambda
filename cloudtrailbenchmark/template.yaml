@@ -67,6 +67,7 @@ Parameters:
     Type: String
   SumoAccessKey:
     Type: String
+    NoEcho: true
   SumoDeployment:
     Type: String
     AllowedValues:
