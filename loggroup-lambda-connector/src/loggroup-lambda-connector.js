@@ -1,10 +1,81 @@
-const { CloudWatchLogsClient, PutSubscriptionFilterCommand, DescribeLogGroupsCommand } = require("@aws-sdk/client-cloudwatch-logs");
+const { CloudWatchLogsClient, PutSubscriptionFilterCommand, DescribeLogGroupsCommand, ListTagsLogGroupCommand } = require("@aws-sdk/client-cloudwatch-logs");
 const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
 
 const cwl = new CloudWatchLogsClient();
 const lambda = new LambdaClient({ apiVersion: '2015-03-31' }); // Update to the appropriate Lambda API version you require
 const maxRetryCounter = 3;
 const timeoutThreshold = 12000;
+
+
+function validateRegex(pattern) {
+    try {
+        // Attempt to create a RegExp object with the provided pattern
+        return new RegExp(pattern, "i");
+    } catch (e) {
+        // Throw an error with a descriptive message if the pattern is invalid
+        throw new Error(`Invalid regular expression pattern: ${pattern}. Error: ${e.message}`);
+    }
+}
+
+async function getTagsByLogGroupName(logGroupName, retryCounter=0) {
+    var tags = {};
+    const input = {
+      logGroupName: logGroupName, // required
+    };
+    try {
+        // ListTagsLogGroupRequest
+        let response = await cwl.send(new ListTagsLogGroupCommand(input));
+        tags = response.tags
+    } catch (err) {
+          if (err && err.message === "Rate exceeded" && retryCounter <= maxRetryCounter) {
+            retryCounter += 1
+            const delayTime = Math.pow(2, retryCounter) * 2000; // Exponential backoff
+            console.log(`ThrottlingException encountered for ${logGroupName}. Retrying in ${delayTime}ms...Attempt ${retryCounter}/${maxRetryCounter}`);
+            await delay(delayTime);
+            await getTagsByLogGroupName(logGroupName, retryCounter);
+          } else {
+            console.error(`Failed to get tags for ${logGroupName} due to ${err}`)
+          }
+    }
+    return tags
+}
+
+function IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags) {
+    if (tagMatcherForLogGroup && logGroupTags) {
+        let tagMatcherList = tagMatcherForLogGroup.split(",");
+        console.log("logGroupTags: ", logGroupTags);
+        let tag, key, value;
+        for (let i = 0; i < tagMatcherList.length; i++) {
+            tag = tagMatcherList[i].split("=");
+            key = tag[0].trim();
+            value = tag[1].trim();
+            if (logGroupTags[key] && logGroupTags[key] == value) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+async function filterExistingLogGroups(logGroupName, logGroupRegex) {
+    if (logGroupName.match(logGroupRegex)) {
+        return true;
+    }
+    var logGroupTags = await getTagsByLogGroupName(logGroupName)
+    var tagMatcherForLogGroup = process.env.LOG_GROUP_TAGS
+    console.log("Filtering log group:", logGroupName, "with tags:", logGroupTags);
+    return IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags)
+}
+
+function filterNewLogGroups(event, logGroupRegex) {
+    var logGroupName = event.detail.requestParameters.logGroupName;
+    if (logGroupName.match(logGroupRegex) && event.detail.eventName === "CreateLogGroup") {
+        return true;
+    }
+    var logGroupTags = event.detail.requestParameters.tags;
+    var tagMatcherForLogGroup = process.env.LOG_GROUP_TAGS
+    return IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags)
+}
 
 async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn, additionalArgs) {
     var params={};
@@ -37,46 +108,25 @@ async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, role
     }
 }
 
-function filterLogGroups(event, logGroupRegex) {
-    logGroupRegex = new RegExp(logGroupRegex, "i");
-    let logGroupName = event.detail.requestParameters.logGroupName;
-    if (logGroupName.match(logGroupRegex) && event.detail.eventName === "CreateLogGroup") {
-        return true;
-    }
-    let lg_tags = event.detail.requestParameters.tags;
-    if (process.env.LOG_GROUP_TAGS && lg_tags) {
-        console.log("tags in loggroup: ", lg_tags);
-        var tags_array = process.env.LOG_GROUP_TAGS.split(",");
-        let tag, key, value;
-        for (let i = 0; i < tags_array.length; i++) {
-            tag = tags_array[i].split("=");
-            key = tag[0].trim();
-            value = tag[1].trim();
-            if (lg_tags[key] && lg_tags[key] == value) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 async function subscribeExistingLogGroups(logGroups, retryCounter, additionalArgs) {
-    var logGroupRegex = new RegExp(process.env.LOG_GROUP_PATTERN, "i");
+    var logGroupRegex = validateRegex(process.env.LOG_GROUP_PATTERN);
+    console.log("logGroupRegexPattern: ", logGroupRegex);
     var destinationArn = process.env.DESTINATION_ARN;
     var roleArn = process.env.ROLE_ARN;
     const failedLogGroupNames = [];
     await logGroups.reduce(async (previousPromise, nextLogGroup) => {
         await previousPromise;
         const { logGroupName } = nextLogGroup;
-        if (!logGroupName.match(logGroupRegex)) {
-            console.log("Unmatched logGroup: ", logGroupName);
-            return Promise.resolve();
-        } else {
+        let filterStatus = await filterExistingLogGroups(logGroupName, logGroupRegex);
+        if (filterStatus) {
             return createSubscriptionFilter(logGroupName, destinationArn, roleArn, additionalArgs).catch(function (err) {
                 if (err && err.message === "Rate exceeded") {
                     failedLogGroupNames.push({ logGroupName: logGroupName });
                 }
             });
+        } else {
+            console.log("Unmatched logGroup: ", logGroupName);
+            return Promise.resolve();
         }
     }, Promise.resolve());
 
@@ -128,7 +178,7 @@ async function processExistingLogGroups(context, token, additionalArgs, errorHan
   }
 
 async function invoke_lambda(context, token, additionalArgs, errorHandler) {
-  var payload = { "existingLogs": "true", "token": token, "additionalArgs": additionalArgs};
+  var payload = {"existingLogs": "true", "token": token, "additionalArgs": additionalArgs};
   try {
     await lambda.send(new InvokeCommand({
       InvocationType: 'Event',
@@ -146,7 +196,9 @@ async function delay(ms) {
 
 async function processEvents(env, event, additionalArgs, errorHandler, retryCounter=0) {
   var logGroupName = event.detail.requestParameters.logGroupName;
-  if (filterLogGroups(event, env.LOG_GROUP_PATTERN)) {
+  var logGroupRegex = validateRegex(env.LOG_GROUP_PATTERN);
+  console.log("logGroupRegex: ", logGroupRegex);
+  if (filterNewLogGroups(event, logGroupRegex)) {
     console.log("Subscribing: ", logGroupName, env.DESTINATION_ARN);
     try {
         await createSubscriptionFilter(logGroupName, env.DESTINATION_ARN, env.ROLE_ARN, additionalArgs);
@@ -182,6 +234,9 @@ exports.handler = async function (event, context, callback) {
       } else {
         callback(null, "Success");
       }
+    }
+    if (!process.env.LOG_GROUP_PATTERN || process.env.LOG_GROUP_PATTERN.trim().length === 0) {
+        console.warn("LOG_GROUP_PATTERN is empty, it will subscribe to all loggroups");
     }
     if (event.existingLogs == "true") {
       await processExistingLogGroups(context, event.token, additionalArgs, errorHandler);

@@ -10,7 +10,7 @@ else
     AWS_REGION="us-east-2"
 fi
 
-version="1.0.11"
+version="1.0.14"
 
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "LoggroupConnector/v$version" --region $AWS_REGION
 

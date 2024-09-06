@@ -21,10 +21,10 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.12/6092dd6c323e33634657102f570628e0
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.14/6092dd6c323e33634657102f570628e0
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.12/999bf8292d709fcf681946996eb9071d
-    SemanticVersion: 1.0.12
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.14/60b531a8a7a836857dd096ea058dc2c6
+    SemanticVersion: 1.0.14
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -107,7 +107,7 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.12/6b0658f101eead0c32f0fd36c4cbedd1
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.14/5a44aebff6ae18483b1b5d082d112e85
       Handler: loggroup-lambda-connector.handler
       Runtime: nodejs20.x
       Environment:
@@ -130,6 +130,7 @@ Resources:
           - logs:DescribeLogGroups
           - logs:DescribeLogStreams
           - logs:PutSubscriptionFilter
+          - logs:ListTagsLogGroup
           Resource:
           - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
         - Sid: InvokePolicy

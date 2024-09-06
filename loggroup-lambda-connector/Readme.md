@@ -1,7 +1,7 @@
 # SumoLogic LogGroup Connector
 This is used to automatically subscribe newly created and existing Cloudwatch LogGroups to a Lambda function.
 
-**Note:**
+> **Note:**
 For existing CloudWatch LogGroups, a Lambda function can subscribe to up to 65,000 LogGroups.
 If the number of LogGroups exceeds 65,000, you can request to disable Lambda recursive loop detection by [contact AWS Support](https://repost.aws/knowledge-center/aws-phone-support).
 
@@ -25,13 +25,30 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
 
 
 ### Configuring Lambda
-It has two environment variables
+#### Environment variables
 
-**LOG_GROUP_PATTERN**: This is a javascript regex to filter out loggroups. Only loggroups which match this pattern will be subscribed to the lambda function.Do not use '/' while writing the pattern and it is case insensitive.
+**LOG_GROUP_PATTERN**: This JavaScript regex is used to filter log groups. Only log groups that match this pattern will be subscribed to the Lambda function. The default value is `Test`, which will match log groups like `testlogroup`, `logtestgroup`, and `LogGroupTest`.
 
+##### Use Cases and it's Regex Pattern Example
+
+| Case Description                                                     | Regex Pattern  Example              |
+|----------------------------------------------------------------------|-------------------------------------|
+| To subscribe all loggroup                                            | `/*` or (leave empty)               |
+| To subscribe all loggroup paths only                                 | `/`                                 |
+| To subscribe all loggroup of aws services                            | `/aws/*`                            |
+| To subscribe to loggroups for only one service, such as Lambda       | `/aws/lambda/*`                     |
+| To subscribe loggroup multiple services like lambda, rds, apigateway | `/aws/(lambda\|rds\|apigateway)`    |
+| To subscribe loggroup by key word like `Test` or `Prod`              | `Test` or `Prod` [Case insensitive] |
+| Don't subscribe if `LOG_GROUP_PATTERN`                               | `^$`                                |
+
+**LOG_GROUP_TAGS**: This is used to filter log groups based on tags. Only log groups that match any of the specified key-value pairs will be subscribed to the Lambda function. It is case-sensitive.
+#### e.g
+```bash
+LOG_GROUP_TAGS="Environment=Production,Application=MyApp"
 ```
-    Test - will match testlogroup, logtestgroup and LogGroupTest
-```
+> 💡 **Tip**: To filter log groups based on tags only, set `LOG_GROUP_PATTERN=^$`.
+
+> **Note**: `LOG_GROUP_PATTERN` and `LOG_GROUP_TAGS` can be used together to subscribe to log groups or can be used separately.
 
 **DESTINATION_ARN**: This specifies ARN of the Destination to Subscribe the log group. 
 
@@ -53,8 +70,6 @@ Lambda Destination ARN :- This specifies ARN of the Lambda function. Also you ha
 ```
 
 Kinesis Destination ARN :- This specifies the ARN of the kinesis Stream.
-
-**LOG_GROUP_TAGS**: This is used for filtering out loggroups based on tags.Only loggroups which match any one of the key value pairs will be subscribed to the lambda function. This works only for new loggroups not existing loggroups.
 
 **ROLE_ARN** : This is used when subscription destination ARN is kinesis firehose stream.
 
