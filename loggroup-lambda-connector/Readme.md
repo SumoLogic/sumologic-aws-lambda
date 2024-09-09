@@ -42,7 +42,7 @@ Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Rep
 | Don't subscribe if `LOG_GROUP_PATTERN`                               | `^$`                                |
 
 **LOG_GROUP_TAGS**: This is used to filter log groups based on tags. Only log groups that match any of the specified key-value pairs will be subscribed to the Lambda function. It is case-sensitive.
-#### e.g
+#### For example
 ```bash
 LOG_GROUP_TAGS="Environment=Production,Application=MyApp"
 ```
