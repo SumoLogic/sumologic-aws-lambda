@@ -75,7 +75,7 @@ class TestLambda(unittest.TestCase):
     def test_5_matching_existing_loggroup_with_pattern_and_tag(self):
         self.create_log_group_with_tag()
         self.create_stack(self.stack_name, self.template_data,
-                          self.create_stack_parameters("Kinesis","true", loggroup_tag='username=akhil'))
+                          self.create_stack_parameters("Kinesis","true", loggroup_tag='env=prod'))
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
         #self.invoke_lambda()
@@ -163,7 +163,7 @@ class TestLambda(unittest.TestCase):
     def create_log_group_with_tag(self):
         tags = {
             'team': 'apps',
-            'username': 'akhil'
+            'env': 'prod'
         }
         self.log_group_name = 'mytag-%s' % (datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"))
         print("Loggroup Name", self.log_group_name)
