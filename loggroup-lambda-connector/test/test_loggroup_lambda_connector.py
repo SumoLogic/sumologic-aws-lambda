@@ -72,7 +72,26 @@ class TestLambda(unittest.TestCase):
         #self.invoke_lambda()
         self.assert_subscription_filter("SumoLGLBDFilter")
 
-    def create_stack_parameters(self, destination, existing, pattern='test'):
+    def test_5_matching_existing_loggroup_with_pattern_and_tag(self):
+        self.create_log_group_with_tag()
+        self.create_stack(self.stack_name, self.template_data,
+                          self.create_stack_parameters("Kinesis","true", loggroup_tag='env=prod'))
+        print("Testing Stack Creation")
+        self.assertTrue(self.stack_exists(self.stack_name))
+        #self.invoke_lambda()
+        self.assert_subscription_filter("SumoLGLBDFilter")
+
+    def test_6_matching_existing_loggroup_by_tag_only(self):
+        self.create_log_group_with_tag()
+        self.create_stack(self.stack_name, self.template_data,
+                          self.create_stack_parameters("Kinesis","true", loggroup_pattern='^$',
+                                                       loggroup_tag='username=akhil'))
+        print("Testing Stack Creation")
+        self.assertTrue(self.stack_exists(self.stack_name))
+        #self.invoke_lambda()
+        self.assert_subscription_filter("SumoLGLBDFilter")
+
+    def create_stack_parameters(self, destination, existing, loggroup_pattern='test', loggroup_tag=''):
         return [
             {
                 'ParameterKey': 'DestinationType',
@@ -80,7 +99,11 @@ class TestLambda(unittest.TestCase):
             },
             {
                 'ParameterKey': 'LogGroupPattern',
-                'ParameterValue': pattern
+                'ParameterValue': loggroup_pattern
+            },
+            {
+                'ParameterKey': 'LogGroupTags',
+                'ParameterValue': loggroup_tag
             },
             {
                 'ParameterKey': 'UseExistingLogs',
@@ -135,6 +158,16 @@ class TestLambda(unittest.TestCase):
 
     def create_log_group(self):
         response = self.log_group_client.create_log_group(logGroupName=self.log_group_name)
+        print("creating log group", response)
+
+    def create_log_group_with_tag(self):
+        tags = {
+            'team': 'apps',
+            'env': 'prod'
+        }
+        self.log_group_name = 'mytag-%s' % (datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"))
+        print("Loggroup Name", self.log_group_name)
+        response = self.log_group_client.create_log_group(logGroupName=self.log_group_name, tags=tags)
         print("creating log group", response)
 
     def assert_subscription_filter(self, filter_name):
@@ -205,7 +238,8 @@ def create_sam_package_and_upload():
 
 def _run(command, input=None, check=False, **kwargs):
     if sys.version_info >= (3, 5):
-        return subprocess.run(command, capture_output=True)
+        result = subprocess.run(command, capture_output=True)
+        return result.returncode, result.stdout, result.stderr
     if input is not None:
         if 'stdin' in kwargs:
             raise ValueError('stdin and input arguments may not both be used.')
@@ -226,11 +260,11 @@ def _run(command, input=None, check=False, **kwargs):
 
 
 def run_command(cmdargs):
-    resp = _run(cmdargs)
-    if len(resp.stderr.decode()) > 0:
+    retcode, stdout, stderr = _run(cmdargs)
+    if retcode != 0:
         # traceback.print_exc()
-        raise Exception("Error in run command %s cmd: %s" % (resp, cmdargs))
-    return resp.stdout
+        raise Exception("Error in run command %s cmd: %s" % (stderr, cmdargs))
+    return retcode, stdout, stderr
 
 
 if __name__ == '__main__':

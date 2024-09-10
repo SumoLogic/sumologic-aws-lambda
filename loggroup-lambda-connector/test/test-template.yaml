@@ -23,6 +23,13 @@ Parameters:
     AllowedValues: [ "true", "false" ]
     Description: "Select true for subscribing existing logs"
 
+  LogGroupTags:
+    Type: String
+    Default: ""
+    Description: Enter comma separated keyvalue pairs for filtering logGroups using
+      tags. Ex KeyName1=string,KeyName2=string. This is optional leave it blank if
+      tag based filtering is not needed.
+
   BucketName:
     Type: String
     Default: ""
@@ -72,7 +79,7 @@ Resources:
           print("success")
       Handler: index.lambda_handler
       MemorySize: 128
-      Runtime: python3.7
+      Runtime: python3.12
       Timeout: 60
       Role: !GetAtt LambdaRole.Arn
 
@@ -214,6 +221,7 @@ Resources:
         DestinationArnValue: !If [ create_invoke_permission, !GetAtt DummyLambda.Arn, !GetAtt KinesisLogsDeliveryStream.Arn ]
         LogGroupPattern: !Ref LogGroupPattern
         UseExistingLogs: !Ref UseExistingLogs
+        LogGroupTags: !Ref LogGroupTags
         RoleArn: !If [ create_invoke_permission, "", !GetAtt KinesisLogsRole.Arn ]
 
 Outputs:

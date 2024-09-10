@@ -24,7 +24,7 @@ Metadata:
     LicenseUrl: ../LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../Readme.md
-    SemanticVersion: 1.0.12
+    SemanticVersion: 1.0.14
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
@@ -114,6 +114,7 @@ Resources:
                 - logs:DescribeLogGroups
                 - logs:DescribeLogStreams
                 - logs:PutSubscriptionFilter
+                - logs:ListTagsLogGroup
               Resource:
                 - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
             - Sid: InvokePolicy
