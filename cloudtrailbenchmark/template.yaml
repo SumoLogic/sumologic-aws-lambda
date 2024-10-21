@@ -49,7 +49,7 @@ Metadata:
     Name: sumologic-aws-cloudtrail-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.17
+    SemanticVersion: 1.0.16
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudtrailbenchmark
 
 
@@ -67,7 +67,6 @@ Parameters:
     Type: String
   SumoAccessKey:
     Type: String
-    NoEcho: true
   SumoDeployment:
     Type: String
     AllowedValues:
@@ -75,13 +74,12 @@ Parameters:
       - ca
       - de
       - eu
-      - fed
-      - in
       - jp
-      - kr
-      - us1
       - us2
-    Description: "Enter au, ca, de, eu, fed, in, jp, kr, us1 or us2"
+      - us1
+      - in
+      - fed
+    Description: "Enter au, ca, de, eu, jp, us2, in, fed or us1"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -125,7 +123,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.17
+        SemanticVersion: 2.0.16
 
   SumoRole:
     Condition: SetupSumoResources
