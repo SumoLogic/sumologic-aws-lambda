@@ -7,12 +7,14 @@ from abc import abstractmethod
 from datetime import datetime
 from random import uniform
 
+
 import requests
 import six
+import jsonschema
 from resourcefactory import AutoRegisterResource
 from sumologic import SumoLogic
 from awsresource import AWSResourcesProvider
-
+from constants import *
 
 @six.add_metaclass(AutoRegisterResource)
 class SumoResource(object):
@@ -317,6 +319,33 @@ class AWSSource(BaseSource):
         })
         return source_json
 
+    @staticmethod
+    def _prepare_aws_filter_tags(props, namespaces):
+        filters = []
+        aws_tag_filters = props.get("AWSTagFilters", {})
+        if aws_tag_filters:
+            # Convert the string to JSON (Python dictionary)
+            try:
+                aws_tag_filters = json.loads(aws_tag_filters)
+                jsonschema.validate(instance=aws_tag_filters, schema=AWS_TAG_FILTERS_SCHEMA)
+                print("Converted AWS tag filters JSON:", aws_tag_filters)
+            except json.JSONDecodeError as e:
+                print("Invalid AWS tag filters JSON:", e)
+                aws_tag_filters = {}
+            except jsonschema.exceptions.ValidationError as e:
+                print(f"JSON validation error: {e.message}")
+                aws_tag_filters = {}
+        else:
+            aws_tag_filters = {}
+        for key, value in aws_tag_filters.items():
+            if key in namespaces:
+                filters.append({
+                    "type": "TagFilters",
+                    "namespace": key,
+                    "tags": value["tags"]
+                })
+        return filters
+
     def _get_path(self, props):
         source_type = props.get("SourceType")
 
@@ -336,6 +365,10 @@ class AWSSource(BaseSource):
                 path["limitToRegions"] = regions
             if "Namespaces" in props:
                 path["limitToNamespaces"] = props.get("Namespaces")
+                print("limitToNamespaces: ", path["limitToNamespaces"])
+            aws_filter_tag = self._prepare_aws_filter_tags(props, props.get("Namespaces", []))
+            if aws_filter_tag:
+                path["tagFilters"] = aws_filter_tag
             if source_type == "AwsCloudWatch":
                 path["type"] = "CloudWatchPath"
             else:
@@ -403,9 +436,7 @@ class HTTPSource(BaseSource):
                 "thirdPartyRef": {
                     "resources": [{
                         "serviceType": props.get("SourceType"),
-                        "path": {
-                            "type": props.get("SourceType") + "Path",
-                        },
+                        "path": self._get_path(props),
                         "authentication": {
                             "type": "AWSRoleBasedAuthentication",
                             "roleARN": props.get("RoleArn")
@@ -414,6 +445,41 @@ class HTTPSource(BaseSource):
                 }
             })
         return source_json
+
+    @staticmethod
+    def _prepare_aws_filter_tags(props):
+        filters = []
+        aws_tag_filters = props.get("AWSTagFilters", {})
+        if aws_tag_filters:
+            # Convert the string to JSON (Python dictionary)
+            try:
+                aws_tag_filters = json.loads(aws_tag_filters)
+                jsonschema.validate(instance=aws_tag_filters, schema=AWS_TAG_FILTERS_SCHEMA)
+                print("Converted AWS tag filters JSON:", aws_tag_filters)
+            except json.JSONDecodeError as e:
+                print("Invalid AWS tag filters JSON:", e)
+                aws_tag_filters = {}
+            except jsonschema.exceptions.ValidationError as e:
+                print(f"JSON validation error: {e.message}")
+                aws_tag_filters = {}
+        else:
+            aws_tag_filters = {}
+        for key, value in aws_tag_filters.items():
+            filters.append({
+                "type": "TagFilters",
+                "namespace": key,
+                "tags": value["tags"]
+            })
+        return filters
+
+    def _get_path(self, props):
+        path = {
+            "type": props.get("SourceType") + "Path",
+        }
+        aws_filter_tag = self._prepare_aws_filter_tags(props)
+        if aws_filter_tag:
+            path["tagFilters"] = aws_filter_tag
+        return path
 
     def create(self, collector_id, source_name, props, *args, **kwargs):
         endpoint = source_id = None

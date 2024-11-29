@@ -15,18 +15,21 @@ rm src/external/*.pyc
 rm src/*.pyc
 rm sumo_app_utils.zip
 
-if [ ! -f sumo_app_utils.zip ]; then
-    echo "creating zip file"
-    mkdir python
-    cd python
-    pip3 install  crhelper -t .
-    pip3 install requests -t .
-    pip3 install retrying -t .
-    cp -v ../src/*.py .
-    zip -r ../sumo_app_utils.zip .
-    cd ..
-    rm -r python
-fi
+#if [ ! -f sumo_app_utils.zip ]; then
+#    echo "creating zip file"
+#    mkdir python
+#    cd python
+#    pip3 install crhelper -t .
+#    pip3 install jsonschema==4.17.3 -t .
+#    pip3 install requests -t .
+#    pip3 install retrying -t .
+#    cp -v ../src/*.py .
+#    zip -r ../sumo_app_utils.zip .
+#    cd ..
+#    rm -r python
+#fi
+
+./build.sh
 
 version="2.0.15"
 
