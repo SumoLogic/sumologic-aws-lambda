@@ -320,8 +320,11 @@ class AWSSource(BaseSource):
         return source_json
 
     @staticmethod
-    def _prepare_aws_filter_tags(props, namespaces):
+    def _prepare_aws_filter_tags(props):
         filters = []
+
+        namespaces = props.get("Namespaces", [])
+        namespaces = [namespace for namespace in namespaces if namespace.strip().startswith('AWS/')]
         aws_tag_filters = props.get("AWSTagFilters", {})
         if aws_tag_filters:
             # Convert the string to JSON (Python dictionary)
@@ -338,7 +341,7 @@ class AWSSource(BaseSource):
         else:
             aws_tag_filters = {}
         for key, value in aws_tag_filters.items():
-            if key in namespaces:
+            if key in namespaces or key.lower() == "all":
                 filters.append({
                     "type": "TagFilters",
                     "namespace": key,
@@ -365,8 +368,7 @@ class AWSSource(BaseSource):
                 path["limitToRegions"] = regions
             if "Namespaces" in props:
                 path["limitToNamespaces"] = props.get("Namespaces")
-                print("limitToNamespaces: ", path["limitToNamespaces"])
-            aws_filter_tag = self._prepare_aws_filter_tags(props, props.get("Namespaces", []))
+            aws_filter_tag = self._prepare_aws_filter_tags(props)
             if aws_filter_tag:
                 path["tagFilters"] = aws_filter_tag
             if source_type == "AwsCloudWatch":
@@ -465,11 +467,12 @@ class HTTPSource(BaseSource):
         else:
             aws_tag_filters = {}
         for key, value in aws_tag_filters.items():
-            filters.append({
-                "type": "TagFilters",
-                "namespace": key,
-                "tags": value["tags"]
-            })
+            if key.strip().startswith('AWS/') or key.lower() == "all":
+                filters.append({
+                    "type": "TagFilters",
+                    "namespace": key,
+                    "tags": value["tags"]
+                })
         return filters
 
     def _get_path(self, props):
