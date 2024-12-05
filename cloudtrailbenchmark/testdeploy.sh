@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export AWS_PROFILE="sumocontent"
+export AWS_PROFILE="prod"
 export AWS_REGION="us-east-1"
 if [ "$AWS_PROFILE" == "prod" ]
 then
