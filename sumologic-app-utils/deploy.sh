@@ -31,7 +31,7 @@ rm sumo_app_utils.zip
 
 ./build.sh
 
-version="2.0.15"
+version="2.0.18"
 
 aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
 
@@ -39,5 +39,5 @@ sam package --template-file sumo_app_utils.yaml --s3-bucket $SAM_S3_BUCKET  --ou
 
 sam publish --template packaged_sumo_app_utils.yaml --region $AWS_REGION --semantic-version $version
 
-# sam deploy --template-file packaged_sumo_app_utils.yaml --stack-name testingsumoapputils --capabilities CAPABILITY_IAM --region $AWS_REGION
+#sam deploy --template-file packaged_sumo_app_utils.yaml --stack-name testingsumoapputils --capabilities CAPABILITY_IAM --region $AWS_REGION
 

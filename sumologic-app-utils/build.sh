@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Pull the Amazon lambda Linux image from Docker Hub
-docker pull public.ecr.aws/lambda/python:3.12-x86_64
+docker pull public.ecr.aws/lambda/python:3.13-x86_64
 
 # Run the Amazon lambda Linux container in detached mode
-docker run -d --name sumologic-app-utils public.ecr.aws/lambda/python:3.12-x86_64 lambda_function.lambda_handler
+docker run -d --name sumologic-app-utils public.ecr.aws/lambda/python:3.13-x86_64 lambda_function.lambda_handler
 
 # Install dependencies inside the container
 docker exec -it sumologic-app-utils /bin/bash -c "dnf install -y zip"
