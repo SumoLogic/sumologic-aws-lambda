@@ -12,7 +12,7 @@ AWS_TAG_FILTERS_SCHEMA = {
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^[a-zA-Z0-9_]+=[a-zA-Z0-9_;]+$"
+            "pattern": "[a-zA-Z0-9=_;,]+$"
           }
         }
       },
