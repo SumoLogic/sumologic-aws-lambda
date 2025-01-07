@@ -11,8 +11,7 @@ AWS_TAG_FILTERS_SCHEMA = {
         "tags": {
           "type": "array",
           "items": {
-            "type": "string",
-            "pattern": "[a-zA-Z0-9=_;,]+$"
+            "type": "string"
           }
         }
       },
