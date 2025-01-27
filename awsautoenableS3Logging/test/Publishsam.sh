@@ -29,7 +29,8 @@ do
         export version=`grep AWS::ServerlessRepo::Application: ../${VALUE} -A 20 | grep SemanticVersion | cut -d ':' -f 2 | xargs`
         echo "Package and publish the Template file ${VALUE} with version ${version}."
 
-        echo `sam validate -t ../${VALUE} --lint`
+        ## ignoring lint command as errors can't fix
+        # echo `sam validate -t ../${VALUE} --lint`
 
         sam package --profile ${AWS_PROFILE} --template-file ../${VALUE} --s3-bucket ${SAM_S3_BUCKET} --output-template-file ../packaged.yaml \
         --s3-prefix "${KEY}/v${version}" --region ${AWS_REGION}

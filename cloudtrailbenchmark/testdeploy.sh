@@ -12,7 +12,7 @@ else
 fi
 uid=$(cat /dev/random | LC_CTYPE=C tr -dc "[:lower:]" | head -c 6)
 
-version="1.0.17"
+version="1.0.19"
 
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "cloudtrailbenchmark/v$version" --region $AWS_REGION --profile $AWS_PROFILE
 

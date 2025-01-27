@@ -1,0 +1,21 @@
+Logging:
+ LOG_FORMAT: "%(levelname)s | %(asctime)s | %(threadName)s | %(name)s | %(message)s"
+ ROTATION_TYPE: D
+ ROTATION_INTERVAL: 10
+ ENABLE_CONSOLE_LOG: true
+ ENABLE_LOGFILE: false
+ LOG_FILEPATH: /tmp/cloudformation-telemetry/telemetry.log
+ LOG_LEVEL: "DEBUG"
+
+Collection:
+ MAX_PAYLOAD_BYTESIZE: 500000
+ MAX_RETRY: 5
+ BACKOFF_FACTOR: 1
+ COMPRESSED: true
+ TIMEOUT: 60
+
+DeployMetaData:
+ PACKAGENAME: "cloudformation-telemetry"
+
+SumoLogic:
+  SUMO_ENDPOINT: null

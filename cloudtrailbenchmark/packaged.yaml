@@ -43,9 +43,9 @@ Metadata:
     - benchmark
     - cloudtrail
     Name: sumologic-aws-cloudtrail-benchmark
-    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.17/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.17/8a901bb4fbbe82f128fc502dd3077508
-    SemanticVersion: 1.0.17
+    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.18/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.18/8a901bb4fbbe82f128fc502dd3077508
+    SemanticVersion: 1.0.18
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudtrailbenchmark
 Parameters:
   CollectorName:
@@ -129,7 +129,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.17
+        SemanticVersion: 2.0.19
     Metadata:
       SamResourceId: SumoAppUtils
   SumoRole:
