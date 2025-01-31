@@ -53,9 +53,9 @@ Metadata:
     - benchmark
     - guardduty
     Name: sumologic-guardduty-benchmark
-    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.16/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.16/cab012d7fb7887671b751e6f5c0d2062
-    SemanticVersion: 1.0.16
+    LicenseUrl: s3://appdevstore/guarddutybenchmark/v1.0.17/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/guarddutybenchmark/v1.0.17/cab012d7fb7887671b751e6f5c0d2062
+    SemanticVersion: 1.0.17
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudwatchevents/guarddutybenchmark
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -98,7 +98,7 @@ Parameters:
 Resources:
   CloudWatchEventFunction:
     Properties:
-      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.16/22b7b226ca9ec3b9dbb28b94c0e5f824
+      CodeUri: s3://appdevstore/guarddutybenchmark/v1.0.17/22b7b226ca9ec3b9dbb28b94c0e5f824
       Environment:
         Variables:
           SUMO_ENDPOINT:
@@ -113,7 +113,7 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
     Type: AWS::Serverless::Function
     Metadata:
       SamResourceId: CloudWatchEventFunction
@@ -122,7 +122,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.17
+        SemanticVersion: 2.0.19
     Metadata:
       SamResourceId: SumoAppUtils
   SumoHostedCollector:

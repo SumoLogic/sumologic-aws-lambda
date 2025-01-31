@@ -21,9 +21,9 @@ Metadata:
     - serverless
     - loggroups
     - cloudwatch
-    LicenseUrl: s3://appdevstore-akhil-ap-south-1/test-log-group-lambda-connector/6092dd6c323e33634657102f570628e0
+    LicenseUrl: s3://appdevstore/LoggroupConnector/v1.0.15/6092dd6c323e33634657102f570628e0
     Name: sumologic-loggroup-connector
-    ReadmeUrl: s3://appdevstore-akhil-ap-south-1/test-log-group-lambda-connector/15e6b49afe3116d3ff8861099b34b973
+    ReadmeUrl: s3://appdevstore/LoggroupConnector/v1.0.15/15e6b49afe3116d3ff8861099b34b973
     SemanticVersion: 1.0.15
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
@@ -107,7 +107,7 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore-akhil-ap-south-1/test-log-group-lambda-connector/5a44aebff6ae18483b1b5d082d112e85
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.15/5a44aebff6ae18483b1b5d082d112e85
       Handler: loggroup-lambda-connector.handler
       Runtime: nodejs22.x
       Environment:

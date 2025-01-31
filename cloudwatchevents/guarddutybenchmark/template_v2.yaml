@@ -56,7 +56,7 @@ Metadata:
     Name: sumologic-guardduty-benchmark
     LicenseUrl: ../LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.16
+    SemanticVersion: 1.0.17
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudwatchevents/guarddutybenchmark
     SpdxLicenseId: Apache-2.0
 
@@ -112,7 +112,7 @@ Resources:
               - aws.guardduty
           Type: CloudWatchEvent
       Handler: cloudwatchevents.handler
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
     Type: AWS::Serverless::Function
 
   SumoAppUtils:
@@ -120,7 +120,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.17
+        SemanticVersion: 2.0.19
 
   SumoHostedCollector:
     Type: Custom::Collector

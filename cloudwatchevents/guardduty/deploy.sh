@@ -10,7 +10,7 @@ else
     AWS_REGION="us-east-2"
 fi
 
-version="1.0.5"
+version="1.0.6"
 
 echo "Creating package.yaml"
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "GuardDuty/v"$version --region $AWS_REGION --profile $AWS_PROFILE

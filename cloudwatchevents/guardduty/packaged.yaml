@@ -23,9 +23,9 @@ Metadata:
     - cloudwatchevents
     - guardduty
     Name: sumologic-guardduty-events-processor
-    LicenseUrl: s3://appdevstore/GuardDuty/v1.0.5/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/GuardDuty/v1.0.5/9d217c45b3ababadef584aee27d4d607
-    SemanticVersion: 1.0.5
+    LicenseUrl: s3://appdevstore/GuardDuty/v1.0.6/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/GuardDuty/v1.0.6/9d217c45b3ababadef584aee27d4d607
+    SemanticVersion: 1.0.6
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudwatchevents/guardduty
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -35,9 +35,9 @@ Resources:
   CloudWatchEventFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/GuardDuty/v1.0.5/22b7b226ca9ec3b9dbb28b94c0e5f824
+      CodeUri: s3://appdevstore/GuardDuty/v1.0.6/22b7b226ca9ec3b9dbb28b94c0e5f824
       Handler: cloudwatchevents.handler
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Environment:
         Variables:
           SUMO_ENDPOINT:
