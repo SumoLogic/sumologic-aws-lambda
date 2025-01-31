@@ -85,7 +85,7 @@ class TestLambda(unittest.TestCase):
         self.create_log_group_with_tag()
         self.create_stack(self.stack_name, self.template_data,
                           self.create_stack_parameters("Kinesis","true", loggroup_pattern='^$',
-                                                       loggroup_tag='username=akhil'))
+                                                       loggroup_tag='team=apps'))
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
         #self.invoke_lambda()
@@ -221,7 +221,7 @@ def upload_to_s3(file_path):
     bucket_name = get_bucket_name()
     key = os.path.basename(file_path)
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), file_path)
-    s3.upload_file(os.path.join(__file__, filename), bucket_name, key, ExtraArgs={'ACL': 'public-read'})
+    s3.upload_file(os.path.join(__file__, filename), bucket_name, key)
 
 
 def create_sam_package_and_upload():
