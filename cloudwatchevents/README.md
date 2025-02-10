@@ -13,7 +13,7 @@ First create an [HTTP collector endpoint](http://help.sumologic.com/Send_Data/So
 2. Select `Blank Function` on the select blueprint page
 3. Leave triggers empty for now, click next
 4. Configure Lambda
-   * Select Node.js 18.x as runtime
+   * Select Node.js 22.x as runtime
    * Copy code from cloudwatchevents.js into the Lambda function code.
    * Add Environment variables (See below)
 5. Scroll down to the `Lambda function handle and role` section, make sure you set the right values that match the function. For role, you can just use the basic execution role. Click next.

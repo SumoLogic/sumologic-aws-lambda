@@ -35,8 +35,8 @@ class TestLambda(unittest.TestCase):
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
         self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
-        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "20.x")
-        self.template_data = self.template_data.replace("nodejs20.x", RUNTIME)
+        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "22.x")
+        self.template_data = self.template_data.replace("nodejs22.x", RUNTIME)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
@@ -226,8 +226,7 @@ def upload_code_in_S3(region):
     s3 = boto3.client('s3', region)
     bucket_name = get_bucket_name(region)
     print("Uploading zip file %s in S3 bucket (%s) at region (%s)" % (filename, bucket_name, region))
-    s3.upload_file(filename, bucket_name, f"cloudwatchLogsDLQ/{VERSION}/{filename}",
-                   ExtraArgs={'ACL': 'public-read'})
+    s3.upload_file(filename, bucket_name, f"cloudwatchLogsDLQ/{VERSION}/{filename}")
 
 
 def generate_fixtures(region, count):
@@ -259,7 +258,7 @@ def prod_deploy():
     print("Uploading template file: %s in S3" % filename)
     s3.upload_file(filename, bucket_name, filename,
                    ExtraArgs={'ACL': 'public-read'})
-    print("Deployment Successfull: ALL files copied to Sumocontent")
+    print("Deployment Successfully: ALL files copied to Sumocontent")
 
 
 if __name__ == '__main__':

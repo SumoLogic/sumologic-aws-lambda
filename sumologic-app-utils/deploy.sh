@@ -31,7 +31,7 @@ rm sumo_app_utils.zip
 
 ./build.sh
 
-version="2.0.19"
+version="2.0.20"
 
 aws s3 cp sumo_app_utils.zip s3://$SAM_S3_BUCKET/sumo_app_utils/v"$version"/sumo_app_utils.zip --region $AWS_REGION --acl public-read
 
