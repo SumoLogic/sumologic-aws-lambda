@@ -15,7 +15,7 @@ Metadata:
       - cloudwatch
       - metrics
     Name: sumologic-kinesis-cloudwatch-metrics
-    SemanticVersion: 1.0.0
+    SemanticVersion: 1.0.1
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/kinesis-firehose-cloudwatch-collection/metrics
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
@@ -407,7 +407,7 @@ Resources:
                   print(e)
                   cfnresponse.send(event, context, cfnresponse.FAILED, {"Error": str(e)}, physical_id)
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, physical_id)
-      Runtime: python3.11
+      Runtime: python3.13
       Timeout: 300
       Role: !GetAtt KinesisMetricsCloudWatchMetricsStreamLambdaRole.Arn
 
