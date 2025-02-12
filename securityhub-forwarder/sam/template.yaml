@@ -16,7 +16,7 @@ Metadata:
     Name: sumologic-securityhub-forwarder
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.10
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-forwarder
     SpdxLicenseId: Apache-2.0
 
@@ -62,7 +62,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: securityhub_forwarder.lambda_handler
-      Runtime: python3.11
+      Runtime: python3.13
       CodeUri: ../src/
       MemorySize: 128
       Timeout: 300
