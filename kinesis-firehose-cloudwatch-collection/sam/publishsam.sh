@@ -42,7 +42,7 @@ do
         sam build -t ${template_path}
 
         sam package --profile ${AWS_PROFILE} --template-file .aws-sam/build/template.yaml --s3-bucket ${SAM_S3_BUCKET} --output-template-file ${packaged_path} \
-        --s3-prefix "${KEY}/v${version}"
+        --s3-prefix "${KEY}/v${version}" --region $AWS_REGION
 
         sam publish --template ${packaged_path} --region ${AWS_REGION} --semantic-version ${version} --profile ${AWS_PROFILE}
         echo "Publish done"

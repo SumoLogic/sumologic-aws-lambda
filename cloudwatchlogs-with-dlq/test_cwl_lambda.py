@@ -226,7 +226,7 @@ def upload_code_in_S3(region):
     s3 = boto3.client('s3', region)
     bucket_name = get_bucket_name(region)
     print("Uploading zip file %s in S3 bucket (%s) at region (%s)" % (filename, bucket_name, region))
-    s3.upload_file(filename, bucket_name, f"cloudwatchLogsDLQ/{VERSION}/{filename}")
+    s3.upload_file(filename, bucket_name, f"cloudwatchLogsDLQ/{VERSION}/{filename}", ExtraArgs={'ACL': 'public-read'})
 
 
 def generate_fixtures(region, count):

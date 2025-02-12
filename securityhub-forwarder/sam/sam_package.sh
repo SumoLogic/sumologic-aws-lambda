@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export AWS_PROFILE="prod"
+
 if [ "$AWS_PROFILE" == "prod" ]
 then
     SAM_S3_BUCKET="appdevstore"
@@ -8,7 +10,7 @@ else
     SAM_S3_BUCKET="cf-templates-5d0x5unchag-us-east-2"
     AWS_REGION="us-east-2"
 fi
-version="1.0.10"
+version="1.0.11"
 
 echo "Creating package.yaml"
 sam package --template-file template.yaml --s3-bucket $SAM_S3_BUCKET  --output-template-file packaged.yaml --s3-prefix "SecurityHubForwarder/v"$version --region $AWS_REGION --profile $AWS_PROFILE
