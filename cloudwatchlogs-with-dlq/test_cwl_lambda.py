@@ -5,14 +5,88 @@ from time import sleep
 import os
 import sys
 import datetime
+import uuid
 
 BUCKET_PREFIX = "appdevstore"
 VERSION = "v1.3.0"
-AWS_PROFILE = "prod"
+AWS_PROFILE = "default"
 
 class TestLambda(unittest.TestCase):
     TEMPLATE_KEYS_TO_REMOVE = ['SumoCWProcessDLQScheduleRule',
                                'SumoCWEventsInvokeLambdaPermission']
+
+    REGION_MAPPING = {
+        "us-east-1": "appdevstore-<uuid>-us-east-1",
+        "us-east-2": "appdevstore-<uuid>-us-east-2",
+        "us-west-1": "appdevstore-<uuid>-us-west-1",
+        "us-west-2": "appdevstore-<uuid>-us-west-2",
+        "ap-south-1": "appdevstore-<uuid>-ap-south-1",
+        "ap-northeast-2": "appdevstore-<uuid>-ap-northeast-2",
+        "ap-southeast-1": "appdevstore-<uuid>-ap-southeast-1",
+        "ap-southeast-2": "appdevstore-<uuid>-ap-southeast-2",
+        "ap-northeast-1": "appdevstore-<uuid>-ap-northeast-1",
+        "ca-central-1": "appdevstore-<uuid>-ca-central-1",
+        "eu-central-1": "appdevstore-<uuid>-eu-central-1",
+        "eu-west-1": "appdevstore-<uuid>-eu-west-1",
+        "eu-west-2": "appdevstore-<uuid>-eu-west-2",
+        "eu-west-3": "appdevstore-<uuid>-eu-west-3",
+        "eu-north-1": "appdevstore-<uuid>-eu-north-1s",
+        "sa-east-1": "appdevstore-<uuid>-sa-east-1",
+        "ap-east-1": "appdevstore-<uuid>-ap-east-1s",
+        "af-south-1": "appdevstore-<uuid>-af-south-1s",
+        "eu-south-1": "appdevstore-<uuid>-eu-south-1",
+        "me-south-1": "appdevstore-<uuid>-me-south-1s",
+        "me-central-1": "appdevstore-<uuid>-me-central-1",
+        "eu-central-2": "appdevstore-<uuid>-eu-central-2ss",
+        "ap-northeast-3": "appdevstore-<uuid>-ap-northeast-3s",
+        "ap-southeast-3": "appdevstore-<uuid>-ap-southeast-3"
+    }
+
+    def get_bucket_name(self, region):
+        return self.REGION_MAPPING[region]
+
+    @staticmethod
+    def generate_32bit_uuid():
+        return uuid.uuid4().int & 0xFFFFFFFF  # Extract only the last 32 bits
+
+    def bucket_exists(self, s3, bucket_name):
+        """Check if an S3 bucket exists."""
+        try:
+            s3.head_bucket(Bucket=bucket_name)
+            return True
+        except Exception:
+            return False
+
+    def create_bucket(self, region, bucket_name):
+        """Create an S3 bucket in the specified region if it does not exist."""
+        s3 = boto3.client("s3", region_name=region)
+
+        if not bucket_name:
+            print(f"No bucket mapping found for region: {region}")
+            return
+
+        if self.bucket_exists(s3, bucket_name):
+            print(f"Bucket {bucket_name} already exists in {region}.")
+            return
+
+        try:
+            if region == "us-east-1":
+                response = s3.create_bucket(Bucket=bucket_name)
+            else:
+                response = s3.create_bucket(
+                    Bucket=bucket_name,
+                    CreateBucketConfiguration={"LocationConstraint": region},
+                )
+            print(f"Bucket created: {bucket_name} in {region}", response)
+        except Exception as e:
+            print(f"Error creating bucket {bucket_name}: {e}")
+
+    def upload_code_in_s3(self, region):
+        filename = 'cloudwatchlogs-with-dlq.zip'
+        boto3.setup_default_session(profile_name=AWS_PROFILE)
+        s3 = boto3.client('s3', region)
+        print("Uploading zip file %s in S3 bucket (%s) at region (%s)" % (filename, self.bucket_name, region))
+        s3.upload_file(filename, self.bucket_name, f"cloudwatchLogsDLQ/{VERSION}/{filename}")
 
     def setUp(self):
         self.DLQ_QUEUE_NAME = 'SumoCWDeadLetterQueue'
@@ -20,7 +94,7 @@ class TestLambda(unittest.TestCase):
 
         self.config = {
             'AWS_REGION_NAME': os.environ.get("AWS_DEFAULT_REGION",
-                                              "us-east-2")
+                                              "ap-southeast-1")
         }
         self.stack_name = "TestCWLStack-%s" % (
             datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"))
@@ -34,17 +108,27 @@ class TestLambda(unittest.TestCase):
             raise Exception("SumoEndPointURL environment variables are not set")
         self.template_data = self._parse_template(self.template_name)
         # replacing prod zipfile location to test zipfile location
-        self.template_data = self.template_data.replace("appdevzipfiles", BUCKET_PREFIX)
+        bucket_name = self.get_bucket_name(self.config['AWS_REGION_NAME'])
+        bucket_uuid = str(self.generate_32bit_uuid())
+        self.bucket_name = bucket_name.replace("<uuid>", bucket_uuid)
+        # create new bucket
+        self.create_bucket(self.config['AWS_REGION_NAME'], self.bucket_name)
+        bucket_prefix = bucket_name.split("<uuid>")[0]
+        bucket_uuid_prefix = f"{bucket_prefix}{bucket_uuid}"
+        self.template_data = self.template_data.replace("appdevzipfiles", bucket_uuid_prefix)
         RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "22.x")
         self.template_data = self.template_data.replace("nodejs22.x", RUNTIME)
+        print("self.bucket_name", self.bucket_name)
+        print("self.template_data", self.template_data)
 
     def tearDown(self):
         if self.stack_exists(self.stack_name):
             self.delete_stack()
+        self.delete_s3_bucket(self.bucket_name)
 
     def test_lambda(self):
 
-        upload_code_in_S3(self.config['AWS_REGION_NAME'])
+        self.upload_code_in_s3(self.config['AWS_REGION_NAME'])
         self.create_stack()
         print("Testing Stack Creation")
         self.assertTrue(self.stack_exists(self.stack_name))
@@ -52,6 +136,20 @@ class TestLambda(unittest.TestCase):
         self.assertTrue(int(self.initial_log_count) == 50)
         self.invoke_lambda()
         self.check_consumed_messages_count()
+
+    def delete_s3_bucket(self, bucket_name):
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(bucket_name)
+
+        # Delete all objects
+        bucket.objects.all().delete()
+
+        # Delete all object versions (if versioning is enabled)
+        bucket.object_versions.all().delete()
+
+        # Delete the bucket
+        bucket.delete()
+        print(f"Bucket '{bucket_name}' and all objects deleted successfully.")
 
     def stack_exists(self, stack_name):
         stacks = self.cf.list_stacks()['StackSummaries']
@@ -93,7 +191,7 @@ class TestLambda(unittest.TestCase):
         waiter.wait(StackName=self.stack_name)
 
     def _get_dlq_url(self):
-        if (not hasattr(self, 'dlq_queue_url')):
+        if not hasattr(self, 'dlq_queue_url'):
             sqs = boto3.resource('sqs', self.config['AWS_REGION_NAME'])
             queue_name = self._get_queue_name(sqs, self.DLQ_QUEUE_NAME)
             queue = sqs.get_queue_by_name(QueueName=queue_name)
@@ -158,7 +256,7 @@ class TestLambda(unittest.TestCase):
             template_data = template_fileobj.read()
         print("Validating cloudformation template")
         self.cf.validate_template(TemplateBody=template_data)
-        #removing schedulerule to prevent lambda being triggered while testing
+        #removing schedule rule to prevent lambda being triggered while testing
         #becoz we are invoking lambda directly
         template_data = eval(template_data)
         template_data["Parameters"]["SumoEndPointURL"]["Default"] = self.sumo_endpoint_url
@@ -168,101 +266,6 @@ class TestLambda(unittest.TestCase):
         return template_data
 
 
-def upload_code_in_multiple_regions():
-    # for region in regions:
-    #     create_bucket(region)
-
-    for region in region_map.keys():
-        upload_code_in_S3(region)
-
-
-region_map = {
-    "us-east-1": "appdevzipfiles-us-east-1",
-    "us-east-2": "appdevzipfiles-us-east-2",
-    "us-west-1": "appdevzipfiles-us-west-1",
-    "us-west-2": "appdevzipfiles-us-west-2",
-    "ap-south-1": "appdevzipfiles-ap-south-1",
-    "ap-northeast-2": "appdevzipfiles-ap-northeast-2",
-    "ap-southeast-1": "appdevzipfiles-ap-southeast-1",
-    "ap-southeast-2": "appdevzipfiles-ap-southeast-2",
-    "ap-northeast-1": "appdevzipfiles-ap-northeast-1",
-    "ca-central-1": "appdevzipfiles-ca-central-1",
-    "eu-central-1": "appdevzipfiles-eu-central-1",
-    "eu-west-1": "appdevzipfiles-eu-west-1",
-    "eu-west-2": "appdevzipfiles-eu-west-2",
-    "eu-west-3": "appdevzipfiles-eu-west-3",
-    "eu-north-1": "appdevzipfiles-eu-north-1s",
-    "sa-east-1": "appdevzipfiles-sa-east-1",
-    "ap-east-1": "appdevzipfiles-ap-east-1s",
-    "af-south-1": "appdevzipfiles-af-south-1s",
-    "eu-south-1": "appdevzipfiles-eu-south-1",
-    "me-south-1": "appdevzipfiles-me-south-1s",
-    "me-central-1": "appdevzipfiles-me-central-1",
-    "eu-central-2": "appdevzipfiles-eu-central-2ss",
-    "ap-northeast-3": "appdevzipfiles-ap-northeast-3s",
-    "ap-southeast-3": "appdevzipfiles-ap-southeast-3"
-}
-
-def get_bucket_name(region):
-    return region_map[region]
-
-
-def create_bucket(region):
-    s3 = boto3.client('s3', region)
-    bucket_name = get_bucket_name(region)
-    if region == "us-east-1":
-        response = s3.create_bucket(Bucket=bucket_name)
-    else:
-        response = s3.create_bucket(Bucket=bucket_name,
-                                    CreateBucketConfiguration={
-                                        'LocationConstraint': region
-                                    })
-    print("Creating bucket", region, response)
-
-
-def upload_code_in_S3(region):
-    filename = 'cloudwatchlogs-with-dlq.zip'
-    boto3.setup_default_session(profile_name=AWS_PROFILE)
-    s3 = boto3.client('s3', region)
-    bucket_name = get_bucket_name(region)
-    print("Uploading zip file %s in S3 bucket (%s) at region (%s)" % (filename, bucket_name, region))
-    s3.upload_file(filename, bucket_name, f"cloudwatchLogsDLQ/{VERSION}/{filename}")
-
-
-def generate_fixtures(region, count):
-    data = []
-    sqs = boto3.client('sqs', region)
-    for x in range(0, count, 10):
-        response = sqs.receive_message(
-            QueueUrl='https://sqs.us-east-2.amazonaws.com/456227676011/SumoCWDeadLetterQueue',
-            MaxNumberOfMessages=10,
-        )
-        for msg in response['Messages']:
-            data.append(eval(msg['Body']))
-
-    return data[:count]
-
-
-def prod_deploy():
-    global BUCKET_PREFIX
-    BUCKET_PREFIX = 'appdevzipfiles'
-    upload_code_in_multiple_regions()
-    boto3.setup_default_session(profile_name=AWS_PROFILE)
-    s3 = boto3.client('s3', "us-east-1")
-    filename = 'DLQLambdaCloudFormation.json'
-    print("Uploading template file: %s in S3" % filename)
-    bucket_name = "appdev-cloudformation-templates"
-    s3.upload_file(filename, bucket_name, filename,
-                   ExtraArgs={'ACL': 'public-read'})
-    filename = 'DLQLambdaCloudFormationWithSecuredEndpoint.json'
-    print("Uploading template file: %s in S3" % filename)
-    s3.upload_file(filename, bucket_name, filename,
-                   ExtraArgs={'ACL': 'public-read'})
-    print("Deployment Successfully: ALL files copied to Sumocontent")
-
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        BUCKET_PREFIX = sys.argv.pop()
-
     unittest.main()
