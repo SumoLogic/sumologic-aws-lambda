@@ -123,9 +123,9 @@ Mappings:
     us-gov-east-1:
       ArnValue: "aws-us-gov"
     cn-north-1:
-      ArnValue: "aws"
+      ArnValue: "aws-cn"
     cn-northwest-1:
-      ArnValue: "aws"
+      ArnValue: "aws-cn"
 
 Resources:
   # Common Resources including creating bucket, create logs role and attach bucket policy.
