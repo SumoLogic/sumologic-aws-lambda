@@ -44,7 +44,7 @@ class SumoResource(object):
     def api_endpoint(self):
         if self.deployment == "us1":
             return "https://api.sumologic.com/api"
-        elif self.deployment in ["ca", "au", "de", "eu", "jp", "us2", "fed", 'kr']:
+        elif self.deployment in ["ca", "au", "de", "eu", "jp", "us2", "fed", 'kr', 'ch']:
             return "https://api.%s.sumologic.com/api" % self.deployment
         else:
             return 'https://%s-api.sumologic.net/api' % self.deployment
@@ -111,7 +111,8 @@ class Collector(SumoResource):
             collector_id = json.loads(resp.text)['collector']['id']
             print("created collector %s" % collector_id)
         except Exception as e:
-            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()[
+                "code"] == 'collectors.validation.name.duplicate':
                 collector = self._get_collector_by_name(collector_name, collector_type.lower())
                 collector_id = collector['id']
                 print("fetched existing collector %s" % collector_id)
@@ -270,7 +271,8 @@ class BaseSource(SumoResource):
         })
         # timestamp processing
         if props.get("DateFormat"):
-            source_json["defaultDateFormats"] = [{"format": props.get("DateFormat"), "locator": props.get("DateLocatorRegex")}]
+            source_json["defaultDateFormats"] = [
+                {"format": props.get("DateFormat"), "locator": props.get("DateLocatorRegex")}]
 
         # processing rules
         if 'filters' in props and isinstance(props['filters'], list):
@@ -389,7 +391,8 @@ class AWSSource(BaseSource):
             print("created source %s" % source_id)
         except Exception as e:
             # Todo 100 sources in a collector is good. Same error code for duplicates in case of Collector and source.
-            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()[
+                "code"] == 'collectors.validation.name.duplicate':
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
                         source_id = source["id"]
@@ -495,7 +498,8 @@ class HTTPSource(BaseSource):
             print("created source %s" % source_id)
         except Exception as e:
             # Todo 100 sources in a collector is good
-            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()["code"] == 'collectors.validation.name.duplicate':
+            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()[
+                "code"] == 'collectors.validation.name.duplicate':
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
                         source_id = source["id"]
@@ -554,28 +558,35 @@ class App(SumoResource):
 
         return appjson
 
-    def _add_time_suffix(self, appjson):
+    @staticmethod
+    def _add_time_suffix(appjson):
         date_format = "%Y-%m-%d %H:%M:%S"
         appjson['name'] = appjson['name'] + "-" + datetime.utcnow().strftime(date_format)
         return appjson
 
-    def _get_app_folder(self, appdata, parent_id, userMode=False):
+    def _get_app_folder(self, appdata, parent_id, is_admin=False):
         folder_id = None
         try:
-            response = self.sumologic_cli.create_folder(appdata["name"], appdata["description"][:255], parent_id, userMode)
+            response = self.sumologic_cli.create_folder(appdata["name"], appdata["description"][:255], parent_id,
+                                                        is_admin)
             folder_id = response.json()["id"]
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'content:duplicate_content':
-                        folder_details = self.sumologic_cli.get_folder_by_id(parent_id)
-                        if "children" in folder_details:
-                            for children in folder_details["children"]:
-                                if "name" in children and children["name"] == appdata["name"]:
-                                    return children["id"]
+                        folder_details = self.sumologic_cli.get_folder_by_id(parent_id, is_admin)
+                        return self.get_child_folder_id(folder_details, appdata["name"])
                 raise
         return folder_id
+
+    @staticmethod
+    def get_child_folder_id(data, folder_name):
+        if "children" in data:
+            for folder in data["children"]:
+                if "name" in folder and folder["name"] == folder_name:
+                    return folder["id"]
+        return None
 
     def _get_app_content(self, appname, source_params, s3url=None):
         # Based on S3 URL provided download the data.
@@ -596,11 +607,11 @@ class App(SumoResource):
 
         return appjson
 
-    def _wait_for_folder_creation(self, folder_id, job_id):
+    def _wait_for_folder_creation(self, folder_id, job_id, is_admin):
         print("waiting for folder creation folder_id %s job_id %s" % (folder_id, job_id))
         waiting = True
         while waiting:
-            response = self.sumologic_cli.check_import_status(folder_id, job_id)
+            response = self.sumologic_cli.check_import_status(folder_id, job_id, is_admin)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(2)
 
@@ -631,12 +642,12 @@ class App(SumoResource):
         print("job status: %s" % response.text)
         return response
 
-    def _create_backup_folder(self, new_app_folder_id, old_app_folder_id, isAdmin):
-        new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id)
+    def _create_backup_folder(self, new_app_folder_id, old_app_folder_id, is_admin):
+        new_folder_details = self.sumologic_cli.get_folder_by_id(new_app_folder_id, is_admin)
         parent_folder_id = new_folder_details["parentId"]
 
-        old_folder_details = self.sumologic_cli.get_folder_by_id(old_app_folder_id)
-        old_parent_folder_details = self.sumologic_cli.get_folder_by_id(old_folder_details["parentId"])
+        old_folder_details = self.sumologic_cli.get_folder_by_id(old_app_folder_id, is_admin)
+        old_parent_folder_details = self.sumologic_cli.get_folder_by_id(old_folder_details["parentId"], is_admin)
 
         if old_parent_folder_details.get("parentId") == "0000000000000000":
             back_up = "Back Up Old App"
@@ -645,36 +656,42 @@ class App(SumoResource):
 
         backup_folder_id = self._get_app_folder({"name": back_up,
                                                  "description": "The folder contains back up of all the apps that are updated using CloudFormation template."},
-                                                parent_folder_id, isAdmin)
+                                                parent_folder_id, is_admin)
         return backup_folder_id
 
-    def get_admin_recommended_id(self, isAdminMode):
-        """ Sync call to  get the Admin Recommended folder Id """
-        return self.get_admin_recommended(isAdminMode)["id"]
+    def get_admin_recommended_id(self, is_admin):
+        """ Sync call to get the Admin Recommended folder Id """
+        return self.get_admin_recommended(is_admin)["id"]
 
-    def get_admin_recommended(self, isAdminMode):
-        """ Sync call to  get the Admin Recommended folder content """
-        headers = {"isAdminMode": "true"} if isAdminMode else None
-    
-        job_response = self.sumologic_cli.get(
-            "/content/folders/adminRecommended", version="v2")
+    def get_admin_recommended(self, is_admin):
+        """ Sync call to get the Admin Recommended folder content """
+        headers = {"isAdminMode": "true"} if is_admin else None
+
+        job_response = self.sumologic_cli.get("/content/folders/adminRecommended", version="v2",
+                                              headers=headers)
         job_id = json.loads(job_response.text)["id"]
 
-        print("Got Admin Recommended job "+job_id+" , now checking for status")
+        print("Got Admin Recommended job " + job_id + " , now checking for status")
         while True:
-            status_response = self.sumologic_cli.get(f"/content/folders/adminRecommended/{job_id}/status", version="v2")
-            if (json.loads(status_response.text)["status"] == "InProgress"):
+            status_response = self.sumologic_cli.get(f"/content/folders/adminRecommended/{job_id}/status",
+                                                     version="v2")
+            data = json.loads(status_response.text)
+            if data["status"] == "InProgress":
                 print('Admin Recommended job in progress')
                 time.sleep(1)
             else:
-                if (json.loads(status_response.text)["status"] == "Failed"):
+                if data["status"] == "Failed":
                     raise Exception("Not able to fetch Admin Recommended Folder")
                 else:
-                    status_response = self.sumologic_cli.get(f"/content/folders/adminRecommended/{job_id}/result", version="v2")
+                    status_response = self.sumologic_cli.get(f"/content/folders/adminRecommended/{job_id}/result",
+                                                             version="v2")
                     return status_response
 
-    def share_content_with_org(self, content_id, org_id, isAdminMode):
-        """ Share a given content item """
+    def share_content_with_org(self, is_share, content_id, org_id, is_admin):
+        """ Share or Revoke a given content item """
+        action = "remove"
+        if is_share:
+            action = "add"
         payload = {"contentPermissionAssignments": [
             {
                 "permissionName": "View",
@@ -685,66 +702,68 @@ class App(SumoResource):
             "notifyRecipients": False,
             "notificationMessage": ""
         }
-        headers = {'isAdminMode': 'true'} if isAdminMode else {}
-        response = self.sumologic_cli.put(f"/content/{content_id}/permissions/add", params=payload,headers=headers, version="v2")
-        if response.status_code==200:
+        print(f"Updating action: {action} on payload: {json.dumps(payload)}")
+        headers = {'isAdminMode': 'true'} if is_admin else {}
+        response = self.sumologic_cli.put(f"/content/{content_id}/permissions/{action}", params=payload,
+                                          headers=headers, version="v2")
+        if response.status_code == 200:
             return response
         else:
             raise Exception(f"Unable to share {content_id} in org: {org_id}")
 
-    def share_app_by_id(self, app_folder_id, org_id, isAdminMode):
-        """ This shares an app identified by its Id under the Admin Recommended folder """
-        response = self.share_content_with_org(app_folder_id, org_id, isAdminMode)
-        if response.status_code==200:
-            print('Shared '+ app_folder_id +' in org '+ org_id)
-        else:
-            raise Exception(f"Folder Sharing Failed for folder id: {app_folder_id} in {org_id} response: {response.text}")
 
-    def _create_or_fetch_apps_parent_folder(self, folder_prefix,orgID,share=False,location=None):
-        userMode = False
-        folder_id=""
-        if location == 'admin':
-            response = self.get_admin_recommended(isAdminMode=True)
-            folder_id=response.json()["id"]
-            userMode=True
+    def share_app_by_id(self, is_share, app_folder_id, org_id, is_admin):
+        """ This shares an app identified by its Id under the Admin Recommended folder """
+        response = self.share_content_with_org(is_share, app_folder_id, org_id, is_admin)
+        if response.status_code == 200:
+            print('Shared ' + app_folder_id + ' in org ' + org_id)
         else:
-            response = self.sumologic_cli.get_personal_folder()
-            folder_id=response.json()['id']
+            raise Exception(
+                f"Folder Sharing Failed for folder id: {app_folder_id} in {org_id} response: {response.text}")
+
+    def _create_or_fetch_apps_parent_folder(self, folder_prefix, org_id, is_share=False, location=None):
+        is_admin = False
+        if location == 'admin':
+            parent_content = self.get_admin_recommended(is_admin=True).json()
+            parent_folder_id = parent_content["id"]
+            is_admin = True
+        else:
+            parent_content = self.sumologic_cli.get_personal_folder().json()
+            parent_folder_id = parent_content['id']
         folder_name = folder_prefix + str(datetime.now().strftime(" %d-%b-%Y"))
         description = "This folder contains all the apps created as a part of Sumo Logic Solutions."
         try:
-            folder = self.sumologic_cli.create_folder(folder_name, description, folder_id, userMode)
-            if share == 'True':
-                share_response = self.share_app_by_id(folder.json()["id"],orgID,userMode)
+            folder = self.sumologic_cli.create_folder(folder_name, description, parent_folder_id, is_admin)
+            self.share_app_by_id(is_share, folder.json()["id"], org_id, is_admin)
             return folder.json()["id"]
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'content:duplicate_content':
-                        #response = self.sumologic_cli.get_personal_folder()
-                        if "children" in response.json():
-                            for children in response.json()["children"]:
-                                if "name" in children and children["name"] == folder_name:
-                                    return children["id"]
+                        print(f"The folder already exists. Updating sharing permissions for: {is_share}")
+                        child_folder_id = self.get_child_folder_id(parent_content, folder_name)
+                        self.share_app_by_id(is_share, child_folder_id, org_id, is_admin)
+                        return child_folder_id
             raise
 
-    def create_by_import_api(self, appname, source_params, folder_name, s3url, orgID, location, share, *args, **kwargs):
+    def create_by_import_api(self, appname, source_params, folder_name, s3url, org_id, location, is_share, *args, **kwargs):
         # Add  retry if folder sync fails
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
         content = self._get_app_content(appname, source_params, s3url)
-
+        is_admin = False
         if folder_name:
-            folder_id = self._create_or_fetch_apps_parent_folder(folder_name,orgID,share,location)
+            folder_id = self._create_or_fetch_apps_parent_folder(folder_name, org_id, is_share, location)
         else:
             response = self.sumologic_cli.get_personal_folder()
             folder_id = response.json()['id']
         if location == "admin":
+            is_admin = True
             app_folder_id = self._get_app_folder(content, folder_id, True)
             time.sleep(3)
-            response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true", isAdmin=True)
+            response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true", is_admin=is_admin)
         else:
             app_folder_id = self._get_app_folder(content, folder_id)
             time.sleep(3)
@@ -752,17 +771,16 @@ class App(SumoResource):
         job_id = response.json()["id"]
         print("Imported app %s: appFolderId: %s FolderId: %s jobId: %s" % (
             appname, app_folder_id, folder_id, job_id))
-        self._wait_for_folder_creation(folder_id, job_id)
+        self._wait_for_folder_creation(folder_id, job_id, is_admin)
         return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
 
-    def create_by_install_api(self, appid, appname, source_params, folder_name,orgID,location, share, *args, **kwargs):
+    def create_by_install_api(self, appid, appname, source_params, folder_name, org_id, location, is_share, *args,
+                              **kwargs):
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
             raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
 
-        folder_id = None
-
         if folder_name:
-            folder_id = self._create_or_fetch_apps_parent_folder(folder_name,orgID,share,location)
+            folder_id = self._create_or_fetch_apps_parent_folder(folder_name, org_id, is_share, location)
         else:
             response = self.sumologic_cli.get_personal_folder()
             folder_id = response.json()['id']
@@ -770,7 +788,7 @@ class App(SumoResource):
         content = {'name': appname + datetime.now().strftime(" %d-%b-%Y %H:%M:%S"), 'description': appname,
                    'dataSourceValues': source_params, 'destinationFolderId': folder_id}
 
-        if location=="admin":
+        if location == "admin":
             response = self.sumologic_cli.install_app(appid, content, True)
         else:
             response = self.sumologic_cli.install_app(appid, content)
@@ -778,7 +796,7 @@ class App(SumoResource):
         response = self._wait_for_app_install(job_id)
 
         json_resp = json.loads(response.content)
-        if (json_resp['status'] == 'Success'):
+        if json_resp['status'] == 'Success':
             app_folder_id = json_resp['statusMessage'].split(":")[1]
             print("installed app %s: appFolderId: %s parent_folder_id: %s jobId: %s" % (
                 appname, app_folder_id, folder_id, job_id))
@@ -786,54 +804,61 @@ class App(SumoResource):
         else:
             print("%s installation failed." % appname)
             raise Exception(response.text)
-    
-    def create(self, appname, source_params, orgID, share=True, location=None, appid=None, folder_name=None, s3url=None,*args, **kwargs):
-        if appid:
-            return self.create_by_install_api(appid, appname, source_params, folder_name,orgID,location, share, *args, **kwargs)
-        else:
-            return self.create_by_import_api(appname, source_params, folder_name, s3url,orgID,location, share, *args, **kwargs)
 
-    def update(self, app_folder_id, appname, source_params, orgID, share=True, location=None, appid=None, folder_name=None, retain_old_app=False,
-               s3url=None,  *args, **kwargs):
+    def create(self, appname, source_params, org_id, is_share=True, location=None, appid=None, folder_name=None, s3url=None,
+               *args, **kwargs):
+        if appid:
+            return self.create_by_install_api(appid, appname, source_params, folder_name, org_id, location, is_share, *args,
+                                              **kwargs)
+        else:
+            return self.create_by_import_api(appname, source_params, folder_name, s3url, org_id, location, is_share, *args,
+                                             **kwargs)
+
+    def update(self, app_folder_id, appname, source_params, org_id, is_share=True, location=None, appid=None,
+               folder_name=None, retain_old_app=False,
+               s3url=None, *args, **kwargs):
 
         # Delete is called by CF itself on Old Resource if we create a new resource. So, no need to delete the resource here.
         # self.delete(app_folder_id, remove_on_delete_stack=True)
-        
-        isAdmin = False
+        is_admin = False
         if location == "admin":
-            isAdmin=True
-        data, new_app_folder_id = self.create(appname=appname, source_params=source_params, appid=appid, folder_name=folder_name, s3url=s3url, orgID=orgID, share=share, location=location)
+            is_admin = True
+        data, new_app_folder_id = self.create(appname=appname, source_params=source_params, appid=appid,
+                                              folder_name=folder_name, s3url=s3url, org_id=org_id, is_share=is_share,
+                                              location=location)
         print("updated app appFolderId: %s " % new_app_folder_id)
         if retain_old_app:
             try:
-                backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, isAdmin)
+                backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, is_admin)
                 print("backup folder created")
                 # Starting Folder Copy
-                response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id, isAdmin)
+                response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id, is_admin)
                 job_id = response.json()["id"]
                 print("Copy Completed parentFolderId: %s jobId: %s" % (backup_folder_id, job_id))
                 copied_folder_id = self._wait_for_folder_copy(app_folder_id, job_id)
                 # Updating copied folder name with suffix BackUp.
-                copied_folder_details = self.sumologic_cli.get_folder_by_id(copied_folder_id)
-                copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)", "- BackUp_" + datetime.now().strftime("%H:%M:%S")),
-                                        "description": copied_folder_details["description"][:255]}
-                self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details, isAdmin)
+                copied_folder_details = self.sumologic_cli.get_folder_by_id(copied_folder_id, is_admin)
+                copied_folder_details = {"name": copied_folder_details["name"].replace("(Copy)",
+                                                                                       "- BackUp_" + datetime.now().strftime(
+                                                                                           "%H:%M:%S")),
+                                         "description": copied_folder_details["description"][:255]}
+                self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details, is_admin)
                 print("Back Up done for the APP: %s." % backup_folder_id)
             except Exception as e:
-                print("App - Exception while taking backup of App folder ID %s, error: %s " %(app_folder_id, e))
+                print("App - Exception while taking backup of App folder ID %s, error: %s " % (app_folder_id, e))
 
         return data, new_app_folder_id
 
     def delete(self, app_folder_id, remove_on_delete_stack, location=None, *args, **kwargs):
-        isAdmin = False
+        is_admin = False
         if location == "admin":
-            isAdmin=True
+            is_admin = True
         if remove_on_delete_stack:
             try:
-                response = self.sumologic_cli.delete_folder(app_folder_id, isAdmin)
+                response = self.sumologic_cli.delete_folder(app_folder_id, is_admin)
                 print("deleting app folder %s : %s" % (app_folder_id, response.text))
             except Exception as e:
-                print("App - Exception while deleting the App folder ID %s, error: %s " %(app_folder_id, e))
+                print("App - Exception while deleting the App folder ID %s, error: %s " % (app_folder_id, e))
         else:
             print("skipping app folder deletion")
 
@@ -850,9 +875,9 @@ class App(SumoResource):
             "retain_old_app": props.get("RetainOldAppOnUpdate") == 'true',
             "app_folder_id": app_folder_id,
             "s3url": props.get("AppJsonS3Url"),
-            "location": 'admin' if props.get("location")=='Admin Recommended Folder' else 'personal',
-            "share": props.get("share"),
-            "orgID": props.get("orgid")
+            "location": 'admin' if props.get("location") == 'Admin Recommended Folder' else 'personal',
+            "is_share": True if props.get("share") == 'True' else False,
+            "org_id": props.get("orgid")
         }
 
 
@@ -980,7 +1005,9 @@ class SumoLogicMetricRules(SumoResource):
         if remove_on_delete_stack:
             try:
                 response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
-                print("METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (metric_rule_name, response.text))
+                print(
+                    "METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (metric_rule_name,
+                                                                                                      response.text))
             except Exception as e:
                 print("AWS EXPLORER - Exception while deleting the Metric Rules %s," % e)
         else:
@@ -1017,6 +1044,7 @@ class SumoLogicUpdateFields(SumoResource):
         Fields can also be added to new Sources using AWSSource, HTTPSources classes.
         Getting collector name, as Calling custom collector resource can update the collector name if stack is updated with different collector name.
     """
+
     def add_fields_to_collector(self, collector_id, source_id, fields):
         if collector_id and source_id:
             sv, etag = self.sumologic_cli.source(collector_id, source_id)
@@ -1420,6 +1448,7 @@ class EnterpriseOrTrialAccountCheck(SumoResource):
         props = event.get("ResourceProperties")
         return props
 
+
 class AccountAlias(SumoResource):
 
     def get_account_alias(self, account_id, accountaliasmappings3url, accountalias):
@@ -1457,7 +1486,7 @@ class AccountAlias(SumoResource):
         return self.get_account_alias(account_id, accountaliasmappings3url, accountalias)
 
     def update(self, account_id, accountaliasmappings3url, accountalias, *args, **kwargs):
-        return self.get_account_alias( account_id, accountaliasmappings3url, accountalias)
+        return self.get_account_alias(account_id, accountaliasmappings3url, accountalias)
 
     def delete(self, account_id, accountaliasmappings3url, accountalias, *args, **kwargs):
         print("In Delete method for Account Alias")
@@ -1470,10 +1499,13 @@ class AccountAlias(SumoResource):
             "accountalias": props.get("AccountAlias")
         }
 
-class AlertsMonitor(SumoResource):
 
-    awso_fields = ["account","accountid","apiid","apiname","cacheclusterid","clustername","dbclusteridentifier","dbidentifier","dbinstanceidentifier","functionname","instanceid","loadbalancer","loadbalancername","namespace","networkloadbalancer","region","tablename","topicname","queuename"]
-    
+class AlertsMonitor(SumoResource):
+    awso_fields = ["account", "accountid", "apiid", "apiname", "cacheclusterid", "clustername", "dbclusteridentifier",
+                   "dbidentifier", "dbinstanceidentifier", "functionname", "instanceid", "loadbalancer",
+                   "loadbalancername", "namespace", "networkloadbalancer", "region", "tablename", "topicname",
+                   "queuename"]
+
     def _replace_variables(self, appjson_filepath, variables):
         with open(appjson_filepath, 'r') as old_file:
             text = old_file.read()
@@ -1501,17 +1533,17 @@ class AlertsMonitor(SumoResource):
         return response["id"]
 
     def _fields_present(self):
-        fields_responses=self.sumologic_cli.get_all_fields()
+        fields_responses = self.sumologic_cli.get_all_fields()
         field_names = [fields_response['fieldName'] for fields_response in fields_responses]
         intersection_set = set(field_names).intersection(set(self.awso_fields))
-        intersection_set= list(intersection_set)
+        intersection_set = list(intersection_set)
         intersection_set.sort()
         self.awso_fields.sort()
         return intersection_set == self.awso_fields
 
-    def import_monitor(self, folder_name, orgID, monitors3url, variables, suffix_date_time, retry_counter=30):
+    def import_monitor(self, folder_name, org_id, monitors3url, variables, suffix_date_time, retry_counter=30):
         date_format = "%d-%b-%Y %H:%M:%S"
-        if retry_counter <=0:
+        if retry_counter <= 0:
             return {"ALERTS MONITORS": "Monitor Import Timed out"}, None
         if self._fields_present():
             try:
@@ -1522,25 +1554,28 @@ class AlertsMonitor(SumoResource):
                 response = self.sumologic_cli.import_monitors(root_folder_id, content)
                 import_id = response["id"]
                 # Start Uncomment following when FGP feature for monitors is live
-                # monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": orgID,"targetId": import_id}]}
+                # monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": org_id,"targetId": import_id}]}
                 # self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
                 # End Uncomment above when FGP feature for monitors is live
                 print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
             except:
                 time.sleep(10)
                 retry_counter -= 1
-                return self.import_monitor(folder_name, orgID, monitors3url, variables, suffix_date_time, retry_counter=retry_counter)
+                return self.import_monitor(folder_name, org_id, monitors3url, variables, suffix_date_time,
+                                           retry_counter=retry_counter)
         else:
             time.sleep(10)
             retry_counter -= 1
-            return self.import_monitor(folder_name, orgID, monitors3url, variables, suffix_date_time, retry_counter=retry_counter)
+            return self.import_monitor(folder_name, org_id, monitors3url, variables, suffix_date_time,
+                                       retry_counter=retry_counter)
         return {"ALERTS MONITORS": response["name"]}, import_id
 
-    def create(self, folder_name, orgID, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
-        return self.import_monitor(folder_name, orgID, monitors3url, variables, suffix_date_time)
+    def create(self, folder_name, org_id, monitors3url, variables, suffix_date_time=False, *args, **kwargs):
+        return self.import_monitor(folder_name, org_id, monitors3url, variables, suffix_date_time)
 
-    def update(self, folder_id, folder_name, orgID, monitors3url, variables, suffix_date_time=False, retain_old_alerts=False, *args, **kwargs):
-        data, new_folder_id = self.create(folder_name, orgID, monitors3url, variables, suffix_date_time)
+    def update(self, folder_id, folder_name, org_id, monitors3url, variables, suffix_date_time=False,
+               retain_old_alerts=False, *args, **kwargs):
+        data, new_folder_id = self.create(folder_name, org_id, monitors3url, variables, suffix_date_time)
         if retain_old_alerts:
             # Retaining old folder in the new folder as backup.
             try:
@@ -1578,7 +1613,7 @@ class AlertsMonitor(SumoResource):
             "suffix_date_time": props.get("SuffixDateTime") == 'true',
             "retain_old_alerts": props.get("RetainOldAlerts") == 'true',
             "folder_id": folder_id,
-            "orgID": props.get("orgid")
+            "org_id": props.get("orgid")
         }
 
 
@@ -1597,8 +1632,8 @@ if __name__ == '__main__':
     source_category = "Labs/AWS/%s" % app_prefix
     # appname = "Global Intelligence for Amazon GuardDuty"
     appname = "AWS Application LB"
-    appid="ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
-    #appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
+    appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
+    # appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
     s3url = ""
     # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
     # appid = None
@@ -1617,11 +1652,11 @@ if __name__ == '__main__':
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
     # _, source_id = src.create(collector_id, source_name, source_category)
-    #_, app_folder_id = app.create(appname=appname, source_params=source_params,folder_name="abc" ,appid=appid,orgID="0000000000BC5DF9",share=True,location='adm') #install
-    #_, app_folder_id = app.update(app_folder_id='0000000001A70848', appname=appname, source_params=source_params,folder_name="abcd" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='admin',retain_old_app=True) #import
-    #app.delete(app_folder_id, True, location='admin')
+    # _, app_folder_id = app.create(appname=appname, source_params=source_params,folder_name="abc" ,appid=appid,orgID="0000000000BC5DF9",share=True,location='adm') #install
+    # _, app_folder_id = app.update(app_folder_id='0000000001A70848', appname=appname, source_params=source_params,folder_name="abcd" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='admin',retain_old_app=True) #import
+    # app.delete(app_folder_id, True, location='admin')
 
-    monitor=AlertsMonitor(props)
+    monitor = AlertsMonitor(props)
     monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.8.0/appjson/Alerts-App.json"
     # _, app_folder_id = monitor.create('abc','0000000000BD3DDD',monitors3,"",retain_old_alerts=False)
     # _, app_folder_id = monitor.update('000000000002796B','abc1','0000000000285A74',monitors3,"",retain_old_alerts=True)
@@ -1642,4 +1677,3 @@ if __name__ == '__main__':
     # src.delete(collector_id, source_id, True)
     # col.delete(collector_id, True)
     # app.delete(new_app_folder_id, True)
-
