@@ -665,7 +665,7 @@ class App(SumoResource):
 
     def get_admin_recommended(self, is_admin):
         """ Sync call to get the Admin Recommended folder content """
-        headers = {"isAdminMode": "true"} if is_admin else None
+        headers = {"isAdminMode": "true"} if is_admin else {}
 
         job_response = self.sumologic_cli.get("/content/folders/adminRecommended", version="v2",
                                               headers=headers)
@@ -1630,7 +1630,6 @@ if __name__ == '__main__':
     collector_name = "%sCollector" % app_prefix
     source_name = "%sEvents" % app_prefix
     source_category = "Labs/AWS/%s" % app_prefix
-    # appname = "Global Intelligence for Amazon GuardDuty"
     appname = "AWS Application LB"
     appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
     # appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
