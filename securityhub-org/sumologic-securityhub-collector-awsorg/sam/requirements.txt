@@ -1,2 +1,2 @@
 # boto3==1.27.1
-requests==2.32.2
+requests==2.32.4
