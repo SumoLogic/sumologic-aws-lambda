@@ -292,7 +292,7 @@ Resources:
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
-      AppJsonS3Url: "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.1.0/appjson/Alb-App.json"
+      AppJsonS3Url: "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.13.0/appjson/Alb-App.json"
       orgid: !Ref Section1dSumoOrganizationId
 
   sumoAppwithUID:
@@ -342,7 +342,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       Region: !Ref "AWS::Region"
-      SourceApiUrl: "https://api.sumologic.com/api/v1/collectors/307270925/sources/1862440173"
+      SourceApiUrl: "https://api.sumologic.com/api/v1/collectors/268544623/sources/1621987448"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
