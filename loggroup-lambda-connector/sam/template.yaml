@@ -60,6 +60,16 @@ Parameters:
     Default: ""
     Description: "Enter comma separated keyvalue pairs for filtering logGroups using tags. Ex KeyName1=string,KeyName2=string. This is optional leave it blank if tag based filtering is not needed."
 
+  FilterName:
+    Type: String
+    Default: "SumoLGLBDFilter"
+    Description: "A name for the subscription filter"
+
+  FilterPattern:
+    Type: String
+    Default: ""
+    Description: "Filter pattern for subscribing to a filtered stream of log events"
+
   RoleArn:
     Type: String
     Default: ""
@@ -105,6 +115,8 @@ Resources:
           DESTINATION_ARN: !Ref "DestinationArnValue"
           LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
           LOG_GROUP_TAGS: !Join [ ",", { "Ref": "LogGroupTags" } ]
+          FILTER_NAME: !Ref "FilterName"
+          FILTER_PATTERN: !Ref "FilterPattern"
           ROLE_ARN: !Ref "RoleArn"
       Policies:
         - Statement:
@@ -216,6 +228,8 @@ Resources:
       ServiceToken: !GetAtt SumoLogGroupExistingLambdaConnector.Arn
       DESTINATION_ARN: !Ref "DestinationArnValue"
       LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
+      FILTER_NAME: !Ref "FilterName"
+      FILTER_PATTERN: !Ref "FilterPattern"
       ROLE_ARN: !Ref "RoleArn"
 
 Outputs:
