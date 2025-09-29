@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+  build:
+    commands:
+      - echo "Building cloudwatchlogs-with-dlq.zip..."
+      - cd cloudwatchlogs-with-dlq
+      - npm install
+      - npm run build
+      - echo "Build completed successfully"
+      - ls -la cloudwatchlogs-with-dlq.zip
+      - export DATETIME=$(date +%Y%m%d-%H%M%S)
+      - export ZIP_NAME="cloudwatchlogs-with-dlq-m-${DATETIME}.zip"
+      - mv cloudwatchlogs-with-dlq.zip $ZIP_NAME
+      - echo "Renamed to $ZIP_NAME"
+      - ls -la $ZIP_NAME
+  post_build:
+    commands:
+      - echo "Uploading to S3..."
+      - echo "Using filename: $ZIP_NAME"
+      - aws s3 cp $ZIP_NAME s3://replicon-release-artifact/sumologic-aws-lambda/$ZIP_NAME
+      - echo "Upload completed successfully: $ZIP_NAME"
+
+artifacts:
+  files:
+    - cloudwatchlogs-with-dlq/cloudwatchlogs-with-dlq-m-*.zip
+  name: SumoLogicAWSLambdaArtifacts
