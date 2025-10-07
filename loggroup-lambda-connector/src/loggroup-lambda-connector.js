@@ -77,20 +77,20 @@ function filterNewLogGroups(event, logGroupRegex) {
     return IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags)
 }
 
-async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn, additionalArgs) {
+async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, filterName, filterPattern, roleArn, additionalArgs) {
     var params={};
     if (destinationArn.startsWith("arn:aws:lambda")) {
         params = {
             destinationArn: destinationArn,
-            filterName: 'SumoLGLBDFilter',
-            filterPattern: '',
+            filterName: filterName,
+            filterPattern: filterPattern,
             logGroupName: lambdaLogGroupName
         };
     } else {
         params = {
             destinationArn: destinationArn,
-            filterName: 'SumoLGLBDFilter',
-            filterPattern: '',
+            filterName: filterName,
+            filterPattern: filterPattern
             logGroupName: lambdaLogGroupName,
             roleArn: roleArn
         };
@@ -112,6 +112,8 @@ async function subscribeExistingLogGroups(logGroups, retryCounter, additionalArg
     var logGroupRegex = validateRegex(process.env.LOG_GROUP_PATTERN);
     console.log("logGroupRegexPattern: ", logGroupRegex);
     var destinationArn = process.env.DESTINATION_ARN;
+    var filterName = process.env.FILTER_NAME
+    var filterPattern = process.env.FILTER_PATTERN
     var roleArn = process.env.ROLE_ARN;
     const failedLogGroupNames = [];
     await logGroups.reduce(async (previousPromise, nextLogGroup) => {
@@ -119,7 +121,7 @@ async function subscribeExistingLogGroups(logGroups, retryCounter, additionalArg
         const { logGroupName } = nextLogGroup;
         let filterStatus = await filterExistingLogGroups(logGroupName, logGroupRegex);
         if (filterStatus) {
-            return createSubscriptionFilter(logGroupName, destinationArn, roleArn, additionalArgs).catch(function (err) {
+            return createSubscriptionFilter(logGroupName, destinationArn, filterName, filterPattern, roleArn, additionalArgs).catch(function (err) {
                 if (err && err.message === "Rate exceeded") {
                     failedLogGroupNames.push({ logGroupName: logGroupName });
                 }
@@ -197,11 +199,13 @@ async function delay(ms) {
 async function processEvents(env, event, additionalArgs, errorHandler, retryCounter=0) {
   var logGroupName = event.detail.requestParameters.logGroupName;
   var logGroupRegex = validateRegex(env.LOG_GROUP_PATTERN);
+  var filterName = env.FILTER_NAME
+  var filterPattern = env.FILTER_PATTERN
   console.log("logGroupRegex: ", logGroupRegex);
   if (filterNewLogGroups(event, logGroupRegex)) {
     console.log("Subscribing: ", logGroupName, env.DESTINATION_ARN);
     try {
-        await createSubscriptionFilter(logGroupName, env.DESTINATION_ARN, env.ROLE_ARN, additionalArgs);
+        await createSubscriptionFilter(logGroupName, env.DESTINATION_ARN, filterName, filterPattern, env.ROLE_ARN, additionalArgs);
     } catch (err) {
       errorHandler(err, "Error in Subscribing.");
       if (err && err.message === "Rate exceeded" && retryCounter <= maxRetryCounter) {

@@ -59,6 +59,14 @@ Parameters:
     Description: Enter comma separated keyvalue pairs for filtering logGroups using
       tags. Ex KeyName1=string,KeyName2=string. This is optional leave it blank if
       tag based filtering is not needed.
+  FilterName:
+    Type: String
+    Default: 'SumoLGLBDFilter'
+    Description: A name for the subscription filter
+  FilterPattern:
+    Type: String
+    Default: ''
+    Description: Filter pattern for subscribing to a filtered stream of log events
   RoleArn:
     Type: String
     Default: ''
