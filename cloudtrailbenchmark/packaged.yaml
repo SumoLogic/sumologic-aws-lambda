@@ -43,9 +43,9 @@ Metadata:
     - benchmark
     - cloudtrail
     Name: sumologic-aws-cloudtrail-benchmark
-    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.21/cac1a6df52c685e0f6ebe4ae72078c80
-    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.21/8a901bb4fbbe82f128fc502dd3077508
-    SemanticVersion: 1.0.21
+    LicenseUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.22/cac1a6df52c685e0f6ebe4ae72078c80
+    ReadmeUrl: s3://appdevstore/cloudtrailbenchmark/v1.0.22/8a901bb4fbbe82f128fc502dd3077508
+    SemanticVersion: 1.0.22
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudtrailbenchmark
 Parameters:
   CollectorName:
@@ -67,6 +67,7 @@ Parameters:
     AllowedValues:
     - au
     - ca
+    - ch
     - de
     - eu
     - fed
@@ -74,7 +75,7 @@ Parameters:
     - kr
     - us1
     - us2
-    Description: Enter au, ca, de, eu, fed, jp, kr, us1 or us2
+    Description: Enter au, ca, ch, de, eu, fed, jp, kr, us1 or us2
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
     - true
