@@ -56,7 +56,7 @@ Metadata:
     Name: sumologic-guardduty-benchmark
     LicenseUrl: ../LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.18
+    SemanticVersion: 1.0.19
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudwatchevents/guarddutybenchmark
     SpdxLicenseId: Apache-2.0
 
@@ -80,6 +80,7 @@ Parameters:
     AllowedValues:
       - au
       - ca
+      - ch
       - de
       - eu
       - fed
@@ -87,7 +88,7 @@ Parameters:
       - kr
       - us1
       - us2
-    Description: "Enter au, ca, de, eu, fed, jp, kr, us1 or us2"
+    Description: "Enter au, ca, ch, de, eu, fed, jp, kr, us1 or us2"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
