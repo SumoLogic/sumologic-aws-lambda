@@ -4,11 +4,43 @@ import re
 import time
 from abc import abstractmethod
 
+import traceback
 import boto3
 import six
 from botocore.exceptions import ClientError
 from resourcefactory import AutoRegisterResource
 from retrying import retry
+
+# https://docs.aws.amazon.com/elasticloadbalancing/latest/application/enable-access-logging.html
+# Elastic Load Balancing required region-specific account IDs in IAM policies, but this has been replaced by a newer,
+# simplified policy. The legacy policy is still supported for older regions, with a reference list of account IDs provided.
+Region2ELBAccountId = {
+    "us-east-1": {"AccountId": "127311923021"},
+    "us-east-2": {"AccountId": "033677994240"},
+    "us-west-1": {"AccountId": "027434742980"},
+    "us-west-2": {"AccountId": "797873946194"},
+    "af-south-1": {"AccountId": "098369216593"},
+    "ca-central-1": {"AccountId": "985666609251"},
+    "eu-central-1": {"AccountId": "054676820928"},
+    "eu-west-1": {"AccountId": "156460612806"},
+    "eu-west-2": {"AccountId": "652711504416"},
+    "eu-south-1": {"AccountId": "635631232127"},
+    "eu-west-3": {"AccountId": "009996457667"},
+    "eu-north-1": {"AccountId": "897822967062"},
+    "ap-east-1": {"AccountId": "754344448648"},
+    "ap-northeast-1": {"AccountId": "582318560864"},
+    "ap-northeast-2": {"AccountId": "600734575887"},
+    "ap-northeast-3": {"AccountId": "383597477331"},
+    "ap-southeast-1": {"AccountId": "114774131450"},
+    "ap-southeast-2": {"AccountId": "783225319266"},
+    "ap-south-1": {"AccountId": "718504428378"},
+    "me-south-1": {"AccountId": "076674570225"},
+    "sa-east-1": {"AccountId": "507241528517"},
+    "us-gov-west-1": {"AccountId": "048591011584"},
+    "us-gov-east-1": {"AccountId": "190560391635"},
+    "cn-north-1": {"AccountId": "638102146993"},
+    "cn-northwest-1": {"AccountId": "037604701340"}
+}
 
 
 @six.add_metaclass(AutoRegisterResource)
@@ -205,14 +237,14 @@ class EnableS3LogsResources(AWSResource):
         print('Enabling S3 for ALB/ELB-classic aws resource %s' % props.get("AWSResource"))
 
     def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, bucket_prefix,
-                               delete_flag, filter_regex, region_account_id, account_id):
+                               delete_flag, filter_regex, account_id):
 
         # Get the class instance based on AWS Resource
         tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, account_id)
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
-        if(not aws_resource == 'elb'):
+        if aws_resource != 'elb':
             filtered_resources = tag_resource.filter_resources(filter_regex, resources)
         else:
             filtered_resources = resources
@@ -224,41 +256,50 @@ class EnableS3LogsResources(AWSResource):
             if delete_flag:
                 tag_resource.disable_s3_logs(arns, bucket_name)
             else:
-                tag_resource.enable_s3_logs(arns, bucket_name, bucket_prefix, region_account_id)
+                tag_resource.enable_s3_logs(arns, bucket_name, bucket_prefix)
 
-    def create(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, region_account_id,
+    def create(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
                account_id, *args, **kwargs):
         print("ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket %s." % bucket_name)
         self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
-                                    False, filter_regex, region_account_id, account_id)
+                                    False, filter_regex, account_id)
         print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
 
         return {"S3_ENABLE": "Successful"}, aws_resource
 
-    def update(self, old_properties, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
-               region_account_id, account_id, *args, **kwargs):
+    def update(self, old_properties, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, account_id, *args, **kwargs):
         # First Delete Old Tags from old aws resource with old filter regex and Then add new Tags.
         # Check if aws resource is changed, then raise exception.
-        if old_properties['AWSResource'] != aws_resource:
-            data, aws_resource = self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
-                                             region_account_id, account_id)
-        else:
-            # If bucket name or prefix are not same, delete the old logging.
-            if old_properties['BucketName'] != bucket_name or old_properties['BucketPrefix'] != bucket_prefix:
-                self.delete(region_value, aws_resource, old_properties['BucketName'], old_properties['BucketPrefix'],
-                            old_properties['Filter'], True, account_id)
+        print("old_properties", old_properties)
+        print("region_value", region_value)
+        print("aws_resource", aws_resource)
+        print("bucket_name", bucket_name)
+        print("bucket_prefix", bucket_prefix)
+        print("filter_regex", filter_regex)
+        print("account_id", account_id)
+        try:
+            if old_properties['AWSResource'] != aws_resource:
+                data, aws_resource = self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, account_id)
+            else:
+                # If bucket name or prefix are not same, delete the old logging.
+                if old_properties['BucketName'] != bucket_name or old_properties['BucketPrefix'] != bucket_prefix:
+                    self.delete(region_value, aws_resource, old_properties['BucketName'], old_properties['BucketPrefix'],
+                                old_properties['Filter'], True, account_id)
 
-            print("ENABLE S3 LOGS - Starting the AWS resources S3 Update with bucket %s." % bucket_name)
-            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
-                                        False, filter_regex, region_account_id, account_id)
-        print("ENABLE S3 LOGS - Completed the AWS resources S3 Update for bucket.")
-        return {"S3_ENABLE": "Successful"}, aws_resource
+                print("ENABLE S3 LOGS - Starting the AWS resources S3 Update with bucket %s." % bucket_name)
+                self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
+                                            False, filter_regex, account_id)
+            print("ENABLE S3 LOGS - Completed the AWS resources S3 Update for bucket.")
+            return {"S3_ENABLE": "Successful"}, aws_resource
+        except Exception as e:
+            traceback.print_exc()
+            raise
 
     def delete(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, remove_on_delete_stack,
                account_id, *args, **kwargs):
         if remove_on_delete_stack:
             self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix, True,
-                                        filter_regex, "", account_id)
+                                        filter_regex, account_id)
             print("ENABLE S3 LOGS - Completed the AWS resources S3 deletion to bucket.")
         else:
             print("ENABLE S3 LOGS - Skipping the AWS resources S3 deletion to bucket.")
@@ -275,7 +316,6 @@ class EnableS3LogsResources(AWSResource):
             "bucket_name": props.get("BucketName"),
             "bucket_prefix": props.get("BucketPrefix"),
             "filter_regex": props.get("Filter"),
-            "region_account_id": props.get("RegionAccountId"),
             "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
             "account_id": props.get("AccountID"),
             "old_properties": old_properties,
@@ -392,7 +432,6 @@ def enable_s3_logs(event, context):
     bucket_prefix = os.environ.get("BucketPrefix")
     account_id = os.environ.get("AccountID")
     filter_regex = os.environ.get("Filter")
-    region_account_id = os.environ.get("RegionAccountId")
     is_elbClassic = False
     if "detail" in event:
         event_detail = event.get("detail")
@@ -415,13 +454,13 @@ def enable_s3_logs(event, context):
                 resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
 
                 # Enable S3 logging
-                alb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix, region_account_id)
+                alb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix)
         else:
             elb_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
             event_detail = elb_resource.filter_resources(filter_regex, event_detail)
             if event_detail:
                 resources = elb_resource.get_arn_list_cloud_trail_event(event_detail)
-                elb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix, region_account_id)
+                elb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix)
 
     print("AWS S3 ENABLE ALB :- Completed s3 logs enable")
 
@@ -447,7 +486,16 @@ class AWSResourcesAbstract(object):
         self.client = boto3.client(self.event_resource_map[aws_resource] if aws_resource in self.event_resource_map
                                    else aws_resource, region_name=region_value)
         self.region_value = region_value
+        self.partition = self.get_partition()
         self.account_id = account_id
+
+    def get_partition(self):
+        if self.region_value.startswith("cn-"):
+            return "aws-cn"
+        elif self.region_value.startswith("us-gov-"):
+            return "aws-us-gov"
+        else:
+            return "aws"
 
     @abstractmethod
     def fetch_resources(self):
@@ -522,7 +570,8 @@ class EC2Resources(AWSResourcesAbstract):
         if resources:
             for resource in resources:
                 arns.append(
-                    "arn:aws:ec2:" + self.region_value + ":" + self.account_id + ":instance/" + resource['InstanceId'])
+                    f"arn:{self.partition}:ec2:{self.region_value}:{self.account_id}:instance/{resource['InstanceId']}"
+                )
 
         return arns
 
@@ -585,10 +634,11 @@ class ApiGatewayResources(AWSResourcesAbstract):
         if resources:
             for resource in resources:
                 if "stageName" in resource:
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/" + resource["restApiId"]
-                                + "/stages/" + resource["stageName"])
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{resource['restApiId']}/stages/{resource['stageName']}"
+                    )
                 else:
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/" + resource["id"])
+                    arns.append(f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{resource['id']}")
 
         return arns
 
@@ -604,12 +654,15 @@ class ApiGatewayResources(AWSResourcesAbstract):
             if response_elements and "self" in response_elements:
                 details = response_elements.get("self")
                 if event_name == "CreateStage":
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
-                                + details.get("restApiId") + "/stages/"
-                                + details.get("stageName"))
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{details.get('restApiId')}"
+                        f"/stages/{details.get('stageName')}"
+                    )
+
                 elif event_name == "CreateRestApi":
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
-                                + details.get("restApiId"))
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{details.get('restApiId')}"
+                    )
 
         if "requestParameters" in event_detail:
             request_parameters = event_detail.get("requestParameters")
@@ -617,9 +670,11 @@ class ApiGatewayResources(AWSResourcesAbstract):
                     and "createDeploymentInput" in request_parameters:
                 details = request_parameters.get("createDeploymentInput")
                 if event_name == "CreateDeployment":
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
-                                + request_parameters.get("restApiId") + "/stages/"
-                                + details.get("stageName"))
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/"
+                        f"{request_parameters.get('restApiId')}/stages/{details.get('stageName')}"
+                    )
+
         return arns
 
     @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
@@ -654,8 +709,9 @@ class DynamoDbResources(AWSResourcesAbstract):
         arns = []
         if resources:
             for resource in resources:
-                arns.append("arn:aws:dynamodb:" + self.region_value + ":" + self.account_id + ":table/" + resource)
-
+                arns.append(
+                    f"arn:{self.partition}:dynamodb:{self.region_value}:{self.account_id}:table/{resource}"
+                )
         return arns
 
     def process_tags(self, tags):
@@ -832,8 +888,108 @@ class RDSResources(AWSResourcesAbstract):
             tags.extend(tags_arn)
             self.client.add_tags_to_resource(ResourceName=arn, Tags=tags)
 
+class LbResources(AWSResourcesAbstract):
 
-class AlbResources(AWSResourcesAbstract):
+    def add_bucket_policy(self, bucket_name, elb_region_account_id):
+        print("Adding policy to the bucket " + bucket_name)
+        s3 = boto3.client('s3')
+        try:
+            response = s3.get_bucket_policy(Bucket=bucket_name)
+            existing_policy = json.loads(response["Policy"])
+        except ClientError as e:
+            if "Error" in e.response and "Code" in e.response["Error"] \
+                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                existing_policy = {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                    ]
+                }
+            else:
+                raise e
+
+        bucket_policy = [
+            {
+                "Sid": "AWSCloudTrailAclCheck",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "cloudtrail.amazonaws.com"
+                },
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSCloudTrailWrite",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "cloudtrail.amazonaws.com"
+                },
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
+                "Condition": {
+                    "StringEquals": {
+                        "s3:x-amz-acl": "bucket-owner-full-control"
+                    }
+                }
+            },
+            {
+                "Sid": "AWSBucketExistenceCheck",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "cloudtrail.amazonaws.com"
+                },
+                "Action": "s3:ListBucket",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "delivery.logs.amazonaws.com"
+                },
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSLogDeliveryWrite",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "delivery.logs.amazonaws.com"
+                },
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
+                "Condition": {
+                    "StringEquals": {
+                        "s3:x-amz-acl": "bucket-owner-full-control"
+                    }
+                }
+            }]
+        if elb_region_account_id:
+            elb_old_region_policy = {
+                "Sid": "AwsElbLogs",
+                "Effect": "Allow",
+                "Principal": {
+                    "AWS": f"arn:{self.partition}:iam::{elb_region_account_id}:root"
+                },
+                "Action": ["s3:PutObject"],
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
+            }
+            bucket_policy.append(elb_old_region_policy)
+        else:
+            elb_new_region_policy = {
+                "Sid": "AwsElbLogs",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "logdelivery.elasticloadbalancing.amazonaws.com"
+                },
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
+            }
+            bucket_policy.append(elb_new_region_policy)
+        existing_policy["Statement"].extend(bucket_policy)
+
+        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+
+class AlbResources(LbResources):
 
     def fetch_resources(self):
         resources = []
@@ -882,7 +1038,7 @@ class AlbResources(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, arns, tags):
         self.client.add_tags(ResourceArns=arns, Tags=tags)
 
-    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, elb_region_account_id):
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'true'},
                       {'Key': 'access_logs.s3.bucket', 'Value': s3_bucket},
                       {'Key': 'access_logs.s3.prefix', 'Value': s3_prefix}]
@@ -899,64 +1055,15 @@ class AlbResources(AWSResourcesAbstract):
                         except ClientError as e:
                             if "Error" in e.response and "Message" in e.response["Error"] \
                                     and "Access Denied for bucket" in e.response['Error']['Message']:
+                                elb_region = Region2ELBAccountId.get(self.region_value, None)
+                                elb_region_account_id = None
+                                if elb_region:
+                                    elb_region_account_id = elb_region.get("AccountId")
                                 self.add_bucket_policy(s3_bucket, elb_region_account_id)
                                 time.sleep(10)
                                 self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
                             else:
                                 raise e
-
-    def add_bucket_policy(self, bucket_name, elb_region_account_id):
-        print("Adding policy to the bucket " + bucket_name)
-        s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if "Error" in e.response and "Code" in e.response["Error"] \
-                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                    ]
-                }
-            else:
-                raise e
-
-        bucket_policy = [{
-                'Sid': 'AwsAlbLogs',
-                'Effect': 'Allow',
-                'Principal': {
-                    "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"
-                },
-                'Action': ['s3:PutObject'],
-                'Resource': f'arn:aws:s3:::{bucket_name}/*'
-            },
-            {
-                "Sid": "AWSLogDeliveryAclCheck",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
-                "Action": "s3:GetBucketAcl",
-                "Resource": "arn:aws:s3:::" + bucket_name
-            },
-            {
-                "Sid": "AWSLogDeliveryWrite",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
-                "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::" + bucket_name + "/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
-            }]
-        existing_policy["Statement"].extend(bucket_policy)
-
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
 
     def disable_s3_logs(self, arns, s3_bucket):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'false'}]
@@ -968,7 +1075,6 @@ class AlbResources(AWSResourcesAbstract):
                     if attribute["Key"] == "access_logs.s3.bucket" and attribute["Value"] == s3_bucket:
                         self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
                         time.sleep(1)
-
 
 class S3Resource(AWSResourcesAbstract):
 
@@ -1007,7 +1113,7 @@ class S3Resource(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, *args):
         pass
 
-    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, region_account_id):
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix):
 
         bucket_logging = {'LoggingEnabled': {'TargetBucket': s3_bucket, 'TargetPrefix': s3_prefix}}
 
@@ -1088,7 +1194,7 @@ class VpcResource(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, *args):
         pass
 
-    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, region_account_id):
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix):
         if arns:
             chunk_records = self._batch_size_chunk(arns, 1000)
             for record in chunk_records:
@@ -1097,7 +1203,7 @@ class VpcResource(AWSResourcesAbstract):
                     ResourceType='VPC',
                     TrafficType='ALL',
                     LogDestinationType='s3',
-                    LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix
+                    LogDestination=f"arn:{self.partition}:s3:::{s3_bucket}/{s3_prefix}"
                 )
                 print(response)
                 if "*Access Denied for LogDestination*" in str(response):
@@ -1108,7 +1214,7 @@ class VpcResource(AWSResourcesAbstract):
                         ResourceType='VPC',
                         TrafficType='ALL',
                         LogDestinationType='s3',
-                        LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix
+                        LogDestination=f"arn:{self.partition}:s3:::{s3_bucket}/{s3_prefix}"
                     )
 
     def add_bucket_policy(self, bucket_name, prefix):
@@ -1135,7 +1241,7 @@ class VpcResource(AWSResourcesAbstract):
                 "Service": "delivery.logs.amazonaws.com"
             },
             "Action": "s3:GetBucketAcl",
-            "Resource": "arn:aws:s3:::" + bucket_name
+            "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
         },
             {
                 "Sid": "AWSLogDeliveryWrite",
@@ -1144,7 +1250,7 @@ class VpcResource(AWSResourcesAbstract):
                     "Service": "delivery.logs.amazonaws.com"
                 },
                 "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::" + bucket_name + "/" + prefix + "/AWSLogs/" + self.account_id + "/*",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/{prefix}/AWSLogs/{self.account_id}/*",
                 "Condition": {
                     "StringEquals": {
                         "s3:x-amz-acl": "bucket-owner-full-control"
@@ -1168,7 +1274,8 @@ class VpcResource(AWSResourcesAbstract):
                     if flow_ids:
                         self.client.delete_flow_logs(FlowLogIds=flow_ids)
 
-class ElbResource(AWSResourcesAbstract):
+
+class ElbResource(LbResources):
     def fetch_resources(self):
         resources = []
         next_token = None
@@ -1216,80 +1323,31 @@ class ElbResource(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, names, tags):
         self.client.add_tags(LoadBalancerNames=names, Tags=tags)
 
-    def enable_s3_logs(self, names, s3_bucket, s3_prefix, elb_region_account_id):
+    def enable_s3_logs(self, names, s3_bucket, s3_prefix):
         for name in names:
             print("Enable S3 logging for ALB " + name)
             response = self.client.describe_load_balancer_attributes(LoadBalancerName=name)
             if "LoadBalancerAttributes" in response:
                 access_logs = response.get("LoadBalancerAttributes").get("AccessLog")
-                if(access_logs["Enabled"]==False):
-                    access_logs["Enabled"]=True
-                    access_logs["S3BucketName"]=s3_bucket
-                    access_logs["S3BucketPrefix"]=s3_prefix
+                if not access_logs["Enabled"]:
+                    access_logs["Enabled"] = True
+                    access_logs["S3BucketName"] = s3_bucket
+                    access_logs["S3BucketPrefix"] = s3_prefix
                     try:
                         self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                         time.sleep(10)
                     except ClientError as e:
                         if "Error" in e.response and "Message" in e.response["Error"] \
                             and "Access Denied for bucket" in e.response['Error']['Message']:
+                            elb_region = Region2ELBAccountId.get(self.region_value, None)
+                            elb_region_account_id = None
+                            if elb_region:
+                                elb_region_account_id = elb_region.get("AccountId")
                             self.add_bucket_policy(s3_bucket, elb_region_account_id)
                             time.sleep(10)
                             self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response)
                         else:
                             raise e
-
-    def add_bucket_policy(self, bucket_name, elb_region_account_id):
-        print("Adding policy to the bucket " + bucket_name)
-        s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if "Error" in e.response and "Code" in e.response["Error"] \
-                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                    ]
-                }
-            else:
-                raise e
-
-        bucket_policy = [{
-                'Sid': 'AwsElbLogs',
-                'Effect': 'Allow',
-                'Principal': {
-                    "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"
-                },
-                'Action': ['s3:PutObject'],
-                'Resource': f'arn:aws:s3:::{bucket_name}/*'
-            },
-            {
-                "Sid": "AWSLogDeliveryAclCheck",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
-                "Action": "s3:GetBucketAcl",
-                "Resource": "arn:aws:s3:::" + bucket_name
-            },
-            {
-                "Sid": "AWSLogDeliveryWrite",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
-                "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::" + bucket_name + "/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
-            }]
-        existing_policy["Statement"].extend(bucket_policy)
-
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
 
     def disable_s3_logs(self, names, s3_bucket):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'false'}]
@@ -1298,8 +1356,8 @@ class ElbResource(AWSResourcesAbstract):
             response = self.client.describe_load_balancer_attributes(LoadBalancerName=name)
             if "LoadBalancerAttributes" in response:
                 access_logs = response.get("LoadBalancerAttributes").get("AccessLog")
-                if(access_logs["Enabled"]==True):
-                    access_logs["Enabled"]=False
+                if access_logs["Enabled"]:
+                    access_logs["Enabled"] = False
                     self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                     time.sleep(1)
 

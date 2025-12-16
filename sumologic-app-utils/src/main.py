@@ -1,73 +1,114 @@
-from crhelper import CfnResource
+import logging
+import json
 from sumoresource import SumoResource
-from awsresource import AWSResource
-
 from resourcefactory import ResourceFactory
 
-helper = CfnResource(json_logging=False, log_level='INFO', sleep_on_delete=30)
+try:
+    from crhelper import CfnResource
+    helper = CfnResource(json_logging=False, log_level='INFO', sleep_on_delete=30)
+    USE_CRHELPER = True
+except ImportError:
+    helper = None
+    USE_CRHELPER = False
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def get_resource(event):
-    resource_type = event.get("ResourceType").split("::")[-1]
+    """Factory method to get a resource object and parameters."""
+    resource_type = event.get("ResourceType", "").split("::")[-1]
     resource_class = ResourceFactory.get_resource(resource_type)
-    props = event.get("ResourceProperties")
+    props = event.get("ResourceProperties", {})
     resource = resource_class(props)
     params = resource.extract_params(event)
+
     if isinstance(resource, SumoResource):
         params["remove_on_delete_stack"] = props.get("RemoveOnDeleteStack") == 'true'
+
     return resource, resource_type, params
 
 
-@helper.create
-def create(event, context):
-    # Test with failure cases should not get stuck in progress
-    # Optionally return an ID that will be used for the resource PhysicalResourceId,
-    # if None is returned an ID will be generated. If a poll_create function is defined
-    # return value is placed into the poll event as event['CrHelperData']['PhysicalResourceId']
-    resource, resource_type, params = get_resource(event)
-    # Handle Exception to send a proper error to CF logs.
-    try:
-        data, resource_id = resource.create(**params)
-    except Exception as e:
-        raise e
-    #print(data)
-    print(resource_id)
-    helper.Data.update(data)
-    helper.Status = "SUCCESS"
-    print("Created %s" % resource_type)
-    return "%s/%s" % (event.get('LogicalResourceId', ''), resource_id)
+# --------------------------
+# CFN path (crhelper managed)
+# --------------------------
+if USE_CRHELPER:
 
+    @helper.create
+    def create(event, context):
+        resource, resource_type, params = get_resource(event)
+        try:
+            data, resource_id = resource.create(**params)
+        except Exception as e:
+            logger.error(f"Create failed for {resource_type}: {e}")
+            raise
+        helper.Data.update(data)
+        helper.Status = "SUCCESS"
+        logger.info(f"Created {resource_type} with ID {resource_id}")
+        return f"{event.get('LogicalResourceId', '')}/{resource_id}"
 
-@helper.update
-def update(event, context):
-    resource, resource_type, params = get_resource(event)
-    data, resource_id = resource.update(**params)
-    #print(data)
-    print(resource_id)
-    helper.Data.update(data)
-    helper.Status = "SUCCESS"
-    print("Updated %s" % resource_type)
-    return "%s/%s" % (event.get('LogicalResourceId', ''), resource_id)
-    # If the update resulted in a new resource being created, return an id for the new resource.
-    # CloudFormation will send a delete event with the old id when stack update completes
+    @helper.update
+    def update(event, context):
+        resource, resource_type, params = get_resource(event)
+        data, resource_id = resource.update(**params)
+        helper.Data.update(data)
+        helper.Status = "SUCCESS"
+        logger.info(f"Updated {resource_type} with ID {resource_id}")
+        return f"{event.get('LogicalResourceId', '')}/{resource_id}"
 
-
-@helper.delete
-def delete(event, context):
-    if "/" not in event.get('PhysicalResourceId', ""):
-        print("%s resource_id not found" % event.get('PhysicalResourceId'))
-        return
-    resource, resource_type, params = get_resource(event)
-    resource.delete(**params)
-    helper.Status = "SUCCESS"
-    print("Deleted %s" % resource_type)
-    # Delete never returns anything. Should not fail if the underlying resources are already deleted. Desired state.
+    @helper.delete
+    def delete(event, context):
+        phys_id = event.get("PhysicalResourceId", "")
+        if "/" not in phys_id:
+            logger.warning(f"{phys_id} resource_id not found")
+            return
+        resource, resource_type, params = get_resource(event)
+        resource.delete(**params)
+        helper.Status = "SUCCESS"
+        logger.info(f"Deleted {resource_type}")
 
 
 def handler(event, context):
-    helper(event, context)
+    """
+    Common handler (CF + TF)
+    """
+    logger.info(f"Received event: {json.dumps(event)}")
+
+    # CloudFormation event → delegate to crhelper
+    if "RequestType" in event and USE_CRHELPER:
+        return helper(event, context)
+
+    # Terraform/direct invoke path
+    action = event.get("action")
+    logger.info(f"Terraform action detected: {action}")
+
+    if action in ["create", "update", "delete"]:
+        resource, resource_type, params = get_resource(event)
+        try:
+            if action == "create":
+                data, resource_id = resource.create(**params)
+            elif action == "update":
+                data, resource_id = resource.update(**params)
+            elif action == "delete":
+                resource.delete(**params)
+                return {"status": "success", "deleted": True}
+        except Exception as e:
+            logger.error(f"{action} failed for {resource_type}: {e}")
+            return {"status": "failed", "reason": str(e)}
+
+        return {"status": "success", "id": resource_id, "data": data}
+
+    return {"status": "failed", "reason": f"Unknown action {action}"}
 
 
 if __name__ == "__main__":
-    event = {}
-    create(event, None)
+    # Example local test
+    test_event = {
+        "action": "create",
+        "ResourceType": "Custom::MyResource",
+        "ResourceProperties": {
+            "BucketName": "my-bucket",
+            "RemoveOnDeleteStack": "true"
+        }
+    }
+    print(handler(test_event, None))
