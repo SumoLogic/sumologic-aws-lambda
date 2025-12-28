@@ -71,6 +71,10 @@ Lambda Destination ARN :- This specifies ARN of the Lambda function. Also you ha
 
 Kinesis Destination ARN :- This specifies the ARN of the kinesis Stream.
 
+**FILTER_NAME** : A name for the subscription filter. Will use `SumoLGLBDFilter` to set an empty filter if none is provided since [PutSubscriptionFilter](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutSubscriptionFilter.html) requires this parameter.
+
+**FILTER_PATTERN** : Filter pattern for subscribing to a filtered stream of log events. Default will be an empty pattern `""` since [PutSubscriptionFilter](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutSubscriptionFilter.html) requires this parameter.
+
 **ROLE_ARN** : This is used when subscription destination ARN is kinesis firehose stream.
 
 ### For Developers
