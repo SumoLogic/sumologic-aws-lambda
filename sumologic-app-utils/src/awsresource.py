@@ -447,7 +447,16 @@ class AWSResourcesAbstract(object):
         self.client = boto3.client(self.event_resource_map[aws_resource] if aws_resource in self.event_resource_map
                                    else aws_resource, region_name=region_value)
         self.region_value = region_value
+        self.partition = self.get_partition()
         self.account_id = account_id
+
+    def get_partition(self):
+        if self.region_value.startswith("cn-"):
+            return "aws-cn"
+        elif self.region_value.startswith("us-gov-"):
+            return "aws-us-gov"
+        else:
+            return "aws"
 
     @abstractmethod
     def fetch_resources(self):
@@ -522,7 +531,8 @@ class EC2Resources(AWSResourcesAbstract):
         if resources:
             for resource in resources:
                 arns.append(
-                    "arn:aws:ec2:" + self.region_value + ":" + self.account_id + ":instance/" + resource['InstanceId'])
+                    f"arn:{self.partition}:ec2:{self.region_value}:{self.account_id}:instance/{resource['InstanceId']}"
+                )
 
         return arns
 
@@ -585,10 +595,11 @@ class ApiGatewayResources(AWSResourcesAbstract):
         if resources:
             for resource in resources:
                 if "stageName" in resource:
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/" + resource["restApiId"]
-                                + "/stages/" + resource["stageName"])
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{resource['restApiId']}/stages/{resource['stageName']}"
+                    )
                 else:
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/" + resource["id"])
+                    arns.append(f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{resource['id']}")
 
         return arns
 
@@ -604,12 +615,15 @@ class ApiGatewayResources(AWSResourcesAbstract):
             if response_elements and "self" in response_elements:
                 details = response_elements.get("self")
                 if event_name == "CreateStage":
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
-                                + details.get("restApiId") + "/stages/"
-                                + details.get("stageName"))
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{details.get('restApiId')}"
+                        f"/stages/{details.get('stageName')}"
+                    )
+
                 elif event_name == "CreateRestApi":
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
-                                + details.get("restApiId"))
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/{details.get('restApiId')}"
+                    )
 
         if "requestParameters" in event_detail:
             request_parameters = event_detail.get("requestParameters")
@@ -617,9 +631,11 @@ class ApiGatewayResources(AWSResourcesAbstract):
                     and "createDeploymentInput" in request_parameters:
                 details = request_parameters.get("createDeploymentInput")
                 if event_name == "CreateDeployment":
-                    arns.append("arn:aws:apigateway:" + self.region_value + "::/restapis/"
-                                + request_parameters.get("restApiId") + "/stages/"
-                                + details.get("stageName"))
+                    arns.append(
+                        f"arn:{self.partition}:apigateway:{self.region_value}::/restapis/"
+                        f"{request_parameters.get('restApiId')}/stages/{details.get('stageName')}"
+                    )
+
         return arns
 
     @retry(retry_on_exception=lambda exc: isinstance(exc, ClientError), stop_max_attempt_number=10,
@@ -654,8 +670,9 @@ class DynamoDbResources(AWSResourcesAbstract):
         arns = []
         if resources:
             for resource in resources:
-                arns.append("arn:aws:dynamodb:" + self.region_value + ":" + self.account_id + ":table/" + resource)
-
+                arns.append(
+                    f"arn:{self.partition}:dynamodb:{self.region_value}:{self.account_id}:table/{resource}"
+                )
         return arns
 
     def process_tags(self, tags):
@@ -922,14 +939,15 @@ class AlbResources(AWSResourcesAbstract):
             else:
                 raise e
 
-        bucket_policy = [{
-                'Sid': 'AwsAlbLogs',
-                'Effect': 'Allow',
-                'Principal': {
-                    "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"
+        bucket_policy = [
+            {
+                "Sid": "AwsAlbLogs",
+                "Effect": "Allow",
+                "Principal": {
+                    "AWS": f"arn:{self.partition}:iam::{elb_region_account_id}:root"
                 },
-                'Action': ['s3:PutObject'],
-                'Resource': f'arn:aws:s3:::{bucket_name}/*'
+                "Action": ["s3:PutObject"],
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
             },
             {
                 "Sid": "AWSLogDeliveryAclCheck",
@@ -938,7 +956,7 @@ class AlbResources(AWSResourcesAbstract):
                     "Service": "delivery.logs.amazonaws.com"
                 },
                 "Action": "s3:GetBucketAcl",
-                "Resource": "arn:aws:s3:::" + bucket_name
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
                 "Sid": "AWSLogDeliveryWrite",
@@ -947,13 +965,14 @@ class AlbResources(AWSResourcesAbstract):
                     "Service": "delivery.logs.amazonaws.com"
                 },
                 "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::" + bucket_name + "/*",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
                 "Condition": {
                     "StringEquals": {
                         "s3:x-amz-acl": "bucket-owner-full-control"
                     }
                 }
-            }]
+            }
+        ]
         existing_policy["Statement"].extend(bucket_policy)
 
         s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
@@ -1097,7 +1116,7 @@ class VpcResource(AWSResourcesAbstract):
                     ResourceType='VPC',
                     TrafficType='ALL',
                     LogDestinationType='s3',
-                    LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix
+                    LogDestination=f"arn:{self.partition}:s3:::{s3_bucket}/{s3_prefix}"
                 )
                 print(response)
                 if "*Access Denied for LogDestination*" in str(response):
@@ -1108,7 +1127,7 @@ class VpcResource(AWSResourcesAbstract):
                         ResourceType='VPC',
                         TrafficType='ALL',
                         LogDestinationType='s3',
-                        LogDestination='arn:aws:s3:::' + s3_bucket + '/' + s3_prefix
+                        LogDestination=f"arn:{self.partition}:s3:::{s3_bucket}/{s3_prefix}"
                     )
 
     def add_bucket_policy(self, bucket_name, prefix):
@@ -1135,7 +1154,7 @@ class VpcResource(AWSResourcesAbstract):
                 "Service": "delivery.logs.amazonaws.com"
             },
             "Action": "s3:GetBucketAcl",
-            "Resource": "arn:aws:s3:::" + bucket_name
+            "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
         },
             {
                 "Sid": "AWSLogDeliveryWrite",
@@ -1144,7 +1163,7 @@ class VpcResource(AWSResourcesAbstract):
                     "Service": "delivery.logs.amazonaws.com"
                 },
                 "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::" + bucket_name + "/" + prefix + "/AWSLogs/" + self.account_id + "/*",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/{prefix}/AWSLogs/{self.account_id}/*",
                 "Condition": {
                     "StringEquals": {
                         "s3:x-amz-acl": "bucket-owner-full-control"
@@ -1189,7 +1208,7 @@ class ElbResource(AWSResourcesAbstract):
         return resources
     #there are no arn's associated with Classic elb
     def get_arn_list(self, resources):
-        
+
         names = []
         if resources:
             for resource in resources:
@@ -1255,14 +1274,15 @@ class ElbResource(AWSResourcesAbstract):
             else:
                 raise e
 
-        bucket_policy = [{
-                'Sid': 'AwsElbLogs',
-                'Effect': 'Allow',
-                'Principal': {
-                    "AWS": "arn:aws:iam::" + elb_region_account_id + ":root"
+        bucket_policy = [
+            {
+                "Sid": "AwsElbLogs",
+                "Effect": "Allow",
+                "Principal": {
+                    "AWS": f"arn:{self.partition}:iam::{elb_region_account_id}:root"
                 },
-                'Action': ['s3:PutObject'],
-                'Resource': f'arn:aws:s3:::{bucket_name}/*'
+                "Action": ["s3:PutObject"],
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
             },
             {
                 "Sid": "AWSLogDeliveryAclCheck",
@@ -1271,7 +1291,7 @@ class ElbResource(AWSResourcesAbstract):
                     "Service": "delivery.logs.amazonaws.com"
                 },
                 "Action": "s3:GetBucketAcl",
-                "Resource": "arn:aws:s3:::" + bucket_name
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
                 "Sid": "AWSLogDeliveryWrite",
@@ -1280,13 +1300,14 @@ class ElbResource(AWSResourcesAbstract):
                     "Service": "delivery.logs.amazonaws.com"
                 },
                 "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::" + bucket_name + "/*",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
                 "Condition": {
                     "StringEquals": {
                         "s3:x-amz-acl": "bucket-owner-full-control"
                     }
                 }
-            }]
+            }
+        ]
         existing_policy["Statement"].extend(bucket_policy)
 
         s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
