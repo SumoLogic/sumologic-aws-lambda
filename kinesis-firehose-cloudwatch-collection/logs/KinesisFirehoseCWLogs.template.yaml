@@ -111,6 +111,10 @@ Mappings:
       ArnValue: "aws"
     sa-east-1:
       ArnValue: "aws"
+    me-central-1:
+      ArnValue: "aws"
+    il-central-1:
+      ArnValue: "aws"
     us-gov-west-1:
       ArnValue: "aws-us-gov"
     us-gov-east-1:
