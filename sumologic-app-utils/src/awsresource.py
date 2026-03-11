@@ -443,20 +443,17 @@ class AWSResourcesAbstract(object):
     }
 
     def __init__(self, aws_resource, region_value, account_id):
+        self.region_value = region_value
+        self.account_id = account_id
+
+        # Get partition from boto3 session
+        session = boto3.Session(region_name=region_value)
+        self.partition = session.get_partition_for_region(region_value)
+
+            # Initialize clients
         self.tagging_client = boto3.client('resourcegroupstaggingapi', region_name=region_value)
         self.client = boto3.client(self.event_resource_map[aws_resource] if aws_resource in self.event_resource_map
                                    else aws_resource, region_name=region_value)
-        self.region_value = region_value
-        self.partition = self.get_partition()
-        self.account_id = account_id
-
-    def get_partition(self):
-        if self.region_value.startswith("cn-"):
-            return "aws-cn"
-        elif self.region_value.startswith("us-gov-"):
-            return "aws-us-gov"
-        else:
-            return "aws"
 
     @abstractmethod
     def fetch_resources(self):

@@ -46,8 +46,8 @@ Resources:
             Action:
             - "s3:PutObject"
             Resource:
-            - !Sub 'arn:aws:s3:::${S3SourceBucketName}'
-            - !Sub 'arn:aws:s3:::${S3SourceBucketName}/*'
+            - !Sub 'arn:${AWS::Partition}:s3:::${S3SourceBucketName}'
+            - !Sub 'arn:${AWS::Partition}:s3:::${S3SourceBucketName}/*'
 
         Environment:
           Variables:

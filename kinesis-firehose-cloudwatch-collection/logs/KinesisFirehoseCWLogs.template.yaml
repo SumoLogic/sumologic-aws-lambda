@@ -67,59 +67,6 @@ Parameters:
 Conditions:
   create_bucket: !Equals [ !Ref Section2aCreateS3Bucket, 'Yes' ]
 
-Mappings:
-  ArnValue:
-    us-east-1:
-      ArnValue: "aws"
-    us-east-2:
-      ArnValue: "aws"
-    us-west-1:
-      ArnValue: "aws"
-    us-west-2:
-      ArnValue: "aws"
-    af-south-1:
-      ArnValue: "aws"
-    ca-central-1:
-      ArnValue: "aws"
-    eu-central-1:
-      ArnValue: "aws"
-    eu-west-1:
-      ArnValue: "aws"
-    eu-west-2:
-      ArnValue: "aws"
-    eu-south-1:
-      ArnValue: "aws"
-    eu-west-3:
-      ArnValue: "aws"
-    eu-north-1:
-      ArnValue: "aws"
-    ap-east-1:
-      ArnValue: "aws"
-    ap-northeast-1:
-      ArnValue: "aws"
-    ap-northeast-2:
-      ArnValue: "aws"
-    ap-northeast-3:
-      ArnValue: "aws"
-    ap-southeast-1:
-      ArnValue: "aws"
-    ap-southeast-2:
-      ArnValue: "aws"
-    ap-south-1:
-      ArnValue: "aws"
-    me-south-1:
-      ArnValue: "aws"
-    sa-east-1:
-      ArnValue: "aws"
-    us-gov-west-1:
-      ArnValue: "aws-us-gov"
-    us-gov-east-1:
-      ArnValue: "aws-us-gov"
-    cn-north-1:
-      ArnValue: "aws-cn"
-    cn-northwest-1:
-      ArnValue: "aws-cn"
-
 Resources:
   # Common Resources including creating bucket, create logs role and attach bucket policy.
   FailedDataBucket:
@@ -175,13 +122,11 @@ Resources:
               - s3:PutObject
             Resource:
               - !Sub
-                - "arn:${arn}:s3:::${S3Bucket}/*"
-                - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
-                  S3Bucket: !Ref Section2bFailedDataS3Bucket
+                - "arn:${AWS::Partition}:s3:::${S3Bucket}/*"
+                - S3Bucket: !Ref Section2bFailedDataS3Bucket
               - !Sub
-                - "arn:${arn}:s3:::${S3Bucket}"
-                - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
-                  S3Bucket: !Ref Section2bFailedDataS3Bucket
+                - "arn:${AWS::Partition}:s3:::${S3Bucket}"
+                - S3Bucket: !Ref Section2bFailedDataS3Bucket
       Roles:
         - Ref: FirehoseLogsRole
 
@@ -238,17 +183,15 @@ Resources:
               - kinesis:PutRecord
               - kinesis:PutRecordBatch
             Resource: !Sub
-              - "arn:${arn}:firehose:${Region}:${AccountId}:*"
-              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
-                Region: !Ref "AWS::Region"
+              - "arn:${AWS::Partition}:firehose:${Region}:${AccountId}:*"
+              - Region: !Ref "AWS::Region"
                 AccountId: !Ref "AWS::AccountId"
           - Effect: Allow
             Action:
               - iam:PassRole
             Resource: !Sub
-              - "arn:${arn}:iam::${AccountId}:role/${KinesisLogsRole}"
-              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
-                AccountId: !Ref "AWS::AccountId"
+              - "arn:${AWS::Partition}:iam::${AccountId}:role/${KinesisLogsRole}"
+              - AccountId: !Ref "AWS::AccountId"
                 KinesisLogsRole: !Ref KinesisLogsRole
       Roles:
         - Ref: KinesisLogsRole
@@ -288,9 +231,8 @@ Resources:
             - create_bucket
             - !GetAtt FailedDataBucket.Arn
             - !Sub
-              - "arn:${arn}:s3:::${S3Bucket}"
-              - arn: !FindInMap [ArnValue, !Ref "AWS::Region", ArnValue]
-                S3Bucket: !Ref Section2bFailedDataS3Bucket
+              - "arn:${AWS::Partition}:s3:::${S3Bucket}"
+              - S3Bucket: !Ref Section2bFailedDataS3Bucket
           CompressionFormat: UNCOMPRESSED
           ErrorOutputPrefix: "SumoLogic-Kinesis-Failed-Logs/"
           RoleARN: !GetAtt FirehoseLogsRole.Arn

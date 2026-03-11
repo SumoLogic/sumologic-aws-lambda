@@ -116,13 +116,13 @@ Resources:
                 - logs:PutSubscriptionFilter
                 - logs:ListTagsLogGroup
               Resource:
-                - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+                - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
             - Sid: InvokePolicy
               Effect: Allow
               Action:
                 - lambda:InvokeFunction
               Resource:
-                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambda*'
+                - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambda*'
       Events:
         LambdaTrigger:
           Type: CloudWatchEvent
@@ -159,7 +159,7 @@ Resources:
       FunctionName: !Ref "DestinationArnValue"
       Principal: !Sub 'logs.${AWS::Region}.amazonaws.com'
       SourceAccount: !Ref AWS::AccountId
-      SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+      SourceArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
 
   SumoLogGroupExistingLambdaConnector:
     Type: AWS::Serverless::Function
@@ -204,7 +204,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
               Resource:
-                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}'
+                - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}'
 
   InvokeLambdaConnector:
     Type: AWS::CloudFormation::CustomResource

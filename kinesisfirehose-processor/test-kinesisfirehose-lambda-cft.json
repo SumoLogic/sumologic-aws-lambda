@@ -7,7 +7,9 @@
                 "DeliveryStreamName": { "Fn::Join": [ "-", [ "SumoKFDeliveryStream", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] },
                 "DeliveryStreamType" : "DirectPut",
                 "ExtendedS3DestinationConfiguration": {
-                    "BucketARN": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref":"SumoKFS3bucket"}]]},
+                    "BucketARN": {
+                      "Fn::Sub": "arn:${AWS::Partition}:s3:::${SumoKFS3bucket}"
+                    },
                     "BufferingHints": {
                         "IntervalInSeconds": "300",
                         "SizeInMBs": "5"
@@ -96,8 +98,8 @@
                                 "s3:PutObject"
                             ],
                             "Resource": [
-                                {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref":"SumoKFS3bucket"}]]},
-                                {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref":"SumoKFS3bucket"}, "*"]]}
+                                {"Fn::Sub": "arn:${AWS::Partition}:s3:::${SumoKFS3bucket}"},
+                                {"Fn::Sub": "arn:${AWS::Partition}:s3:::${SumoKFS3bucket}/*"}
                             ]
                         },
                         {

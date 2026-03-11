@@ -52,7 +52,7 @@ Resources:
               x-amazon-apigateway-integration:
                 type: "aws_proxy"
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SecurityHubForwarderFunction.Arn}/invocations
+                  Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SecurityHubForwarderFunction.Arn}/invocations
                 passthroughBehavior: "when_no_match"
                 httpMethod: "POST"
                 requestParameters:
@@ -72,7 +72,7 @@ Resources:
           Effect: Allow
           Action:
           - securityhub:BatchImportFindings
-          Resource: 'arn:aws:securityhub:*:*:*'
+          Resource: 'arn:${AWS::Partition}:securityhub:*:*:*'
       Events:
         Api1:
           Type: Api

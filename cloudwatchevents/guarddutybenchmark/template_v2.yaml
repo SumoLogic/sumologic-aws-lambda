@@ -119,7 +119,7 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
+        ApplicationId: arn:${AWS::Partition}:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
         SemanticVersion: 2.0.21
 
   SumoHostedCollector:
