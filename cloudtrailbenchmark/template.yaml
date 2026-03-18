@@ -49,7 +49,7 @@ Metadata:
     Name: sumologic-aws-cloudtrail-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.22
+    SemanticVersion: 1.0.23
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudtrailbenchmark
 
 
@@ -124,7 +124,7 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location:
-        ApplicationId: arn:${AWS::Partition}:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
+        ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
         SemanticVersion: 2.0.21
 
 
@@ -137,7 +137,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: arn:${AWS::Partition}:iam::926226587429:root
+              AWS: !Sub "arn:${AWS::Partition}:iam::926226587429:root"
             Action: sts:AssumeRole
             Condition:
               StringEquals:
