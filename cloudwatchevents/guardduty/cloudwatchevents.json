@@ -108,7 +108,9 @@
                 "Type": "AWS::IAM::Role",
                 "Properties": {
                     "ManagedPolicyArns": [
-                        "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                        }
                     ],
                     "AssumeRolePolicyDocument": {
                         "Version": "2012-10-17",
