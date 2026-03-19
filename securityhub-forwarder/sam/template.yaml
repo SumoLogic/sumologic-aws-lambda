@@ -16,7 +16,7 @@ Metadata:
     Name: sumologic-securityhub-forwarder
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.11
+    SemanticVersion: 1.0.12
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-forwarder
     SpdxLicenseId: Apache-2.0
 
@@ -72,7 +72,7 @@ Resources:
           Effect: Allow
           Action:
           - securityhub:BatchImportFindings
-          Resource: 'arn:${AWS::Partition}:securityhub:*:*:*'
+          Resource: !Sub 'arn:${AWS::Partition}:securityhub:*:*:*'
       Events:
         Api1:
           Type: Api
