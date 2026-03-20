@@ -78,8 +78,9 @@ function filterNewLogGroups(event, logGroupRegex) {
 }
 
 async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn, additionalArgs) {
+    const partition = additionalArgs.partition ?? "aws";
     var params={};
-    if (destinationArn.startsWith("arn:aws:lambda")) {
+    if (destinationArn.startsWith(`arn:${partition}:lambda`)) {
         params = {
             destinationArn: destinationArn,
             filterName: 'SumoLGLBDFilter',
@@ -218,10 +219,12 @@ async function processEvents(env, event, additionalArgs, errorHandler, retryCoun
 }
 
 exports.handler = async function (event, context, callback) {
+  const partition = context.invokedFunctionArn?.split(":")?.[1] ?? "aws";
   let additionalArgs = {
     recordCount: 0,
     subscribeCount: 0,
-    invokeCount: 0
+    invokeCount: 0,
+    partition: partition
   };
   if (event.additionalArgs) {
      additionalArgs = event.additionalArgs
