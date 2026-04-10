@@ -11,12 +11,13 @@ Parameters:
       - ch
       - de
       - eu
+      - esc
       - jp
       - us2
       - us1
       - in
       - fed
-    Description: "Enter au, ca, ch, de, eu, jp, us2, in, fed or us1."
+    Description: "Enter au, ca, ch, de, eu, esc, jp, us2, in, fed or us1."
   Section1bSumoAccessID:
     Type: String
     Description: "Sumo Logic Access ID. Used for Sumo Logic API calls."
@@ -49,7 +50,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.22
+        SemanticVersion: 2.0.23
 
   SumoLogicHelperPolicy:
     Type: AWS::IAM::Policy
