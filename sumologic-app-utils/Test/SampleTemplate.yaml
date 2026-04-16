@@ -43,6 +43,17 @@ Parameters:
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
+Mappings:
+  SumoAWSAccountIds:
+    aws:
+      AWSAccountId: "926226587429"
+    aws-us-gov:
+      AWSAccountId: "926226587429"
+    aws-cn:
+      AWSAccountId: "926226587429"
+    aws-eusc:
+      AWSAccountId: "052162193518"
+
 Resources:
 
   SumoAppUtils:
@@ -226,7 +237,9 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub "arn:${AWS::Partition}:iam::926226587429:root"
+              AWS: !Sub
+                - "arn:${AWS::Partition}:iam::${AWSAccountId}:root"
+                - AWSAccountId: !FindInMap [SumoAWSAccountIds, !Ref AWS::Partition, AWSAccountId]
             Action: sts:AssumeRole
             Condition:
               StringEquals:
