@@ -22,9 +22,9 @@ Metadata:
     - cloudwatchevents
     - securityhub
     Name: sumologic-securityhub-collector
-    LicenseUrl: s3://appdevstore/SecurityHubCollector/v1.0.10/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/SecurityHubCollector/v1.0.10/3edeb049c0e4202e9588e43b957090ed
-    SemanticVersion: 1.0.10
+    LicenseUrl: s3://appdevstore/SecurityHubCollector/v1.0.11/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/SecurityHubCollector/v1.0.11/3edeb049c0e4202e9588e43b957090ed
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-collector
     SpdxLicenseId: Apache-2.0
 Parameters:
@@ -36,7 +36,7 @@ Resources:
     Properties:
       Handler: securityhub_collector.lambda_handler
       Runtime: python3.13
-      CodeUri: s3://appdevstore/SecurityHubCollector/v1.0.10/3c2bc2da7576810682419519fdc578bb
+      CodeUri: s3://appdevstore/SecurityHubCollector/v1.0.11/3c2bc2da7576810682419519fdc578bb
       MemorySize: 128
       Timeout: 300
       Policies:
@@ -46,8 +46,8 @@ Resources:
           Action:
           - s3:PutObject
           Resource:
-          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}
-          - Fn::Sub: arn:aws:s3:::${S3SourceBucketName}/*
+          - Fn::Sub: arn:${AWS::Partition}:s3:::${S3SourceBucketName}
+          - Fn::Sub: arn:${AWS::Partition}:s3:::${S3SourceBucketName}/*
       Environment:
         Variables:
           S3_LOG_BUCKET:

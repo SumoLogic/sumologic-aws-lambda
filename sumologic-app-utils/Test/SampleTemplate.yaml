@@ -8,14 +8,16 @@ Parameters:
     AllowedValues:
       - au
       - ca
+      - ch
       - de
       - eu
+      - esc
       - jp
       - us2
       - us1
       - in
       - fed
-    Description: "Enter au, ca, de, eu, jp, us2, in, fed or us1."
+    Description: "Enter au, ca, ch, de, eu, esc, jp, us2, in, fed or us1."
   Section1bSumoAccessID:
     Type: String
     Description: "Sumo Logic Access ID. Used for Sumo Logic API calls."
@@ -41,6 +43,17 @@ Parameters:
                   Deletes the resources created by the stack. Deletion of updated resources will be skipped."
     Type: String
 
+Mappings:
+  SumoAWSAccountIds:
+    aws:
+      AWSAccountId: "926226587429"
+    aws-us-gov:
+      AWSAccountId: "926226587429"
+    aws-cn:
+      AWSAccountId: "926226587429"
+    aws-eusc:
+      AWSAccountId: "052162193518"
+
 Resources:
 
   SumoAppUtils:
@@ -48,7 +61,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.21
+        SemanticVersion: 2.0.23
 
   SumoLogicHelperPolicy:
     Type: AWS::IAM::Policy
@@ -118,7 +131,7 @@ Resources:
     DependsOn: SumoLogicHelperPolicy
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: "cf-templates-1xa70np4sllja-us-east-1"
+      Bucket: !Sub "cf-templates-1xa70np4sllja-${AWS::Region}"
       PolicyDocument:
         Statement:
           - Sid: AWSCloudTrailAclCheck
@@ -127,14 +140,14 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:GetBucketAcl
             Resource:
-              - "arn:aws:s3:::cf-templates-1xa70np4sllja-us-east-1"
+              - !Sub "arn:${AWS::Partition}:s3:::cf-templates-1xa70np4sllja-${AWS::Region}"
           - Sid: AWSCloudTrailWrite
             Effect: Allow
             Principal:
               Service: cloudtrail.amazonaws.com
             Action: s3:PutObject
             Resource:
-              - "arn:aws:s3:::cf-templates-1xa70np4sllja-us-east-1/*"
+              - !Sub "arn:${AWS::Partition}:s3:::cf-templates-1xa70np4sllja-${AWS::Region}/*"
             Condition:
               StringEquals:
                 s3:x-amz-acl: bucket-owner-full-control
@@ -144,7 +157,7 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:ListBucket
             Resource:
-              - "arn:aws:s3:::cf-templates-1xa70np4sllja-us-east-1"
+              - !Sub "arn:${AWS::Partition}:s3:::cf-templates-1xa70np4sllja-${AWS::Region}"
 
   SumoCloudTrail:
     Type: Custom::AWSTrail
@@ -153,7 +166,7 @@ Resources:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       IsLogging: true
       IsMultiRegionTrail: false
-      S3BucketName: "cf-templates-1xa70np4sllja-us-east-1"
+      S3BucketName: !Sub "cf-templates-1xa70np4sllja-${AWS::Region}"
       TrailName: "Aws-Observability-onemoreupdae"
       RemoveOnDeleteStack: !Ref Section1eRemoveSumoResourcesOnDeleteStack
 
@@ -224,7 +237,9 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: arn:aws:iam::926226587429:root
+              AWS: !Sub
+                - "arn:${AWS::Partition}:iam::${AWSAccountId}:root"
+                - AWSAccountId: !FindInMap [SumoAWSAccountIds, !Ref AWS::Partition, AWSAccountId]
             Action: sts:AssumeRole
             Condition:
               StringEquals:
@@ -260,7 +275,7 @@ Resources:
       SumoAccessID: !Ref Section1bSumoAccessID
       SumoAccessKey: !Ref Section1cSumoAccessKey
       SumoDeployment: !Ref Section1aSumoDeployment
-      TargetBucketName: "cf-templates-1xa70np4sllja-us-east-1"
+      TargetBucketName: !Sub "cf-templates-1xa70np4sllja-${AWS::Region}"
       PathExpression: "asdasd"
       DateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
       DateLocatorRegex: '.*"updatedAt":"(.*)".*'
@@ -402,7 +417,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SumoAppUtils.Outputs.SumoAppUtilsFunction
       AWSResource: "vpc"
-      BucketName: "cf-templates-1xa70np4sllja-us-east-1"
+      BucketName: !Sub "cf-templates-1xa70np4sllja-${AWS::Region}"
       Filter: ".*"
       BucketPrefix: "vpc/logs"
       AccountID: !Ref "AWS::AccountId"

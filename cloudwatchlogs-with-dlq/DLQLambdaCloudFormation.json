@@ -177,7 +177,7 @@
                                     "logs:DescribeLogStreams"
                                 ],
                                 "Resource": [
-                                    { "Fn::Join": [ ":", ["arn", "aws", "logs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" },"log-group","*" ] ] }
+                                    { "Fn::Join": [ ":", [ "arn", { "Ref" : "AWS::Partition" }, "logs", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" },"log-group","*" ] ] }
                                 ]
                             }]
                         }
@@ -192,7 +192,7 @@
                                     "lambda:InvokeFunction"
                                 ],
                                 "Resource": [
-                                       { "Fn::Join": [ ":", ["arn", "aws", "lambda", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "function", { "Fn::Join": [ "-", [ "SumoCWProcessDLQLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] } ] ] }
+                                       { "Fn::Join": [ ":", [ "arn", { "Ref" : "AWS::Partition" }, "lambda", { "Ref" : "AWS::Region" }, { "Ref" : "AWS::AccountId" }, "function", { "Fn::Join": [ "-", [ "SumoCWProcessDLQLambda", { "Fn::Select" : [ "2", {"Fn::Split" : [ "/" , { "Ref": "AWS::StackId" } ]}] } ] ] } ] ] }
                                 ]
                             }]
                         }

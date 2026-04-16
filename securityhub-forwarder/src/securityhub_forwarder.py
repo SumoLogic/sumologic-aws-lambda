@@ -10,11 +10,16 @@ import boto3
 from botocore.exceptions import ClientError
 from utils import retry
 
+def get_partition(region_value):
+    # Get partition from boto3 session
+    session = boto3.Session(region_name=region_value)
+    partition = session.get_partition_for_region(region_value)
+    return partition
 
 def get_product_arn(securityhub_region):
-    PROVIDER_ACCOUNT_ID = "956882708938"
-    return "arn:aws:securityhub:%s:%s:product/sumologicinc/sumologic-mda" % (securityhub_region, PROVIDER_ACCOUNT_ID)
-
+    provider_account_id = "956882708938"
+    partition = get_partition(securityhub_region)
+    return f"arn:{partition}:securityhub:{securityhub_region}:{provider_account_id}:product/sumologicinc/sumologic-mda"
 
 def get_logger():
     logger = logging.getLogger()
