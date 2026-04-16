@@ -183,16 +183,13 @@ Resources:
               - kinesis:PutRecord
               - kinesis:PutRecordBatch
             Resource: !Sub
-              - "arn:${AWS::Partition}:firehose:${Region}:${AccountId}:*"
-              - Region: !Ref "AWS::Region"
-                AccountId: !Ref "AWS::AccountId"
+              - "arn:${AWS::Partition}:firehose:${AWS::Region}:${AWS::AccountId}:*"
           - Effect: Allow
             Action:
               - iam:PassRole
             Resource: !Sub
-              - "arn:${AWS::Partition}:iam::${AccountId}:role/${KinesisLogsRole}"
-              - AccountId: !Ref "AWS::AccountId"
-                KinesisLogsRole: !Ref KinesisLogsRole
+              - "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${KinesisLogsRole}"
+              - KinesisLogsRole: !Ref KinesisLogsRole
       Roles:
         - Ref: KinesisLogsRole
 

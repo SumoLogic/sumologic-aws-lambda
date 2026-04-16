@@ -188,16 +188,13 @@ Resources:
               - firehose:PutRecord
               - firehose:PutRecordBatch
             Resource: !Sub
-              - "arn:${AWS::Partition}:firehose:${Region}:${AccountId}:*"
-              - Region: !Ref "AWS::Region"
-                AccountId: !Ref "AWS::AccountId"
+              - "arn:${AWS::Partition}:firehose:${AWS::Region}:${AWS::AccountId}:*"
           - Effect: Allow
             Action:
               - iam:PassRole
             Resource: !Sub
-              - "arn:${AWS::Partition}:iam::${AccountId}:role/${KinesisMetricsRole}"
-              - AccountId: !Ref "AWS::AccountId"
-                KinesisMetricsRole: !Ref KinesisMetricsRole
+              - "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${KinesisMetricsRole}"
+              - KinesisMetricsRole: !Ref KinesisMetricsRole
       Roles:
         - Ref: KinesisMetricsRole
 
@@ -292,16 +289,13 @@ Resources:
                   - cloudwatch:PutMetricStream
                   - cloudwatch:DeleteMetricStream
                 Resource: !Sub
-                  - "arn:${AWS::Partition}:cloudwatch:${Region}:${AccountId}:metric-stream/*"
-                  - Region: !Ref "AWS::Region"
-                    AccountId: !Ref "AWS::AccountId"
+                  - "arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:metric-stream/*"
               - Effect: Allow
                 Action:
                   - iam:PassRole
                 Resource: !Sub
-                  - "arn:${AWS::Partition}:iam::${AccountId}:role/${KinesisMetricsRole}"
-                  - AccountId: !Ref "AWS::AccountId"
-                    KinesisMetricsRole: !Ref KinesisMetricsRole
+                  - "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${KinesisMetricsRole}"
+                  - KinesisMetricsRole: !Ref KinesisMetricsRole
       ManagedPolicyArns:
         - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 
