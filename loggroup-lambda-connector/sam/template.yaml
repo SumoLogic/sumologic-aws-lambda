@@ -99,7 +99,7 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: "loggroup-lambda-connector.handler"
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Environment:
         Variables:
           DESTINATION_ARN: !Ref "DestinationArnValue"
@@ -193,7 +193,7 @@ Resources:
           await response.send(event, context, responseStatus, responseData);
         };
       Handler: "index.handler"
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Environment:
         Variables:
           FUNCTION_NAME: !Ref SumoLogGroupLambdaConnector
