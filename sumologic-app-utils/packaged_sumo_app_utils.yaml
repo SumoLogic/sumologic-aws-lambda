@@ -29,7 +29,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: main.handler
-      Runtime: python3.13
+      Runtime: python3.14
       CodeUri: s3://appdevstore/sumo_app_utils/v2.0.23/sumo_app_utils.zip
       MemorySize: 128
       Timeout: 300
