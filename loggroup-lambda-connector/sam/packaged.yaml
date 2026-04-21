@@ -107,9 +107,9 @@ Resources:
   SumoLogGroupLambdaConnector:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.16/1c2a1905b7cc328190497a4582481fb6
+      CodeUri: s3://appdevstore/LoggroupConnector/v1.0.16/00026b4d91b0d0a89abec3e0cfe43475
       Handler: loggroup-lambda-connector.handler
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Environment:
         Variables:
           DESTINATION_ARN:
@@ -202,7 +202,7 @@ Resources:
         \   console.log(responseData.Error + \":\\n\", err);\n  }\n  \n  await response.send(event,\
         \ context, responseStatus, responseData);\n};\n"
       Handler: index.handler
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Environment:
         Variables:
           FUNCTION_NAME:
