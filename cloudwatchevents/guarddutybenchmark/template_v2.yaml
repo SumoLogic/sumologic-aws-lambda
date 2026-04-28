@@ -83,13 +83,12 @@ Parameters:
       - ch
       - de
       - eu
-      - esc
       - fed
       - jp
       - kr
       - us1
       - us2
-    Description: "Enter au, ca, ch, de, eu, esc, fed, jp, kr, us1 or us2"
+    Description: "Enter au, ca, ch, de, eu, fed, jp, kr, us1 or us2"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
       - true
@@ -121,7 +120,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.21
+        SemanticVersion: 2.0.23
 
   SumoHostedCollector:
     Type: Custom::Collector
