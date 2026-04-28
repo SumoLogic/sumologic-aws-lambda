@@ -35,13 +35,12 @@ Parameters:
       - ch
       - de
       - eu
-      - esc
       - fed
       - jp
       - kr
       - us1
       - us2
-    Description: "Enter au, ca, ch, de, eu, esc, fed, jp, kr, us1 or us2"
+    Description: "Enter au, ca, ch, de, eu, fed, jp, kr, us1 or us2"
   RemoveSumoResourcesOnDeleteStack:
     AllowedValues:
     - true
