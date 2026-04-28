@@ -49,7 +49,7 @@ Metadata:
     Name: sumologic-aws-cloudtrail-benchmark
     LicenseUrl: ./LICENSE
     ReadmeUrl: ./README.md
-    SemanticVersion: 1.0.22
+    SemanticVersion: 1.0.23
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/cloudtrailbenchmark
 
 
@@ -125,7 +125,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:us-east-1:956882708938:applications/sumologic-app-utils
-        SemanticVersion: 2.0.21
+        SemanticVersion: 2.0.23
 
 
   SumoRole:
@@ -137,7 +137,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: arn:aws:iam::926226587429:root
+              AWS: !Sub "arn:${AWS::Partition}:iam::926226587429:root"
             Action: sts:AssumeRole
             Condition:
               StringEquals:
@@ -157,10 +157,10 @@ Resources:
               - s3:ListBucket
               Resource:
                 - !Sub
-                  - arn:aws:s3:::${CloudTrailTargetS3BucketName}
+                  - arn:${AWS::Partition}:s3:::${CloudTrailTargetS3BucketName}
                   - { S3bucketName: !Ref CloudTrailTargetS3BucketName }
                 - !Sub
-                  - arn:aws:s3:::${CloudTrailTargetS3BucketName}/*
+                  - arn:${AWS::Partition}:s3:::${CloudTrailTargetS3BucketName}/*
                   - { S3bucketName: !Ref CloudTrailTargetS3BucketName  }
 
   SumoCloudTrailExportPolicy:
@@ -176,14 +176,14 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:GetBucketAcl
             Resource:
-              - !Sub "arn:aws:s3:::${CloudTrailTargetS3BucketName}"
+              - !Sub "arn:${AWS::Partition}:s3:::${CloudTrailTargetS3BucketName}"
           - Sid: AWSCloudTrailWrite
             Effect: Allow
             Principal:
               Service: cloudtrail.amazonaws.com
             Action: s3:PutObject
             Resource:
-              - !Sub "arn:aws:s3:::${CloudTrailTargetS3BucketName}/*"
+              - !Sub "arn:${AWS::Partition}:s3:::${CloudTrailTargetS3BucketName}/*"
             Condition:
               StringEquals:
                 s3:x-amz-acl: bucket-owner-full-control
@@ -193,7 +193,7 @@ Resources:
               Service: cloudtrail.amazonaws.com
             Action: s3:ListBucket
             Resource:
-              - !Sub "arn:aws:s3:::${CloudTrailTargetS3BucketName}"
+              - !Sub "arn:${AWS::Partition}:s3:::${CloudTrailTargetS3BucketName}"
 
     DependsOn:
       - TargetS3Bucket
@@ -262,7 +262,7 @@ Resources:
               StringEquals:
                 aws:SourceAccount: !Ref AWS::AccountId
               ArnLike:
-                aws:SourceArn: !Sub "arn:aws:s3:::${CloudTrailTargetS3BucketName}"
+                aws:SourceArn: !Sub "arn:${AWS::Partition}:s3:::${CloudTrailTargetS3BucketName}"
             Effect: Allow
             Principal:
               AWS: "*"

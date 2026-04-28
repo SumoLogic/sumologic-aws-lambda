@@ -116,8 +116,8 @@ Resources:
               - s3:ListBucketMultipartUploads
               - s3:PutObject
             Resource:
-              - !Sub "arn:aws:s3:::${BucketName}"
-              - !Sub "arn:aws:s3:::${BucketName}/*"
+              - !Sub "arn:${AWS::Partition}:s3:::${BucketName}"
+              - !Sub "arn:${AWS::Partition}:s3:::${BucketName}/*"
       Roles:
         - Ref: FirehoseLogsRole
 
@@ -148,11 +148,11 @@ Resources:
               - firehose:PutRecordBatch
               - kinesis:PutRecord
               - kinesis:PutRecordBatch
-            Resource: !Sub "arn:aws:firehose:${AWS::Region}:${AWS::AccountId}:*"
+            Resource: !Sub "arn:${AWS::Partition}:firehose:${AWS::Region}:${AWS::AccountId}:*"
           - Effect: Allow
             Action:
               - iam:PassRole
-            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/${KinesisLogsRole}"
+            Resource: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${KinesisLogsRole}"
       Roles:
         - Ref: KinesisLogsRole
 
@@ -186,7 +186,7 @@ Resources:
           DurationInSeconds: 60
         S3BackupMode: FailedDataOnly
         S3Configuration:
-          BucketARN: !Sub "arn:aws:s3:::${BucketName}"
+          BucketARN: !Sub "arn:${AWS::Partition}:s3:::${BucketName}"
           CompressionFormat: UNCOMPRESSED
           ErrorOutputPrefix: "SumoLogic-Kinesis-Failed-Logs/"
           RoleARN: !GetAtt FirehoseLogsRole.Arn

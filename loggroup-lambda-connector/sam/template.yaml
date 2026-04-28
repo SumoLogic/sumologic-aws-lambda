@@ -24,7 +24,7 @@ Metadata:
     LicenseUrl: ../LICENSE
     Name: sumologic-loggroup-connector
     ReadmeUrl: ../Readme.md
-    SemanticVersion: 1.0.15
+    SemanticVersion: 1.0.16
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/loggroup-lambda-connector
     SpdxLicenseId: Apache-2.0
 
@@ -99,7 +99,7 @@ Resources:
     Properties:
       CodeUri: ../src/
       Handler: "loggroup-lambda-connector.handler"
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Environment:
         Variables:
           DESTINATION_ARN: !Ref "DestinationArnValue"
@@ -116,13 +116,13 @@ Resources:
                 - logs:PutSubscriptionFilter
                 - logs:ListTagsLogGroup
               Resource:
-                - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+                - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
             - Sid: InvokePolicy
               Effect: Allow
               Action:
                 - lambda:InvokeFunction
               Resource:
-                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambda*'
+                - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*SumoLogGroupLambda*'
       Events:
         LambdaTrigger:
           Type: CloudWatchEvent
@@ -159,7 +159,7 @@ Resources:
       FunctionName: !Ref "DestinationArnValue"
       Principal: !Sub 'logs.${AWS::Region}.amazonaws.com'
       SourceAccount: !Ref AWS::AccountId
-      SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+      SourceArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
 
   SumoLogGroupExistingLambdaConnector:
     Type: AWS::Serverless::Function
@@ -193,7 +193,7 @@ Resources:
           await response.send(event, context, responseStatus, responseData);
         };
       Handler: "index.handler"
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Environment:
         Variables:
           FUNCTION_NAME: !Ref SumoLogGroupLambdaConnector
@@ -204,7 +204,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
               Resource:
-                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}'
+                - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SumoLogGroupLambdaConnector}'
 
   InvokeLambdaConnector:
     Type: AWS::CloudFormation::CustomResource

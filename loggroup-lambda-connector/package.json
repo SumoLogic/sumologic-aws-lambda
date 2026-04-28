@@ -4,7 +4,7 @@
   "description": "Lambda Function for automatic subscription of any Sumo Logic lambda function with loggroups matching an input pattern.",
   "main": "loggroup-lambda-connector.js",
   "dependencies": {
-    "aws-sdk": "^2.160.0"
+    "aws-sdk": "^3.895.0"
   },
   "devDependencies": {},
   "scripts": {

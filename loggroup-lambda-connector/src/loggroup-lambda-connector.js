@@ -78,8 +78,9 @@ function filterNewLogGroups(event, logGroupRegex) {
 }
 
 async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, roleArn, additionalArgs) {
+    const partition = additionalArgs.partition ?? "aws";
     var params={};
-    if (destinationArn.startsWith("arn:aws:lambda")) {
+    if (destinationArn.startsWith(`arn:${partition}:lambda`)) {
         params = {
             destinationArn: destinationArn,
             filterName: 'SumoLGLBDFilter',
@@ -217,30 +218,43 @@ async function processEvents(env, event, additionalArgs, errorHandler, retryCoun
   }
 }
 
-exports.handler = async function (event, context, callback) {
+exports.handler = async (event, context) => {
+
+  const partition = context.invokedFunctionArn?.split(":")?.[1] ?? "aws";
+
   let additionalArgs = {
     recordCount: 0,
     subscribeCount: 0,
-    invokeCount: 0
+    invokeCount: 0,
+    partition: partition
   };
+
   if (event.additionalArgs) {
-     additionalArgs = event.additionalArgs
+    additionalArgs = event.additionalArgs;
   }
+
   console.log("Invoking Log Group connector function");
+
   function errorHandler(err, msg) {
     if (err) {
-      console.log(err, msg);
-        callback(err);
-      } else {
-        callback(null, "Success");
-      }
+      console.error(msg, err);
+      throw err;
     }
-    if (!process.env.LOG_GROUP_PATTERN || process.env.LOG_GROUP_PATTERN.trim().length === 0) {
-        console.warn("LOG_GROUP_PATTERN is empty, it will subscribe to all loggroups");
-    }
-    if (event.existingLogs == "true") {
-      await processExistingLogGroups(context, event.token, additionalArgs, errorHandler);
-    } else {
-      await processEvents(process.env, event, additionalArgs, errorHandler);
-    }
+    return "Success";
+  }
+
+  if (!process.env.LOG_GROUP_PATTERN || process.env.LOG_GROUP_PATTERN.trim().length === 0) {
+    console.warn("LOG_GROUP_PATTERN is empty, it will subscribe to all loggroups");
+  }
+
+  if (event.existingLogs === "true") {
+    await processExistingLogGroups(context, event.token, additionalArgs, errorHandler);
+  } else {
+    await processEvents(process.env, event, additionalArgs, errorHandler);
+  }
+
+  return {
+    statusCode: 200,
+    body: "Success"
+  };
 };

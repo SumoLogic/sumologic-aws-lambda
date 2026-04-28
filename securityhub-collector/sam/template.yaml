@@ -21,7 +21,7 @@ Metadata:
     Name: sumologic-securityhub-collector
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.10
+    SemanticVersion: 1.0.11
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-collector
     SpdxLicenseId: Apache-2.0
 
@@ -46,8 +46,8 @@ Resources:
             Action:
             - "s3:PutObject"
             Resource:
-            - !Sub 'arn:aws:s3:::${S3SourceBucketName}'
-            - !Sub 'arn:aws:s3:::${S3SourceBucketName}/*'
+            - !Sub 'arn:${AWS::Partition}:s3:::${S3SourceBucketName}'
+            - !Sub 'arn:${AWS::Partition}:s3:::${S3SourceBucketName}/*'
 
         Environment:
           Variables:
