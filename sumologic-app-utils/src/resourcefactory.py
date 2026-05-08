@@ -13,7 +13,7 @@ class ResourceFactory(object):
     def get_resource(cls, objname):
         if objname in cls.resource_type:
             return cls.resource_type[objname]
-        raise Exception("%s resource type is undefined" % objname)
+        raise Exception(f"{objname} resource type is undefined")
 
 
 class AutoRegisterResource(ABCMeta):

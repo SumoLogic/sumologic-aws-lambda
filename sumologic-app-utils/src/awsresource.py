@@ -74,14 +74,14 @@ class AWSTrail(AWSResource):
     def create(self, trail_name, params, *args, **kwargs):
         try:
             response = self.cloudtrailcli.create_trail(**params)
-            print("Trail created %s" % trail_name)
+            print(f"Trail created {trail_name}")
             self.cloudtrailcli.start_logging(Name=trail_name)
             return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
         except ClientError as e:
-            print("Error in creating trail %s" % e.response['Error'])
+            print(f"Error in creating trail {e.response['Error']}")
             raise
         except Exception as e:
-            print("Error in creating trail %s" % e)
+            print(f"Error in creating trail {e}")
             raise
 
     def update(self, old_trail_name, trail_name, params, *args, **kwargs):
@@ -91,14 +91,14 @@ class AWSTrail(AWSResource):
                 return self.create(trail_name, params)
             else:
                 response = self.cloudtrailcli.update_trail(**params)
-                print("Trail updated %s" % trail_name)
+                print(f"Trail updated {trail_name}")
                 self.cloudtrailcli.start_logging(Name=trail_name)
                 return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
         except ClientError as e:
-            print("Error in updating trail %s" % e.response['Error'])
+            print(f"Error in updating trail {e.response['Error']}")
             raise
         except Exception as e:
-            print("Error in updating trail %s" % e)
+            print(f"Error in updating trail {e}")
             raise
 
     def delete(self, trail_name, *args, **kwargs):
@@ -106,12 +106,12 @@ class AWSTrail(AWSResource):
             self.cloudtrailcli.delete_trail(
                 Name=trail_name
             )
-            print("Trail deleted %s" % trail_name)
+            print(f"Trail deleted {trail_name}")
         except ClientError as e:
-            print("Error in deleting trail %s" % e.response['Error'])
+            print(f"Error in deleting trail {e.response['Error']}")
             raise
         except Exception as e:
-            print("Error in deleting trail %s" % e)
+            print(f"Error in deleting trail {e}")
             raise
 
     def _transform_bool_values(self, k, v):
@@ -143,7 +143,7 @@ class AWSTrail(AWSResource):
 class TagAWSResources(AWSResource):
 
     def __init__(self, props, *args, **kwargs):
-        print('Tagging aws resource %s' % props.get("AWSResource"))
+        print(f'Tagging aws resource {props.get("AWSResource")}')
 
     def _tag_aws_resources(self, region_value, aws_resource, tags, account_id, delete_flag, filter_regex):
         # Get the class instance based on AWS Resource
@@ -164,7 +164,7 @@ class TagAWSResources(AWSResource):
                 tag_resource.add_tags(arns, tags)
 
     def create(self, region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs):
-        print("TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags %s." % tags)
+        print(f"TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags {tags}.")
         regions = [region_value]
         for region in regions:
             self._tag_aws_resources(region, aws_resource, tags, account_id, False, filter_regex)
@@ -188,12 +188,12 @@ class TagAWSResources(AWSResource):
                     self.delete(old_properties['Region'], old_properties['AWSResource'], old_tags,
                                 account_id, old_properties['Filter'], remove_on_delete_stack=True)
 
-            print("TAG AWS RESOURCES - Starting the AWS resources Tag update with Tags %s." % tags)
+            print(f"TAG AWS RESOURCES - Starting the AWS resources Tag update with Tags {tags}.")
             regions = [region_value]
             for region in regions:
                 self._tag_aws_resources(region, aws_resource, tags, account_id, False, filter_regex)
 
-        print("updated tags for aws resource %s " % aws_resource)
+        print(f"updated tags for aws resource {aws_resource} ")
         return {"TAG_UPDATE": "Successful"}, aws_resource
 
     def delete(self, region_value, aws_resource, tags, account_id, filter_regex, remove_on_delete_stack, *args,
@@ -201,7 +201,7 @@ class TagAWSResources(AWSResource):
         tags_list = []
         if tags:
             tags_list = list(tags.keys())
-        print("TAG AWS RESOURCES - Starting the AWS resources Tag deletion with Tags %s." % tags_list)
+        print(f"TAG AWS RESOURCES - Starting the AWS resources Tag deletion with Tags {tags_list}.")
         if remove_on_delete_stack:
             regions = [region_value]
             for region in regions:
@@ -234,7 +234,7 @@ class TagAWSResources(AWSResource):
 class EnableS3LogsResources(AWSResource):
 
     def __init__(self, props, *args, **kwargs):
-        print('Enabling S3 for ALB/ELB-classic aws resource %s' % props.get("AWSResource"))
+        print(f'Enabling S3 for ALB/ELB-classic aws resource {props.get("AWSResource")}')
 
     def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, bucket_prefix,
                                delete_flag, filter_regex, account_id):
@@ -260,7 +260,7 @@ class EnableS3LogsResources(AWSResource):
 
     def create(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
                account_id, *args, **kwargs):
-        print("ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket %s." % bucket_name)
+        print(f"ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket {bucket_name}.")
         self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
                                     False, filter_regex, account_id)
         print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
@@ -286,7 +286,7 @@ class EnableS3LogsResources(AWSResource):
                     self.delete(region_value, aws_resource, old_properties['BucketName'], old_properties['BucketPrefix'],
                                 old_properties['Filter'], True, account_id)
 
-                print("ENABLE S3 LOGS - Starting the AWS resources S3 Update with bucket %s." % bucket_name)
+                print(f"ENABLE S3 LOGS - Starting the AWS resources S3 Update with bucket {bucket_name}.")
                 self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
                                             False, filter_regex, account_id)
             print("ENABLE S3 LOGS - Completed the AWS resources S3 Update for bucket.")
@@ -353,7 +353,7 @@ class ConfigDeliveryChannel(AWSResource):
         return name
 
     def create(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
-        print("DELIVERY CHANNEL - Starting the AWS config Delivery channel create with bucket %s." % bucket_name)
+        print(f"DELIVERY CHANNEL - Starting the AWS config Delivery channel create with bucket {bucket_name}.")
 
         name = self.create_delivery_channel(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn)
 
@@ -362,7 +362,7 @@ class ConfigDeliveryChannel(AWSResource):
         return {"DELIVERY_CHANNEL": "Successful"}, name
 
     def update(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
-        print("updated delivery channel to %s " % bucket_name)
+        print(f"updated delivery channel to {bucket_name} ")
         name = self.create_delivery_channel(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn)
         return {"DELIVERY_CHANNEL": "Successful"}, name
 
@@ -1388,7 +1388,7 @@ class AWSResourcesProvider(object):
         if provider_name in cls.provider_map:
             return cls.provider_map[provider_name](provider_name, region_value, account_id)
         else:
-            raise Exception("%s provider not found" % provider_name)
+            raise Exception(f"{provider_name} provider not found")
 
 
 if __name__ == '__main__':
