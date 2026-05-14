@@ -19,9 +19,9 @@ Metadata:
     - cloudwatchevents
     - securityhub
     Name: sumologic-securityhub-forwarder
-    LicenseUrl: s3://appdevstore/SecurityHubForwarder/v1.0.12/6092dd6c323e33634657102f570628e0
-    ReadmeUrl: s3://appdevstore/SecurityHubForwarder/v1.0.12/56f774fe371f787c17ec137a47c93138
-    SemanticVersion: 1.0.12
+    LicenseUrl: s3://appdevstore/SecurityHubForwarder/v1.0.13/6092dd6c323e33634657102f570628e0
+    ReadmeUrl: s3://appdevstore/SecurityHubForwarder/v1.0.13/56f774fe371f787c17ec137a47c93138
+    SemanticVersion: 1.0.13
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-forwarder
     SpdxLicenseId: Apache-2.0
 Resources:
@@ -68,7 +68,7 @@ Resources:
     Properties:
       Handler: securityhub_forwarder.lambda_handler
       Runtime: python3.13
-      CodeUri: s3://appdevstore/SecurityHubForwarder/v1.0.12/c344c0895451a1baae2f6a64ff9aa774
+      CodeUri: s3://appdevstore/SecurityHubForwarder/v1.0.13/8dc0ba1407c47048e12562ab64b6cc11
       MemorySize: 128
       Timeout: 300
       Policies:

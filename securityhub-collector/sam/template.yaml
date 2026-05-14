@@ -21,7 +21,7 @@ Metadata:
     Name: sumologic-securityhub-collector
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.11
+    SemanticVersion: 1.0.12
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/master/securityhub-collector
     SpdxLicenseId: Apache-2.0
 
