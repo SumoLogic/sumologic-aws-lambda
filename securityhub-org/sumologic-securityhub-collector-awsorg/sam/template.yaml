@@ -20,7 +20,7 @@ Metadata:
     Name: sumologic-securityhub-connector-aws-org
     LicenseUrl: ../LICENSE
     ReadmeUrl: ../README.md
-    SemanticVersion: 1.0.9
+    SemanticVersion: 1.0.10
     SourceCodeUrl: https://github.com/SumoLogic/sumologic-aws-lambda/tree/main/securityhub-org/sumologic-securityhub-collector-awsorg/src
     SpdxLicenseId: Apache-2.0
 
@@ -41,7 +41,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: securityhub_collector_org.lambda_handler
-      Runtime: python3.13
+      Runtime: python3.14
       CodeUri: ../src/src.zip
       MemorySize: 128
       Timeout: 300
