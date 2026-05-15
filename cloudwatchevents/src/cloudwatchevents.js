@@ -24,7 +24,6 @@ var numOfRetries = process.env.NUMBER_OF_RETRIES || 3;  // the number of retries
 
 var https = require('https');
 var zlib = require('zlib');
-var url = require('url');
 
 Promise.retryMax = function(fn,retry,interval,fnParams) {
     return fn.apply(this,fnParams).catch( err => {
@@ -49,59 +48,49 @@ function exponentialBackoff(seed) {
     }
 }
 
-function postToSumo(callback, messages) {
-    var messagesTotal = Object.keys(messages).length;
+function httpSend(options, headers, data) {
+    return new Promise( (resolve,reject) => {
+        var curOptions = Object.assign({}, options);
+        curOptions.headers = headers;
+        var req = https.request(curOptions, function (res) {
+            var body = '';
+            res.setEncoding('utf8');
+            res.on('data', function (chunk) {
+                body += chunk;
+            });
+            res.on('end', function () {
+                if (res.statusCode == 200) {
+                    resolve(body);
+                } else {
+                    reject({'error':'HTTP Return code ' + res.statusCode,'res':res});
+                }
+            });
+        });
+        req.on('error', function (e) {
+            reject({'error':e,'res':null});
+        });
+        for (var i = 0; i < data.length; i++) {
+            req.write(JSON.stringify(data[i]) + '\n');
+        }
+        console.log("sending to Sumo...")
+        req.end();
+    });
+}
+
+async function postToSumo(messages) {
     var messagesSent = 0;
     var messageErrors = [];
 
-    var urlObject = url.parse(SumoURL);
+    var urlObject = new URL(SumoURL);
     var options = {
         'hostname': urlObject.hostname,
-        'path': urlObject.pathname,
+        'path': urlObject.pathname + urlObject.search,
         'method': 'POST'
     };
 
-    var finalizeContext = function () {
-        var total = messagesSent + messageErrors.length;
-        if (total == messagesTotal) {
-            console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
-            if (messageErrors.length > 0) {
-                callback('errors: ' + messageErrors);
-            } else {
-                callback(null, "Success");
-            }
-        }
-    };
-
-    function httpSend(options, headers, data) {
-        return new Promise( (resolve,reject) => {
-            var curOptions = options;
-            curOptions.headers = headers;
-            var req = https.request(curOptions, function (res) {
-                var body = '';
-                res.setEncoding('utf8');
-                res.on('data', function (chunk) {
-                    body += chunk; // don't really do anything with body
-                });
-                res.on('end', function () {
-                    if (res.statusCode == 200) {
-                        resolve(body);
-                    } else {
-                        reject({'error':'HTTP Return code ' + res.statusCode,'res':res});
-                    }
-                });
-            });
-            req.on('error', function (e) {
-                reject({'error':e,'res':null});
-            });
-            for (var i = 0; i < data.length; i++) {
-                req.write(JSON.stringify(data[i]) + '\n');
-            }
-            console.log("sending to Sumo...")
-            req.end();
-        });
-    }
-    Object.keys(messages).forEach(function (key, index) {
+    var keys = Object.keys(messages);
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
         var headerArray = key.split(':');
         var headers = {
             'X-Sumo-Name': headerArray[0],
@@ -109,33 +98,40 @@ function postToSumo(callback, messages) {
             'X-Sumo-Host': headerArray[2],
             'X-Sumo-Client': 'cloudwatchevents-aws-lambda'
         };
-        Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]).then((body)=> {
+        try {
+            await Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]);
             messagesSent++;
-            finalizeContext()
-        }).catch((e) => {
+        } catch (e) {
             messageErrors.push(e.error);
-            finalizeContext();
-        });
-    });
-}
-
-exports.handler = function (event, context, callback) {
-
-    // Used to hold chunks of messages to post to SumoLogic
-    var messageList = {};
-    var final_event;
-    // Validate URL has been set
-    var urlObject = url.parse(SumoURL);
-    if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
-        callback('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+        }
     }
 
-    //console.log(event);
+    console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
+    if (messageErrors.length > 0) {
+        throw new Error('errors: ' + messageErrors);
+    }
+    return "Success";
+}
+
+exports.handler = async function (event, context) {
+
+    var messageList = {};
+    var final_event;
+    var urlObject;
+    try {
+        urlObject = new URL(SumoURL);
+    } catch (e) {
+        throw new Error('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+    }
+    if (urlObject.protocol !== 'https:' || !urlObject.hostname || !urlObject.pathname) {
+        throw new Error('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+    }
+
     if ((event.source==="aws.guardduty") || (removeOuterFields)) {
         final_event =event.detail;
     } else {
         final_event = event;
     }
     messageList[sourceNameOverride+':'+sourceCategoryOverride+':'+sourceHostOverride]=[final_event];
-    postToSumo(callback, messageList);
+    return await postToSumo(messageList);
 };

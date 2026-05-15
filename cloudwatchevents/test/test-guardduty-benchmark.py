@@ -8,6 +8,7 @@ import time
 import unittest
 
 import boto3
+import requests
 from sumologic import SumoLogic
 
 TIMEFORMAT = '%Y-%m-%dT%H:%M:%S'
@@ -154,10 +155,9 @@ class SumoLogicResource(object):
 
     def fetch_logs(self):
         raw_messages = []
-        # fetch Last 10 Minutes logs
-        # Get the current time
+        # Search with a wide window to avoid missing logs during retries
         to_time = datetime.datetime.now()
-        from_time = to_time - datetime.timedelta(minutes=self.delay+2)
+        from_time = to_time - datetime.timedelta(minutes=self.delay+15)
         from_time = from_time.strftime(TIMEFORMAT)
         to_time = to_time.strftime(TIMEFORMAT)
         print("Fetching records")
@@ -192,7 +192,11 @@ class SumoLogicResource(object):
 
     def fetch_logs_with_retry(self, retries=6, delay=60):
         for attempt in range(1, retries + 1):
-            result = self.fetch_logs()
+            try:
+                result = self.fetch_logs()
+            except requests.exceptions.ConnectionError as e:
+                print(f"Connection error on attempt {attempt}: {e}")
+                result = []
             if len(result) >= 3:
                 return result
             else:
@@ -202,7 +206,6 @@ class SumoLogicResource(object):
                     return result
                 else:
                     print(f"Retrying in {delay} seconds...")
-                    self.delay += 1
                     time.sleep(delay)
 
     # Validate the specific findings generated
@@ -356,6 +359,7 @@ class TestGuardDutyBenchmark(unittest.TestCase):
         self.cf.create_stack(self.parameters)
         print("Testing Stack Creation.")
         self.assertTrue(self.cf.stack_exists())
+        time.sleep(120)
         # Generate some specific sample findings
         print("Generating sample GuardDuty findings.")
         self.guard_duty.create_sample_findings(DetectorId=self.detector_id, FindingTypes=self.finding_types)
@@ -442,6 +446,7 @@ class TestGuardDuty(unittest.TestCase):
         self.cf.create_stack(self.parameters)
         print("Testing Stack Creation.")
         self.assertTrue(self.cf.stack_exists())
+        time.sleep(120)
         # Generate some specific sample findings
         print("Generating sample GuardDuty findings.")
         self.guard_duty.create_sample_findings(DetectorId=self.detector_id, FindingTypes=self.finding_types)
@@ -499,6 +504,7 @@ class TestCloudWatchEvents(unittest.TestCase):
         self.cf.create_stack(self.parameters)
         print("Testing Stack Creation.")
         self.assertTrue(self.cf.stack_exists())
+        time.sleep(120)
         # Generate some specific sample findings
         print("Generating sample CloudWatch Events.")
         self.guard_duty.create_sample_findings(DetectorId=self.detector_id, FindingTypes=self.finding_types)
