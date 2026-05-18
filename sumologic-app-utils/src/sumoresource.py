@@ -626,7 +626,7 @@ class App(SumoResource):
             time.sleep(2)
 
         print(f"job status: {response.text}")
-        matched = re.search('id:\s*(.*?)\"', response.text)
+        matched = re.search('id:\\s*(.*?)\"', response.text)
         copied_folder_id = None
         if matched:
             copied_folder_id = matched[1]
@@ -710,7 +710,6 @@ class App(SumoResource):
             return response
         else:
             raise Exception(f"Unable to share {content_id} in org: {org_id}")
-
 
     def share_app_by_id(self, is_share, app_folder_id, org_id, is_admin):
         """ This shares an app identified by its Id under the Admin Recommended folder """
@@ -876,6 +875,115 @@ class App(SumoResource):
             "location": 'admin' if props.get("location") == 'Admin Recommended Folder' else 'personal',
             "is_share": True if props.get("share") == 'True' else False,
             "org_id": props.get("orgid")
+        }
+
+
+class AppV2(SumoResource):
+
+    def _wait_for_job(self, job_id, status_fn):
+        print(f"Waiting for job_id: {job_id}")
+        while True:
+            response = status_fn(job_id)
+            json_resp = response.json()
+            if json_resp['status'] != "InProgress":
+                print(f"Job status: {json_resp}")
+                return response
+            time.sleep(2)
+
+    def _is_admin(self, location):
+        return location == "admin"
+
+    def _handle_job_response(self, response, job_id, appname, action="installed"):
+        json_resp = response.json()
+        if json_resp['status'] == 'Success':
+            app_folder_id = json_resp.get('folderId')
+            app_path = json_resp.get('path')
+            print(f"jobId:{job_id} -> {action} app '{appname}', folderId: {app_folder_id}, path: {app_path}")
+            return {"APP_FOLDER_NAME": appname}, app_folder_id
+        raise Exception(f"App '{appname}' {action} failed: {json_resp}")
+
+    def _run_job(self, job_id_key, api_fn, status_fn, job_id, appname, action):
+        response = api_fn()
+        job_id = response.json()[job_id_key]
+        response = self._wait_for_job(job_id, status_fn)
+        return self._handle_job_response(response, job_id, appname, action=action)
+
+    def get_installed_apps(self):
+        response = self.sumologic_cli.get_instances_app_v2()
+        return (response.json() or {}).get("data", [])
+
+    def check_app_installed(self, app_id):
+        return next((app for app in self.get_installed_apps() if app["uuid"] == app_id), None)
+
+    def install_app(self, appid, appname, version, location, is_share, *args, **kwargs):
+        content = {'name': appname, 'version': version}
+        response = self.sumologic_cli.install_app_v2(appid, content, self._is_admin(location))
+        job_id = response.json()["jobId"]
+        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_install_status)
+        return self._handle_job_response(response, job_id, appname, action="installed")
+
+    def create(self, appid, appname, org_id, version, location, is_share=True, *args, **kwargs):
+        if not appid:
+            return None
+        app_instance = self.check_app_installed(appid)
+        if app_instance:
+            print(f"App {appname} is already installed")
+            return {"APP_FOLDER_NAME": appname}, app_instance["folderId"]
+        print(f"App {appname} is installing")
+        return self.install_app(appid, appname, version, location, is_share, *args, **kwargs)
+
+    def update(self, appid, appname, org_id, version, is_share=True, location=None, *args, **kwargs):
+        if not appid:
+            return None
+        app_instance = self.check_app_installed(appid)
+        if not app_instance:
+            print(f"App {appname} is not present")
+            return self.install_app(appid, appname, version, location, is_share, *args, **kwargs)
+        # Extract version information
+        current_version = app_instance.get("version")
+        latest_version = app_instance.get("latestVersion")
+        print(f"App: {appname}")
+        print(f"Current Version: {current_version}")
+        print(f"Latest Version: {latest_version}")
+        if current_version == latest_version:
+            print(f"App {appname} is already updated")
+            return {"APP_FOLDER_NAME": appname}, app_instance["folderId"]
+        print(f"App {appname} is updating")
+        response = self.sumologic_cli.upgrade_app_v2(appid, {}, self._is_admin(location))
+        job_id = response.json()["jobId"]
+        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_upgrade_status)
+        return self._handle_job_response(response, job_id, appname, action="upgraded")
+
+    def delete(self, appid, appname, remove_on_delete_stack, location=None, *args, **kwargs):
+        if not remove_on_delete_stack or not appid:
+            print("Skipping app uninstallation")
+            return None
+        app_instance = self.check_app_installed(appid)
+        if not app_instance:
+            print("App is already uninstalled")
+            return None
+        response = self.sumologic_cli.uninstall_app_v2(appid, self._is_admin(location))
+        job_id = response.json()["jobId"]
+        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_uninstall_status)
+        if response.json()['status'] == 'Success':
+            print(f"jobId:{job_id} -> uninstalled app '{appname}'")
+        return None
+
+    def extract_params(self, event):
+        print("extract_params", event)
+        props = event.get("ResourceProperties", {})
+        physical_id = event.get('PhysicalResourceId', '')
+        app_folder_id = physical_id.split("/")[1] if "/" in physical_id else None
+
+        return {
+            "appid":              props.get("AppId"),
+            "appname":            props.get("AppName"),
+            "version":            props.get("Version", "latest"),
+            "retain_old_app":     props.get("RetainOldAppOnUpdate") == 'true',
+            "location":           'admin' if props.get("location") == 'Admin Recommended Folder' else 'personal',
+            "is_share":           props.get("share") == 'True',
+            "org_id":             props.get("orgid"),
+            "app_folder_id":      app_folder_id
         }
 
 
@@ -1614,19 +1722,19 @@ class AlertsMonitor(SumoResource):
 
 if __name__ == '__main__':
     props = {
-        "SumoAccessID": "",
-        "SumoAccessKey": "",
-        "SumoDeployment": "",
+        "SumoAccessID": "suWLcCmdOVlgWt",
+        "SumoAccessKey": "Y8mGiWz3RjU0fPe7gSn3d1hWbpw4L7Z5A697MAc26dwgh9sqjUtREPXy0sDp1i4k",
+        "SumoDeployment": "ch",
     }
-    app_prefix = "ALB"
-    # app_prefix = "GuardDuty"
-    collector_id = None
-    collector_type = "Hosted"
-    collector_name = f"{app_prefix}Collector"
-    source_name = f"{app_prefix}Events"
-    source_category = f"Labs/AWS/{app_prefix}"
-    appname = "AWS Application LB"
-    appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
+    # app_prefix = "ALB"
+    # # app_prefix = "GuardDuty"
+    # collector_id = None
+    # collector_type = "Hosted"
+    # collector_name = f"{app_prefix}Collector"
+    # source_name = f"{app_prefix}Events"
+    # source_category = f"Labs/AWS/{app_prefix}"
+    # appname = "AWS Application LB"
+    # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
     # appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
     s3url = ""
     # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
@@ -1634,14 +1742,24 @@ if __name__ == '__main__':
     # source_params = {
     #     "logsrc": "_sourceCategory=%s" % source_category
     # }
-    source_params = {
-        "cloudtraillogsource": f"_sourceCategory={source_category}",
-        "indexname": '%rnd%',
-        "incrementalindex": "%rnd%"
-    }
+    # source_params = {
+    #     "cloudtraillogsource": f"_sourceCategory={source_category}",
+    #     "indexname": '%rnd%',
+    #     "incrementalindex": "%rnd%"
+    # }
     # col = Collector(**params)
     # src = HTTPSource(**params)
     # app = App(props)
+
+    appname = "Amazon Bedrock AgentCore"
+    appid = "f27e26fc-f272-4849-b6de-9170834b11b4"
+    app = AppV2(props)
+    #app.get_install_apps()
+    id = "CD6CC478B5018A8D"
+    org_id, version, location = "0000000000000062", "latest", "user"
+    print(app.update(appid, appname, org_id, version, is_share=True))
+
+    #app.install_app(appid, appname, version="latest", location="user", is_share=False)
 
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
@@ -1650,8 +1768,8 @@ if __name__ == '__main__':
     # _, app_folder_id = app.update(app_folder_id='0000000001A70848', appname=appname, source_params=source_params,folder_name="abcd" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='admin',retain_old_app=True) #import
     # app.delete(app_folder_id, True, location='admin')
 
-    monitor = AlertsMonitor(props)
-    monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.8.0/appjson/Alerts-App.json"
+    # monitor = AlertsMonitor(props)
+    # monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.8.0/appjson/Alerts-App.json"
     # _, app_folder_id = monitor.create('abc','0000000000BD3DDD',monitors3,"",retain_old_alerts=False)
     # _, app_folder_id = monitor.update('000000000002796B','abc1','0000000000285A74',monitors3,"",retain_old_alerts=True)
 

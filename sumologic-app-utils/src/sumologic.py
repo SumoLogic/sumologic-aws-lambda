@@ -248,12 +248,36 @@ class SumoLogic(object):
         headers = {'isAdminMode': 'true'} if is_admin else {}
         return self.post(f'/apps/{app_id}/install', headers=headers, params=content)
 
+    def install_app_v2(self, app_id, content, is_admin=False):
+        headers = {'isAdminMode': 'true'} if is_admin else {}
+        return self.post(f'/apps/{app_id}/install', version='v2', headers=headers, params=content)
+
+    def upgrade_app_v2(self, app_id, content, is_admin=False):
+        headers = {'isAdminMode': 'true'} if is_admin else {}
+        return self.post(f'/apps/{app_id}/upgrade', version='v2', headers=headers, params=content)
+
+    def uninstall_app_v2(self, app_id, content, is_admin=False):
+        headers = {'isAdminMode': 'true'} if is_admin else {}
+        return self.post(f'/apps/{app_id}/uninstall', version='v2', headers=headers, params=content)
+
     def check_app_install_status(self, job_id):
         return self.get(f'/apps/install/{job_id}/status')
+
+    def check_app_v2_install_status(self, job_id):
+        return self.get(f'/apps/install/{job_id}/status', version='v2')
+
+    def check_app_v2_uninstall_status(self, job_id):
+        return self.get(f'/apps/uninstall/{job_id}/status', version='v2')
+
+    def check_app_v2_upgrade_status(self, job_id):
+        return self.get(f'/apps/upgrade/{job_id}/status', version='v2')
 
     def get_apps(self):
         response = self.get('/apps')
         return json.loads(response.text)
+
+    def get_instances_app_v2(self):
+        return self.get(f'/apps/instances', version='v2')
 
     def create_hierarchy(self, content):
         return self.post('/entities/hierarchies', params=content, version='v1')
