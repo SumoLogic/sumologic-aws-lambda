@@ -893,20 +893,25 @@ class AppV2(SumoResource):
     def _is_admin(self, location):
         return location == "admin"
 
-    def _handle_job_response(self, response, job_id, appname, action="installed"):
+    @staticmethod
+    def is_latest(app_instance):
+        current_version = app_instance.get("version")
+        latest_version = app_instance.get("latestVersion")
+        appname = app_instance.get("name")
+        print(f"App: {appname}")
+        print(f"Current Version: {current_version}")
+        print(f"Latest Version: {latest_version}")
+        return current_version == latest_version
+
+    def _handle_job_response(self, appid, response, job_id, appname, action="installed"):
         json_resp = response.json()
+        print("json_resp", json_resp)
         if json_resp['status'] == 'Success':
             app_folder_id = json_resp.get('folderId')
             app_path = json_resp.get('path')
             print(f"jobId:{job_id} -> {action} app '{appname}', folderId: {app_folder_id}, path: {app_path}")
-            return {"APP_FOLDER_NAME": appname}, app_folder_id
+            return {"APP_FOLDER_NAME": appname}, appid
         raise Exception(f"App '{appname}' {action} failed: {json_resp}")
-
-    def _run_job(self, job_id_key, api_fn, status_fn, job_id, appname, action):
-        response = api_fn()
-        job_id = response.json()[job_id_key]
-        response = self._wait_for_job(job_id, status_fn)
-        return self._handle_job_response(response, job_id, appname, action=action)
 
     def get_installed_apps(self):
         response = self.sumologic_cli.get_instances_app_v2()
@@ -920,17 +925,25 @@ class AppV2(SumoResource):
         response = self.sumologic_cli.install_app_v2(appid, content, self._is_admin(location))
         job_id = response.json()["jobId"]
         response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_install_status)
-        return self._handle_job_response(response, job_id, appname, action="installed")
+        return self._handle_job_response(appid, response, job_id, appname, action="installed")
 
-    def create(self, appid, appname, org_id, version, location, is_share=True, *args, **kwargs):
+    def create(self, appid, appname, org_id, version, location=None, is_share=True, *args, **kwargs):
         if not appid:
             return None
         app_instance = self.check_app_installed(appid)
         if app_instance:
-            print(f"App {appname} is already installed")
-            return {"APP_FOLDER_NAME": appname}, app_instance["folderId"]
+            if not self.is_latest(app_instance):
+                print(f"App {appname} is already installed")
+                return self.upgrade(appid, appname)
+            return {"APP_FOLDER_NAME": appname}, appid
         print(f"App {appname} is installing")
         return self.install_app(appid, appname, version, location, is_share, *args, **kwargs)
+
+    def upgrade(self, appid, appname):
+        response = self.sumologic_cli.upgrade_app_v2(appid, {}, self._is_admin(location))
+        job_id = response.json()["jobId"]
+        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_upgrade_status)
+        return self._handle_job_response(appid, response, job_id, appname, action="upgraded")
 
     def update(self, appid, appname, org_id, version, is_share=True, location=None, *args, **kwargs):
         if not appid:
@@ -940,19 +953,11 @@ class AppV2(SumoResource):
             print(f"App {appname} is not present")
             return self.install_app(appid, appname, version, location, is_share, *args, **kwargs)
         # Extract version information
-        current_version = app_instance.get("version")
-        latest_version = app_instance.get("latestVersion")
-        print(f"App: {appname}")
-        print(f"Current Version: {current_version}")
-        print(f"Latest Version: {latest_version}")
-        if current_version == latest_version:
+        if self.is_latest(app_instance):
             print(f"App {appname} is already updated")
-            return {"APP_FOLDER_NAME": appname}, app_instance["folderId"]
+            return {"APP_FOLDER_NAME": appname}, app_instance["uuid"]
         print(f"App {appname} is updating")
-        response = self.sumologic_cli.upgrade_app_v2(appid, {}, self._is_admin(location))
-        job_id = response.json()["jobId"]
-        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_upgrade_status)
-        return self._handle_job_response(response, job_id, appname, action="upgraded")
+        return self.upgrade(appid, appname)
 
     def delete(self, appid, appname, remove_on_delete_stack, location=None, *args, **kwargs):
         if not remove_on_delete_stack or not appid:
@@ -1722,9 +1727,9 @@ class AlertsMonitor(SumoResource):
 
 if __name__ == '__main__':
     props = {
-        "SumoAccessID": "suWLcCmdOVlgWt",
-        "SumoAccessKey": "Y8mGiWz3RjU0fPe7gSn3d1hWbpw4L7Z5A697MAc26dwgh9sqjUtREPXy0sDp1i4k",
-        "SumoDeployment": "ch",
+        "SumoAccessID": "su1l9BLvK1YI4o",
+        "SumoAccessKey": "J8VaDSz3b6n8LLwprz7lXJCX1mo9TQhdSLiG4qsh9tkI10tIV7qEXTlmQVb6UEYa",
+        "SumoDeployment": "stag",
     }
     # app_prefix = "ALB"
     # # app_prefix = "GuardDuty"
@@ -1751,13 +1756,15 @@ if __name__ == '__main__':
     # src = HTTPSource(**params)
     # app = App(props)
 
-    appname = "Amazon Bedrock AgentCore"
-    appid = "f27e26fc-f272-4849-b6de-9170834b11b4"
+    appname = "AWS Application Load Balancer"
+    appid = "27a17946-e475-4d56-8a8f-bc3fbc0400ca"
+    # appname = "Amazon Bedrock"
+    # appid = "8f4fd1aa-3b83-4d2e-b2ef-e8baec880afa"
     app = AppV2(props)
     #app.get_install_apps()
     id = "CD6CC478B5018A8D"
-    org_id, version, location = "0000000000000062", "latest", "user"
-    print(app.update(appid, appname, org_id, version, is_share=True))
+    org_id, version, location = "0000000000000062", "1.0.3", "user"
+    print(app.create(appid, appname, org_id, version, is_share=True))
 
     #app.install_app(appid, appname, version="latest", location="user", is_share=False)
 
