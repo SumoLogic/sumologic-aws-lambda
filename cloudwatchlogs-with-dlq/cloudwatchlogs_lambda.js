@@ -155,55 +155,44 @@ function filterRecords(config, records) {
     return filteredRecords;
 }
 
-exports.processLogs = async function (env, eventAwslogsData, callback) {
+exports.processLogs = async function (env, eventAwslogsData) {
     var zippedInput = Buffer.from(eventAwslogsData, 'base64');
     var config = await getConfig(env);
     if (config instanceof Error) {
         console.log("Error in getConfig: ", config);
-        callback(config, null);
-        return;
+        throw config;
     }
-    var awslogsData;
-    Utils.gunzipPromise(zippedInput).then(function (data) {
-        console.log("Successfully Unzipped");
-        awslogsData = JSON.parse(data.toString(config.encoding));
-        var records = [];
-        if (awslogsData.messageType === 'CONTROL_MESSAGE') {
-            console.log('Skipping Control Message');
-        } else if(config.logStreamPrefixRegex && !awslogsData.logStream.match(config.logStreamPrefixRegex)){
-            console.log('Skipping Non-Applicable Log Stream');
-        } else {
-            records = createRecords(config, awslogsData.logEvents, awslogsData);
-            console.log(records.length + " Records Found");
+    var data = await Utils.gunzipPromise(zippedInput);
+    console.log("Successfully Unzipped");
+    var awslogsData = JSON.parse(data.toString(config.encoding));
+    var records = [];
+    if (awslogsData.messageType === 'CONTROL_MESSAGE') {
+        console.log('Skipping Control Message');
+    } else if (config.logStreamPrefixRegex && !awslogsData.logStream.match(config.logStreamPrefixRegex)) {
+        console.log('Skipping Non-Applicable Log Stream');
+    } else {
+        records = createRecords(config, awslogsData.logEvents, awslogsData);
+        console.log(records.length + " Records Found");
+    }
+    records = filterRecords(config, records);
+    if (records.length > 0) {
+        records = await transformRecords(config, records);
+        var SumoLogsClientObj = new SumoLogsClient(config);
+        var messageList = SumoLogsClientObj.createBuckets(config, records, awslogsData, config.LogFormat === "VPC-RAW");
+        console.log("Buckets Created: " + Object.keys(messageList).length);
+        var result = await SumoLogsClientObj.postToSumo(messageList, config.compressData);
+        var msg = `RequestSent: ${result.requestSuccessCnt} RequestError: ${result.messageErrors.length}`;
+        console.log(msg);
+        if (result.messageErrors.length > 0) {
+            throw new Error(result.messageErrors.join());
         }
-        return records;
-    }).then(function (records) {
-        records = filterRecords(config, records);
-        if (records.length > 0) {
-            return transformRecords(config, records).then(function (records) {
-                var SumoLogsClientObj = new SumoLogsClient(config);
-                var messageList = SumoLogsClientObj.createBuckets(config, records, awslogsData, config.LogFormat === "VPC-RAW");
-                console.log("Buckets Created: " + Object.keys(messageList).length);
-                // console.log(messageList);
-                return SumoLogsClientObj.postToSumo(messageList, config.compressData);
-            });
-        }
-    }).then(function (result) {
-        if (!result) {
-            callback(null, "No Records");
-        } else {
-            var msg = `RequestSent: ${result.requestSuccessCnt} RequestError: ${result.messageErrors.length}`;
-            console.log(msg);
-            callback(result.messageErrors.length > 0 ? result.messageErrors.join() : null, msg);
-        }
-    }).catch(function (err) {
-        console.log(err);
-        callback(err, null);
-    });
+        return msg;
+    }
+    return "No Records";
 };
 
-exports.handler = function (event, context, callback) {
+exports.handler = async function (event, context) {
 
-    exports.processLogs(process.env, event.awslogs.data, callback);
+    return await exports.processLogs(process.env, event.awslogs.data);
 
 };

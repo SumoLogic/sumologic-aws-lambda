@@ -116,8 +116,8 @@ class TestLambda(unittest.TestCase):
         bucket_prefix = bucket_name.split("<uuid>")[0]
         bucket_uuid_prefix = f"{bucket_prefix}{bucket_uuid}"
         self.template_data = self.template_data.replace("appdevzipfiles", bucket_uuid_prefix)
-        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "22.x")
-        self.template_data = self.template_data.replace("nodejs22.x", RUNTIME)
+        RUNTIME = "nodejs%s" % os.environ.get("NODE_VERSION", "24.x")
+        self.template_data = self.template_data.replace("nodejs24.x", RUNTIME)
         print("self.bucket_name", self.bucket_name)
         print("self.template_data", self.template_data)
 
