@@ -63,28 +63,14 @@ Resources:
               }
           }
 
-          function postToSumo(callback, messages) {
+          function postToSumo(messages) {
               var messagesTotal = Object.keys(messages).length;
-              var messagesSent = 0;
-              var messageErrors = [];
 
               var urlObject = url.parse(SumoURL);
               var options = {
                   'hostname': urlObject.hostname,
                   'path': urlObject.pathname,
                   'method': 'POST'
-              };
-
-              var finalizeContext = function () {
-                  var total = messagesSent + messageErrors.length;
-                  if (total == messagesTotal) {
-                      console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
-                      if (messageErrors.length > 0) {
-                          callback('errors: ' + messageErrors);
-                      } else {
-                          callback(null, "Success");
-                      }
-                  }
               };
 
               function httpSend(options, headers, data) {
@@ -115,7 +101,8 @@ Resources:
                       req.end();
                   });
               }
-              Object.keys(messages).forEach(function (key, index) {
+
+              var promises = Object.keys(messages).map(function (key) {
                   var headerArray = key.split(':');
                   var headers = {
                       'X-Sumo-Name': headerArray[0],
@@ -123,17 +110,28 @@ Resources:
                       'X-Sumo-Host': headerArray[2],
                       'X-Sumo-Client': 'cloudwatchevents-aws-lambda'
                   };
-                  Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]).then((body)=> {
-                      messagesSent++;
-                      finalizeContext()
-                  }).catch((e) => {
-                      messageErrors.push(e.error);
-                      finalizeContext();
+                  return Promise.retryMax(httpSend, numOfRetries, retryInterval, [options, headers, messages[key]]);
+              });
+
+              return Promise.allSettled(promises).then(function (results) {
+                  var messagesSent = 0;
+                  var messageErrors = [];
+                  results.forEach(function (result) {
+                      if (result.status === 'fulfilled') {
+                          messagesSent++;
+                      } else {
+                          messageErrors.push(result.reason.error);
+                      }
                   });
+                  console.log('messagesSent: ' + messagesSent + ' messagesErrors: ' + messageErrors.length);
+                  if (messageErrors.length > 0) {
+                      throw new Error('errors: ' + messageErrors);
+                  }
+                  return "Success";
               });
           }
 
-          exports.handler = function (event, context, callback) {
+          exports.handler = async function (event, context) {
 
               // Used to hold chunks of messages to post to SumoLogic
               var messageList = {};
@@ -141,23 +139,22 @@ Resources:
               // Validate URL has been set
               var urlObject = url.parse(SumoURL);
               if (urlObject.protocol != 'https:' || urlObject.host === null || urlObject.path === null) {
-                  callback('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
+                  throw new Error('Invalid SUMO_ENDPOINT environment variable: ' + SumoURL);
               }
 
-              //console.log(event);
               if ((event.source==="aws.guardduty") || (removeOuterFields)) {
                   final_event =event.detail;
               } else {
                   final_event = event;
               }
               messageList[sourceNameOverride+':'+sourceCategoryOverride+':'+sourceHostOverride]=[final_event];
-              postToSumo(callback, messageList);
+              return await postToSumo(messageList);
           };
       Handler: index.handler
       Role: !GetAtt 
         - CloudWatchEventFunctionRole
         - Arn
-      Runtime: nodejs22.x
+      Runtime: nodejs24.x
       Timeout: 300
       Environment:
         Variables:

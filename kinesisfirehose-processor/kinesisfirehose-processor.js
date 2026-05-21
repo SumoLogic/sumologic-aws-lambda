@@ -17,24 +17,24 @@ function addDelimitertoJSON(data, delimiter) {
 function convertToLine(data) {
     // converts json object to a single line ({k1:v1,k2:v2} to k1=v1 k2=v2)
     const entryObj = JSON.parse(decodebase64(data));
-    var resultdata = "";
-    for (var key in entryObj) {
+    let resultdata = "";
+    for (let key in entryObj) {
         if (entryObj.hasOwnProperty(key)) {
             resultdata += key + "=" + entryObj[key] + " ";
         }
     }
     resultdata = resultdata.trim() + "\n";
-    resultdata = encodebase64(resultdata);
-    return resultdata;
+    return encodebase64(resultdata);
 }
-exports.handler = (event, context, callback) => {
+
+exports.handler = async (event, context) => {
     console.log("invoking transformation lambda");
+
     let success = 0;
     let failure = 0;
 
-    const output = event.records.map( function (record) {
+    const output = event.records.map((record) => {
         try {
-            // let resultdata = convertToLine(record.data);
             let resultdata = addDelimitertoJSON(record.data);
             success++;
             return {
@@ -42,7 +42,7 @@ exports.handler = (event, context, callback) => {
                 result: 'Ok',
                 data: resultdata
             };
-        } catch(error) {
+        } catch (error) {
             console.log("Error in record transformation", error);
             failure++;
             return {
@@ -52,6 +52,8 @@ exports.handler = (event, context, callback) => {
             };
         }
     });
-    console.log(`Processing completed.Total records ${output.length}. Success ${success} Failed ${failure}`);
-    callback(null, { records: output });
+
+    console.log(`Processing completed. Total records ${output.length}. Success ${success} Failed ${failure}`);
+
+    return { records: output };
 };
