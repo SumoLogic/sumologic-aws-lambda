@@ -62,10 +62,10 @@ def get_bucket_name(region):
     return region_map[region]
 
 
-def upload_code_in_multiple_regions(filepath, bucket_prefix):
+def upload_code_in_multiple_regions(filepath, bucket_prefix, s3_key_prefix=""):
 
     for region in regions:
-        upload_code_in_S3(filepath, get_bucket_name(region), region)
+        upload_code_in_S3(filepath, get_bucket_name(region), region, s3_key_prefix)
 
 
 def create_buckets(bucket_prefix):
@@ -87,11 +87,12 @@ def create_buckets(bucket_prefix):
 
 
 
-def upload_code_in_S3(filepath, bucket_name, region):
+def upload_code_in_S3(filepath, bucket_name, region, s3_key_prefix=""):
     print("Uploading zip file in S3", region)
     s3 = boto3.client('s3', region)
     filename = os.path.basename(filepath)
-    s3.upload_file(filepath, bucket_name, filename,
+    s3_key = s3_key_prefix + filename if s3_key_prefix else filename
+    s3.upload_file(filepath, bucket_name, s3_key,
                    ExtraArgs={'ACL': 'public-read'})
 
 
@@ -115,6 +116,9 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--deployment", dest="deployment", default="dev",
                         help="aws account type")
 
+    parser.add_argument("-p", "--s3prefix", dest="s3prefix", default="",
+                        help="S3 key prefix path for the zip file (e.g. sumologic-aws-observability/functions/cloudwatch-logs-dlq/v1.4.0/)")
+
     args = parser.parse_args()
     if args.deployment == "prod":
         zip_bucket_prefix = "appdevzipfiles"
@@ -135,6 +139,6 @@ if __name__ == '__main__':
         if not os.path.isfile(args.zipfile):
             raise Exception("zipfile does not exists")
         else:
-            upload_code_in_multiple_regions(args.zipfile, zip_bucket_prefix)
+            upload_code_in_multiple_regions(args.zipfile, zip_bucket_prefix, args.s3prefix)
 
     print("Deployment Successfull: ALL files copied to %s" % args.deployment)
