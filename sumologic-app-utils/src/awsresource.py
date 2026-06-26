@@ -270,13 +270,6 @@ class EnableS3LogsResources(AWSResource):
     def update(self, old_properties, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, account_id, *args, **kwargs):
         # First Delete Old Tags from old aws resource with old filter regex and Then add new Tags.
         # Check if aws resource is changed, then raise exception.
-        print("old_properties", old_properties)
-        print("region_value", region_value)
-        print("aws_resource", aws_resource)
-        print("bucket_name", bucket_name)
-        print("bucket_prefix", bucket_prefix)
-        print("filter_regex", filter_regex)
-        print("account_id", account_id)
         try:
             if old_properties['AWSResource'] != aws_resource:
                 data, aws_resource = self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, account_id)

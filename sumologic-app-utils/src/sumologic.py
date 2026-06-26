@@ -248,17 +248,14 @@ class SumoLogic(object):
         headers = {'isAdminMode': 'true'} if is_admin else {}
         return self.post(f'/apps/{app_id}/install', headers=headers, params=content)
 
-    def install_app_v2(self, app_id, content, is_admin=False):
-        headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.post(f'/apps/{app_id}/install', version='v2', headers=headers, params=content)
+    def install_app_v2(self, app_id, content={}):
+        return self.post(f'/apps/{app_id}/install', version='v2', params=content)
 
-    def upgrade_app_v2(self, app_id, content, is_admin=False):
-        headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.post(f'/apps/{app_id}/upgrade', version='v2', headers=headers, params=content)
+    def upgrade_app_v2(self, app_id, content={}):
+        return self.post(f'/apps/{app_id}/upgrade', version='v2', params=content)
 
-    def uninstall_app_v2(self, app_id, content, is_admin=False):
-        headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.post(f'/apps/{app_id}/uninstall', version='v2', headers=headers, params=content)
+    def uninstall_app_v2(self, app_id, content={}):
+        return self.post(f'/apps/{app_id}/uninstall', version='v2', params=content)
 
     def check_app_install_status(self, job_id):
         return self.get(f'/apps/install/{job_id}/status')

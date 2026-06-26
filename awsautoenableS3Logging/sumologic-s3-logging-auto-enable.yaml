@@ -200,9 +200,13 @@ Resources:
                   - s3:GetBucketLocation
                   - s3:PutBucketAcl
                   - s3:GetBucketAcl
+                Resource: '*'
+              - Effect: Allow
+                Action:
                   - s3:GetBucketLogging
                   - s3:PutBucketLogging
-                Resource: '*'
+                Resource:
+                  - !Sub arn:${AWS::Partition}:s3:::${BucketName}
 
   EnableNewAWSResourcesLambda:
     Type: 'AWS::Serverless::Function'

@@ -890,9 +890,6 @@ class AppV2(SumoResource):
                 return response
             time.sleep(2)
 
-    def _is_admin(self, location):
-        return location == "admin"
-
     @staticmethod
     def is_latest(app_instance):
         current_version = app_instance.get("version")
@@ -920,38 +917,38 @@ class AppV2(SumoResource):
     def check_app_installed(self, app_id):
         return next((app for app in self.get_installed_apps() if app["uuid"] == app_id), None)
 
-    def install_app(self, appid, appname, version, location, is_share, *args, **kwargs):
+    def install_app(self, appid, appname, version, *args, **kwargs):
         content = {'name': appname, 'version': version}
-        response = self.sumologic_cli.install_app_v2(appid, content, self._is_admin(location))
+        response = self.sumologic_cli.install_app_v2(appid, content)
         job_id = response.json()["jobId"]
         response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_install_status)
         return self._handle_job_response(appid, response, job_id, appname, action="installed")
 
-    def create(self, appid, appname, org_id, version, location=None, is_share=True, *args, **kwargs):
+    def create(self, appid, appname, version, *args, **kwargs):
         if not appid:
             return None
         app_instance = self.check_app_installed(appid)
         if app_instance:
             if not self.is_latest(app_instance):
-                print(f"App {appname} is already installed")
+                print(f"App {appname} is not latest, upgrading")
                 return self.upgrade(appid, appname)
             return {"APP_FOLDER_NAME": appname}, appid
         print(f"App {appname} is installing")
-        return self.install_app(appid, appname, version, location, is_share, *args, **kwargs)
+        return self.install_app(appid, appname, version, *args, **kwargs)
 
     def upgrade(self, appid, appname):
-        response = self.sumologic_cli.upgrade_app_v2(appid, {}, self._is_admin(location))
+        response = self.sumologic_cli.upgrade_app_v2(appid, {})
         job_id = response.json()["jobId"]
         response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_upgrade_status)
         return self._handle_job_response(appid, response, job_id, appname, action="upgraded")
 
-    def update(self, appid, appname, org_id, version, is_share=True, location=None, *args, **kwargs):
+    def update(self, appid, appname, version, *args, **kwargs):
         if not appid:
             return None
         app_instance = self.check_app_installed(appid)
         if not app_instance:
             print(f"App {appname} is not present")
-            return self.install_app(appid, appname, version, location, is_share, *args, **kwargs)
+            return self.install_app(appid, appname, version, *args, **kwargs)
         # Extract version information
         if self.is_latest(app_instance):
             print(f"App {appname} is already updated")
@@ -959,7 +956,7 @@ class AppV2(SumoResource):
         print(f"App {appname} is updating")
         return self.upgrade(appid, appname)
 
-    def delete(self, appid, appname, remove_on_delete_stack, location=None, *args, **kwargs):
+    def delete(self, appid, appname, remove_on_delete_stack, *args, **kwargs):
         if not remove_on_delete_stack or not appid:
             print("Skipping app uninstallation")
             return None
@@ -967,7 +964,7 @@ class AppV2(SumoResource):
         if not app_instance:
             print("App is already uninstalled")
             return None
-        response = self.sumologic_cli.uninstall_app_v2(appid, self._is_admin(location))
+        response = self.sumologic_cli.uninstall_app_v2(appid)
         job_id = response.json()["jobId"]
         response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_uninstall_status)
         if response.json()['status'] == 'Success':
@@ -977,18 +974,11 @@ class AppV2(SumoResource):
     def extract_params(self, event):
         print("extract_params", event)
         props = event.get("ResourceProperties", {})
-        physical_id = event.get('PhysicalResourceId', '')
-        app_folder_id = physical_id.split("/")[1] if "/" in physical_id else None
 
         return {
-            "appid":              props.get("AppId"),
-            "appname":            props.get("AppName"),
-            "version":            props.get("Version", "latest"),
-            "retain_old_app":     props.get("RetainOldAppOnUpdate") == 'true',
-            "location":           'admin' if props.get("location") == 'Admin Recommended Folder' else 'personal',
-            "is_share":           props.get("share") == 'True',
-            "org_id":             props.get("orgid"),
-            "app_folder_id":      app_folder_id
+            "appid":    props.get("AppId"),
+            "appname":  props.get("AppName"),
+            "version":  props.get("Version", "latest"),
         }
 
 
@@ -1727,9 +1717,9 @@ class AlertsMonitor(SumoResource):
 
 if __name__ == '__main__':
     props = {
-        "SumoAccessID": "su1l9BLvK1YI4o",
-        "SumoAccessKey": "J8VaDSz3b6n8LLwprz7lXJCX1mo9TQhdSLiG4qsh9tkI10tIV7qEXTlmQVb6UEYa",
-        "SumoDeployment": "stag",
+        "SumoAccessID": "",
+        "SumoAccessKey": "",
+        "SumoDeployment": "",
     }
     # app_prefix = "ALB"
     # # app_prefix = "GuardDuty"
@@ -1756,15 +1746,18 @@ if __name__ == '__main__':
     # src = HTTPSource(**params)
     # app = App(props)
 
-    appname = "AWS Application Load Balancer"
-    appid = "27a17946-e475-4d56-8a8f-bc3fbc0400ca"
+    #appname = "AWS Application Load Balancer"
+    #appid = "27a17946-e475-4d56-8a8f-bc3fbc0400ca"
     # appname = "Amazon Bedrock"
     # appid = "8f4fd1aa-3b83-4d2e-b2ef-e8baec880afa"
+    appname = "AWS EC2"
+    appid = "3dcaacb4-a5de-4e57-a477-fccd04f9e40f"
     app = AppV2(props)
     #app.get_install_apps()
-    id = "CD6CC478B5018A8D"
-    org_id, version, location = "0000000000000062", "1.0.3", "user"
-    print(app.create(appid, appname, org_id, version, is_share=True))
+    #id = "CD6CC478B5018A8D"
+    version = None
+    #print(app.create(appid, appname, version))
+    print(app.get_installed_apps())
 
     #app.install_app(appid, appname, version="latest", location="user", is_share=False)
 
