@@ -31,8 +31,7 @@ REGION_MAPPING = {
     "me-central-1": "appdevzipfiles-me-central-1",
     "eu-central-2": "appdevzipfiles-eu-central-2ss",
     "ap-northeast-3": "appdevzipfiles-ap-northeast-3s",
-    "ap-southeast-3": "appdevzipfiles-ap-southeast-3",
-    "il-central-1": "appdevzipfiles-il-central-1"
+    "ap-southeast-3": "appdevzipfiles-ap-southeast-3"
 }
 
 def get_bucket_name(region):
