@@ -62,8 +62,7 @@
             "me-central-1": {"bucketname": "appdevzipfiles-me-central-1"},
             "eu-central-2": {"bucketname": "appdevzipfiles-eu-central-2ss"},
             "ap-northeast-3": {"bucketname": "appdevzipfiles-ap-northeast-3s"},
-            "ap-southeast-3": {"bucketname": "appdevzipfiles-ap-southeast-3"},
-            "il-central-1": {"bucketname": "appdevzipfiles-il-central-1"}
+            "ap-southeast-3": {"bucketname": "appdevzipfiles-ap-southeast-3"}
         }
     },
     "Resources": {

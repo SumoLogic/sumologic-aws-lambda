@@ -86,8 +86,6 @@ Mappings:
       bucketname: appdevzipfiles-ap-northeast-3s
     ap-southeast-3:
       bucketname: appdevzipfiles-ap-southeast-3
-    il-central-1:
-      bucketname: appdevzipfiles-il-central-1
 Resources:
     SumoCWLogGroup:
         Type: AWS::Logs::LogGroup
