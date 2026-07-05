@@ -6,7 +6,8 @@
   "files": ["./lib"],
   "main": "./lib/mainindex",
   "dependencies": {
-    "aws-sdk": "^2.1633.0"
+    "@aws-sdk/client-sqs": "^3",
+    "@aws-sdk/client-lambda": "^3"
   },
   "devDependencies": {},
   "author": "Himanshu Pal"

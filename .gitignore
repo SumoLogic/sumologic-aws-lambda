@@ -142,3 +142,6 @@ pkg/
 
 # pycharm
 .idea
+
+# Node
+node_modules/
