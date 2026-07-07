@@ -1335,7 +1335,7 @@ class ElbResource(LbResources):
                                 elb_region_account_id = elb_region.get("AccountId")
                             self.add_bucket_policy(s3_bucket, elb_region_account_id)
                             time.sleep(10)
-                            self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response)
+                            self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                         else:
                             raise e
 
