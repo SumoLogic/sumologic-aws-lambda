@@ -11,37 +11,6 @@ from botocore.exceptions import ClientError
 from resourcefactory import AutoRegisterResource
 from retrying import retry
 
-# https://docs.aws.amazon.com/elasticloadbalancing/latest/application/enable-access-logging.html
-# Elastic Load Balancing required region-specific account IDs in IAM policies, but this has been replaced by a newer,
-# simplified policy. The legacy policy is still supported for older regions, with a reference list of account IDs provided.
-Region2ELBAccountId = {
-    "us-east-1": {"AccountId": "127311923021"},
-    "us-east-2": {"AccountId": "033677994240"},
-    "us-west-1": {"AccountId": "027434742980"},
-    "us-west-2": {"AccountId": "797873946194"},
-    "af-south-1": {"AccountId": "098369216593"},
-    "ca-central-1": {"AccountId": "985666609251"},
-    "eu-central-1": {"AccountId": "054676820928"},
-    "eu-west-1": {"AccountId": "156460612806"},
-    "eu-west-2": {"AccountId": "652711504416"},
-    "eu-south-1": {"AccountId": "635631232127"},
-    "eu-west-3": {"AccountId": "009996457667"},
-    "eu-north-1": {"AccountId": "897822967062"},
-    "ap-east-1": {"AccountId": "754344448648"},
-    "ap-northeast-1": {"AccountId": "582318560864"},
-    "ap-northeast-2": {"AccountId": "600734575887"},
-    "ap-northeast-3": {"AccountId": "383597477331"},
-    "ap-southeast-1": {"AccountId": "114774131450"},
-    "ap-southeast-2": {"AccountId": "783225319266"},
-    "ap-south-1": {"AccountId": "718504428378"},
-    "me-south-1": {"AccountId": "076674570225"},
-    "sa-east-1": {"AccountId": "507241528517"},
-    "us-gov-west-1": {"AccountId": "048591011584"},
-    "us-gov-east-1": {"AccountId": "190560391635"},
-    "cn-north-1": {"AccountId": "638102146993"},
-    "cn-northwest-1": {"AccountId": "037604701340"}
-}
-
 
 @six.add_metaclass(AutoRegisterResource)
 class AWSResource(object):
@@ -880,7 +849,7 @@ class RDSResources(AWSResourcesAbstract):
 
 class LbResources(AWSResourcesAbstract):
 
-    def add_bucket_policy(self, bucket_name, elb_region_account_id):
+    def add_bucket_policy(self, bucket_name):
         print("Adding policy to the bucket " + bucket_name)
         s3 = boto3.client('s3')
         try:
@@ -931,7 +900,7 @@ class LbResources(AWSResourcesAbstract):
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
-                "Sid": "AWSLogDeliveryAclCheck",
+                "Sid": "AWSAlbLogDeliveryAclCheck",
                 "Effect": "Allow",
                 "Principal": {
                     "Service": "delivery.logs.amazonaws.com"
@@ -940,33 +909,7 @@ class LbResources(AWSResourcesAbstract):
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
-                "Sid": "AWSLogDeliveryWrite",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
-                "Action": "s3:PutObject",
-                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
-            }]
-        if elb_region_account_id:
-            elb_old_region_policy = {
-                "Sid": "AwsElbLogs",
-                "Effect": "Allow",
-                "Principal": {
-                    "AWS": f"arn:{self.partition}:iam::{elb_region_account_id}:root"
-                },
-                "Action": ["s3:PutObject"],
-                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
-            }
-            bucket_policy.append(elb_old_region_policy)
-        else:
-            elb_new_region_policy = {
-                "Sid": "AwsElbLogs",
+                "Sid": "AddLBLogsStatement",
                 "Effect": "Allow",
                 "Principal": {
                     "Service": "logdelivery.elasticloadbalancing.amazonaws.com"
@@ -974,7 +917,7 @@ class LbResources(AWSResourcesAbstract):
                 "Action": "s3:PutObject",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
             }
-            bucket_policy.append(elb_new_region_policy)
+        ]
         existing_policy["Statement"].extend(bucket_policy)
 
         s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
@@ -1045,11 +988,7 @@ class AlbResources(LbResources):
                         except ClientError as e:
                             if "Error" in e.response and "Message" in e.response["Error"] \
                                     and "Access Denied for bucket" in e.response['Error']['Message']:
-                                elb_region = Region2ELBAccountId.get(self.region_value, None)
-                                elb_region_account_id = None
-                                if elb_region:
-                                    elb_region_account_id = elb_region.get("AccountId")
-                                self.add_bucket_policy(s3_bucket, elb_region_account_id)
+                                self.add_bucket_policy(s3_bucket)
                                 time.sleep(10)
                                 self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
                             else:
@@ -1329,11 +1268,7 @@ class ElbResource(LbResources):
                     except ClientError as e:
                         if "Error" in e.response and "Message" in e.response["Error"] \
                             and "Access Denied for bucket" in e.response['Error']['Message']:
-                            elb_region = Region2ELBAccountId.get(self.region_value, None)
-                            elb_region_account_id = None
-                            if elb_region:
-                                elb_region_account_id = elb_region.get("AccountId")
-                            self.add_bucket_policy(s3_bucket, elb_region_account_id)
+                            self.add_bucket_policy(s3_bucket)
                             time.sleep(10)
                             self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                         else:
