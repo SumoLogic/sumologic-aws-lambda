@@ -12,6 +12,11 @@
         "Default": "test@gmail.com",
         "Description": "Enter your email for receiving alerts.You will receive confirmation email after the deployment is complete, confirm it to subscribe for alerts."
       },
+      "SNSTopicKMSKey": {
+        "Type": "String",
+        "Default": "",
+        "Description": "Optional KMS key id to encrypt messages on the email SNS topic."
+      },
       "NumOfWorkers": {
         "Type": "Number",
         "Default": 4,
@@ -62,6 +67,9 @@
             "ap-northeast-3": {"bucketname": "appdevzipfiles-ap-northeast-3s"},
             "ap-southeast-3": {"bucketname": "appdevzipfiles-ap-southeast-3"}
         }
+    },
+    "Conditions": {
+        "HasSNSTopicKey": { "Fn::Not": [ { "Fn::Equals": [ { "Ref": "SNSTopicKMSKey" }, "" ] } ] }
     },
     "Resources": {
         "SumoCWLogGroup": {
@@ -322,7 +330,8 @@
                 "Subscription":[ {
                     "Endpoint" : {"Ref": "EmailID"},
                     "Protocol" : "email"
-                }]
+                }],
+                "KmsMasterKeyId": { "Fn::If" : [ "HasSNSTopicKey", { "Ref": "SNSTopicKMSKey" }, { "Ref": "AWS::NoValue" } ] }
             }
         },
         "SumoCWSpilloverAlarm":{
