@@ -1319,6 +1319,123 @@ class AWSResourcesProvider(object):
             raise Exception(f"{provider_name} provider not found")
 
 
+class AddBucketPolicy(AWSResource):
+    """Custom::AddBucketPolicy — appends S3 log-delivery policy statements to an existing bucket
+    without replacing any existing statements. Idempotent by Sid.
+    ServiceType controls which statements are added: 'alb', 'elb', or 'cloudtrail'."""
+
+    ALL_STATEMENTS = [
+        {"Sid": "AWSCloudTrailAclCheck", "Effect": "Allow",
+         "Principal": {"Service": "cloudtrail.amazonaws.com"},
+         "Action": ["s3:GetBucketAcl"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AWSCloudTrailWrite", "Effect": "Allow",
+         "Principal": {"Service": "cloudtrail.amazonaws.com"},
+         "Action": ["s3:PutObject"],
+         "Resource": "arn:{partition}:s3:::{bucket}/*",
+         "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}},
+        {"Sid": "AWSBucketExistenceCheck", "Effect": "Allow",
+         "Principal": {"Service": "cloudtrail.amazonaws.com"},
+         "Action": ["s3:ListBucket"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AWSALBLogDeliveryAclCheck", "Effect": "Allow",
+         "Principal": {"Service": "delivery.logs.amazonaws.com"},
+         "Action": ["s3:GetBucketAcl"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AddALBLogsStatement", "Effect": "Allow",
+         "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
+         "Action": ["s3:PutObject"],
+         "Resource": "arn:{partition}:s3:::{bucket}/*"},
+        {"Sid": "AWSELBLogDeliveryAclCheck", "Effect": "Allow",
+         "Principal": {"Service": "delivery.logs.amazonaws.com"},
+         "Action": ["s3:GetBucketAcl"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AddELBLogsStatement", "Effect": "Allow",
+         "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
+         "Action": ["s3:PutObject"],
+         "Resource": "arn:{partition}:s3:::{bucket}/*"},
+    ]
+
+    SERVICE_SIDS = {
+        "cloudtrail": {"AWSCloudTrailAclCheck", "AWSCloudTrailWrite", "AWSBucketExistenceCheck"},
+        "alb":        {"AWSALBLogDeliveryAclCheck", "AddALBLogsStatement"},
+        "elb":        {"AWSELBLogDeliveryAclCheck", "AddELBLogsStatement"},
+    }
+
+    def __init__(self, props, *args, **kwargs):
+        self.props = props
+
+    def _statements_for_service(self, service_type):
+        allowed = self.SERVICE_SIDS.get(service_type)
+        if not allowed:
+            return self.ALL_STATEMENTS
+        return [s for s in self.ALL_STATEMENTS if s["Sid"] in allowed]
+
+    def _build_statements(self, bucket_name, partition, service_type):
+        statements = []
+        for tmpl in self._statements_for_service(service_type):
+            stmt = json.loads(json.dumps(tmpl))
+            stmt["Resource"] = stmt["Resource"].format(bucket=bucket_name, partition=partition)
+            statements.append(stmt)
+        return statements
+
+    def _add_policy(self, bucket_name, partition, service_type):
+        s3 = boto3.client('s3')
+        try:
+            response = s3.get_bucket_policy(Bucket=bucket_name)
+            existing_policy = json.loads(response["Policy"])
+        except ClientError as e:
+            if e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                existing_policy = {"Version": "2012-10-17", "Statement": []}
+            else:
+                raise
+        existing_sids = {s.get("Sid") for s in existing_policy["Statement"] if s.get("Sid")}
+        added = []
+        for stmt in self._build_statements(bucket_name, partition, service_type):
+            if stmt["Sid"] not in existing_sids:
+                existing_policy["Statement"].append(stmt)
+                added.append(stmt["Sid"])
+        if added:
+            s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+        return added
+
+    def _remove_policy(self, bucket_name, service_type):
+        s3 = boto3.client('s3')
+        our_sids = {s["Sid"] for s in self._statements_for_service(service_type)}
+        try:
+            response = s3.get_bucket_policy(Bucket=bucket_name)
+            existing_policy = json.loads(response["Policy"])
+        except ClientError:
+            return
+        existing_policy["Statement"] = [
+            s for s in existing_policy["Statement"] if s.get("Sid") not in our_sids
+        ]
+        if existing_policy["Statement"]:
+            s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+        else:
+            s3.delete_bucket_policy(Bucket=bucket_name)
+
+    def create(self, bucket_name, partition, service_type, *args, **kwargs):
+        added = self._add_policy(bucket_name, partition, service_type)
+        return {"AddedSids": added, "BucketName": bucket_name}, bucket_name
+
+    def update(self, bucket_name, partition, service_type, *args, **kwargs):
+        added = self._add_policy(bucket_name, partition, service_type)
+        return {"AddedSids": added, "BucketName": bucket_name}, bucket_name
+
+    def delete(self, bucket_name, service_type, *args, **kwargs):
+        self._remove_policy(bucket_name, service_type)
+        return {"BucketName": bucket_name}, bucket_name
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties", {})
+        return {
+            "bucket_name": props.get("BucketName"),
+            "partition": props.get("Partition", "aws"),
+            "service_type": props.get("ServiceType", "").lower(),
+        }
+
+
 if __name__ == '__main__':
     params = {"AWSResource": "s3"}
     # value = ConfigDeliveryChannel()
