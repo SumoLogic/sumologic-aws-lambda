@@ -1381,23 +1381,34 @@ class AddBucketPolicy(AWSResource):
 
     def _add_policy(self, bucket_name, partition, service_type):
         s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {"Version": "2012-10-17", "Statement": []}
-            else:
-                raise
-        existing_sids = {s.get("Sid") for s in existing_policy["Statement"] if s.get("Sid")}
-        added = []
-        for stmt in self._build_statements(bucket_name, partition, service_type):
-            if stmt["Sid"] not in existing_sids:
-                existing_policy["Statement"].append(stmt)
-                added.append(stmt["Sid"])
-        if added:
-            s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
-        return added
+        expected_stmts = self._build_statements(bucket_name, partition, service_type)
+        expected_sids = {s["Sid"] for s in expected_stmts}
+        for attempt in range(5):
+            try:
+                response = s3.get_bucket_policy(Bucket=bucket_name)
+                existing_policy = json.loads(response["Policy"])
+            except ClientError as e:
+                if e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                    existing_policy = {"Version": "2012-10-17", "Statement": []}
+                else:
+                    raise
+            existing_sids = {s.get("Sid") for s in existing_policy["Statement"] if s.get("Sid")}
+            added = []
+            for stmt in expected_stmts:
+                if stmt["Sid"] not in existing_sids:
+                    existing_policy["Statement"].append(stmt)
+                    added.append(stmt["Sid"])
+            if added:
+                s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                # Verify our SIDs survived — a concurrent write could have overwritten them
+                time.sleep(0.5 * (attempt + 1))
+                verify = json.loads(s3.get_bucket_policy(Bucket=bucket_name)["Policy"])
+                current_sids = {s.get("Sid") for s in verify["Statement"]}
+                if not expected_sids.issubset(current_sids):
+                    print(f"Concurrent policy overwrite detected on attempt {attempt + 1}, retrying...")
+                    continue
+            return added
+        raise Exception(f"Failed to persist bucket policy for {bucket_name} after 5 attempts — concurrent overwrite")
 
     def _remove_policy(self, bucket_name, service_type):
         s3 = boto3.client('s3')
