@@ -1411,7 +1411,14 @@ class AddBucketPolicy(AWSResource):
                     added.append(stmt["Sid"])
             if added:
                 print(f"put_bucket_policy attempt {attempt + 1} for {bucket_name}: adding SIDs {added}")
-                s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                try:
+                    s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                except ClientError as e:
+                    if e.response['Error']['Code'] == "OperationAborted":
+                        print(f"OperationAborted on put_bucket_policy attempt {attempt + 1} for {bucket_name}, retrying in {2 ** attempt}s...")
+                        time.sleep(2 ** attempt)
+                        continue
+                    raise
                 print(f"put_bucket_policy succeeded for {bucket_name} on attempt {attempt + 1}")
                 # Verify our SIDs survived — a concurrent write could have overwritten them
                 time.sleep(0.5 * (attempt + 1))
@@ -1431,8 +1438,10 @@ class AddBucketPolicy(AWSResource):
         try:
             response = s3.get_bucket_policy(Bucket=bucket_name)
             existing_policy = json.loads(response["Policy"])
-        except ClientError:
-            return
+        except ClientError as e:
+            if e.response['Error']['Code'] in ("NoSuchBucketPolicy", "NoSuchBucket"):
+                return
+            raise
         existing_policy["Statement"] = [
             s for s in existing_policy["Statement"] if s.get("Sid") not in our_sids
         ]
