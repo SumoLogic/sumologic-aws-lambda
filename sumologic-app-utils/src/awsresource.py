@@ -513,6 +513,33 @@ class AWSResourcesAbstract(object):
             data = iterable[idx:min(idx + size, length)]
             yield data
 
+    @staticmethod
+    def _apply_bucket_policy(bucket_name, statements):
+        s3 = boto3.client('s3')
+        for attempt in range(5):
+            try:
+                response = s3.get_bucket_policy(Bucket=bucket_name)
+                existing_policy = json.loads(response["Policy"])
+            except ClientError as e:
+                if e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                    existing_policy = {"Version": "2012-10-17", "Statement": []}
+                else:
+                    raise
+            existing_sids = {s.get("Sid") for s in existing_policy["Statement"] if s.get("Sid")}
+            for stmt in statements:
+                if stmt.get("Sid") not in existing_sids:
+                    existing_policy["Statement"].append(stmt)
+            try:
+                s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                return
+            except ClientError as e:
+                if e.response['Error']['Code'] == "OperationAborted":
+                    print(f"OperationAborted on put_bucket_policy attempt {attempt + 1}, retrying...")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise
+        raise Exception(f"Failed to put bucket policy for {bucket_name} after 5 attempts")
+
 
 class EC2Resources(AWSResourcesAbstract):
 
@@ -847,82 +874,48 @@ class RDSResources(AWSResourcesAbstract):
             tags.extend(tags_arn)
             self.client.add_tags_to_resource(ResourceName=arn, Tags=tags)
 
-class LbResources(AWSResourcesAbstract):
+class AlbResources(AWSResourcesAbstract):
 
     def add_bucket_policy(self, bucket_name):
         print("Adding policy to the bucket " + bucket_name)
-        s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if "Error" in e.response and "Code" in e.response["Error"] \
-                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                    ]
-                }
-            else:
-                raise e
-
-        bucket_policy = [
+        self._apply_bucket_policy(bucket_name, [
             {
                 "Sid": "AWSCloudTrailAclCheck",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "cloudtrail.amazonaws.com"
-                },
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
                 "Action": "s3:GetBucketAcl",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
                 "Sid": "AWSCloudTrailWrite",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "cloudtrail.amazonaws.com"
-                },
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
                 "Action": "s3:PutObject",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
+                "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
             },
             {
                 "Sid": "AWSBucketExistenceCheck",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "cloudtrail.amazonaws.com"
-                },
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
                 "Action": "s3:ListBucket",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
-                "Sid": "AWSAlbLogDeliveryAclCheck",
+                "Sid": "AWSALBLogDeliveryAclCheck",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
                 "Action": "s3:GetBucketAcl",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
-                "Sid": "AddLBLogsStatement",
+                "Sid": "AddALBLogsStatement",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "logdelivery.elasticloadbalancing.amazonaws.com"
-                },
+                "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
                 "Action": "s3:PutObject",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
             }
-        ]
-        existing_policy["Statement"].extend(bucket_policy)
-
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
-
-class AlbResources(LbResources):
+        ])
 
     def fetch_resources(self):
         resources = []
@@ -1148,47 +1141,23 @@ class VpcResource(AWSResourcesAbstract):
 
     def add_bucket_policy(self, bucket_name, prefix):
         print("Adding policy to the bucket " + bucket_name)
-        s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if "Error" in e.response and "Code" in e.response["Error"] \
-                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                    ]
-                }
-            else:
-                raise e
-
-        bucket_policy = [{
-            "Sid": "AWSLogDeliveryAclCheck",
-            "Effect": "Allow",
-            "Principal": {
-                "Service": "delivery.logs.amazonaws.com"
+        self._apply_bucket_policy(bucket_name, [
+            {
+                "Sid": "AWSLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
-            "Action": "s3:GetBucketAcl",
-            "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
-        },
             {
                 "Sid": "AWSLogDeliveryWrite",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
                 "Action": "s3:PutObject",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}/{prefix}/AWSLogs/{self.account_id}/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
-            }]
-        existing_policy["Statement"].extend(bucket_policy)
-
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
+            }
+        ])
 
     def disable_s3_logs(self, arns, s3_bucket):
         if arns:
@@ -1204,7 +1173,7 @@ class VpcResource(AWSResourcesAbstract):
                         self.client.delete_flow_logs(FlowLogIds=flow_ids)
 
 
-class ElbResource(LbResources):
+class ElbResource(AWSResourcesAbstract):
     def fetch_resources(self):
         resources = []
         next_token = None
@@ -1273,6 +1242,47 @@ class ElbResource(LbResources):
                             self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                         else:
                             raise e
+
+    def add_bucket_policy(self, bucket_name):
+        print("Adding policy to the bucket " + bucket_name)
+        self._apply_bucket_policy(bucket_name, [
+            {
+                "Sid": "AWSCloudTrailAclCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSCloudTrailWrite",
+                "Effect": "Allow",
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
+                "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
+            },
+            {
+                "Sid": "AWSBucketExistenceCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                "Action": "s3:ListBucket",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSELBLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AddELBLogsStatement",
+                "Effect": "Allow",
+                "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
+            }
+        ])
 
     def disable_s3_logs(self, names, s3_bucket):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'false'}]
