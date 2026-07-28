@@ -531,10 +531,11 @@ class AWSResourcesAbstract(object):
                     existing_policy["Statement"].append(stmt)
             try:
                 s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                print(f"put_bucket_policy succeeded for {bucket_name} on attempt {attempt + 1}")
                 return
             except ClientError as e:
                 if e.response['Error']['Code'] == "OperationAborted":
-                    print(f"OperationAborted on put_bucket_policy attempt {attempt + 1}, retrying...")
+                    print(f"OperationAborted on put_bucket_policy attempt {attempt + 1} for {bucket_name}, retrying in {2 ** attempt}s...")
                     time.sleep(2 ** attempt)
                     continue
                 raise
@@ -1409,14 +1410,18 @@ class AddBucketPolicy(AWSResource):
                     existing_policy["Statement"].append(stmt)
                     added.append(stmt["Sid"])
             if added:
+                print(f"put_bucket_policy attempt {attempt + 1} for {bucket_name}: adding SIDs {added}")
                 s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                print(f"put_bucket_policy succeeded for {bucket_name} on attempt {attempt + 1}")
                 # Verify our SIDs survived — a concurrent write could have overwritten them
                 time.sleep(0.5 * (attempt + 1))
                 verify = json.loads(s3.get_bucket_policy(Bucket=bucket_name)["Policy"])
                 current_sids = {s.get("Sid") for s in verify["Statement"]}
                 if not expected_sids.issubset(current_sids):
-                    print(f"Concurrent policy overwrite detected on attempt {attempt + 1}, retrying...")
+                    print(f"Concurrent policy overwrite detected on attempt {attempt + 1} for {bucket_name}, retrying...")
                     continue
+            else:
+                print(f"put_bucket_policy skipped for {bucket_name} on attempt {attempt + 1}: all SIDs already present")
             return added
         raise Exception(f"Failed to persist bucket policy for {bucket_name} after 5 attempts — concurrent overwrite")
 
