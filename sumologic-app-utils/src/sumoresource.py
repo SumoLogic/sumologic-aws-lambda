@@ -1146,21 +1146,22 @@ class SumoLogicUpdateFields(SumoResource):
 
     def add_fields_to_collector(self, collector_id, source_id, fields):
         if collector_id and source_id:
-            sv, etag = self.sumologic_cli.source(collector_id, source_id)
-
-            existing_fields = sv['source']['fields']
-
-            new_fields = existing_fields.copy()
-            new_fields.update(fields)
-
-            sv['source']['fields'] = new_fields
-
-            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-
-            data = resp.json()['source']
-            print(f"Added Fields in Source {data['id']}")
-
-            return {"source_name": data["name"]}, str(source_id)
+            for attempt in range(5):
+                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+                existing_fields = sv['source']['fields']
+                new_fields = existing_fields.copy()
+                new_fields.update(fields)
+                sv['source']['fields'] = new_fields
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                if resp.status_code == 412:
+                    print(f"ETag conflict on attempt {attempt + 1}, retrying...")
+                    time.sleep(2 ** attempt)
+                    continue
+                resp.raise_for_status()
+                data = resp.json()['source']
+                print(f"Added Fields in Source {data['id']}")
+                return {"source_name": data["name"]}, str(source_id)
+            resp.raise_for_status()
         return {"source_name": "Not updated"}, "No_Source_Id"
 
     def create(self, collector_id, source_id, fields, *args, **kwargs):
@@ -1176,18 +1177,24 @@ class SumoLogicUpdateFields(SumoResource):
                 re.search('collectors/(.*)/sources', old_resource_properties['SourceApiUrl']).group(1) != collector_id:
             return self.create(collector_id, source_id, fields)
         else:
-            sv, etag = self.sumologic_cli.source(collector_id, source_id)
-            existing_source_fields = sv['source']['fields']
-            if 'Fields' in old_resource_properties and old_resource_properties['Fields']:
-                for k in old_resource_properties['Fields']:
-                    existing_source_fields.pop(k, None)
-            existing_source_fields.update(fields)
-
-            sv['source']['fields'] = existing_source_fields
-            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-            data = resp.json()['source']
-            print(f"updated Fields in Source {data['id']}")
-            return {"source_name": data["name"]}, source_id
+            for attempt in range(3):
+                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+                existing_source_fields = sv['source']['fields']
+                if 'Fields' in old_resource_properties and old_resource_properties['Fields']:
+                    for k in old_resource_properties['Fields']:
+                        existing_source_fields.pop(k, None)
+                existing_source_fields.update(fields)
+                sv['source']['fields'] = existing_source_fields
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                if resp.status_code == 412:
+                    print(f"ETag conflict on attempt {attempt + 1}, retrying...")
+                    time.sleep(2 ** attempt)
+                    continue
+                resp.raise_for_status()
+                data = resp.json()['source']
+                print(f"updated Fields in Source {data['id']}")
+                return {"source_name": data["name"]}, source_id
+            resp.raise_for_status()
 
     def delete(self, collector_id, source_id, fields, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
