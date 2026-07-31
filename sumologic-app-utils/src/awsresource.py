@@ -1471,6 +1471,143 @@ class AddBucketPolicy(AWSResource):
         }
 
 
+class ConfigureBucketNotifications(AWSResource):
+    """Custom::ConfigureBucketNotifications — manages S3 event notifications and SNS subscriptions
+    for all existing-bucket sources in one shot. Groups sources by bucket so that sources sharing
+    the same bucket reuse a single SNS topic, avoiding S3's one-notification-per-event-type limit."""
+
+    def __init__(self, props, *args, **kwargs):
+        self.props = props
+
+    def _get_topic_name(self, stack_id, bucket_name):
+        import hashlib
+        stack_suffix = stack_id.split('/')[-1].split('-')[0]
+        bucket_hash = hashlib.md5(bucket_name.encode()).hexdigest()[:8]
+        return "sumo-s3-notif-{}-{}".format(stack_suffix, bucket_hash)
+
+    def _configure(self, sources, account_id, partition, stack_id, region):
+        sns_client = boto3.client('sns', region_name=region)
+        s3_client = boto3.client('s3', region_name=region)
+
+        active = [s for s in sources if s.get('BucketName')]
+        buckets = {}
+        for src in active:
+            buckets.setdefault(src['BucketName'], []).append(src['SumoEndpoint'])
+
+        created_topics = {}
+        for bucket_name, endpoints in buckets.items():
+            topic_name = self._get_topic_name(stack_id, bucket_name)
+            topic_arn = sns_client.create_topic(Name=topic_name)['TopicArn']
+
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Effect": "Allow",
+                    "Principal": {"Service": "s3.amazonaws.com"},
+                    "Action": "sns:Publish",
+                    "Resource": topic_arn,
+                    "Condition": {
+                        "StringEquals": {"aws:SourceAccount": account_id},
+                        "ArnLike": {"aws:SourceArn": "arn:{}:s3:::{}".format(partition, bucket_name)}
+                    }
+                }]
+            }
+            import json as _json
+            sns_client.set_topic_attributes(
+                TopicArn=topic_arn,
+                AttributeName='Policy',
+                AttributeValue=_json.dumps(policy)
+            )
+
+            config = s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
+            config.pop('ResponseMetadata', None)
+            topic_configs = [tc for tc in config.get('TopicConfigurations', []) if tc.get('TopicArn') != topic_arn]
+            topic_configs.append({'TopicArn': topic_arn, 'Events': ['s3:ObjectCreated:Put']})
+            config['TopicConfigurations'] = topic_configs
+            s3_client.put_bucket_notification_configuration(
+                Bucket=bucket_name,
+                NotificationConfiguration=config,
+            )
+
+            for endpoint in endpoints:
+                sns_client.subscribe(TopicArn=topic_arn, Protocol='https', Endpoint=endpoint)
+
+            created_topics[bucket_name] = topic_arn
+
+        return created_topics
+
+    def _cleanup(self, sources, account_id, partition, stack_id, region):
+        sns_client = boto3.client('sns', region_name=region)
+        s3_client = boto3.client('s3', region_name=region)
+
+        active = [s for s in sources if s.get('BucketName')]
+        buckets = {}
+        for src in active:
+            buckets.setdefault(src['BucketName'], []).append(src['SumoEndpoint'])
+
+        for bucket_name in buckets:
+            topic_name = self._get_topic_name(stack_id, bucket_name)
+            topic_arn = "arn:{}:sns:{}:{}:{}".format(partition, region, account_id, topic_name)
+
+            try:
+                config = s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
+                config.pop('ResponseMetadata', None)
+                config['TopicConfigurations'] = [
+                    tc for tc in config.get('TopicConfigurations', []) if tc.get('TopicArn') != topic_arn
+                ]
+                s3_client.put_bucket_notification_configuration(
+                    Bucket=bucket_name,
+                    NotificationConfiguration=config,
+                )
+            except ClientError:
+                pass
+
+            try:
+                paginator = sns_client.get_paginator('list_subscriptions_by_topic')
+                for page in paginator.paginate(TopicArn=topic_arn):
+                    for sub in page.get('Subscriptions', []):
+                        if sub['SubscriptionArn'] not in ('PendingConfirmation', 'Deleted'):
+                            sns_client.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+            except ClientError:
+                pass
+
+            try:
+                sns_client.delete_topic(TopicArn=topic_arn)
+            except ClientError:
+                pass
+
+    def create(self, sources, account_id, partition, stack_id, region, *args, **kwargs):
+        self._configure(sources, account_id, partition, stack_id, region)
+        resource_id = "BucketNotifications-{}".format(stack_id.split('/')[-1].split('-')[0])
+        return {}, resource_id
+
+    def update(self, sources, account_id, partition, stack_id, region,
+               old_sources=None, *args, **kwargs):
+        if old_sources:
+            self._cleanup(old_sources, account_id, partition, stack_id, region)
+        self._configure(sources, account_id, partition, stack_id, region)
+        resource_id = "BucketNotifications-{}".format(stack_id.split('/')[-1].split('-')[0])
+        return {}, resource_id
+
+    def delete(self, sources, account_id, partition, stack_id, region, *args, **kwargs):
+        self._cleanup(sources, account_id, partition, stack_id, region)
+        return {}, None
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties", {})
+        params = {
+            "sources": props.get("Sources", []),
+            "account_id": props.get("AccountId"),
+            "partition": props.get("Partition"),
+            "stack_id": props.get("StackId"),
+            "region": props.get("Region"),
+        }
+        old_props = event.get("OldResourceProperties", {})
+        if old_props:
+            params["old_sources"] = old_props.get("Sources", [])
+        return params
+
+
 if __name__ == '__main__':
     params = {"AWSResource": "s3"}
     # value = ConfigDeliveryChannel()
