@@ -383,24 +383,34 @@ class AWSSource(BaseSource):
 
         endpoint = source_id = None
         source_json = {"source": self.build_source_params(props)}
-        try:
-            resp = self.sumologic_cli.create_source(collector_id, source_json)
-            data = resp.json()['source']
-            source_id = data["id"]
-            endpoint = data["url"]
-            print(f"created source {source_id}")
-        except Exception as e:
-            # Todo 100 sources in a collector is good. Same error code for duplicates in case of Collector and source.
-            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()[
-                "code"] == 'collectors.validation.name.duplicate':
-                for source in self.sumologic_cli.sources(collector_id, limit=300):
-                    if source["name"] == source_name:
-                        source_id = source["id"]
-                        print(f"fetched existing source {source_id}")
-                        endpoint = source["url"]
-            else:
-                print(e, source_json)
-                raise
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                resp = self.sumologic_cli.create_source(collector_id, source_json)
+                data = resp.json()['source']
+                source_id = data["id"]
+                endpoint = data["url"]
+                print(f"created source {source_id}")
+                break
+            except Exception as e:
+                resp_json = e.response.json() if hasattr(e, 'response') else {}
+                code = resp_json.get("code", "")
+                message = resp_json.get("message", "")
+
+                if code == 'collectors.validation.name.duplicate':
+                    for source in self.sumologic_cli.sources(collector_id, limit=300):
+                        if source["name"] == source_name:
+                            source_id = source["id"]
+                            print(f"fetched existing source {source_id}")
+                            endpoint = source["url"]
+                    break
+                elif "errorCode=AccessDenied" in message and attempt < max_retries - 1:
+                    wait = min(5 * (2 ** attempt), 60)
+                    print(f"IAM AccessDenied on attempt {attempt + 1}, retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    print(e, source_json)
+                    raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
     def update(self, collector_id, source_id, source_name, props, *args,

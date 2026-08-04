@@ -78,9 +78,10 @@ def handler(event, context):
     if "RequestType" in event and USE_CRHELPER:
         return helper(event, context)
 
-    # Terraform/direct invoke path
-    action = event.get("action")
-    logger.info(f"Terraform action detected: {action}")
+    # Terraform/direct invoke path — aws_lambda_invocation sets tf.action automatically
+    tf_block = event.get("tf", {})
+    action = tf_block.get("action") or event.get("action")
+    logger.info(f"Direct invoke action: {action}")
 
     if action in ["create", "update", "delete"]:
         resource, resource_type, params = get_resource(event)
