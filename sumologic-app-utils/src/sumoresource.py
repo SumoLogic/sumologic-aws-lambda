@@ -45,9 +45,9 @@ class SumoResource(object):
         if self.deployment == "us1":
             return "https://api.sumologic.com/api"
         elif self.deployment in ["ca", "au", "de", "eu", "esc", "jp", "us2", "fed", "kr", "ch"]:
-            return "https://api.%s.sumologic.com/api" % self.deployment
+            return f"https://api.{self.deployment}.sumologic.com/api"
         else:
-            return 'https://%s-api.sumologic.net/api' % self.deployment
+            return f'https://{self.deployment}-api.sumologic.net/api'
 
     def is_enterprise_or_trial_account(self):
         to_time = int(time.time()) * 1000
@@ -61,9 +61,9 @@ class SumoResource(object):
                 | toint(sev) as sev
                 | benchmark percentage as global_percent from guardduty on threatpurpose=threatPurpose, threatname=threatName, severity=sev, resource=targetresource'''
             response = self.sumologic_cli.search_job(search_query, fromTime=from_time, toTime=to_time)
-            print("schedule job status: %s" % response)
+            print(f"schedule job status: {response}")
             response = self.sumologic_cli.search_job_status(response)
-            print("job status: %s" % response)
+            print(f"job status: {response}")
             if len(response.get("pendingErrors", [])) > 0:
                 return False
             else:
@@ -94,7 +94,7 @@ class Collector(SumoResource):
             offset += page_limit
             all_collectors = self.sumologic_cli.collectors(limit=page_limit, filter_type=collector_type, offset=offset)
 
-        raise Exception("Collector with name %s not found" % collector_name)
+        raise Exception(f"Collector with name {collector_name} not found")
 
     def create(self, collector_type, collector_name, source_category=None, description='', *args, **kwargs):
         collector_id = None
@@ -109,13 +109,13 @@ class Collector(SumoResource):
         try:
             resp = self.sumologic_cli.create_collector(collector, headers=None)
             collector_id = json.loads(resp.text)['collector']['id']
-            print("created collector %s" % collector_id)
+            print(f"created collector {collector_id}")
         except Exception as e:
             if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()[
                 "code"] == 'collectors.validation.name.duplicate':
                 collector = self._get_collector_by_name(collector_name, collector_type.lower())
                 collector_id = collector['id']
-                print("fetched existing collector %s" % collector_id)
+                print(f"fetched existing collector {collector_id}")
             else:
                 raise
 
@@ -129,7 +129,7 @@ class Collector(SumoResource):
         cv['collector']['description'] = description
         resp = self.sumologic_cli.update_collector(cv, etag)
         collector_id = json.loads(resp.text)['collector']['id']
-        print("updated collector %s" % collector_id)
+        print(f"updated collector {collector_id}")
         return {"COLLECTOR_ID": collector_id}, collector_id
 
     def delete(self, collector_id, remove_on_delete_stack, *args, **kwargs):
@@ -140,7 +140,7 @@ class Collector(SumoResource):
             sources = self.sumologic_cli.sources(collector_id, limit=10)
             if len(sources) == 0:
                 response = self.sumologic_cli.delete_collector({"collector": {"id": collector_id}})
-                print("deleted collector %s : %s" % (collector_id, response.text))
+                print(f"deleted collector {collector_id} : {response.text}")
         else:
             print("skipping collector deletion")
 
@@ -192,7 +192,7 @@ class Connections(SumoResource):
         try:
             resp = self.sumologic_cli.create_connection(connection, headers=None)
             connection_id = json.loads(resp.text)['id']
-            print("created connectionId %s" % connection_id)
+            print(f"created connectionId {connection_id}")
         except Exception as e:
             if hasattr(e, 'response'):
                 print(e.response.json())
@@ -215,13 +215,13 @@ class Connections(SumoResource):
         cv['password'] = password
         resp = self.sumologic_cli.update_collector(cv, etag)
         connection_id = json.loads(resp.text)['connections']['id']
-        print("updated connections %s" % connection_id)
+        print(f"updated connections {connection_id}")
         return {"CONNECTION_ID": connection_id}, connection_id
 
     def delete(self, connection_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_connection(connection_id, 'WebhookConnection')
-            print("deleted connection %s %s" % (connection_id, response.text))
+            print(f"deleted connection {connection_id} {response.text}")
         else:
             print("skipping connection deletion")
 
@@ -267,7 +267,7 @@ class BaseSource(SumoResource):
         source_json.update({
             "category": props.get("SourceCategory"),
             "name": props.get("SourceName"),
-            "description": "This %s source is created by AWS SAM Application" % (props.get("SourceType", "HTTP"))
+            "description": f'This {props.get("SourceType", "HTTP")} source is created by AWS SAM Application'
         })
         # timestamp processing
         if props.get("DateFormat"):
@@ -383,24 +383,34 @@ class AWSSource(BaseSource):
 
         endpoint = source_id = None
         source_json = {"source": self.build_source_params(props)}
-        try:
-            resp = self.sumologic_cli.create_source(collector_id, source_json)
-            data = resp.json()['source']
-            source_id = data["id"]
-            endpoint = data["url"]
-            print("created source %s" % source_id)
-        except Exception as e:
-            # Todo 100 sources in a collector is good. Same error code for duplicates in case of Collector and source.
-            if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()[
-                "code"] == 'collectors.validation.name.duplicate':
-                for source in self.sumologic_cli.sources(collector_id, limit=300):
-                    if source["name"] == source_name:
-                        source_id = source["id"]
-                        print("fetched existing source %s" % source_id)
-                        endpoint = source["url"]
-            else:
-                print(e, source_json)
-                raise
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                resp = self.sumologic_cli.create_source(collector_id, source_json)
+                data = resp.json()['source']
+                source_id = data["id"]
+                endpoint = data["url"]
+                print(f"created source {source_id}")
+                break
+            except Exception as e:
+                resp_json = e.response.json() if hasattr(e, 'response') else {}
+                code = resp_json.get("code", "")
+                message = resp_json.get("message", "")
+
+                if code == 'collectors.validation.name.duplicate':
+                    for source in self.sumologic_cli.sources(collector_id, limit=300):
+                        if source["name"] == source_name:
+                            source_id = source["id"]
+                            print(f"fetched existing source {source_id}")
+                            endpoint = source["url"]
+                    break
+                elif "errorCode=AccessDenied" in message and attempt < max_retries - 1:
+                    wait = min(5 * (2 ** attempt), 60)
+                    print(f"IAM AccessDenied on attempt {attempt + 1}, retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    print(e, source_json)
+                    raise
         return {"SUMO_ENDPOINT": endpoint}, source_id
 
     def update(self, collector_id, source_id, source_name, props, *args,
@@ -410,7 +420,7 @@ class AWSSource(BaseSource):
         try:
             resp = self.sumologic_cli.update_source(collector_id, source_json, etag)
             data = resp.json()['source']
-            print("updated source %s" % data["id"])
+            print(f"updated source {data['id']}")
             return {"SUMO_ENDPOINT": data["url"]}, data["id"]
         except Exception as e:
             print(e, source_json)
@@ -419,7 +429,7 @@ class AWSSource(BaseSource):
     def delete(self, collector_id, source_id, remove_on_delete_stack, props, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
-            print("deleted source %s : %s" % (source_id, response.text))
+            print(f"deleted source {source_id} : {response.text}")
         else:
             print("skipping source deletion")
 
@@ -495,7 +505,7 @@ class HTTPSource(BaseSource):
             data = resp.json()['source']
             source_id = data["id"]
             endpoint = data["url"]
-            print("created source %s" % source_id)
+            print(f"created source {source_id}")
         except Exception as e:
             # Todo 100 sources in a collector is good
             if hasattr(e, 'response') and "code" in e.response.json() and e.response.json()[
@@ -503,7 +513,7 @@ class HTTPSource(BaseSource):
                 for source in self.sumologic_cli.sources(collector_id, limit=300):
                     if source["name"] == source_name:
                         source_id = source["id"]
-                        print("fetched existing source %s" % source_id)
+                        print(f"fetched existing source {source_id}")
                         endpoint = source["url"]
             else:
                 raise
@@ -516,13 +526,13 @@ class HTTPSource(BaseSource):
 
         resp = self.sumologic_cli.update_source(collector_id, sv, etag)
         data = resp.json()['source']
-        print("updated source %s" % data["id"])
+        print(f"updated source {data['id']}")
         return {"SUMO_ENDPOINT": data["url"]}, data["id"]
 
     def delete(self, collector_id, source_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_source(collector_id, {"source": {"id": source_id}})
-            print("deleted source %s : %s" % (source_id, response.text))
+            print(f"deleted source {source_id} : {response.text}")
         else:
             print("skipping source deletion")
 
@@ -546,14 +556,14 @@ class App(SumoResource):
 
     def _convert_to_hour(self, timeoffset):
         hour = timeoffset / 60 * 60 * 1000
-        return "%sh" % (hour)
+        return f"{hour}h"
 
     def _replace_source_category(self, appjson_filepath, sourceDict):
         with open(appjson_filepath, 'r') as old_file:
             text = old_file.read()
             if sourceDict:
                 for k, v in sourceDict.items():
-                    text = text.replace("$$%s" % k, v)
+                    text = text.replace(f"$${k}", v)
             appjson = json.loads(text)
 
         return appjson
@@ -592,8 +602,8 @@ class App(SumoResource):
         # Based on S3 URL provided download the data.
         if not s3url:
             key_name = "ApiExported-" + re.sub(r"\s+", "-", appname) + ".json"
-            s3url = "https://app-json-store.s3.amazonaws.com/%s" % key_name
-        print("Fetching appjson %s" % s3url)
+            s3url = f"https://app-json-store.s3.amazonaws.com/{key_name}"
+        print(f"Fetching appjson {s3url}")
         with requests.get(s3url, stream=True) as r:
             r.raise_for_status()
             with tempfile.NamedTemporaryFile() as fp:
@@ -608,38 +618,38 @@ class App(SumoResource):
         return appjson
 
     def _wait_for_folder_creation(self, folder_id, job_id, is_admin):
-        print("waiting for folder creation folder_id %s job_id %s" % (folder_id, job_id))
+        print(f"waiting for folder creation folder_id {folder_id} job_id {job_id}")
         waiting = True
         while waiting:
             response = self.sumologic_cli.check_import_status(folder_id, job_id, is_admin)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(2)
 
-        print("job status: %s" % response.text)
+        print(f"job status: {response.text}")
 
     def _wait_for_folder_copy(self, folder_id, job_id):
-        print("waiting for folder copy folder_id %s job_id %s" % (folder_id, job_id))
+        print(f"waiting for folder copy folder_id {folder_id} job_id {job_id}")
         waiting = True
         while waiting:
             response = self.sumologic_cli.check_copy_status(folder_id, job_id)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(2)
 
-        print("job status: %s" % response.text)
-        matched = re.search('id:\s*(.*?)\"', response.text)
+        print(f"job status: {response.text}")
+        matched = re.search('id:\\s*(.*?)\"', response.text)
         copied_folder_id = None
         if matched:
             copied_folder_id = matched[1]
         return copied_folder_id
 
     def _wait_for_app_install(self, job_id):
-        print("waiting for app installation job_id %s" % job_id)
+        print(f"waiting for app installation job_id {job_id}")
         waiting = True
         while waiting:
             response = self.sumologic_cli.check_app_install_status(job_id)
             waiting = response.json()['status'] == "InProgress"
             time.sleep(2)
-        print("job status: %s" % response.text)
+        print(f"job status: {response.text}")
         return response
 
     def _create_backup_folder(self, new_app_folder_id, old_app_folder_id, is_admin):
@@ -711,7 +721,6 @@ class App(SumoResource):
         else:
             raise Exception(f"Unable to share {content_id} in org: {org_id}")
 
-
     def share_app_by_id(self, is_share, app_folder_id, org_id, is_admin):
         """ This shares an app identified by its Id under the Admin Recommended folder """
         response = self.share_content_with_org(is_share, app_folder_id, org_id, is_admin)
@@ -750,7 +759,7 @@ class App(SumoResource):
     def create_by_import_api(self, appname, source_params, folder_name, s3url, org_id, location, is_share, *args, **kwargs):
         # Add  retry if folder sync fails
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
-            raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
+            raise Exception(f"{appname} is available to Enterprise or Trial Account Type only.")
 
         content = self._get_app_content(appname, source_params, s3url)
         is_admin = False
@@ -769,15 +778,14 @@ class App(SumoResource):
             time.sleep(3)
             response = self.sumologic_cli.import_content(folder_id, content, is_overwrite="true")
         job_id = response.json()["id"]
-        print("Imported app %s: appFolderId: %s FolderId: %s jobId: %s" % (
-            appname, app_folder_id, folder_id, job_id))
+        print(f"Imported app {appname}: appFolderId: {app_folder_id} FolderId: {folder_id} jobId: {job_id}")
         self._wait_for_folder_creation(folder_id, job_id, is_admin)
         return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
 
     def create_by_install_api(self, appid, appname, source_params, folder_name, org_id, location, is_share, *args,
                               **kwargs):
         if appname in self.ENTERPRISE_ONLY_APPS and not self.is_enterprise_or_trial_account():
-            raise Exception("%s is available to Enterprise or Trial Account Type only." % appname)
+            raise Exception(f"{appname} is available to Enterprise or Trial Account Type only.")
 
         if folder_name:
             folder_id = self._create_or_fetch_apps_parent_folder(folder_name, org_id, is_share, location)
@@ -798,11 +806,10 @@ class App(SumoResource):
         json_resp = json.loads(response.content)
         if json_resp['status'] == 'Success':
             app_folder_id = json_resp['statusMessage'].split(":")[1]
-            print("installed app %s: appFolderId: %s parent_folder_id: %s jobId: %s" % (
-                appname, app_folder_id, folder_id, job_id))
+            print(f"installed app {appname}: appFolderId: {app_folder_id} parent_folder_id: {folder_id} jobId: {job_id}")
             return {"APP_FOLDER_NAME": content["name"]}, app_folder_id
         else:
-            print("%s installation failed." % appname)
+            print(f"{appname} installation failed.")
             raise Exception(response.text)
 
     def create(self, appname, source_params, org_id, is_share=True, location=None, appid=None, folder_name=None, s3url=None,
@@ -826,7 +833,7 @@ class App(SumoResource):
         data, new_app_folder_id = self.create(appname=appname, source_params=source_params, appid=appid,
                                               folder_name=folder_name, s3url=s3url, org_id=org_id, is_share=is_share,
                                               location=location)
-        print("updated app appFolderId: %s " % new_app_folder_id)
+        print(f"updated app appFolderId: {new_app_folder_id} ")
         if retain_old_app:
             try:
                 backup_folder_id = self._create_backup_folder(new_app_folder_id, app_folder_id, is_admin)
@@ -834,7 +841,7 @@ class App(SumoResource):
                 # Starting Folder Copy
                 response = self.sumologic_cli.copy_folder(app_folder_id, backup_folder_id, is_admin)
                 job_id = response.json()["id"]
-                print("Copy Completed parentFolderId: %s jobId: %s" % (backup_folder_id, job_id))
+                print(f"Copy Completed parentFolderId: {backup_folder_id} jobId: {job_id}")
                 copied_folder_id = self._wait_for_folder_copy(app_folder_id, job_id)
                 # Updating copied folder name with suffix BackUp.
                 copied_folder_details = self.sumologic_cli.get_folder_by_id(copied_folder_id, is_admin)
@@ -843,9 +850,9 @@ class App(SumoResource):
                                                                                            "%H:%M:%S")),
                                          "description": copied_folder_details["description"][:255]}
                 self.sumologic_cli.update_folder_by_id(copied_folder_id, copied_folder_details, is_admin)
-                print("Back Up done for the APP: %s." % backup_folder_id)
+                print(f"Back Up done for the APP: {backup_folder_id}.")
             except Exception as e:
-                print("App - Exception while taking backup of App folder ID %s, error: %s " % (app_folder_id, e))
+                print(f"App - Exception while taking backup of App folder ID {app_folder_id}, error: {e} ")
 
         return data, new_app_folder_id
 
@@ -856,9 +863,9 @@ class App(SumoResource):
         if remove_on_delete_stack:
             try:
                 response = self.sumologic_cli.delete_folder(app_folder_id, is_admin)
-                print("deleting app folder %s : %s" % (app_folder_id, response.text))
+                print(f"deleting app folder {app_folder_id} : {response.text}")
             except Exception as e:
-                print("App - Exception while deleting the App folder ID %s, error: %s " % (app_folder_id, e))
+                print(f"App - Exception while deleting the App folder ID {app_folder_id}, error: {e} ")
         else:
             print("skipping app folder deletion")
 
@@ -881,6 +888,110 @@ class App(SumoResource):
         }
 
 
+class AppV2(SumoResource):
+
+    def _wait_for_job(self, job_id, status_fn):
+        print(f"Waiting for job_id: {job_id}")
+        while True:
+            response = status_fn(job_id)
+            json_resp = response.json()
+            if json_resp['status'] != "InProgress":
+                print(f"Job status: {json_resp}")
+                return response
+            time.sleep(2)
+
+    @staticmethod
+    def is_latest(app_instance):
+        current_version = app_instance.get("version")
+        latest_version = app_instance.get("latestVersion")
+        appname = app_instance.get("name")
+        print(f"App: {appname}")
+        print(f"Current Version: {current_version}")
+        print(f"Latest Version: {latest_version}")
+        return current_version == latest_version
+
+    def _handle_job_response(self, appid, response, job_id, appname, action="installed"):
+        json_resp = response.json()
+        print("json_resp", json_resp)
+        if json_resp['status'] == 'Success':
+            app_folder_id = json_resp.get('folderId')
+            app_path = json_resp.get('path')
+            print(f"jobId:{job_id} -> {action} app '{appname}', folderId: {app_folder_id}, path: {app_path}")
+            return {"APP_FOLDER_NAME": appname}, appid
+        raise Exception(f"App '{appname}' {action} failed: {json_resp}")
+
+    def get_installed_apps(self):
+        response = self.sumologic_cli.get_instances_app_v2()
+        return (response.json() or {}).get("data", [])
+
+    def check_app_installed(self, app_id):
+        return next((app for app in self.get_installed_apps() if app["uuid"] == app_id), None)
+
+    def install_app(self, appid, appname, version, *args, **kwargs):
+        content = {'name': appname, 'version': version}
+        response = self.sumologic_cli.install_app_v2(appid, content)
+        job_id = response.json()["jobId"]
+        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_install_status)
+        return self._handle_job_response(appid, response, job_id, appname, action="installed")
+
+    def create(self, appid, appname, version, *args, **kwargs):
+        if not appid:
+            return None
+        app_instance = self.check_app_installed(appid)
+        if app_instance:
+            if not self.is_latest(app_instance):
+                print(f"App {appname} is not latest, upgrading")
+                return self.upgrade(appid, appname)
+            return {"APP_FOLDER_NAME": appname}, appid
+        print(f"App {appname} is installing")
+        return self.install_app(appid, appname, version, *args, **kwargs)
+
+    def upgrade(self, appid, appname):
+        response = self.sumologic_cli.upgrade_app_v2(appid, {})
+        job_id = response.json()["jobId"]
+        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_upgrade_status)
+        return self._handle_job_response(appid, response, job_id, appname, action="upgraded")
+
+    def update(self, appid, appname, version, *args, **kwargs):
+        if not appid:
+            return None
+        app_instance = self.check_app_installed(appid)
+        if not app_instance:
+            print(f"App {appname} is not present")
+            return self.install_app(appid, appname, version, *args, **kwargs)
+        # Extract version information
+        if self.is_latest(app_instance):
+            print(f"App {appname} is already updated")
+            return {"APP_FOLDER_NAME": appname}, app_instance["uuid"]
+        print(f"App {appname} is updating")
+        return self.upgrade(appid, appname)
+
+    def delete(self, appid, appname, remove_on_delete_stack, *args, **kwargs):
+        if not remove_on_delete_stack or not appid:
+            print("Skipping app uninstallation")
+            return None
+        app_instance = self.check_app_installed(appid)
+        if not app_instance:
+            print("App is already uninstalled")
+            return None
+        response = self.sumologic_cli.uninstall_app_v2(appid)
+        job_id = response.json()["jobId"]
+        response = self._wait_for_job(job_id, self.sumologic_cli.check_app_v2_uninstall_status)
+        if response.json()['status'] == 'Success':
+            print(f"jobId:{job_id} -> uninstalled app '{appname}'")
+        return None
+
+    def extract_params(self, event):
+        print("extract_params", event)
+        props = event.get("ResourceProperties", {})
+
+        return {
+            "appid":    props.get("AppId"),
+            "appname":  props.get("AppName"),
+            "version":  props.get("Version", "latest"),
+        }
+
+
 class SumoLogicAWSExplorer(SumoResource):
 
     def get_explorer_id(self, hierarchy_name):
@@ -889,7 +1000,7 @@ class SumoLogicAWSExplorer(SumoResource):
             for hierarchy in hierarchies["data"]:
                 if hierarchy_name == hierarchy["name"]:
                     return hierarchy["id"]
-        raise Exception("Hierarchy with name %s not found" % hierarchy_name)
+        raise Exception(f"Hierarchy with name {hierarchy_name} not found")
 
     def create_hierarchy(self, hierarchy_name, level, hierarchy_filter):
         content = {
@@ -900,19 +1011,19 @@ class SumoLogicAWSExplorer(SumoResource):
         try:
             response = self.sumologic_cli.create_hierarchy(content)
             hierarchy_id = response.json()["id"]
-            print("Hierarchy -  creation successful with ID %s" % hierarchy_id)
+            print(f"Hierarchy -  creation successful with ID {hierarchy_id}")
             return {"Hierarchy_Name": response.json()["name"]}, hierarchy_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'hierarchy:duplicate':
-                        print("Hierarchy -  Duplicate Exists for Name %s" % hierarchy_name)
+                        print(f"Hierarchy -  Duplicate Exists for Name {hierarchy_name}")
                         # Get the hierarchy ID from all explorer.
                         hierarchy_id = self.get_explorer_id(hierarchy_name)
                         response = self.sumologic_cli.update_hierarchy(hierarchy_id, content)
                         hierarchy_id = response.json()["id"]
-                        print("Hierarchy -  update successful with ID %s" % hierarchy_id)
+                        print(f"Hierarchy -  update successful with ID {hierarchy_id}")
                         return {"Hierarchy_Name": hierarchy_name}, hierarchy_id
             raise
 
@@ -922,7 +1033,7 @@ class SumoLogicAWSExplorer(SumoResource):
     # Use the new update API.
     def update(self, hierarchy_id, hierarchy_name, level, hierarchy_filter, *args, **kwargs):
         data, hierarchy_id = self.create(hierarchy_name, level, hierarchy_filter)
-        print("Hierarchy -  update successful with ID %s" % hierarchy_id)
+        print(f"Hierarchy -  update successful with ID {hierarchy_id}")
         return data, hierarchy_id
 
     # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
@@ -935,8 +1046,7 @@ class SumoLogicAWSExplorer(SumoResource):
             if hierarchy_id == "Duplicate":
                 hierarchy_id = self.get_explorer_id(hierarchy_name)
             response = self.sumologic_cli.delete_hierarchy(hierarchy_id)
-            print("Hierarchy - Completed the Hierarchy deletion for Name %s, response - %s"
-                  % (hierarchy_name, response.text))
+            print(f"Hierarchy - Completed the Hierarchy deletion for Name {hierarchy_name}, response - {response.text}")
         else:
             print("Hierarchy - Skipping the Hierarchy deletion.")
 
@@ -970,7 +1080,7 @@ class SumoLogicMetricRules(SumoResource):
         try:
             response = self.sumologic_cli.create_metric_rule(content)
             job_name = response.json()["name"]
-            print("METRIC RULES -  creation successful with Name %s" % job_name)
+            print(f"METRIC RULES -  creation successful with Name {job_name}")
             return {"METRIC_RULES": response.json()["name"]}, job_name
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
@@ -978,7 +1088,7 @@ class SumoLogicMetricRules(SumoResource):
                 for error in errors:
                     if error.get('code') == 'metrics:rule_name_already_exists' \
                             or error.get('code') == 'metrics:rule_already_exists':
-                        print("METRIC RULES -  Duplicate Exists for Name %s" % metric_rule_name)
+                        print(f"METRIC RULES -  Duplicate Exists for Name {metric_rule_name}")
                         if delete:
                             self.delete(metric_rule_name, metric_rule_name, True)
                             # providing sleep for 10 seconds after delete.
@@ -995,7 +1105,7 @@ class SumoLogicMetricRules(SumoResource):
         # Need to add it because CF calls delete method if identifies change in metric rule name.
         self.delete(job_name, old_metric_rule_name, True)
         data, job_name = self.create_metric_rule(metric_rule_name, match_expression, variables)
-        print("METRIC RULES -  Update successful with Name %s" % job_name)
+        print(f"METRIC RULES -  Update successful with Name {job_name}")
         return data, job_name
 
     # handling exception during delete, as update can fail if the previous explorer, metric rule or field has
@@ -1006,10 +1116,9 @@ class SumoLogicMetricRules(SumoResource):
             try:
                 response = self.sumologic_cli.delete_metric_rule(metric_rule_name)
                 print(
-                    "METRIC RULES - Completed the Metric Rule deletion for Name %s, response - %s" % (metric_rule_name,
-                                                                                                      response.text))
+                    f"METRIC RULES - Completed the Metric Rule deletion for Name {metric_rule_name}, response - {response.text}")
             except Exception as e:
-                print("AWS EXPLORER - Exception while deleting the Metric Rules %s," % e)
+                print(f"AWS EXPLORER - Exception while deleting the Metric Rules {e},")
         else:
             print("METRIC RULES - Skipping the Metric Rule deletion")
 
@@ -1047,21 +1156,22 @@ class SumoLogicUpdateFields(SumoResource):
 
     def add_fields_to_collector(self, collector_id, source_id, fields):
         if collector_id and source_id:
-            sv, etag = self.sumologic_cli.source(collector_id, source_id)
-
-            existing_fields = sv['source']['fields']
-
-            new_fields = existing_fields.copy()
-            new_fields.update(fields)
-
-            sv['source']['fields'] = new_fields
-
-            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-
-            data = resp.json()['source']
-            print("Added Fields in Source %s" % data["id"])
-
-            return {"source_name": data["name"]}, str(source_id)
+            for attempt in range(5):
+                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+                existing_fields = sv['source']['fields']
+                new_fields = existing_fields.copy()
+                new_fields.update(fields)
+                sv['source']['fields'] = new_fields
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                if resp.status_code == 412:
+                    print(f"ETag conflict on attempt {attempt + 1}, retrying...")
+                    time.sleep(2 ** attempt)
+                    continue
+                resp.raise_for_status()
+                data = resp.json()['source']
+                print(f"Added Fields in Source {data['id']}")
+                return {"source_name": data["name"]}, str(source_id)
+            resp.raise_for_status()
         return {"source_name": "Not updated"}, "No_Source_Id"
 
     def create(self, collector_id, source_id, fields, *args, **kwargs):
@@ -1077,18 +1187,24 @@ class SumoLogicUpdateFields(SumoResource):
                 re.search('collectors/(.*)/sources', old_resource_properties['SourceApiUrl']).group(1) != collector_id:
             return self.create(collector_id, source_id, fields)
         else:
-            sv, etag = self.sumologic_cli.source(collector_id, source_id)
-            existing_source_fields = sv['source']['fields']
-            if 'Fields' in old_resource_properties and old_resource_properties['Fields']:
-                for k in old_resource_properties['Fields']:
-                    existing_source_fields.pop(k, None)
-            existing_source_fields.update(fields)
-
-            sv['source']['fields'] = existing_source_fields
-            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
-            data = resp.json()['source']
-            print("updated Fields in Source %s" % data["id"])
-            return {"source_name": data["name"]}, source_id
+            for attempt in range(3):
+                sv, etag = self.sumologic_cli.source(collector_id, source_id)
+                existing_source_fields = sv['source']['fields']
+                if 'Fields' in old_resource_properties and old_resource_properties['Fields']:
+                    for k in old_resource_properties['Fields']:
+                        existing_source_fields.pop(k, None)
+                existing_source_fields.update(fields)
+                sv['source']['fields'] = existing_source_fields
+                resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+                if resp.status_code == 412:
+                    print(f"ETag conflict on attempt {attempt + 1}, retrying...")
+                    time.sleep(2 ** attempt)
+                    continue
+                resp.raise_for_status()
+                data = resp.json()['source']
+                print(f"updated Fields in Source {data['id']}")
+                return {"source_name": data["name"]}, source_id
+            resp.raise_for_status()
 
     def delete(self, collector_id, source_id, fields, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
@@ -1103,7 +1219,7 @@ class SumoLogicUpdateFields(SumoResource):
             resp = self.sumologic_cli.update_source(collector_id, sv, etag)
 
             data = resp.json()['source']
-            print("reverted Fields in Source %s" % data["id"])
+            print(f"reverted Fields in Source {data['id']}")
         else:
             print("UPDATE FIELDS - Skipping the Metric Rule deletion")
 
@@ -1142,7 +1258,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
             else:
                 response = None
 
-        raise Exception("FER with name %s not found" % fer_name)
+        raise Exception(f"FER with name {fer_name} not found")
 
     def create(self, fer_name, fer_scope, fer_expression, fer_enabled, *args, **kwargs):
         content = {
@@ -1154,14 +1270,14 @@ class SumoLogicFieldExtractionRule(SumoResource):
         try:
             response = self.sumologic_cli.create_field_extraction_rule(content)
             job_id = response.json()["id"]
-            print("FER RULES -  creation successful with ID %s" % job_id)
+            print(f"FER RULES -  creation successful with ID {job_id}")
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'fer:invalid_extraction_rule':
-                        print("FER RULES -  Duplicate Exists for Name %s" % fer_name)
+                        print(f"FER RULES -  Duplicate Exists for Name {fer_name}")
                         # check if there is difference in scope, if yes then merge the scopes.
                         fer_details = self._get_fer_by_name(fer_name)
                         change_in_fer = False
@@ -1199,7 +1315,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
 
             response = self.sumologic_cli.update_field_extraction_rules(fer_id, content)
             job_id = response.json()["id"]
-            print("FER RULES -  update successful with ID %s" % job_id)
+            print(f"FER RULES -  update successful with ID {job_id}")
             return {"FER_RULES": response.json()["name"]}, job_id
         except Exception as e:
             raise
@@ -1207,8 +1323,7 @@ class SumoLogicFieldExtractionRule(SumoResource):
     def delete(self, fer_id, remove_on_delete_stack, *args, **kwargs):
         if remove_on_delete_stack:
             response = self.sumologic_cli.delete_field_extraction_rule(fer_id)
-            print("FER RULES - Completed the Metric Rule deletion for ID %s, response - %s" % (
-                fer_id, response.text))
+            print(f"FER RULES - Completed the Metric Rule deletion for ID {fer_id}, response - {response.text}")
         else:
             print("FER RULES - Skipping the Metric Rule deletion")
 
@@ -1242,12 +1357,12 @@ class AddFieldsInHostMetricsSources(SumoResource):
     def get_source_and_collector_id(self, instances):
         ids = []
         for instance in instances:
-            ids.append("InstanceId=%s" % instance["InstanceId"])
+            ids.append(f'InstanceId={instance["InstanceId"]}')
         query = " or ".join(ids)
         content = {
             "query": [
                 {
-                    "query": "_contentType=HostMetrics (%s) | count by _sourceId, _collectorId" % query,
+                    "query": f"_contentType=HostMetrics ({query}) | count by _sourceId, _collectorId",
                     "rowId": "A"
                 }
             ],
@@ -1292,7 +1407,7 @@ class AddFieldsInHostMetricsSources(SumoResource):
                 sv['source']['fields'] = existing_source_fields
                 resp = self.sumologic_cli.update_source(collector_id, sv, etag)
                 data = resp.json()['source']
-                print("updated Fields in Source %s" % data["id"])
+                print(f"updated Fields in Source {data['id']}")
 
     def create(self, region_value, account_id, fields, add_fields, *args, **kwargs):
         if add_fields:
@@ -1356,7 +1471,7 @@ class SumoLogicFieldsSchema(SumoResource):
             for field in all_fields:
                 if field_name == field["fieldName"]:
                     return field["fieldId"]
-        raise Exception("Field Name with name %s not found" % field_name)
+        raise Exception(f"Field Name with name {field_name} not found")
 
     def add_field(self, field_name):
         content = {
@@ -1365,14 +1480,14 @@ class SumoLogicFieldsSchema(SumoResource):
         try:
             response = self.sumologic_cli.create_new_field(content)
             field_id = response["fieldId"]
-            print("FIELD NAME -  creation successful with Field Id %s" % field_id)
+            print(f"FIELD NAME -  creation successful with Field Id {field_id}")
             return {"FIELD_NAME": response["fieldName"]}, field_id
         except Exception as e:
             if hasattr(e, 'response') and "errors" in e.response.json() and e.response.json()["errors"]:
                 errors = e.response.json()["errors"]
                 for error in errors:
                     if error.get('code') == 'field:already_exists':
-                        print("FIELD NAME -  Duplicate Exists for Name %s" % field_name)
+                        print(f"FIELD NAME -  Duplicate Exists for Name {field_name}")
                         # Get the Field ID from the existing fields.
                         field_id = self.get_field_id(field_name)
                         return {"FIELD_NAME": field_name}, field_id
@@ -1399,9 +1514,9 @@ class SumoLogicFieldsSchema(SumoResource):
                 if field_id == "Duplicate":
                     field_id = self.get_field_id(field_name)
                 response = self.sumologic_cli.delete_existing_field(field_id)
-                print("FIELD NAME - Completed the Field deletion for ID %s, response - %s" % (field_id, response.text))
+                print(f"FIELD NAME - Completed the Field deletion for ID {field_id}, response - {response.text}")
             except Exception as e:
-                print("AWS EXPLORER - Exception while deleting the Field %s," % e)
+                print(f"AWS EXPLORER - Exception while deleting the Field {e},")
         else:
             print("FIELD NAME - Skipping the Field deletion")
 
@@ -1511,7 +1626,7 @@ class AlertsMonitor(SumoResource):
             text = old_file.read()
             if variables:
                 for k, v in variables.items():
-                    text = text.replace("${%s}" % k, v)
+                    text = text.replace(f"${{{k}}}", v)
             appjson = json.loads(text)
 
         return appjson
@@ -1557,7 +1672,7 @@ class AlertsMonitor(SumoResource):
                 # monitor_permission_payload = {"permissionStatementDefinitions": [{"permissions": ["Create","Read","Update","Delete","Manage"],"subjectType": "org","subjectId": org_id,"targetId": import_id}]}
                 # self.sumologic_cli.set_monitors_permissions(monitor_permission_payload)
                 # End Uncomment above when FGP feature for monitors is live
-                print("ALERTS MONITORS - creation successful with ID %s and Name %s." % (import_id, folder_name))
+                print(f"ALERTS MONITORS - creation successful with ID {import_id} and Name {folder_name}.")
             except:
                 time.sleep(10)
                 retry_counter -= 1
@@ -1586,7 +1701,7 @@ class AlertsMonitor(SumoResource):
                 print("Error while taking backup of Monitors folder")
                 print(e)
 
-        print("ALERTS MONITORS - Update successful with ID %s." % new_folder_id)
+        print(f"ALERTS MONITORS - Update successful with ID {new_folder_id}.")
         return data, new_folder_id
 
     def delete(self, folder_id, remove_on_delete_stack, *args, **kwargs):
@@ -1595,7 +1710,7 @@ class AlertsMonitor(SumoResource):
                 self.sumologic_cli.delete_monitor_folder(folder_id)
                 print("ALERTS MONITORS - Completed the Deletion for Monitors Folder with ID " + str(folder_id))
             except Exception as e:
-                print("ALERTS MONITORS - Exception while deleting the Monitors Folder %s," % e)
+                print(f"ALERTS MONITORS - Exception while deleting the Monitors Folder {e},")
         else:
             print("ALERTS MONITORS - Skipping the Monitor Folder deletion")
 
@@ -1623,15 +1738,15 @@ if __name__ == '__main__':
         "SumoAccessKey": "",
         "SumoDeployment": "",
     }
-    app_prefix = "ALB"
-    # app_prefix = "GuardDuty"
-    collector_id = None
-    collector_type = "Hosted"
-    collector_name = "%sCollector" % app_prefix
-    source_name = "%sEvents" % app_prefix
-    source_category = "Labs/AWS/%s" % app_prefix
-    appname = "AWS Application LB"
-    appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
+    # app_prefix = "ALB"
+    # # app_prefix = "GuardDuty"
+    # collector_id = None
+    # collector_type = "Hosted"
+    # collector_name = f"{app_prefix}Collector"
+    # source_name = f"{app_prefix}Events"
+    # source_category = f"Labs/AWS/{app_prefix}"
+    # appname = "AWS Application LB"
+    # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
     # appid = "570bdc0d-f824-4fcb-96b2-3230d4497180"
     s3url = ""
     # appid = "ceb7fac5-1137-4a04-a5b8-2e49190be3d4"
@@ -1639,14 +1754,29 @@ if __name__ == '__main__':
     # source_params = {
     #     "logsrc": "_sourceCategory=%s" % source_category
     # }
-    source_params = {
-        "cloudtraillogsource": "_sourceCategory=%s" % source_category,
-        "indexname": '%rnd%',
-        "incrementalindex": "%rnd%"
-    }
+    # source_params = {
+    #     "cloudtraillogsource": f"_sourceCategory={source_category}",
+    #     "indexname": '%rnd%',
+    #     "incrementalindex": "%rnd%"
+    # }
     # col = Collector(**params)
     # src = HTTPSource(**params)
     # app = App(props)
+
+    #appname = "AWS Application Load Balancer"
+    #appid = "27a17946-e475-4d56-8a8f-bc3fbc0400ca"
+    # appname = "Amazon Bedrock"
+    # appid = "8f4fd1aa-3b83-4d2e-b2ef-e8baec880afa"
+    appname = "AWS EC2"
+    appid = "3dcaacb4-a5de-4e57-a477-fccd04f9e40f"
+    app = AppV2(props)
+    #app.get_install_apps()
+    #id = "CD6CC478B5018A8D"
+    version = None
+    #print(app.create(appid, appname, version))
+    print(app.get_installed_apps())
+
+    #app.install_app(appid, appname, version="latest", location="user", is_share=False)
 
     # create
     # _, collector_id = col.create(collector_type, collector_name, source_category)
@@ -1655,8 +1785,8 @@ if __name__ == '__main__':
     # _, app_folder_id = app.update(app_folder_id='0000000001A70848', appname=appname, source_params=source_params,folder_name="abcd" ,s3url=s3url,orgID="0000000000BC5DF9",share=True,location='admin',retain_old_app=True) #import
     # app.delete(app_folder_id, True, location='admin')
 
-    monitor = AlertsMonitor(props)
-    monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.8.0/appjson/Alerts-App.json"
+    # monitor = AlertsMonitor(props)
+    # monitors3 = "https://sumologic-appdev-aws-sam-apps.s3.amazonaws.com/aws-observability-versions/v2.8.0/appjson/Alerts-App.json"
     # _, app_folder_id = monitor.create('abc','0000000000BD3DDD',monitors3,"",retain_old_alerts=False)
     # _, app_folder_id = monitor.update('000000000002796B','abc1','0000000000285A74',monitors3,"",retain_old_alerts=True)
 

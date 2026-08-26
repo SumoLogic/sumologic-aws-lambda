@@ -4,6 +4,7 @@ import re
 import time
 from abc import abstractmethod
 
+import traceback
 import boto3
 import six
 from botocore.exceptions import ClientError
@@ -42,14 +43,14 @@ class AWSTrail(AWSResource):
     def create(self, trail_name, params, *args, **kwargs):
         try:
             response = self.cloudtrailcli.create_trail(**params)
-            print("Trail created %s" % trail_name)
+            print(f"Trail created {trail_name}")
             self.cloudtrailcli.start_logging(Name=trail_name)
             return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
         except ClientError as e:
-            print("Error in creating trail %s" % e.response['Error'])
+            print(f"Error in creating trail {e.response['Error']}")
             raise
         except Exception as e:
-            print("Error in creating trail %s" % e)
+            print(f"Error in creating trail {e}")
             raise
 
     def update(self, old_trail_name, trail_name, params, *args, **kwargs):
@@ -59,14 +60,14 @@ class AWSTrail(AWSResource):
                 return self.create(trail_name, params)
             else:
                 response = self.cloudtrailcli.update_trail(**params)
-                print("Trail updated %s" % trail_name)
+                print(f"Trail updated {trail_name}")
                 self.cloudtrailcli.start_logging(Name=trail_name)
                 return {"TrailArn": response["TrailARN"]}, response["TrailARN"]
         except ClientError as e:
-            print("Error in updating trail %s" % e.response['Error'])
+            print(f"Error in updating trail {e.response['Error']}")
             raise
         except Exception as e:
-            print("Error in updating trail %s" % e)
+            print(f"Error in updating trail {e}")
             raise
 
     def delete(self, trail_name, *args, **kwargs):
@@ -74,12 +75,12 @@ class AWSTrail(AWSResource):
             self.cloudtrailcli.delete_trail(
                 Name=trail_name
             )
-            print("Trail deleted %s" % trail_name)
+            print(f"Trail deleted {trail_name}")
         except ClientError as e:
-            print("Error in deleting trail %s" % e.response['Error'])
+            print(f"Error in deleting trail {e.response['Error']}")
             raise
         except Exception as e:
-            print("Error in deleting trail %s" % e)
+            print(f"Error in deleting trail {e}")
             raise
 
     def _transform_bool_values(self, k, v):
@@ -111,7 +112,7 @@ class AWSTrail(AWSResource):
 class TagAWSResources(AWSResource):
 
     def __init__(self, props, *args, **kwargs):
-        print('Tagging aws resource %s' % props.get("AWSResource"))
+        print(f'Tagging aws resource {props.get("AWSResource")}')
 
     def _tag_aws_resources(self, region_value, aws_resource, tags, account_id, delete_flag, filter_regex):
         # Get the class instance based on AWS Resource
@@ -132,7 +133,7 @@ class TagAWSResources(AWSResource):
                 tag_resource.add_tags(arns, tags)
 
     def create(self, region_value, aws_resource, tags, account_id, filter_regex, *args, **kwargs):
-        print("TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags %s." % tags)
+        print(f"TAG AWS RESOURCES - Starting the AWS resources Tag addition with Tags {tags}.")
         regions = [region_value]
         for region in regions:
             self._tag_aws_resources(region, aws_resource, tags, account_id, False, filter_regex)
@@ -156,12 +157,12 @@ class TagAWSResources(AWSResource):
                     self.delete(old_properties['Region'], old_properties['AWSResource'], old_tags,
                                 account_id, old_properties['Filter'], remove_on_delete_stack=True)
 
-            print("TAG AWS RESOURCES - Starting the AWS resources Tag update with Tags %s." % tags)
+            print(f"TAG AWS RESOURCES - Starting the AWS resources Tag update with Tags {tags}.")
             regions = [region_value]
             for region in regions:
                 self._tag_aws_resources(region, aws_resource, tags, account_id, False, filter_regex)
 
-        print("updated tags for aws resource %s " % aws_resource)
+        print(f"updated tags for aws resource {aws_resource} ")
         return {"TAG_UPDATE": "Successful"}, aws_resource
 
     def delete(self, region_value, aws_resource, tags, account_id, filter_regex, remove_on_delete_stack, *args,
@@ -169,7 +170,7 @@ class TagAWSResources(AWSResource):
         tags_list = []
         if tags:
             tags_list = list(tags.keys())
-        print("TAG AWS RESOURCES - Starting the AWS resources Tag deletion with Tags %s." % tags_list)
+        print(f"TAG AWS RESOURCES - Starting the AWS resources Tag deletion with Tags {tags_list}.")
         if remove_on_delete_stack:
             regions = [region_value]
             for region in regions:
@@ -202,17 +203,17 @@ class TagAWSResources(AWSResource):
 class EnableS3LogsResources(AWSResource):
 
     def __init__(self, props, *args, **kwargs):
-        print('Enabling S3 for ALB/ELB-classic aws resource %s' % props.get("AWSResource"))
+        print(f'Enabling S3 for ALB/ELB-classic aws resource {props.get("AWSResource")}')
 
     def _s3_logs_alb_resources(self, region_value, aws_resource, bucket_name, bucket_prefix,
-                               delete_flag, filter_regex, region_account_id, account_id):
+                               delete_flag, filter_regex, account_id):
 
         # Get the class instance based on AWS Resource
         tag_resource = AWSResourcesProvider.get_provider(aws_resource, region_value, account_id)
 
         # Fetch and Filter the Resources.
         resources = tag_resource.fetch_resources()
-        if(not aws_resource == 'elb'):
+        if aws_resource != 'elb':
             filtered_resources = tag_resource.filter_resources(filter_regex, resources)
         else:
             filtered_resources = resources
@@ -224,41 +225,43 @@ class EnableS3LogsResources(AWSResource):
             if delete_flag:
                 tag_resource.disable_s3_logs(arns, bucket_name)
             else:
-                tag_resource.enable_s3_logs(arns, bucket_name, bucket_prefix, region_account_id)
+                tag_resource.enable_s3_logs(arns, bucket_name, bucket_prefix)
 
-    def create(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, region_account_id,
+    def create(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
                account_id, *args, **kwargs):
-        print("ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket %s." % bucket_name)
+        print(f"ENABLE S3 LOGS - Starting the AWS resources S3 addition to bucket {bucket_name}.")
         self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
-                                    False, filter_regex, region_account_id, account_id)
+                                    False, filter_regex, account_id)
         print("ENABLE S3 LOGS - Completed the AWS resources S3 addition to bucket.")
 
         return {"S3_ENABLE": "Successful"}, aws_resource
 
-    def update(self, old_properties, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
-               region_account_id, account_id, *args, **kwargs):
+    def update(self, old_properties, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, account_id, *args, **kwargs):
         # First Delete Old Tags from old aws resource with old filter regex and Then add new Tags.
         # Check if aws resource is changed, then raise exception.
-        if old_properties['AWSResource'] != aws_resource:
-            data, aws_resource = self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex,
-                                             region_account_id, account_id)
-        else:
-            # If bucket name or prefix are not same, delete the old logging.
-            if old_properties['BucketName'] != bucket_name or old_properties['BucketPrefix'] != bucket_prefix:
-                self.delete(region_value, aws_resource, old_properties['BucketName'], old_properties['BucketPrefix'],
-                            old_properties['Filter'], True, account_id)
+        try:
+            if old_properties['AWSResource'] != aws_resource:
+                data, aws_resource = self.create(region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, account_id)
+            else:
+                # If bucket name or prefix are not same, delete the old logging.
+                if old_properties['BucketName'] != bucket_name or old_properties['BucketPrefix'] != bucket_prefix:
+                    self.delete(region_value, aws_resource, old_properties['BucketName'], old_properties['BucketPrefix'],
+                                old_properties['Filter'], True, account_id)
 
-            print("ENABLE S3 LOGS - Starting the AWS resources S3 Update with bucket %s." % bucket_name)
-            self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
-                                        False, filter_regex, region_account_id, account_id)
-        print("ENABLE S3 LOGS - Completed the AWS resources S3 Update for bucket.")
-        return {"S3_ENABLE": "Successful"}, aws_resource
+                print(f"ENABLE S3 LOGS - Starting the AWS resources S3 Update with bucket {bucket_name}.")
+                self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix,
+                                            False, filter_regex, account_id)
+            print("ENABLE S3 LOGS - Completed the AWS resources S3 Update for bucket.")
+            return {"S3_ENABLE": "Successful"}, aws_resource
+        except Exception as e:
+            traceback.print_exc()
+            raise
 
     def delete(self, region_value, aws_resource, bucket_name, bucket_prefix, filter_regex, remove_on_delete_stack,
                account_id, *args, **kwargs):
         if remove_on_delete_stack:
             self._s3_logs_alb_resources(region_value, aws_resource, bucket_name, bucket_prefix, True,
-                                        filter_regex, "", account_id)
+                                        filter_regex, account_id)
             print("ENABLE S3 LOGS - Completed the AWS resources S3 deletion to bucket.")
         else:
             print("ENABLE S3 LOGS - Skipping the AWS resources S3 deletion to bucket.")
@@ -275,7 +278,6 @@ class EnableS3LogsResources(AWSResource):
             "bucket_name": props.get("BucketName"),
             "bucket_prefix": props.get("BucketPrefix"),
             "filter_regex": props.get("Filter"),
-            "region_account_id": props.get("RegionAccountId"),
             "remove_on_delete_stack": props.get("RemoveOnDeleteStack"),
             "account_id": props.get("AccountID"),
             "old_properties": old_properties,
@@ -313,7 +315,7 @@ class ConfigDeliveryChannel(AWSResource):
         return name
 
     def create(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
-        print("DELIVERY CHANNEL - Starting the AWS config Delivery channel create with bucket %s." % bucket_name)
+        print(f"DELIVERY CHANNEL - Starting the AWS config Delivery channel create with bucket {bucket_name}.")
 
         name = self.create_delivery_channel(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn)
 
@@ -322,7 +324,7 @@ class ConfigDeliveryChannel(AWSResource):
         return {"DELIVERY_CHANNEL": "Successful"}, name
 
     def update(self, delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn, *args, **kwargs):
-        print("updated delivery channel to %s " % bucket_name)
+        print(f"updated delivery channel to {bucket_name} ")
         name = self.create_delivery_channel(delivery_frequency, bucket_name, bucket_prefix, sns_topic_arn)
         return {"DELIVERY_CHANNEL": "Successful"}, name
 
@@ -392,7 +394,6 @@ def enable_s3_logs(event, context):
     bucket_prefix = os.environ.get("BucketPrefix")
     account_id = os.environ.get("AccountID")
     filter_regex = os.environ.get("Filter")
-    region_account_id = os.environ.get("RegionAccountId")
     is_elbClassic = False
     if "detail" in event:
         event_detail = event.get("detail")
@@ -415,13 +416,13 @@ def enable_s3_logs(event, context):
                 resources = alb_resource.get_arn_list_cloud_trail_event(event_detail)
 
                 # Enable S3 logging
-                alb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix, region_account_id)
+                alb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix)
         else:
             elb_resource = AWSResourcesProvider.get_provider(event_name, region_value, account_id)
             event_detail = elb_resource.filter_resources(filter_regex, event_detail)
             if event_detail:
                 resources = elb_resource.get_arn_list_cloud_trail_event(event_detail)
-                elb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix, region_account_id)
+                elb_resource.enable_s3_logs(resources, bucket_name, bucket_prefix)
 
     print("AWS S3 ENABLE ALB :- Completed s3 logs enable")
 
@@ -511,6 +512,34 @@ class AWSResourcesAbstract(object):
         for idx in range(0, length, size):
             data = iterable[idx:min(idx + size, length)]
             yield data
+
+    @staticmethod
+    def _apply_bucket_policy(bucket_name, statements):
+        s3 = boto3.client('s3')
+        for attempt in range(5):
+            try:
+                response = s3.get_bucket_policy(Bucket=bucket_name)
+                existing_policy = json.loads(response["Policy"])
+            except ClientError as e:
+                if e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                    existing_policy = {"Version": "2012-10-17", "Statement": []}
+                else:
+                    raise
+            existing_sids = {s.get("Sid") for s in existing_policy["Statement"] if s.get("Sid")}
+            for stmt in statements:
+                if stmt.get("Sid") not in existing_sids:
+                    existing_policy["Statement"].append(stmt)
+            try:
+                s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                print(f"put_bucket_policy succeeded for {bucket_name} on attempt {attempt + 1}")
+                return
+            except ClientError as e:
+                if e.response['Error']['Code'] == "OperationAborted":
+                    print(f"OperationAborted on put_bucket_policy attempt {attempt + 1} for {bucket_name}, retrying in {2 ** attempt}s...")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise
+        raise Exception(f"Failed to put bucket policy for {bucket_name} after 5 attempts")
 
 
 class EC2Resources(AWSResourcesAbstract):
@@ -846,8 +875,48 @@ class RDSResources(AWSResourcesAbstract):
             tags.extend(tags_arn)
             self.client.add_tags_to_resource(ResourceName=arn, Tags=tags)
 
-
 class AlbResources(AWSResourcesAbstract):
+
+    def add_bucket_policy(self, bucket_name):
+        print("Adding policy to the bucket " + bucket_name)
+        self._apply_bucket_policy(bucket_name, [
+            {
+                "Sid": "AWSCloudTrailAclCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSCloudTrailWrite",
+                "Effect": "Allow",
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
+                "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
+            },
+            {
+                "Sid": "AWSBucketExistenceCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                "Action": "s3:ListBucket",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSALBLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AddALBLogsStatement",
+                "Effect": "Allow",
+                "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
+            }
+        ])
 
     def fetch_resources(self):
         resources = []
@@ -896,7 +965,7 @@ class AlbResources(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, arns, tags):
         self.client.add_tags(ResourceArns=arns, Tags=tags)
 
-    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, elb_region_account_id):
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'true'},
                       {'Key': 'access_logs.s3.bucket', 'Value': s3_bucket},
                       {'Key': 'access_logs.s3.prefix', 'Value': s3_prefix}]
@@ -913,66 +982,11 @@ class AlbResources(AWSResourcesAbstract):
                         except ClientError as e:
                             if "Error" in e.response and "Message" in e.response["Error"] \
                                     and "Access Denied for bucket" in e.response['Error']['Message']:
-                                self.add_bucket_policy(s3_bucket, elb_region_account_id)
+                                self.add_bucket_policy(s3_bucket)
                                 time.sleep(10)
                                 self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
                             else:
                                 raise e
-
-    def add_bucket_policy(self, bucket_name, elb_region_account_id):
-        print("Adding policy to the bucket " + bucket_name)
-        s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if "Error" in e.response and "Code" in e.response["Error"] \
-                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                    ]
-                }
-            else:
-                raise e
-
-        bucket_policy = [
-            {
-                "Sid": "AwsAlbLogs",
-                "Effect": "Allow",
-                "Principal": {
-                    "AWS": f"arn:{self.partition}:iam::{elb_region_account_id}:root"
-                },
-                "Action": ["s3:PutObject"],
-                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
-            },
-            {
-                "Sid": "AWSLogDeliveryAclCheck",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
-                "Action": "s3:GetBucketAcl",
-                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
-            },
-            {
-                "Sid": "AWSLogDeliveryWrite",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
-                "Action": "s3:PutObject",
-                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
-            }
-        ]
-        existing_policy["Statement"].extend(bucket_policy)
-
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
 
     def disable_s3_logs(self, arns, s3_bucket):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'false'}]
@@ -984,7 +998,6 @@ class AlbResources(AWSResourcesAbstract):
                     if attribute["Key"] == "access_logs.s3.bucket" and attribute["Value"] == s3_bucket:
                         self.client.modify_load_balancer_attributes(LoadBalancerArn=arn, Attributes=attributes)
                         time.sleep(1)
-
 
 class S3Resource(AWSResourcesAbstract):
 
@@ -1023,7 +1036,7 @@ class S3Resource(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, *args):
         pass
 
-    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, region_account_id):
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix):
 
         bucket_logging = {'LoggingEnabled': {'TargetBucket': s3_bucket, 'TargetPrefix': s3_prefix}}
 
@@ -1104,7 +1117,7 @@ class VpcResource(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, *args):
         pass
 
-    def enable_s3_logs(self, arns, s3_bucket, s3_prefix, region_account_id):
+    def enable_s3_logs(self, arns, s3_bucket, s3_prefix):
         if arns:
             chunk_records = self._batch_size_chunk(arns, 1000)
             for record in chunk_records:
@@ -1129,47 +1142,23 @@ class VpcResource(AWSResourcesAbstract):
 
     def add_bucket_policy(self, bucket_name, prefix):
         print("Adding policy to the bucket " + bucket_name)
-        s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if "Error" in e.response and "Code" in e.response["Error"] \
-                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                    ]
-                }
-            else:
-                raise e
-
-        bucket_policy = [{
-            "Sid": "AWSLogDeliveryAclCheck",
-            "Effect": "Allow",
-            "Principal": {
-                "Service": "delivery.logs.amazonaws.com"
+        self._apply_bucket_policy(bucket_name, [
+            {
+                "Sid": "AWSLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
-            "Action": "s3:GetBucketAcl",
-            "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
-        },
             {
                 "Sid": "AWSLogDeliveryWrite",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
                 "Action": "s3:PutObject",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}/{prefix}/AWSLogs/{self.account_id}/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
-            }]
-        existing_policy["Statement"].extend(bucket_policy)
-
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
+            }
+        ])
 
     def disable_s3_logs(self, arns, s3_bucket):
         if arns:
@@ -1183,6 +1172,7 @@ class VpcResource(AWSResourcesAbstract):
                             flow_ids.append(flow_logs["FlowLogId"])
                     if flow_ids:
                         self.client.delete_flow_logs(FlowLogIds=flow_ids)
+
 
 class ElbResource(AWSResourcesAbstract):
     def fetch_resources(self):
@@ -1232,82 +1222,68 @@ class ElbResource(AWSResourcesAbstract):
     def tag_resources_cloud_trail_event(self, names, tags):
         self.client.add_tags(LoadBalancerNames=names, Tags=tags)
 
-    def enable_s3_logs(self, names, s3_bucket, s3_prefix, elb_region_account_id):
+    def enable_s3_logs(self, names, s3_bucket, s3_prefix):
         for name in names:
             print("Enable S3 logging for ALB " + name)
             response = self.client.describe_load_balancer_attributes(LoadBalancerName=name)
             if "LoadBalancerAttributes" in response:
                 access_logs = response.get("LoadBalancerAttributes").get("AccessLog")
-                if(access_logs["Enabled"]==False):
-                    access_logs["Enabled"]=True
-                    access_logs["S3BucketName"]=s3_bucket
-                    access_logs["S3BucketPrefix"]=s3_prefix
+                if not access_logs["Enabled"]:
+                    access_logs["Enabled"] = True
+                    access_logs["S3BucketName"] = s3_bucket
+                    access_logs["S3BucketPrefix"] = s3_prefix
                     try:
                         self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                         time.sleep(10)
                     except ClientError as e:
                         if "Error" in e.response and "Message" in e.response["Error"] \
                             and "Access Denied for bucket" in e.response['Error']['Message']:
-                            self.add_bucket_policy(s3_bucket, elb_region_account_id)
+                            self.add_bucket_policy(s3_bucket)
                             time.sleep(10)
-                            self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response)
+                            self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                         else:
                             raise e
 
-    def add_bucket_policy(self, bucket_name, elb_region_account_id):
+    def add_bucket_policy(self, bucket_name):
         print("Adding policy to the bucket " + bucket_name)
-        s3 = boto3.client('s3')
-        try:
-            response = s3.get_bucket_policy(Bucket=bucket_name)
-            existing_policy = json.loads(response["Policy"])
-        except ClientError as e:
-            if "Error" in e.response and "Code" in e.response["Error"] \
-                    and e.response['Error']['Code'] == "NoSuchBucketPolicy":
-                existing_policy = {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                    ]
-                }
-            else:
-                raise e
-
-        bucket_policy = [
+        self._apply_bucket_policy(bucket_name, [
             {
-                "Sid": "AwsElbLogs",
+                "Sid": "AWSCloudTrailAclCheck",
                 "Effect": "Allow",
-                "Principal": {
-                    "AWS": f"arn:{self.partition}:iam::{elb_region_account_id}:root"
-                },
-                "Action": ["s3:PutObject"],
-                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
-            },
-            {
-                "Sid": "AWSLogDeliveryAclCheck",
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
                 "Action": "s3:GetBucketAcl",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
             },
             {
-                "Sid": "AWSLogDeliveryWrite",
+                "Sid": "AWSCloudTrailWrite",
                 "Effect": "Allow",
-                "Principal": {
-                    "Service": "delivery.logs.amazonaws.com"
-                },
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
                 "Action": "s3:PutObject",
                 "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*",
-                "Condition": {
-                    "StringEquals": {
-                        "s3:x-amz-acl": "bucket-owner-full-control"
-                    }
-                }
+                "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
+            },
+            {
+                "Sid": "AWSBucketExistenceCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "cloudtrail.amazonaws.com"},
+                "Action": "s3:ListBucket",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AWSELBLogDeliveryAclCheck",
+                "Effect": "Allow",
+                "Principal": {"Service": "delivery.logs.amazonaws.com"},
+                "Action": "s3:GetBucketAcl",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}"
+            },
+            {
+                "Sid": "AddELBLogsStatement",
+                "Effect": "Allow",
+                "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
+                "Action": "s3:PutObject",
+                "Resource": f"arn:{self.partition}:s3:::{bucket_name}/*"
             }
-        ]
-        existing_policy["Statement"].extend(bucket_policy)
-
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+        ])
 
     def disable_s3_logs(self, names, s3_bucket):
         attributes = [{'Key': 'access_logs.s3.enabled', 'Value': 'false'}]
@@ -1316,8 +1292,8 @@ class ElbResource(AWSResourcesAbstract):
             response = self.client.describe_load_balancer_attributes(LoadBalancerName=name)
             if "LoadBalancerAttributes" in response:
                 access_logs = response.get("LoadBalancerAttributes").get("AccessLog")
-                if(access_logs["Enabled"]==True):
-                    access_logs["Enabled"]=False
+                if access_logs["Enabled"]:
+                    access_logs["Enabled"] = False
                     self.client.modify_load_balancer_attributes(LoadBalancerName=name, LoadBalancerAttributes=response.get("LoadBalancerAttributes"))
                     time.sleep(1)
 
@@ -1351,7 +1327,332 @@ class AWSResourcesProvider(object):
         if provider_name in cls.provider_map:
             return cls.provider_map[provider_name](provider_name, region_value, account_id)
         else:
-            raise Exception("%s provider not found" % provider_name)
+            raise Exception(f"{provider_name} provider not found")
+
+
+class AddBucketPolicy(AWSResource):
+    """Custom::AddBucketPolicy — appends S3 log-delivery policy statements to an existing bucket
+    without replacing any existing statements. Idempotent by Sid.
+    ServiceType controls which statements are added: 'alb', 'elb', or 'cloudtrail'."""
+
+    ALL_STATEMENTS = [
+        {"Sid": "AWSCloudTrailAclCheck", "Effect": "Allow",
+         "Principal": {"Service": "cloudtrail.amazonaws.com"},
+         "Action": ["s3:GetBucketAcl"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AWSCloudTrailWrite", "Effect": "Allow",
+         "Principal": {"Service": "cloudtrail.amazonaws.com"},
+         "Action": ["s3:PutObject"],
+         "Resource": "arn:{partition}:s3:::{bucket}/*",
+         "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}},
+        {"Sid": "AWSBucketExistenceCheck", "Effect": "Allow",
+         "Principal": {"Service": "cloudtrail.amazonaws.com"},
+         "Action": ["s3:ListBucket"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AWSALBLogDeliveryAclCheck", "Effect": "Allow",
+         "Principal": {"Service": "delivery.logs.amazonaws.com"},
+         "Action": ["s3:GetBucketAcl"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AddALBLogsStatement", "Effect": "Allow",
+         "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
+         "Action": ["s3:PutObject"],
+         "Resource": "arn:{partition}:s3:::{bucket}/*"},
+        {"Sid": "AWSELBLogDeliveryAclCheck", "Effect": "Allow",
+         "Principal": {"Service": "delivery.logs.amazonaws.com"},
+         "Action": ["s3:GetBucketAcl"],
+         "Resource": "arn:{partition}:s3:::{bucket}"},
+        {"Sid": "AddELBLogsStatement", "Effect": "Allow",
+         "Principal": {"Service": "logdelivery.elasticloadbalancing.amazonaws.com"},
+         "Action": ["s3:PutObject"],
+         "Resource": "arn:{partition}:s3:::{bucket}/*"},
+    ]
+
+    SERVICE_SIDS = {
+        "cloudtrail": {"AWSCloudTrailAclCheck", "AWSCloudTrailWrite", "AWSBucketExistenceCheck"},
+        "alb":        {"AWSALBLogDeliveryAclCheck", "AddALBLogsStatement"},
+        "elb":        {"AWSELBLogDeliveryAclCheck", "AddELBLogsStatement"},
+    }
+
+    def __init__(self, props, *args, **kwargs):
+        self.props = props
+
+    def _statements_for_service(self, service_type):
+        allowed = self.SERVICE_SIDS.get(service_type)
+        if not allowed:
+            return self.ALL_STATEMENTS
+        return [s for s in self.ALL_STATEMENTS if s["Sid"] in allowed]
+
+    def _build_statements(self, bucket_name, partition, service_type):
+        statements = []
+        for tmpl in self._statements_for_service(service_type):
+            stmt = json.loads(json.dumps(tmpl))
+            stmt["Resource"] = stmt["Resource"].format(bucket=bucket_name, partition=partition)
+            statements.append(stmt)
+        return statements
+
+    def _add_policy(self, bucket_name, partition, service_type):
+        s3 = boto3.client('s3')
+        expected_stmts = self._build_statements(bucket_name, partition, service_type)
+        expected_sids = {s["Sid"] for s in expected_stmts}
+        for attempt in range(5):
+            try:
+                response = s3.get_bucket_policy(Bucket=bucket_name)
+                existing_policy = json.loads(response["Policy"])
+            except ClientError as e:
+                if e.response['Error']['Code'] == "NoSuchBucketPolicy":
+                    existing_policy = {"Version": "2012-10-17", "Statement": []}
+                else:
+                    raise
+            existing_sids = {s.get("Sid") for s in existing_policy["Statement"] if s.get("Sid")}
+            added = []
+            for stmt in expected_stmts:
+                if stmt["Sid"] not in existing_sids:
+                    existing_policy["Statement"].append(stmt)
+                    added.append(stmt["Sid"])
+            if added:
+                print(f"put_bucket_policy attempt {attempt + 1} for {bucket_name}: adding SIDs {added}")
+                try:
+                    s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+                except ClientError as e:
+                    if e.response['Error']['Code'] == "OperationAborted":
+                        print(f"OperationAborted on put_bucket_policy attempt {attempt + 1} for {bucket_name}, retrying in {2 ** attempt}s...")
+                        time.sleep(2 ** attempt)
+                        continue
+                    raise
+                print(f"put_bucket_policy succeeded for {bucket_name} on attempt {attempt + 1}")
+                # Verify our SIDs survived — a concurrent write could have overwritten them
+                time.sleep(0.5 * (attempt + 1))
+                verify = json.loads(s3.get_bucket_policy(Bucket=bucket_name)["Policy"])
+                current_sids = {s.get("Sid") for s in verify["Statement"]}
+                if not expected_sids.issubset(current_sids):
+                    print(f"Concurrent policy overwrite detected on attempt {attempt + 1} for {bucket_name}, retrying...")
+                    continue
+            else:
+                print(f"put_bucket_policy skipped for {bucket_name} on attempt {attempt + 1}: all SIDs already present")
+            return added
+        raise Exception(f"Failed to persist bucket policy for {bucket_name} after 5 attempts — concurrent overwrite")
+
+    def _remove_policy(self, bucket_name, service_type):
+        s3 = boto3.client('s3')
+        our_sids = {s["Sid"] for s in self._statements_for_service(service_type)}
+        try:
+            response = s3.get_bucket_policy(Bucket=bucket_name)
+            existing_policy = json.loads(response["Policy"])
+        except ClientError as e:
+            if e.response['Error']['Code'] in ("NoSuchBucketPolicy", "NoSuchBucket"):
+                return
+            raise
+        existing_policy["Statement"] = [
+            s for s in existing_policy["Statement"] if s.get("Sid") not in our_sids
+        ]
+        if existing_policy["Statement"]:
+            s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(existing_policy))
+        else:
+            s3.delete_bucket_policy(Bucket=bucket_name)
+
+    def create(self, bucket_name, partition, service_type, *args, **kwargs):
+        added = self._add_policy(bucket_name, partition, service_type)
+        return {"AddedSids": added, "BucketName": bucket_name}, bucket_name
+
+    def update(self, bucket_name, partition, service_type, *args, **kwargs):
+        added = self._add_policy(bucket_name, partition, service_type)
+        return {"AddedSids": added, "BucketName": bucket_name}, bucket_name
+
+    def delete(self, bucket_name, service_type, *args, **kwargs):
+        self._remove_policy(bucket_name, service_type)
+        return {"BucketName": bucket_name}, bucket_name
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties", {})
+        return {
+            "bucket_name": props.get("BucketName"),
+            "partition": props.get("Partition", "aws"),
+            "service_type": props.get("ServiceType", "").lower(),
+        }
+
+
+class ConfigureBucketNotifications(AWSResource):
+    """Custom::ConfigureBucketNotifications — manages S3 event notifications and SNS subscriptions
+    for all existing-bucket sources in one shot. Groups sources by bucket so that sources sharing
+    the same bucket reuse a single SNS topic, avoiding S3's one-notification-per-event-type limit."""
+
+    def __init__(self, props, *args, **kwargs):
+        self.props = props
+
+    def _get_topic_name(self, stack_id, bucket_name):
+        import hashlib
+        stack_suffix = stack_id.split('/')[-1].split('-')[0]
+        bucket_hash = hashlib.sha256(bucket_name.encode("utf-8")).hexdigest()[:12]
+        return "sumo-s3-notif-{}-{}".format(stack_suffix, bucket_hash)
+
+    def _configure(self, sources, account_id, partition, stack_id, region):
+        sns_client = boto3.client('sns', region_name=region)
+        s3_client = boto3.client('s3', region_name=region)
+
+        active = [s for s in sources if s.get('BucketName') and s.get('SumoEndpoint')]
+        buckets = {}
+        for src in active:
+            seen = buckets.setdefault(src['BucketName'], {})
+            seen[src['SumoEndpoint']] = True
+
+        print("ConfigureBucketNotifications: {} unique bucket(s) to configure: {}".format(
+            len(buckets), list(buckets.keys())))
+
+        created_topics = {}
+        for bucket_name, endpoints in buckets.items():
+            topic_name = self._get_topic_name(stack_id, bucket_name)
+            print("ConfigureBucketNotifications: creating/fetching SNS topic '{}' for bucket '{}'".format(
+                topic_name, bucket_name))
+            topic_arn = sns_client.create_topic(Name=topic_name)['TopicArn']
+            print("ConfigureBucketNotifications: topic_arn={}".format(topic_arn))
+
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Effect": "Allow",
+                    "Principal": {"Service": "s3.amazonaws.com"},
+                    "Action": "sns:Publish",
+                    "Resource": topic_arn,
+                    "Condition": {
+                        "StringEquals": {"aws:SourceAccount": account_id},
+                        "ArnLike": {"aws:SourceArn": "arn:{}:s3:::{}".format(partition, bucket_name)}
+                    }
+                }]
+            }
+            sns_client.set_topic_attributes(
+                TopicArn=topic_arn,
+                AttributeName='Policy',
+                AttributeValue=json.dumps(policy)
+            )
+            print("ConfigureBucketNotifications: SNS topic policy set for bucket '{}'".format(bucket_name))
+
+            config = s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
+            config.pop('ResponseMetadata', None)
+            existing_topic_arns = [tc.get('TopicArn') for tc in config.get('TopicConfigurations', [])]
+            print("ConfigureBucketNotifications: existing TopicConfigurations on bucket '{}': {}".format(
+                bucket_name, existing_topic_arns))
+
+            overlapping_events = {'s3:ObjectCreated:Put', 's3:ObjectCreated:*'}
+            kept = []
+            removed = []
+            for tc in config.get('TopicConfigurations', []):
+                if set(tc.get('Events', [])).intersection(overlapping_events):
+                    removed.append(tc.get('TopicArn'))
+                else:
+                    kept.append(tc)
+            if removed:
+                print("ConfigureBucketNotifications: removed {} conflicting TopicConfiguration(s) "
+                      "on bucket '{}': {}".format(len(removed), bucket_name, removed))
+            kept.append({'TopicArn': topic_arn, 'Events': ['s3:ObjectCreated:Put']})
+            config['TopicConfigurations'] = kept
+            print("ConfigureBucketNotifications: overwriting S3 notification on bucket '{}' — "
+                  "retained {} existing config(s), added topic_arn={}".format(
+                      bucket_name, len(kept) - 1, topic_arn))
+            s3_client.put_bucket_notification_configuration(
+                Bucket=bucket_name,
+                NotificationConfiguration=config,
+            )
+            print("ConfigureBucketNotifications: S3 notification updated for bucket '{}'".format(
+                bucket_name))
+
+            for endpoint in endpoints:
+                sns_client.subscribe(TopicArn=topic_arn, Protocol='https', Endpoint=endpoint)
+                print("ConfigureBucketNotifications: subscribed endpoint '{}' to topic '{}'".format(
+                    endpoint, topic_arn))
+
+            created_topics[bucket_name] = topic_arn
+
+        print("ConfigureBucketNotifications: done. created_topics={}".format(created_topics))
+        return created_topics
+
+    def _cleanup(self, sources, account_id, partition, stack_id, region):
+        sns_client = boto3.client('sns', region_name=region)
+        s3_client = boto3.client('s3', region_name=region)
+
+        active = [s for s in sources if s.get('BucketName') and s.get('SumoEndpoint')]
+        buckets = {}
+        for src in active:
+            seen = buckets.setdefault(src['BucketName'], {})
+            seen[src['SumoEndpoint']] = True
+
+        print("ConfigureBucketNotifications: {} unique bucket(s) to clean up: {}".format(
+            len(buckets), list(buckets.keys())))
+
+        for bucket_name in buckets:
+            topic_name = self._get_topic_name(stack_id, bucket_name)
+            topic_arn = "arn:{}:sns:{}:{}:{}".format(partition, region, account_id, topic_name)
+            print("ConfigureBucketNotifications: processing bucket='{}' topic_arn={}".format(
+                bucket_name, topic_arn))
+
+            try:
+                config = s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
+                config.pop('ResponseMetadata', None)
+                before = [tc.get('TopicArn') for tc in config.get('TopicConfigurations', [])]
+                config['TopicConfigurations'] = [
+                    tc for tc in config.get('TopicConfigurations', []) if tc.get('TopicArn') != topic_arn
+                ]
+                after = [tc.get('TopicArn') for tc in config['TopicConfigurations']]
+                print("ConfigureBucketNotifications: overwriting S3 notification on bucket '{}' — "
+                      "before={}, after={}".format(bucket_name, before, after))
+                s3_client.put_bucket_notification_configuration(
+                    Bucket=bucket_name,
+                    NotificationConfiguration=config,
+                )
+                print("ConfigureBucketNotifications: S3 notification updated for bucket '{}'".format(
+                    bucket_name))
+            except ClientError as e:
+                print("ConfigureBucketNotifications: skipping S3 notification removal for bucket '{}' — "
+                      "{}".format(bucket_name, e.response['Error']))
+
+            try:
+                paginator = sns_client.get_paginator('list_subscriptions_by_topic')
+                for page in paginator.paginate(TopicArn=topic_arn):
+                    for sub in page.get('Subscriptions', []):
+                        if sub['SubscriptionArn'] not in ('PendingConfirmation', 'Deleted'):
+                            sns_client.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+                            print("ConfigureBucketNotifications: unsubscribed {}".format(
+                                sub['SubscriptionArn']))
+            except ClientError as e:
+                print("ConfigureBucketNotifications: skipping subscription removal for topic '{}' — "
+                      "{}".format(topic_arn, e.response['Error']))
+
+            try:
+                sns_client.delete_topic(TopicArn=topic_arn)
+                print("ConfigureBucketNotifications: deleted SNS topic '{}'".format(topic_arn))
+            except ClientError as e:
+                print("ConfigureBucketNotifications: skipping topic deletion for '{}' — "
+                      "{}".format(topic_arn, e.response['Error']))
+
+    def create(self, sources, account_id, partition, stack_id, region, *args, **kwargs):
+        self._configure(sources, account_id, partition, stack_id, region)
+        resource_id = "BucketNotifications-{}".format(stack_id.split('/')[-1].split('-')[0])
+        return {}, resource_id
+
+    def update(self, sources, account_id, partition, stack_id, region,
+               old_sources=None, *args, **kwargs):
+        if old_sources:
+            self._cleanup(old_sources, account_id, partition, stack_id, region)
+        self._configure(sources, account_id, partition, stack_id, region)
+        resource_id = "BucketNotifications-{}".format(stack_id.split('/')[-1].split('-')[0])
+        return {}, resource_id
+
+    def delete(self, sources, account_id, partition, stack_id, region, *args, **kwargs):
+        self._cleanup(sources, account_id, partition, stack_id, region)
+        return {}, None
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties", {})
+        params = {
+            "sources": props.get("Sources", []),
+            "account_id": props.get("AccountId"),
+            "partition": props.get("Partition"),
+            "stack_id": props.get("StackId"),
+            "region": props.get("Region"),
+        }
+        old_props = event.get("OldResourceProperties", {})
+        if old_props:
+            params["old_sources"] = old_props.get("Sources", [])
+        return params
 
 
 if __name__ == '__main__':
