@@ -16,10 +16,10 @@ docker exec -it sumologic-app-utils /bin/bash -c "python3 -m venv temp-venv && s
 docker cp src/. sumologic-app-utils:/var/task/sumo_app_utils
 
 # Zip the contents of the sumologic-app-utils directory
-docker exec -it sumologic-app-utils /bin/bash -c "cd sumo_app_utils && ls -l && zip -r ../sumo_app_utils.zip ."
+docker exec -it sumologic-app-utils /bin/bash -c "cd sumo_app_utils && ls -l && zip -r ../sumo-app-utils.zip ."
 
 # Copy the sumologic-app-utils.zip file from the container to the host
-docker cp sumologic-app-utils://var/task/sumo_app_utils.zip ./sumo_app_utils.zip
+docker cp sumologic-app-utils://var/task/sumo-app-utils.zip ./sumo-app-utils.zip
 
 # Stop and remove the container
 docker stop sumologic-app-utils

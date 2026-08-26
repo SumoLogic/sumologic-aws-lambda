@@ -50,7 +50,7 @@ class SumoLogic(object):
         return endpoint
 
     def get_versioned_endpoint(self, version):
-        return self.endpoint + '/%s' % version
+        return f"{self.endpoint}/{version}"
 
     def delete(self, method, params=None, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
@@ -203,7 +203,7 @@ class SumoLogic(object):
 
     def delete_folder(self, folder_id, is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.delete('/content/%s/delete' % folder_id, headers=headers, version='v2')
+        return self.delete(f'/content/{folder_id}/delete', headers=headers, version='v2')
 
     def create_folder(self, name, description, parent_folder_id, is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
@@ -219,50 +219,71 @@ class SumoLogic(object):
 
     def get_folder_by_id(self, folder_id, is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
-        response = self.get('/content/folders/%s' % folder_id, version='v2', headers=headers)
+        response = self.get(f'/content/folders/{folder_id}', version='v2', headers=headers)
         return json.loads(response.text)
 
     def update_folder_by_id(self, folder_id, content, is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
-        response = self.put('/content/folders/%s' % folder_id, version='v2', headers=headers, params=content)
+        response = self.put(f'/content/folders/{folder_id}', version='v2', headers=headers, params=content)
         return json.loads(response.text)
 
     def copy_folder(self, folder_id, parent_folder_id, is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.post('/content/%s/copy?destinationFolder=%s' % (folder_id, parent_folder_id), headers=headers,
+        return self.post(f'/content/{folder_id}/copy?destinationFolder={parent_folder_id}', headers=headers,
                          params={}, version='v2')
 
     def import_content(self, folder_id, content, is_overwrite="false", is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.post('/content/folders/%s/import?overwrite=%s' % (folder_id, is_overwrite), headers=headers,
+        return self.post(f'/content/folders/{folder_id}/import?overwrite={is_overwrite}', headers=headers,
                          params=content, version='v2')
 
     def check_import_status(self, folder_id, job_id, is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.get('/content/folders/%s/import/%s/status' % (folder_id, job_id), version='v2', headers=headers)
+        return self.get(f'/content/folders/{folder_id}/import/{job_id}/status', version='v2', headers=headers)
 
     def check_copy_status(self, folder_id, job_id):
-        return self.get('/content/%s/copy/%s/status' % (folder_id, job_id), version='v2')
+        return self.get(f'/content/{folder_id}/copy/{job_id}/status', version='v2')
 
     def install_app(self, app_id, content, is_admin=False):
         headers = {'isAdminMode': 'true'} if is_admin else {}
-        return self.post('/apps/%s/install' % (app_id), headers=headers, params=content)
+        return self.post(f'/apps/{app_id}/install', headers=headers, params=content)
+
+    def install_app_v2(self, app_id, content={}):
+        return self.post(f'/apps/{app_id}/install', version='v2', params=content)
+
+    def upgrade_app_v2(self, app_id, content={}):
+        return self.post(f'/apps/{app_id}/upgrade', version='v2', params=content)
+
+    def uninstall_app_v2(self, app_id, content={}):
+        return self.post(f'/apps/{app_id}/uninstall', version='v2', params=content)
 
     def check_app_install_status(self, job_id):
-        return self.get('/apps/install/%s/status' % job_id)
+        return self.get(f'/apps/install/{job_id}/status')
+
+    def check_app_v2_install_status(self, job_id):
+        return self.get(f'/apps/install/{job_id}/status', version='v2')
+
+    def check_app_v2_uninstall_status(self, job_id):
+        return self.get(f'/apps/uninstall/{job_id}/status', version='v2')
+
+    def check_app_v2_upgrade_status(self, job_id):
+        return self.get(f'/apps/upgrade/{job_id}/status', version='v2')
 
     def get_apps(self):
         response = self.get('/apps')
         return json.loads(response.text)
 
+    def get_instances_app_v2(self):
+        return self.get(f'/apps/instances', version='v2')
+
     def create_hierarchy(self, content):
         return self.post('/entities/hierarchies', params=content, version='v1')
 
     def delete_hierarchy(self, hierarchy_id):
-        return self.delete('/entities/hierarchies/%s' % hierarchy_id, version='v1')
+        return self.delete(f'/entities/hierarchies/{hierarchy_id}', version='v1')
 
     def update_hierarchy(self, hierarchy_id, content):
-        return self.put('/entities/hierarchies/%s' % hierarchy_id, params=content, version='v1')
+        return self.put(f'/entities/hierarchies/{hierarchy_id}', params=content, version='v1')
 
     def get_entity_hierarchies(self):
         response = self.get('/entities/hierarchies', version='v1')
@@ -272,13 +293,13 @@ class SumoLogic(object):
         return self.post('/metricsRules', params=content)
 
     def delete_metric_rule(self, metric_rule_name):
-        return self.delete('/metricsRules/%s' % metric_rule_name)
+        return self.delete(f'/metricsRules/{metric_rule_name}')
 
     def create_field_extraction_rule(self, content):
         return self.post('/extractionRules', params=content)
 
     def delete_field_extraction_rule(self, fer_name):
-        return self.delete('/extractionRules/%s' % fer_name)
+        return self.delete(f'/extractionRules/{fer_name}')
 
     def get_all_field_extraction_rules(self, limit=None, token=None, ):
         params = {'limit': limit, 'token': token}
@@ -286,10 +307,10 @@ class SumoLogic(object):
         return json.loads(r.text)
 
     def update_field_extraction_rules(self, fer_id, fer_details):
-        return self.put('/extractionRules/%s' % fer_id, fer_details)
+        return self.put(f'/extractionRules/{fer_id}', fer_details)
 
     def get_fer_by_id(self, fer_id):
-        response = self.get('/extractionRules/%s' % fer_id)
+        response = self.get(f'/extractionRules/{fer_id}')
         return json.loads(response.text)
 
     def fetch_metric_data_points(self, content):
@@ -304,14 +325,14 @@ class SumoLogic(object):
         return json.loads(response.text)['data']
 
     def get_existing_field(self, field_id):
-        response = self.get('/fields/%s' % field_id)
+        response = self.get(f'/fields/{field_id}')
         return json.loads(response.text)
 
     def delete_existing_field(self, field_id):
-        return self.delete('/fields/%s' % field_id)
+        return self.delete(f'/fields/{field_id}')
 
     def import_monitors(self, folder_id, content):
-        response = self.post('/monitors/%s/import' % folder_id, params=content)
+        response = self.post(f'/monitors/{folder_id}/import', params=content)
         return json.loads(response.text)
 
     def set_monitors_permissions(self, content):
@@ -319,7 +340,7 @@ class SumoLogic(object):
         return json.loads(response.text)
 
     def export_monitors(self, folder_id):
-        response = self.get('/monitors/%s/export' % folder_id)
+        response = self.get(f'/monitors/{folder_id}/export')
         return json.loads(response.text)
 
     def get_root_folder(self):
@@ -327,4 +348,4 @@ class SumoLogic(object):
         return json.loads(response.text)
 
     def delete_monitor_folder(self, folder_id):
-        return self.delete('/monitors/%s' % folder_id)
+        return self.delete(f'/monitors/{folder_id}')
