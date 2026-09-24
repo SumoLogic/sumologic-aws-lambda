@@ -252,7 +252,7 @@ Resources:
             DeadLetterConfig:
                 TargetArn: !GetAtt SumoCWDeadLetterQueue.Arn
             Handler: cloudwatchlogs_lambda.handler
-            Runtime: nodejs22.x
+            Runtime: nodejs24.x
             MemorySize: 128
             Environment:
                 Variables:
@@ -301,7 +301,7 @@ Resources:
             Handler: DLQProcessor.handler
             DeadLetterConfig:
                 TargetArn: !GetAtt SumoCWDeadLetterQueue.Arn
-            Runtime: nodejs22.x
+            Runtime: nodejs24.x
             MemorySize: 128
             Environment:
                 Variables:
