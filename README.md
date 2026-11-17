@@ -1,5 +1,6 @@
 Sumo Logic AWS Lambda Functions [![Build Status](https://travis-ci.org/SumoLogic/sumologic-aws-lambda.svg?branch=master)](https://travis-ci.org/SumoLogic/sumologic-aws-lambda)
 ==============================
+**Note:** For the latest code and new development, always refer to the [main-v3x](https://github.com/SumoLogic/sumologic-aws-lambda/tree/main-v3x) branch. The `main` branch is currently under maintenance and should not be used as the source for the latest code.
 
 ## What does AWS Lambda do? ##
 AWS Lambda is a compute service that allows users to run code, in response to events, without having to provision and manage servers. A Lambda Function can be triggered automatically from other Amazon services, or from a web or mobile application.  For more information, please visit the [AWS Lambda site](https://aws.amazon.com/lambda/).
