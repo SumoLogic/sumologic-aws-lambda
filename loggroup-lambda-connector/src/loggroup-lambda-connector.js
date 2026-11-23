@@ -32,7 +32,7 @@ async function getTagsByLogGroupName(logGroupName, retryCounter=0) {
             const delayTime = Math.pow(2, retryCounter) * 2000; // Exponential backoff
             console.log(`ThrottlingException encountered for ${logGroupName}. Retrying in ${delayTime}ms...Attempt ${retryCounter}/${maxRetryCounter}`);
             await delay(delayTime);
-            await getTagsByLogGroupName(logGroupName, retryCounter);
+            return await getTagsByLogGroupName(logGroupName, retryCounter);
           } else {
             console.error(`Failed to get tags for ${logGroupName} due to ${err}`)
           }
@@ -47,6 +47,9 @@ function IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags) {
         let tag, key, value;
         for (let i = 0; i < tagMatcherList.length; i++) {
             tag = tagMatcherList[i].split("=");
+            if (tag.length < 2) {
+                continue;
+            }
             key = tag[0].trim();
             value = tag[1].trim();
             if (logGroupTags[key] && logGroupTags[key] == value) {
@@ -195,22 +198,62 @@ async function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// CreateLogGroup and TagLogGroup carry logGroupName. TagResource carries resourceArn, which is also used for
+// resources that are not log groups (destinations, deliveries), so those return null.
+function getLogGroupName(detail) {
+    var params = (detail && detail.requestParameters) || {};
+    if (params.logGroupName) {
+        return params.logGroupName;
+    }
+    var marker = ":log-group:";
+    var arn = params.resourceArn;
+    if (typeof arn === "string" && arn.indexOf(marker) !== -1) {
+        var name = arn.substring(arn.indexOf(marker) + marker.length);
+        return name.endsWith(":*") ? name.slice(0, -2) : name;
+    }
+    return null;
+}
+
+function isTagEvent(eventName) {
+    return eventName === "TagResource" || eventName === "TagLogGroup";
+}
+
+// A tag event only carries the tags that were just added, so the current tags of the log group are read instead.
+// Name matching is not used here: tagging must not subscribe a log group only because its name matches the pattern.
+async function filterTaggedLogGroup(logGroupName) {
+    var tagMatcherForLogGroup = process.env.LOG_GROUP_TAGS;
+    if (!tagMatcherForLogGroup || tagMatcherForLogGroup.trim().length === 0) {
+        return false;
+    }
+    var logGroupTags = await getTagsByLogGroupName(logGroupName);
+    console.log("Filtering tagged log group:", logGroupName, "with tags:", logGroupTags);
+    return IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags);
+}
+
 async function processEvents(env, event, additionalArgs, errorHandler, retryCounter=0) {
-  var logGroupName = event.detail.requestParameters.logGroupName;
+  var logGroupName = getLogGroupName(event.detail);
+  if (!logGroupName) {
+    console.log("Not a log group event, ignoring: ", event.detail && event.detail.eventName);
+    return;
+  }
   var logGroupRegex = validateRegex(env.LOG_GROUP_PATTERN);
   console.log("logGroupRegex: ", logGroupRegex);
-  if (filterNewLogGroups(event, logGroupRegex)) {
+  var matched = isTagEvent(event.detail.eventName)
+    ? await filterTaggedLogGroup(logGroupName)
+    : filterNewLogGroups(event, logGroupRegex);
+  if (matched) {
     console.log("Subscribing: ", logGroupName, env.DESTINATION_ARN);
     try {
         await createSubscriptionFilter(logGroupName, env.DESTINATION_ARN, env.ROLE_ARN, additionalArgs);
     } catch (err) {
-      errorHandler(err, "Error in Subscribing.");
       if (err && err.message === "Rate exceeded" && retryCounter <= maxRetryCounter) {
         retryCounter += 1
         const delayTime = Math.pow(2, retryCounter) * 1000; // Exponential backoff
         console.log(`ThrottlingException encountered. Retrying in ${delayTime}ms...Attempt ${retryCounter}/${maxRetryCounter}`);
         await delay(delayTime);
         await processEvents(env, event, additionalArgs, errorHandler, retryCounter);
+      } else {
+        errorHandler(err, "Error in Subscribing.");
       }
     };
   } else {

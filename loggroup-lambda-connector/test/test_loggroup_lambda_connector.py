@@ -11,8 +11,8 @@ import datetime
 import cfn_flip
 
 # Modify the name of the bucket prefix for testing
-BUCKET_PREFIX = "appdevstore"
-AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+BUCKET_PREFIX = "appdevstore-akhil90"
+AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "ap-southeast-1")
 
 
 class TestLambda(unittest.TestCase):
@@ -90,6 +90,39 @@ class TestLambda(unittest.TestCase):
         self.assertTrue(self.stack_exists(self.stack_name))
         #self.invoke_lambda()
         self.assert_subscription_filter("SumoLGLBDFilter")
+
+    def test_7_tag_added_after_creation(self):
+        # Log group is created without the tag, so it is not subscribed. Tagging it later (TagResource) subscribes it.
+        self.create_stack(self.stack_name, self.template_data,
+                          self.create_stack_parameters("Lambda", "false", loggroup_pattern='^$',
+                                                       loggroup_tag='team=apps'))
+        self.assertTrue(self.stack_exists(self.stack_name))
+        self.create_log_group()
+        self.assert_no_subscription_filter("SumoLGLBDFilter")
+        account_id = boto3.client('sts', AWS_REGION).get_caller_identity()['Account']
+        log_group_arn = "arn:aws:logs:%s:%s:log-group:%s" % (AWS_REGION, account_id, self.log_group_name)
+        self.log_group_client.tag_resource(resourceArn=log_group_arn, tags={'team': 'apps'})
+        self.assert_subscription_filter("SumoLGLBDFilter")
+
+    def test_8_deprecated_tag_log_group_after_creation(self):
+        # Same as test 7 with the deprecated TagLogGroup API.
+        self.create_stack(self.stack_name, self.template_data,
+                          self.create_stack_parameters("Lambda", "false", loggroup_pattern='^$',
+                                                       loggroup_tag='team=apps'))
+        self.assertTrue(self.stack_exists(self.stack_name))
+        self.create_log_group()
+        self.assert_no_subscription_filter("SumoLGLBDFilter")
+        self.log_group_client.tag_log_group(logGroupName=self.log_group_name, tags={'team': 'apps'})
+        self.assert_subscription_filter("SumoLGLBDFilter")
+
+    def test_9_non_matching_tag_is_not_subscribed(self):
+        self.create_stack(self.stack_name, self.template_data,
+                          self.create_stack_parameters("Lambda", "false", loggroup_pattern='^$',
+                                                       loggroup_tag='team=apps'))
+        self.assertTrue(self.stack_exists(self.stack_name))
+        self.create_log_group()
+        self.log_group_client.tag_log_group(logGroupName=self.log_group_name, tags={'team': 'other'})
+        self.assert_no_subscription_filter("SumoLGLBDFilter")
 
     def create_stack_parameters(self, destination, existing, loggroup_pattern='test', loggroup_tag=''):
         return [
@@ -185,6 +218,15 @@ class TestLambda(unittest.TestCase):
         if "roleArn" in self.outputs:
             assert response['subscriptionFilters'][0]['roleArn'] == self.outputs["roleArn"]
 
+    def assert_no_subscription_filter(self, filter_name):
+        sleep(60)
+        response = self.log_group_client.describe_subscription_filters(
+            logGroupName=self.log_group_name,
+            filterNamePrefix=filter_name
+        )
+        print("testing subscription filter does not exist", response)
+        assert len(response['subscriptionFilters']) == 0
+
     def _parse_template(self, template_name):
         output_file = cfn_flip.to_json(read_file(template_name))
         template_data = json.loads(output_file)
@@ -212,7 +254,7 @@ def read_file(file_path):
 
 
 def get_bucket_name():
-    return '%s-%s' % (BUCKET_PREFIX, AWS_REGION)
+    return '%s' % (BUCKET_PREFIX)
 
 
 def upload_to_s3(file_path):
