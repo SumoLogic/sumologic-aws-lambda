@@ -4,6 +4,8 @@ This lambda function is used for creating custom resources. This application is 
 
 Made with ❤️ by Sumo Logic. Available on the [AWS Serverless Application Repository](https://aws.amazon.com/serverless)
 
+
+
 ## Setup
 
 1. Deploying the SAM Application
