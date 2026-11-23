@@ -6,6 +6,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 DEFAULT_VERSION = 'v1'
+ALLOWLIST_ERROR_KEYWORDS = ('allowlist', 'whitelist', 'ip address', 'not allowed from')
 
 
 class SumoLogic(object):
@@ -49,6 +50,17 @@ class SumoLogic(object):
         print("SDK Endpoint", endpoint)
         return endpoint
 
+    @staticmethod
+    def _raise_for_status(r):
+        if 400 <= r.status_code < 600:
+            r.reason = r.text
+            body = (r.text or "").lower()
+            if r.status_code in (401, 403) and any(keyword in body for keyword in ALLOWLIST_ERROR_KEYWORDS):
+                r.reason = (f"Request blocked by Sumo Logic API allowlist. Add the Lambda outbound IP to the allowlist "
+                            f"(deploy static_outbound_ip.template.yaml and use its NatPublicIp output, also shown as "
+                            f"AWS Observability stack output SumoAPIOutboundIP). Response: {r.text}")
+        r.raise_for_status()
+
     def get_versioned_endpoint(self, version):
         return f"{self.endpoint}/{version}"
 
@@ -56,36 +68,28 @@ class SumoLogic(object):
         endpoint = self.get_versioned_endpoint(version)
         time.sleep(uniform(2, 4))
         r = self.session.delete(endpoint + method, params=params, headers=headers)
-        if 400 <= r.status_code < 600:
-            r.reason = r.text
-        r.raise_for_status()
+        self._raise_for_status(r)
         return r
 
     def get(self, method, params=None, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
         time.sleep(uniform(2, 4))
         r = self.session.get(endpoint + method, params=params, headers=headers)
-        if 400 <= r.status_code < 600:
-            r.reason = r.text
-        r.raise_for_status()
+        self._raise_for_status(r)
         return r
 
     def post(self, method, params, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
         time.sleep(uniform(2, 4))
         r = self.session.post(endpoint + method, data=json.dumps(params), headers=headers)
-        if 400 <= r.status_code < 600:
-            r.reason = r.text
-        r.raise_for_status()
+        self._raise_for_status(r)
         return r
 
     def put(self, method, params, headers=None, version=DEFAULT_VERSION):
         endpoint = self.get_versioned_endpoint(version)
         time.sleep(uniform(2, 4))
         r = self.session.put(endpoint + method, data=json.dumps(params), headers=headers)
-        if 400 <= r.status_code < 600:
-            r.reason = r.text
-        r.raise_for_status()
+        self._raise_for_status(r)
         return r
 
     def search(self, query, fromTime=None, toTime=None, timeZone='UTC'):
