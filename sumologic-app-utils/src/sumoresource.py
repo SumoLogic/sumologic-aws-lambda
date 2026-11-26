@@ -1242,6 +1242,89 @@ class SumoLogicUpdateFields(SumoResource):
         }
 
 
+class KinesisLogsS3AutoReplay(SumoResource):
+    """
+        Configures S3 auto replay on a Kinesis Firehose for Logs (KinesisLog) HTTP source that the same
+        stack created earlier (the Custom::HTTPSource resource). It is not meant for sources that a
+        customer created outside the stack, and it does not check the source type before editing.
+
+        Sumo Logic scans the given bucket/path for data that Firehose failed to deliver to the source
+        and ingests it, using an IAM role it assumes to read the bucket.
+
+        This is a separate resource, instead of properties on HTTPSource, because the failed-data bucket
+        and the IAM policy are created after the source (the Firehose stack needs the source URL first).
+        Create this resource only once the bucket and the IAM policy exist.
+    """
+
+    NO_PATH = {"type": "NoPathExpression"}
+    NO_AUTH = {"type": "NoAuthentication"}
+
+    def set_third_party_ref(self, collector_id, source_id, path, authentication):
+        for attempt in range(5):
+            sv, etag = self.sumologic_cli.source(collector_id, source_id)
+            sv['source']['thirdPartyRef'] = {
+                "resources": [{
+                    "serviceType": "KinesisLog",
+                    "path": path,
+                    "authentication": authentication
+                }]
+            }
+            resp = self.sumologic_cli.update_source(collector_id, sv, etag)
+            if resp.status_code == 412:
+                print(f"ETag conflict on attempt {attempt + 1}, retrying...")
+                time.sleep(2 ** attempt)
+                continue
+            if resp.status_code >= 400:
+                print(f"Failed to update source {source_id}: {resp.text}")
+            resp.raise_for_status()
+            print(f"updated S3 auto replay settings of source {source_id}")
+            return
+        resp.raise_for_status()
+
+    def enable(self, collector_id, source_id, bucket_name, path_expression, role_arn, scan_interval):
+        path = {
+            "type": "KinesisLogPath",
+            "bucketName": bucket_name,
+            "pathExpression": path_expression,
+        }
+        if scan_interval:
+            path["scanInterval"] = scan_interval
+        authentication = {
+            "type": "AWSRoleBasedAuthentication",
+            "roleARN": role_arn
+        }
+        self.set_third_party_ref(collector_id, source_id, path, authentication)
+        return {"SOURCE_ID": source_id}, source_id
+
+    def create(self, collector_id, source_id, bucket_name, path_expression, role_arn, scan_interval, *args, **kwargs):
+        return self.enable(collector_id, source_id, bucket_name, path_expression, role_arn, scan_interval)
+
+    def update(self, collector_id, source_id, bucket_name, path_expression, role_arn, scan_interval, *args, **kwargs):
+        return self.enable(collector_id, source_id, bucket_name, path_expression, role_arn, scan_interval)
+
+    def delete(self, collector_id, source_id, *args, **kwargs):
+        # Switch auto replay off again. If the source is already gone (stack deletion), there is nothing to do.
+        try:
+            self.set_third_party_ref(collector_id, source_id, self.NO_PATH, self.NO_AUTH)
+        except Exception as e:
+            if hasattr(e, 'response') and e.response is not None and e.response.status_code == 404:
+                print(f"source {source_id} not found, skipping")
+                return
+            raise
+
+    def extract_params(self, event):
+        props = event.get("ResourceProperties")
+        return {
+            "collector_id": props.get("CollectorId"),
+            # SourceId is the physical id of the Custom::HTTPSource resource, "<LogicalId>/<source id>".
+            "source_id": props.get("SourceId").rsplit('/', 1)[-1],
+            "bucket_name": props.get("BucketName"),
+            "path_expression": props.get("PathExpression"),
+            "role_arn": props.get("RoleArn"),
+            "scan_interval": int(props.get("ScanInterval")) if props.get("ScanInterval") else None,
+        }
+
+
 class SumoLogicFieldExtractionRule(SumoResource):
     def _get_fer_by_name(self, fer_name):
         token = ""
