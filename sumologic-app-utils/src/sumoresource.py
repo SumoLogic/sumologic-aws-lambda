@@ -1312,15 +1312,32 @@ class KinesisLogsS3AutoReplay(SumoResource):
                 return
             raise
 
+    @staticmethod
+    def _require(props, name):
+        # Fail early with a clear message instead of a confusing error later (or a half-built request to Sumo Logic).
+        value = props.get(name)
+        if value is None or str(value).strip() == "":
+            raise ValueError(f"{name} is required for Custom::KinesisLogsS3AutoReplay")
+        return str(value).strip()
+
     def extract_params(self, event):
-        props = event.get("ResourceProperties")
+        props = event.get("ResourceProperties") or {}
+        # SourceId is the physical id of the Custom::HTTPSource resource, "<LogicalId>/<source id>".
+        source_ref = self._require(props, "SourceId")
+        source_id = source_ref.rsplit('/', 1)[-1]
+        if not source_id:
+            raise ValueError(f"SourceId {source_ref!r} has no source id after the '/'")
+        collector_id = self._require(props, "CollectorId")
+        if event.get("RequestType") == "Delete":
+            # Deleting only needs to find the source again. Never fail a stack deletion because the
+            # bucket, path or role properties are missing, otherwise the stack could get stuck in DELETE_FAILED.
+            return {"collector_id": collector_id, "source_id": source_id}
         return {
-            "collector_id": props.get("CollectorId"),
-            # SourceId is the physical id of the Custom::HTTPSource resource, "<LogicalId>/<source id>".
-            "source_id": props.get("SourceId").rsplit('/', 1)[-1],
-            "bucket_name": props.get("BucketName"),
-            "path_expression": props.get("PathExpression"),
-            "role_arn": props.get("RoleArn"),
+            "collector_id": collector_id,
+            "source_id": source_id,
+            "bucket_name": self._require(props, "BucketName"),
+            "path_expression": self._require(props, "PathExpression"),
+            "role_arn": self._require(props, "RoleArn"),
             "scan_interval": int(props.get("ScanInterval")) if props.get("ScanInterval") else None,
         }
 
