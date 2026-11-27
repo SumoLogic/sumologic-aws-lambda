@@ -1,10 +1,12 @@
-const { CloudWatchLogsClient, PutSubscriptionFilterCommand, DescribeLogGroupsCommand, ListTagsLogGroupCommand } = require("@aws-sdk/client-cloudwatch-logs");
+const { CloudWatchLogsClient, PutSubscriptionFilterCommand, DescribeLogGroupsCommand, ListTagsLogGroupCommand,
+    DescribeSubscriptionFiltersCommand, DeleteSubscriptionFilterCommand } = require("@aws-sdk/client-cloudwatch-logs");
 const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
 
 const cwl = new CloudWatchLogsClient();
 const lambda = new LambdaClient({ apiVersion: '2015-03-31' }); // Update to the appropriate Lambda API version you require
 const maxRetryCounter = 3;
 const timeoutThreshold = 12000;
+const FILTER_NAME = 'SumoLGLBDFilter';
 
 
 function validateRegex(pattern) {
@@ -17,15 +19,17 @@ function validateRegex(pattern) {
     }
 }
 
+// Returns the tags of the log group, or null when they could not be read. null must never be treated as "no tags":
+// unsubscribing on a failed lookup would remove subscriptions that are still wanted.
 async function getTagsByLogGroupName(logGroupName, retryCounter=0) {
-    var tags = {};
+    var tags = null;
     const input = {
       logGroupName: logGroupName, // required
     };
     try {
         // ListTagsLogGroupRequest
         let response = await cwl.send(new ListTagsLogGroupCommand(input));
-        tags = response.tags
+        tags = response.tags || {}
     } catch (err) {
           if (err && err.message === "Rate exceeded" && retryCounter <= maxRetryCounter) {
             retryCounter += 1
@@ -86,14 +90,14 @@ async function createSubscriptionFilter(lambdaLogGroupName, destinationArn, role
     if (destinationArn.startsWith(`arn:${partition}:lambda`)) {
         params = {
             destinationArn: destinationArn,
-            filterName: 'SumoLGLBDFilter',
+            filterName: FILTER_NAME,
             filterPattern: '',
             logGroupName: lambdaLogGroupName
         };
     } else {
         params = {
             destinationArn: destinationArn,
-            filterName: 'SumoLGLBDFilter',
+            filterName: FILTER_NAME,
             filterPattern: '',
             logGroupName: lambdaLogGroupName,
             roleArn: roleArn
@@ -215,19 +219,69 @@ function getLogGroupName(detail) {
 }
 
 function isTagEvent(eventName) {
-    return eventName === "TagResource" || eventName === "TagLogGroup";
+    return eventName === "TagResource" || eventName === "TagLogGroup" ||
+        eventName === "UntagResource" || eventName === "UntagLogGroup";
 }
 
-// A tag event only carries the tags that were just added, so the current tags of the log group are read instead.
-// Name matching is not used here: tagging must not subscribe a log group only because its name matches the pattern.
-async function filterTaggedLogGroup(logGroupName) {
+// Removes SumoLGLBDFilter from a log group that no longer matches, only when it is provably this connector's filter:
+// same name and same destination. Filters of other stacks or customers are never touched. A missing log group or
+// filter counts as done, so repeated or out of order events are harmless.
+async function removeSubscriptionFilter(logGroupName, destinationArn, additionalArgs, retryCounter=0) {
+    try {
+        const response = await cwl.send(new DescribeSubscriptionFiltersCommand({
+            logGroupName: logGroupName,
+            filterNamePrefix: FILTER_NAME
+        }));
+        const filter = (response.subscriptionFilters || []).find(f => f.filterName === FILTER_NAME);
+        if (!filter) {
+            console.log("No subscription filter to remove on: ", logGroupName);
+            return;
+        }
+        if (filter.destinationArn !== destinationArn) {
+            console.log(`Keeping ${FILTER_NAME} on ${logGroupName}: it points to ${filter.destinationArn}, not to this connector's destination.`);
+            return;
+        }
+        await cwl.send(new DeleteSubscriptionFilterCommand({logGroupName: logGroupName, filterName: FILTER_NAME}));
+        additionalArgs.unsubscribeCount = (additionalArgs.unsubscribeCount || 0) + 1;
+        console.log("Successfully unsubscribed logGroup: ", logGroupName);
+    } catch (err) {
+        if (err && err.name === "ResourceNotFoundException") {
+            console.log("Log group or subscription filter already gone: ", logGroupName);
+            return;
+        }
+        if (err && err.message === "Rate exceeded" && retryCounter <= maxRetryCounter) {
+            retryCounter += 1
+            const delayTime = Math.pow(2, retryCounter) * 1000; // Exponential backoff
+            console.log(`ThrottlingException encountered. Retrying in ${delayTime}ms...Attempt ${retryCounter}/${maxRetryCounter}`);
+            await delay(delayTime);
+            return await removeSubscriptionFilter(logGroupName, destinationArn, additionalArgs, retryCounter);
+        }
+        console.log("Error in unsubscribing", logGroupName, err);
+        throw err;
+    }
+}
+
+// A tag event only carries the tags that were just changed, so the current tags of the log group are read instead.
+// Returns "subscribe", "unsubscribe" or "keep". Name matching never subscribes on a tag event (tagging must not pull in
+// a log group only because its name matches), but a name match does keep an existing subscription.
+async function decideForTaggedLogGroup(logGroupName, logGroupRegex) {
     var tagMatcherForLogGroup = process.env.LOG_GROUP_TAGS;
     if (!tagMatcherForLogGroup || tagMatcherForLogGroup.trim().length === 0) {
-        return false;
+        return "keep";
     }
     var logGroupTags = await getTagsByLogGroupName(logGroupName);
     console.log("Filtering tagged log group:", logGroupName, "with tags:", logGroupTags);
-    return IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags);
+    if (logGroupTags === null) {
+        console.log("Tags could not be read, keeping the current subscription of: ", logGroupName);
+        return "keep";
+    }
+    if (IsTagMatchToLogGroup(tagMatcherForLogGroup, logGroupTags)) {
+        return "subscribe";
+    }
+    if (logGroupName.match(logGroupRegex)) {
+        return "keep";
+    }
+    return "unsubscribe";
 }
 
 async function processEvents(env, event, additionalArgs, errorHandler, retryCounter=0) {
@@ -238,9 +292,22 @@ async function processEvents(env, event, additionalArgs, errorHandler, retryCoun
   }
   var logGroupRegex = validateRegex(env.LOG_GROUP_PATTERN);
   console.log("logGroupRegex: ", logGroupRegex);
-  var matched = isTagEvent(event.detail.eventName)
-    ? await filterTaggedLogGroup(logGroupName)
-    : filterNewLogGroups(event, logGroupRegex);
+  var matched;
+  if (isTagEvent(event.detail.eventName)) {
+    var decision = await decideForTaggedLogGroup(logGroupName, logGroupRegex);
+    if (decision === "unsubscribe") {
+      console.log("Unsubscribing: ", logGroupName, env.DESTINATION_ARN);
+      try {
+        await removeSubscriptionFilter(logGroupName, env.DESTINATION_ARN, additionalArgs);
+      } catch (err) {
+        errorHandler(err, "Error in Unsubscribing.");
+      }
+      return;
+    }
+    matched = decision === "subscribe";
+  } else {
+    matched = filterNewLogGroups(event, logGroupRegex);
+  }
   if (matched) {
     console.log("Subscribing: ", logGroupName, env.DESTINATION_ARN);
     try {

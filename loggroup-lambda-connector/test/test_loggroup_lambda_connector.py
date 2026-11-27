@@ -124,6 +124,34 @@ class TestLambda(unittest.TestCase):
         self.log_group_client.tag_log_group(logGroupName=self.log_group_name, tags={'team': 'other'})
         self.assert_no_subscription_filter("SumoLGLBDFilter")
 
+    def _create_tag_filtered_stack(self, loggroup_pattern='^$'):
+        self.create_stack(self.stack_name, self.template_data,
+                          self.create_stack_parameters("Lambda", "false", loggroup_pattern=loggroup_pattern,
+                                                       loggroup_tag='team=apps'))
+        self.assertTrue(self.stack_exists(self.stack_name))
+
+    def test_10_removing_the_tag_unsubscribes(self):
+        self._create_tag_filtered_stack()
+        self.create_log_group_with_tag()
+        self.assert_subscription_filter("SumoLGLBDFilter")
+        self.log_group_client.untag_log_group(logGroupName=self.log_group_name, tags=['team'])
+        self.assert_no_subscription_filter("SumoLGLBDFilter")
+
+    def test_11_changing_the_tag_value_unsubscribes(self):
+        self._create_tag_filtered_stack()
+        self.create_log_group_with_tag()
+        self.assert_subscription_filter("SumoLGLBDFilter")
+        self.log_group_client.tag_log_group(logGroupName=self.log_group_name, tags={'team': 'other'})
+        self.assert_no_subscription_filter("SumoLGLBDFilter")
+
+    def test_12_removing_the_tag_keeps_a_name_matched_subscription(self):
+        # The log group name still matches LOG_GROUP_PATTERN, so the subscription stays.
+        self._create_tag_filtered_stack(loggroup_pattern='mytag')
+        self.create_log_group_with_tag()
+        self.assert_subscription_filter("SumoLGLBDFilter")
+        self.log_group_client.untag_log_group(logGroupName=self.log_group_name, tags=['team'])
+        self.assert_subscription_filter("SumoLGLBDFilter")
+
     def create_stack_parameters(self, destination, existing, loggroup_pattern='test', loggroup_tag=''):
         return [
             {

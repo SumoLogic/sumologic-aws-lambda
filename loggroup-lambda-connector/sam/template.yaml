@@ -115,6 +115,8 @@ Resources:
                 - logs:DescribeLogStreams
                 - logs:PutSubscriptionFilter
                 - logs:ListTagsLogGroup
+                - logs:DescribeSubscriptionFilters
+                - logs:DeleteSubscriptionFilter
               Resource:
                 - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
             - Sid: InvokePolicy
@@ -137,6 +139,8 @@ Resources:
                   - CreateLogGroup
                   - TagResource
                   - TagLogGroup
+                  - UntagResource
+                  - UntagLogGroup
 
   sumoIAMPassRolePolicy:
     Type: AWS::IAM::Policy
@@ -219,6 +223,8 @@ Resources:
       DESTINATION_ARN: !Ref "DestinationArnValue"
       LOG_GROUP_PATTERN: !Ref "LogGroupPattern"
       ROLE_ARN: !Ref "RoleArn"
+      # Changing the tag filter runs the backfill again, so existing log groups with the new tags are subscribed.
+      LOG_GROUP_TAGS: !Join [ ",", !Ref "LogGroupTags" ]
 
 Outputs:
 
